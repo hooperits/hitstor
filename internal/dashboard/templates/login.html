@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>HitStor — Login</title>
+    <link rel="icon" type="image/png" href="/static/favicon.png">
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body class="login-page">
+    <div class="login-shell">
+        <section class="login-brand brand-surface" aria-hidden="false">
+            <div class="login-brand-inner">
+                <img src="/static/icon.png" alt="" class="brand-icon brand-icon-lg" width="72" height="72">
+                <h1 class="brand-wordmark login-brand-wordmark">
+                    <span class="wm-hit">hit</span><span class="wm-stor">stor</span>
+                </h1>
+                <p class="login-brand-lead">Encrypted, deduplicated backups for your infrastructure.</p>
+                <ul class="login-brand-points">
+                    <li>Agent-based file &amp; database protection</li>
+                    <li>Live progress &amp; restore from the dashboard</li>
+                    <li>Client-side encryption before data leaves the host</li>
+                </ul>
+            </div>
+        </section>
+        <section class="login-panel">
+            <div class="login-card">
+                <div class="login-card-header">
+                    <img src="/static/icon.png" alt="" class="brand-icon brand-icon-md login-card-icon" width="48" height="48">
+                    <div>
+                        <h2 class="login-card-title">Sign in</h2>
+                        <p class="login-card-subtitle">Enter your dashboard password to continue.</p>
+                    </div>
+                </div>
+                {{if .}}{{if .Error}}<div class="login-error" role="alert">{{.Error}}</div>{{end}}{{end}}
+                <form method="POST" action="/login" class="login-form">
+                    <label class="login-label" for="login-password">Password</label>
+                    <div class="password-wrap">
+                        <input type="password" name="password" id="login-password" placeholder="Dashboard password" autofocus required autocomplete="current-password">
+                        <button type="button" class="password-toggle" id="password-toggle" aria-label="Show password">Show</button>
+                    </div>
+                    <button type="submit" class="login-submit">Sign In</button>
+                </form>
+            </div>
+        </section>
+    </div>
+    <script src="/static/app.js"></script>
+</body>
+</html>

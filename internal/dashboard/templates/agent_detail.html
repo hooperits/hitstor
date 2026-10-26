@@ -1,0 +1,200 @@
+{{define "content"}}
+{{$page := .Content}}
+{{$a := $page.Agent}}
+{{$jobs := $page.Jobs}}
+
+<nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="/agents">Agents</a>
+    <span class="breadcrumb-sep">/</span>
+    <span>{{$a.Name}}</span>
+</nav>
+
+<section class="agent-detail-hero agent-detail-hero--{{if $a.Suspended}}suspended{{else}}{{$a.BackupStatus}}{{end}}">
+    <div class="agent-detail-hero__main">
+        <div class="agent-detail-hero__identity">
+            <div class="agent-detail-hero__badges">
+                {{if $a.Suspended}}
+                <span class="badge badge-critical agent-detail-status-badge">suspended</span>
+                {{else}}
+                <span class="badge badge-ok agent-detail-status-badge">active</span>
+                <span class="badge {{if eq $a.BackupStatus "ok"}}badge-ok{{else if eq $a.BackupStatus "stale"}}badge-stale{{else}}badge-never{{end}} agent-detail-status-badge">{{$a.BackupStatus}}</span>
+                {{end}}
+                <span class="agent-type-chip agent-type-chip--{{$a.TypeLabel}}">{{$a.TypeLabel}}</span>
+            </div>
+            <h1 class="agent-detail-title">{{$a.Name}}</h1>
+            <p class="agent-detail-subtitle">{{if $a.AgentAddr}}{{$a.AgentAddr}}{{else}}No address configured{{end}}</p>
+        </div>
+        <div class="agent-detail-hero__actions">
+            {{if $a.Suspended}}
+            <button type="button" class="btn agent-detail-unsuspend-btn" onclick="toggleSuspension(false)">Unsuspend Agent</button>
+            {{else}}
+            <button type="button" class="btn agent-detail-suspend-btn" onclick="toggleSuspension(true)">Suspend Agent</button>
+            {{end}}
+            <a href="/backups" class="btn btn-secondary">+ New Backup Job</a>
+            <button type="button" class="btn agent-detail-delete-btn" onclick="removeAgent()">Remove</button>
+            <button type="button" class="btn" onclick="alert('To re-register: run sudo hitstor-agent show-id on the agent, then use the Agents > Add form (it will auto re-register if name exists and preserve jobs).')">Re-register</button>
+        </div>
+    </div>
+    <div class="agent-detail-stats">
+        <div class="detail-stat-tile detail-stat-tile--last detail-stat-tile--{{$a.BackupStatus}}">
+            <div class="detail-stat-tile__top">
+                <span class="detail-stat-tile__label">Last Backup</span>
+                <span class="detail-stat-tile__icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                </span>
+            </div>
+            <div class="detail-stat-tile__value">{{if $a.LastBackup}}{{timeAgo $a.LastBackup}}{{else}}never{{end}}</div>
+        </div>
+        <div class="detail-stat-tile detail-stat-tile--next">
+            <div class="detail-stat-tile__top">
+                <span class="detail-stat-tile__label">Backup Jobs</span>
+                <span class="detail-stat-tile__icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                </span>
+            </div>
+            <div class="detail-stat-tile__value">{{$page.TotalJobs}}</div>
+        </div>
+        <div class="detail-stat-tile detail-stat-tile--agent">
+            <div class="detail-stat-tile__top">
+                <span class="detail-stat-tile__label">Healthy Jobs</span>
+                <span class="detail-stat-tile__icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                </span>
+            </div>
+            <div class="detail-stat-tile__value">{{$page.OKCount}}</div>
+        </div>
+        <div class="detail-stat-tile detail-stat-tile--repo">
+            <div class="detail-stat-tile__top">
+                <span class="detail-stat-tile__label">Created</span>
+                <span class="detail-stat-tile__icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                </span>
+            </div>
+            <div class="detail-stat-tile__value detail-stat-tile__value--sm">{{timeFormat $a.CreatedAt}}</div>
+        </div>
+    </div>
+</section>
+
+{{if $a.Managed}}
+<div class="card agent-detail-live-panel">
+    <div class="agent-detail-panel__head">
+        <span class="agent-detail-panel__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+        </span>
+        <h2 class="agent-detail-panel__title">Live Status</h2>
+    </div>
+    <div id="live-info-content" class="agent-detail-live-loading">Loading agent info...</div>
+</div>
+{{end}}
+
+<div class="agent-detail-jobs-panel">
+    <div class="agent-detail-jobs-head">
+        <h2 class="section-title">Backup Jobs</h2>
+        {{if or $page.OverdueCount $page.ActiveCount}}
+        <div class="agent-detail-jobs-badges">
+            {{if $page.OverdueCount}}<span class="badge badge-stale">{{$page.OverdueCount}} overdue</span>{{end}}
+            {{if $page.ActiveCount}}<span class="badge badge-running">{{$page.ActiveCount}} active</span>{{end}}
+        </div>
+        {{end}}
+    </div>
+
+    {{if not $jobs}}
+    <div class="empty-state empty-state-agents">
+        <h3>No backup jobs</h3>
+        <p>This agent has no scheduled backup jobs yet.</p>
+        <a href="/backups" class="btn">Create backup job</a>
+    </div>
+    {{else}}
+    <div class="table-wrap agents-jobs-table">
+        <table>
+            <thead>
+                <tr>
+                    <th>Job</th>
+                    <th>Source</th>
+                    <th>Repository</th>
+                    <th>Schedule</th>
+                    <th>Last Run</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{range $jobs}}
+                <tr class="clickable-row backup-row backup-row--{{.Status}}" onclick="window.location='/backups/{{.ID}}'">
+                    <td class="job-name-cell">
+                        <span class="job-name">{{.Name}}</span>
+                        <span class="job-type-chip">{{.JobTypeLabel}}</span>
+                    </td>
+                    <td class="paths-cell" title="{{range .Paths}}{{.}} {{end}}">{{.SourceLabel}}</td>
+                    <td><span class="repo-chip">{{.RepoName}}</span></td>
+                    <td class="schedule-cell">
+                        {{if .ScheduleEnabled}}
+                        <span class="schedule-primary">{{.ScheduleDisplay}}</span>
+                        {{if .NextRun}}<span class="schedule-next">Next {{.NextRun}}</span>{{end}}
+                        {{else}}<span class="schedule-off">Schedule off</span>{{end}}
+                    </td>
+                    <td class="last-backup-cell last-backup-cell--{{.Status}}">
+                        {{if .LastBackup}}{{timeAgo .LastBackup}}{{else}}never{{end}}
+                    </td>
+                    <td class="status-cell">
+                        {{if .Running}}
+                        {{if .Stale}}<span class="badge badge-stale">stalled</span>{{else}}<span class="badge badge-running">running</span>{{end}}
+                        {{else}}
+                        <span class="badge {{if eq .Status "ok"}}badge-ok{{else if eq .Status "overdue"}}badge-stale{{else if eq .Status "pending"}}badge-pending{{else if eq .Status "disabled"}}badge-disabled{{else}}badge-never{{end}}">{{.Status}}</span>
+                        {{end}}
+                    </td>
+                </tr>
+                {{end}}
+            </tbody>
+        </table>
+    </div>
+    {{end}}
+</div>
+
+<script>
+var agentName = '{{$a.Name}}';
+
+function removeAgent() {
+    var keep = confirm('Remove agent "' + agentName + '"?\n\nOK = Keep backup jobs (recommended)\nCancel = Also delete the jobs');
+    var url = '/api/agents/' + encodeURIComponent(agentName) + '?keep_jobs=' + (keep ? 'true' : 'false');
+    if (!confirm('Proceed?')) return;
+    fetch(url, {method: 'DELETE'})
+    .then(function(r) {
+        if (!r.ok) return r.text().then(function(t) { throw new Error(t); });
+        window.location = '/agents';
+    })
+    .catch(function(err) { alert('Error: ' + err.message); });
+}
+
+function toggleSuspension(suspend) {
+    var action = suspend ? 'suspend' : 'unsuspend';
+    if (!confirm((suspend ? 'Suspend' : 'Unsuspend') + ' agent "' + agentName + '"?')) return;
+
+    fetch('/api/agents/' + encodeURIComponent(agentName) + '/' + action, { method: 'POST' })
+    .then(function(r) {
+        if (!r.ok) return r.text().then(function(t) { throw new Error(t); });
+        window.location.reload();
+    })
+    .catch(function(err) { alert('Error: ' + err.message); });
+}
+
+{{if $a.Managed}}
+fetch('/api/agents/' + encodeURIComponent(agentName) + '/info')
+.then(function(r) {
+    if (!r.ok) return r.text().then(function(t) { throw new Error(t); });
+    return r.json();
+})
+.then(function(info) {
+    var el = document.getElementById('live-info-content');
+    el.className = 'detail-meta-tiles';
+    el.innerHTML =
+        '<div class="detail-meta-tile"><span class="detail-meta-tile__label">Hostname</span><span class="detail-meta-tile__value">' + (info.hostname || '—') + '</span></div>'
+        + '<div class="detail-meta-tile"><span class="detail-meta-tile__label">Version</span><span class="detail-meta-tile__value">' + (info.version || '—') + '</span></div>'
+        + '<div class="detail-meta-tile"><span class="detail-meta-tile__label">OS</span><span class="detail-meta-tile__value">' + (info.os || '—') + ' ' + (info.arch || '') + '</span></div>'
+        + '<div class="detail-meta-tile"><span class="detail-meta-tile__label">Registered</span><span class="detail-meta-tile__value">' + (info.registered ? 'Yes' : 'No') + '</span></div>';
+})
+.catch(function(err) {
+    document.getElementById('live-info-content').textContent = 'Could not load live info: ' + err.message;
+});
+{{end}}
+</script>
+{{end}}

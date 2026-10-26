@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="HitStor">
+  <rect width="64" height="64" rx="14" fill="#0B1F3A"/>
+  <g transform="translate(18, 14)">
+    <rect x="6" y="16" width="16" height="14" rx="3" fill="#E8602C"/>
+    <path d="M10 16 V11 a6 6 0 0 1 12 0 v5" fill="none" stroke="#E8602C" stroke-width="4" stroke-linecap="round"/>
+    <circle cx="14" cy="22" r="2" fill="#ffffff"/>
+    <rect x="13" y="22" width="2" height="4" rx="1" fill="#ffffff"/>
+  </g>
+  <path d="M12 50 H40" stroke="#E8602C" stroke-width="4" stroke-linecap="round" opacity="0.9"/>
+  <circle cx="44" cy="50" r="3" fill="#E8602C"/>
+</svg>

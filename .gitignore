@@ -1,0 +1,40 @@
+# Go
+bin/
+dist/
+/hitstor
+/hitstor-agent
+*.exe
+*.test
+*.out
+*.prof
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Documentation
+site/
+
+# Environment
+.env
+.env.*
+!.env.example
+*.tmp
+*.swp
+
+# HitStor Build/Temporary dirs
+out/
+scratch/
+tmp/
+scripts/.screenshot-runner/node_modules/
+graphify-out/
+
+# Spec/planning docs (spec-kit workflow)
+/specs/
+/.specify/
+/docs/superpowers/specs/
+/features_to_develop.md

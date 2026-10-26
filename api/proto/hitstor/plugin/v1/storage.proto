@@ -1,0 +1,86 @@
+// StorageBackend plugin protocol for HitStor.
+//
+// Plugin binaries implement this gRPC service. The host (hitstor) launches
+// the plugin as a subprocess and communicates over this protocol via
+// hashicorp/go-plugin.
+
+syntax = "proto3";
+
+package hitstor.plugin.v1;
+
+option go_package = "github.com/hooperits/hitstor/api/proto/hitstor/plugin/v1";
+
+// StorageBackend is the gRPC service that storage backend plugins implement.
+// Each RPC corresponds to a method on the backend.Backend Go interface.
+service StorageBackend {
+  // Configure passes plugin-specific settings after launch.
+  // Called exactly once before any storage operation.
+  rpc Configure(ConfigureRequest) returns (ConfigureResponse);
+
+  // Save stores data under the given file type and ID.
+  rpc Save(SaveRequest) returns (SaveResponse);
+
+  // Load retrieves data for the given file type and ID.
+  rpc Load(LoadRequest) returns (LoadResponse);
+
+  // Stat returns metadata about a stored file.
+  rpc Stat(StatRequest) returns (StatResponse);
+
+  // Remove deletes a stored file.
+  rpc Remove(RemoveRequest) returns (RemoveResponse);
+
+  // List returns all IDs stored for a given file type.
+  rpc List(ListRequest) returns (ListResponse);
+}
+
+// ConfigureRequest carries plugin-specific key-value settings.
+message ConfigureRequest {
+  map<string, string> settings = 1;
+}
+
+message ConfigureResponse {}
+
+message SaveRequest {
+  // backend.FileType as int32 (0=DataFile .. 5=ConfigFile).
+  int32 file_type = 1;
+  // 32-byte backend.ID.
+  bytes id = 2;
+  // Complete file content.
+  bytes data = 3;
+}
+
+message SaveResponse {}
+
+message LoadRequest {
+  int32 file_type = 1;
+  bytes id = 2;
+}
+
+message LoadResponse {
+  bytes data = 1;
+}
+
+message StatRequest {
+  int32 file_type = 1;
+  bytes id = 2;
+}
+
+message StatResponse {
+  int64 size = 1;
+}
+
+message RemoveRequest {
+  int32 file_type = 1;
+  bytes id = 2;
+}
+
+message RemoveResponse {}
+
+message ListRequest {
+  int32 file_type = 1;
+}
+
+message ListResponse {
+  // Each entry is a 32-byte backend.ID.
+  repeated bytes ids = 1;
+}

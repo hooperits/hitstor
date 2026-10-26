@@ -1,0 +1,101 @@
+#!/bin/sh
+set -e
+
+HITSTOR_VERSION="__VERSION__"
+
+echo ""
+echo "HitStor Server v${HITSTOR_VERSION} Installer"
+echo "================================="
+echo ""
+
+# Require root.
+if [ "$(id -u)" -ne 0 ]; then
+    echo "Error: this installer must be run as root (use sudo)" >&2
+    exit 1
+fi
+
+# Check Linux.
+if [ "$(uname -s)" != "Linux" ]; then
+    echo "Error: this installer is for Linux only" >&2
+    exit 1
+fi
+
+# Check systemd.
+if ! command -v systemctl >/dev/null 2>&1; then
+    echo "Error: systemd is required but not found" >&2
+    exit 1
+fi
+
+# Extract payload to temp directory.
+TMPDIR=$(mktemp -d)
+trap 'rm -rf "$TMPDIR"' EXIT
+ARCHIVE=$(awk '/^__PAYLOAD_BELOW__$/{print NR + 1; exit 0;}' "$0")
+tail -n +"$ARCHIVE" "$0" | tar xz -C "$TMPDIR"
+
+# Stop existing service if running (upgrade case).
+if systemctl is-active --quiet hitstor-server 2>/dev/null; then
+    systemctl stop hitstor-server
+    echo "[*] Stopped existing hitstor-server service"
+fi
+
+# Install binary.
+install -m 755 "$TMPDIR/hitstor" /usr/bin/hitstor
+echo "[+] Installed binary to /usr/bin/hitstor"
+
+# Create system user and group.
+if ! getent group hitstor >/dev/null 2>&1; then
+    groupadd --system hitstor
+fi
+if ! getent passwd hitstor >/dev/null 2>&1; then
+    useradd --system --gid hitstor --home-dir /var/lib/hitstor \
+            --shell /usr/sbin/nologin --no-create-home hitstor
+fi
+if getent group systemd-journal >/dev/null 2>&1; then
+    if ! id -nG hitstor 2>/dev/null | tr ' ' '\n' | grep -qx systemd-journal; then
+        usermod -aG systemd-journal hitstor 2>/dev/null || true
+    fi
+fi
+echo "[+] System user 'hitstor' ready"
+
+# Create directories.
+mkdir -p /var/lib/hitstor /var/log/hitstor /etc/hitstor
+chown hitstor:hitstor /var/lib/hitstor /var/log/hitstor
+chmod 750 /var/lib/hitstor /var/log/hitstor
+echo "[+] Directories created"
+
+# Install systemd service.
+install -m 644 "$TMPDIR/hitstor-server.service" /usr/lib/systemd/system/
+systemctl daemon-reload
+echo "[+] Systemd service installed"
+
+# Install config examples (always overwrite examples on upgrade).
+install -m 644 "$TMPDIR/config.yaml.example" /etc/hitstor/
+install -m 644 "$TMPDIR/server.env.example" /etc/hitstor/
+
+# Create working config files only if they don't exist (preserve user edits).
+if [ ! -f /etc/hitstor/config.yaml ]; then
+    install -m 600 -o hitstor -g hitstor "$TMPDIR/config.yaml.example" /etc/hitstor/config.yaml
+fi
+if [ ! -f /etc/hitstor/server.env ]; then
+    install -m 600 -o hitstor -g hitstor "$TMPDIR/server.env.example" /etc/hitstor/server.env
+fi
+echo "[+] Configuration files ready"
+
+# Restart service if it was enabled (upgrade case).
+if systemctl is-enabled --quiet hitstor-server 2>/dev/null; then
+    systemctl start hitstor-server
+    echo "[+] Service restarted"
+fi
+
+echo ""
+echo "Installation complete!"
+echo ""
+echo "Next steps:"
+echo "  1. Set the repository password:  sudo nano /etc/hitstor/server.env"
+echo "  2. Initialize repository:        sudo -u hitstor HITSTOR_PASSWORD=<pass> hitstor init /var/lib/hitstor/repo"
+echo "  3. Start the service:            sudo systemctl enable --now hitstor-server"
+echo "  4. Open the dashboard:           https://localhost:8421"
+echo ""
+
+exit 0
+__PAYLOAD_BELOW__

@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 160" role="img" aria-label="HitStor">
+  <defs>
+    <linearGradient id="storGradDark" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#FF7A45"/>
+      <stop offset="100%" stop-color="#FFB08A"/>
+    </linearGradient>
+  </defs>
+  <text x="24" y="98" font-family="Segoe UI, system-ui, -apple-system, sans-serif" font-size="88" font-weight="800" letter-spacing="-2">
+    <tspan fill="#F4F7FB">h</tspan>
+    <tspan fill="#F4F7FB">i</tspan>
+    <tspan fill="#F4F7FB">t</tspan>
+    <tspan fill="url(#storGradDark)">stor</tspan>
+  </text>
+  <g transform="translate(118, 18)">
+    <rect x="10" y="18" width="28" height="24" rx="5" fill="#F4F7FB"/>
+    <path d="M16 18 V12 a11 11 0 0 1 22 0 v6" fill="none" stroke="#F4F7FB" stroke-width="6" stroke-linecap="round"/>
+    <circle cx="24" cy="30" r="3.5" fill="#0B1F3A"/>
+    <rect x="22.5" y="30" width="3" height="6" rx="1.5" fill="#0B1F3A"/>
+  </g>
+  <circle cx="300" cy="126" r="5" fill="#FF7A45"/>
+  <circle cx="318" cy="126" r="5" fill="#FF7A45" opacity="0.75"/>
+  <circle cx="336" cy="126" r="5" fill="#FF7A45" opacity="0.5"/>
+  <path d="M352 126 H520 C540 126 555 118 570 104" fill="none" stroke="#FF7A45" stroke-width="8" stroke-linecap="round"/>
+  <path d="M566 98 L582 104 L566 110 Z" fill="#FF7A45"/>
+</svg>

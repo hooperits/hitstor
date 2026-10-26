@@ -1,0 +1,91 @@
+# HitStor Quick Start — local repository (default)
+#
+#   cp .env.example .env   # edit HITSTOR_PASSWORD
+#   docker compose -f docker-compose.quickstart.yml up -d
+#   open http://localhost:8421
+#
+# Optional S3-backed repository with bundled MinIO:
+#
+#   docker compose -f docker-compose.quickstart.yml --profile s3 up -d
+
+services:
+  hitstor:
+    build:
+      context: .
+      args:
+        VERSION: "${HITSTOR_VERSION:-dev}"
+    image: ${HITSTOR_IMAGE:-ghcr.io/hooperits/hitstor}:${HITSTOR_VERSION:-latest}
+    ports:
+      - "${HITSTOR_GRPC_PORT:-8420}:8420"
+      - "${HITSTOR_DASHBOARD_PORT:-8421}:8421"
+    volumes:
+      - hitstor-data:/var/lib/hitstor
+    environment:
+      HITSTOR_REPO: /var/lib/hitstor/repo
+      HITSTOR_PASSWORD: ${HITSTOR_PASSWORD:?Set HITSTOR_PASSWORD in .env}
+      HITSTOR_AUTO_INIT: ${HITSTOR_AUTO_INIT:-true}
+      HITSTOR_DASHBOARD_PASSWORD: ${HITSTOR_DASHBOARD_PASSWORD:-}
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8421/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+  hitstor-s3:
+    profiles: ["s3"]
+    build:
+      context: .
+      args:
+        VERSION: "${HITSTOR_VERSION:-dev}"
+    image: ${HITSTOR_IMAGE:-ghcr.io/hooperits/hitstor}:${HITSTOR_VERSION:-latest}
+    depends_on:
+      minio-init:
+        condition: service_completed_successfully
+    ports:
+      - "${HITSTOR_GRPC_PORT:-8420}:8420"
+      - "${HITSTOR_DASHBOARD_PORT:-8421}:8421"
+    volumes:
+      - ./packaging/docker/quickstart-s3-config.yaml:/etc/hitstor/config.yaml:ro
+    environment:
+      HITSTOR_REPO: s3:http://minio:9000/hitstor-backups
+      HITSTOR_PASSWORD: ${HITSTOR_PASSWORD:?Set HITSTOR_PASSWORD in .env}
+      HITSTOR_AUTO_INIT: ${HITSTOR_AUTO_INIT:-true}
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8421/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+  minio:
+    profiles: ["s3"]
+    image: minio/minio:RELEASE.2024-12-18T13-15-44Z
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio-data:/data
+
+  minio-init:
+    profiles: ["s3"]
+    image: minio/mc:RELEASE.2025-01-17T23-25-50Z
+    depends_on:
+      - minio
+    entrypoint: >
+      /bin/sh -c "
+      sleep 3;
+      mc alias set local http://minio:9000 minioadmin minioadmin;
+      mc mb local/hitstor-backups --ignore-existing;
+      echo 'Bucket hitstor-backups ready';
+      "
+
+volumes:
+  hitstor-data:
+  minio-data:

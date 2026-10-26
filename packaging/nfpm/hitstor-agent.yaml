@@ -1,0 +1,55 @@
+name: hitstor-agent
+arch: ${ARCH}
+platform: linux
+version: ${VERSION}
+maintainer: "HooperITS <support@hooperits.com>"
+description: "HitStor remote backup agent — sends encrypted, deduplicated backups to a HitStor server"
+homepage: "https://github.com/hooperits/hitstor"
+license: "AGPL-3.0-only"
+section: "utils"
+priority: "optional"
+
+contents:
+  - src: ../../bin/hitstor-agent
+    dst: /usr/bin/hitstor-agent
+    file_info:
+      mode: 0755
+
+  # Built-in filesystem scanner plugin (core capability, installed with the agent).
+  - src: ../../bin/hitstor-scanner-builtin
+    dst: /usr/lib/hitstor/plugins/hitstor-scanner-builtin
+    file_info:
+      mode: 0755
+
+  - src: ../systemd/hitstor-agent.service
+    dst: /usr/lib/systemd/system/hitstor-agent.service
+
+  - src: ../systemd/hitstor-agent.timer
+    dst: /usr/lib/systemd/system/hitstor-agent.timer
+
+  - src: ../systemd/hitstor-agent.env.example
+    dst: /etc/hitstor/agent.env.example
+    type: config|noreplace
+
+  - src: ../config/agent-config.yaml.example
+    dst: /etc/hitstor/agent-config.yaml.example
+    type: config|noreplace
+
+  # Bare-metal recovery media. `hitstor-agent bmr generate-config` writes the
+  # ReaR EXTERNAL_RESTORE hook into the first directory and `rear mkrescue`
+  # writes the finished ISO into the second, so both must exist and be
+  # root-only: the hook runs as root inside the rescue system, and an ISO is a
+  # complete description of the host's layout.
+  - dst: /usr/share/hitstor/bmr
+    type: dir
+    file_info:
+      mode: 0755
+
+  - dst: /var/lib/hitstor/bmr
+    type: dir
+    file_info:
+      mode: 0700
+
+scripts:
+  postinstall: ../scripts/agent-postinstall.sh
+  preremove: ../scripts/agent-preremove.sh

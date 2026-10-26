@@ -1,0 +1,14 @@
+bin/
+dist/
+.git/
+.vscode/
+.idea/
+*.exe
+*.test
+*.out
+*.prof
+.env*
+.claude/
+.specify/
+specs/
+docs/

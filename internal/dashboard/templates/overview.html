@@ -1,0 +1,132 @@
+{{define "content"}}
+{{if .Content.Alerts}}
+    {{$hasActive := false}}
+    {{range .Content.Alerts}}
+        {{if eq .Status "active"}}{{$hasActive = true}}{{end}}
+    {{end}}
+    {{if $hasActive}}
+    <div class="alert-banner">
+        <div class="alert-banner-title">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="animation: pulse-running 1.5s ease-in-out infinite;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            Active Ransomware Sentinel Alert
+        </div>
+        <div>
+            {{range .Content.Alerts}}
+            {{if eq .Status "active"}}
+            <div class="alert-banner-item">
+                <div style="font-size: 0.9rem;">
+                    <div>Host: <strong style="color:var(--text);">{{.Hostname}}</strong> (Agent: <code>{{.AgentName}}</code>)</div>
+                    <div style="color: var(--text-muted); font-size: 0.82rem; margin-top: 0.25rem;">Threat Reason: <span style="color: var(--danger); font-weight: 500;">{{.Reason}}</span></div>
+                    <div style="color: var(--text-muted); font-size: 0.8rem; margin-top: 0.15rem;">Confidence: <strong style="color: var(--danger);">{{percent .Confidence}}</strong> &bull; Detected: {{timeAgo .Time}}</div>
+                </div>
+                <div>
+                    <button class="btn btn-sm btn-secondary" onclick="resolveAlert('{{.ID}}', '{{.AgentName}}')" style="border-color: rgba(239, 68, 68, 0.4); color: rgb(239, 68, 68); background: rgba(239, 68, 68, 0.03);">Resolve & Unsuspend</button>
+                </div>
+            </div>
+            {{end}}
+            {{end}}
+        </div>
+    </div>
+    <script>
+    function resolveAlert(alertId, agentName) {
+        if (!confirm('Resolve this ransomware threat alert and unsuspend agent "' + agentName + '"?')) return;
+        
+        fetch('/api/alerts/' + encodeURIComponent(alertId) + '/resolve', { method: 'POST' })
+        .then(function(r) {
+            if (!r.ok) return r.text().then(function(t) { throw new Error(t); });
+            return fetch('/api/agents/' + encodeURIComponent(agentName) + '/unsuspend', { method: 'POST' });
+        })
+        .then(function(r) {
+            if (!r.ok) return r.text().then(function(t) { throw new Error(t); });
+            window.location.reload();
+        })
+        .catch(function(err) {
+            alert('Error resolving alert: ' + err.message);
+        });
+    }
+    </script>
+    {{end}}
+{{end}}
+
+<section class="stats-section" hx-get="/api/stats" hx-trigger="every 30s" hx-swap="none">
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-card-top">
+                <span class="stat-card-label">Agents</span>
+                <span class="stat-card-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                </span>
+            </div>
+            <div class="stat-card-value">{{.Content.AgentCount}}</div>
+            {{if or .Content.OKCount .Content.StaleCount .Content.NeverCount}}
+            <div class="stat-card-footer">
+                {{if .Content.OKCount}}<span class="badge badge-ok">{{.Content.OKCount}} ok</span>{{end}}
+                {{if .Content.StaleCount}}<span class="badge badge-stale">{{.Content.StaleCount}} stale</span>{{end}}
+                {{if .Content.NeverCount}}<span class="badge badge-never">{{.Content.NeverCount}} new</span>{{end}}
+            </div>
+            {{end}}
+        </div>
+        <div class="stat-card">
+            <div class="stat-card-top">
+                <span class="stat-card-label">Snapshots</span>
+                <span class="stat-card-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
+                </span>
+            </div>
+            <div class="stat-card-value">{{.Content.SnapshotCount}}</div>
+        </div>
+        <div class="stat-card stat-card--{{.Content.LastBackupTone}}">
+            <div class="stat-card-top">
+                <span class="stat-card-label">Last Backup</span>
+                <span class="stat-card-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                </span>
+            </div>
+            <div class="stat-card-value stat-card-value--{{.Content.LastBackupTone}}">
+                {{if .Content.LastBackup}}{{timeAgo .Content.LastBackup}}{{else}}—{{end}}
+            </div>
+        </div>
+        {{if .Content.ActiveBackups}}
+        <div class="stat-card stat-card--running">
+            <div class="stat-card-top">
+                <span class="stat-card-label">Backups Running</span>
+                <span class="stat-card-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                </span>
+            </div>
+            <div class="stat-card-value stat-card-value--running">{{.Content.ActiveBackups}}</div>
+            <div class="stat-card-footer">
+                {{range .Content.ActiveAgents}}<span class="badge badge-running">{{.}}</span> {{end}}
+            </div>
+        </div>
+        {{end}}
+    </div>
+</section>
+
+<section class="quick-links-section">
+    <h2 class="section-title">Quick Links</h2>
+    <div class="quick-links-grid">
+        <a href="/agents" class="quick-link-card">
+            <span class="quick-link-card-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            </span>
+            <span class="quick-link-card-text">View all agents</span>
+            <span class="quick-link-card-arrow" aria-hidden="true">&rarr;</span>
+        </a>
+        <a href="/snapshots" class="quick-link-card">
+            <span class="quick-link-card-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
+            </span>
+            <span class="quick-link-card-text">View all snapshots</span>
+            <span class="quick-link-card-arrow" aria-hidden="true">&rarr;</span>
+        </a>
+        <a href="/storage" class="quick-link-card">
+            <span class="quick-link-card-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+            </span>
+            <span class="quick-link-card-text">Storage usage</span>
+            <span class="quick-link-card-arrow" aria-hidden="true">&rarr;</span>
+        </a>
+    </div>
+</section>
+{{end}}

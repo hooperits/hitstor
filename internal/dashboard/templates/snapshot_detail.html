@@ -1,0 +1,502 @@
+{{define "content"}}
+{{$data := .Content}}
+{{$repoName := index $data "RepoName"}}
+{{$snap := index $data "Snapshot"}}
+{{$agents := index $data "Agents"}}
+
+<div class="snapshot-restore-page">
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a href="/restores">Restores</a>
+        <span class="breadcrumb-sep">/</span>
+        <a href="/storage/{{$repoName}}">{{$repoName}}</a>
+        <span class="breadcrumb-sep">/</span>
+        <span>{{shortID $snap.ID}}</span>
+    </nav>
+
+    <section class="snapshot-restore-hero snapshot-restore-hero--{{$snap.Type}}">
+        <div class="snapshot-restore-hero__main">
+            <div class="snapshot-restore-hero__identity">
+                <div class="snapshot-restore-hero__badges">
+                    <span class="badge badge-{{$snap.Type}} snapshot-restore-type-badge">{{$snap.Type}}</span>
+                    
+                    <span class="badge snapshot-restore-host-badge">{{$snap.Hostname}}</span>
+                    
+                </div>
+                <h1 class="snapshot-restore-title">Snapshot <code class="snapshot-restore-id">{{shortID $snap.ID}}</code></h1>
+                <p class="snapshot-restore-subtitle">
+                    <time datetime="{{$snap.Time}}">{{timeAgo $snap.Time}}</time>
+                    <span class="snapshot-restore-subtitle-sep">·</span>
+                    <span>{{$snap.Time}}</span>
+                </p>
+            </div>
+            <div class="snapshot-restore-hero__actions">
+                <button type="button" class="btn" id="restore-show-btn" onclick="showRestoreDialog()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+                    Start Restore
+                </button>
+            </div>
+        </div>
+
+        <div class="snapshot-restore-stats">
+            <div class="detail-stat-tile detail-stat-tile--last detail-stat-tile--ok">
+                <div class="detail-stat-tile__top">
+                    <span class="detail-stat-tile__label">Files</span>
+                    <span class="detail-stat-tile__icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                    </span>
+                </div>
+                <div class="detail-stat-tile__value">{{formatNumber $snap.TotalFiles}}</div>
+            </div>
+            <div class="detail-stat-tile detail-stat-tile--repo">
+                <div class="detail-stat-tile__top">
+                    <span class="detail-stat-tile__label">Size</span>
+                    <span class="detail-stat-tile__icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+                    </span>
+                </div>
+                <div class="detail-stat-tile__value">{{formatBytes $snap.TotalSize}}</div>
+            </div>
+            <div class="detail-stat-tile detail-stat-tile--agent">
+                <div class="detail-stat-tile__top">
+                    <span class="detail-stat-tile__label">Source</span>
+                    <span class="detail-stat-tile__icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+                    </span>
+                </div>
+                <div class="detail-stat-tile__value detail-stat-tile__value--chip">{{$snap.Hostname}}</div>
+            </div>
+            <div class="detail-stat-tile detail-stat-tile--next">
+                <div class="detail-stat-tile__top">
+                    <span class="detail-stat-tile__label">Repository</span>
+                    <span class="detail-stat-tile__icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+                    </span>
+                </div>
+                <div class="detail-stat-tile__value detail-stat-tile__value--chip">
+                    <a href="/storage/{{$repoName}}">{{$repoName}}</a>
+                </div>
+            </div>
+        </div>
+
+        {{if $snap.Paths}}
+        <div class="snapshot-restore-paths">
+            <span class="snapshot-restore-paths__label">Backed-up paths</span>
+            <div class="snapshot-restore-paths__list">
+                {{range $snap.Paths}}
+                <code class="snapshot-restore-path-chip">{{.}}</code>
+                {{end}}
+            </div>
+        </div>
+        {{end}}
+
+        <details class="snapshot-restore-meta">
+            <summary>Technical details</summary>
+            <dl class="snapshot-restore-meta__grid">
+                <dt>Snapshot ID</dt>
+                <dd><code>{{$snap.ID}}</code></dd>
+                <dt>Captured at</dt>
+                <dd>{{$snap.Time}}</dd>
+                <dt>Type</dt>
+                <dd><span class="badge badge-{{$snap.Type}}">{{$snap.Type}}</span></dd>
+            </dl>
+        </details>
+    </section>
+
+    Configure Restore</h2>
+                <p class="snapshot-restore-panel__lead">
+                    
+                    Choose a target agent and optional paths. Leave the tree unchecked to restore everything in this snapshot.
+                    
+                </p>
+            </div>
+            <button type="button" class="btn btn-secondary btn-sm" onclick="hideRestoreDialog()">Close</button>
+        </header>
+
+        <div class="snapshot-restore-layout">
+            <div class="snapshot-restore-options">
+                Target path
+                    </label>
+                    <input type="text" id="restore-target" class="snapshot-restore-input"
+                        placeholder="Leave empty for original paths">
+                    
+                    <p class="snapshot-restore-hint">Empty restores files to their original locations on the selected agent.</p>
+                    
+                </div>
+
+                Files &amp; folders
+                    </span>
+                    <div class="snapshot-restore-browser__tools">
+                        <input type="search" id="restore-tree-search" class="snapshot-restore-search" placeholder="Filter…" aria-label="Filter tree" oninput="filterRestoreTree(this.value)">
+                        <button type="button" class="btn btn-secondary btn-sm" onclick="selectAllRestoreTree()">Select all</button>
+                        <button type="button" class="btn btn-secondary btn-sm" onclick="clearRestoreSelection()">Clear</button>
+                    </div>
+                </div>
+                <div id="restore-tree" class="fs-tree snapshot-restore-tree">
+                    <div class="snapshot-restore-tree-loading">Loading snapshot contents…</div>
+                </div>
+                <div id="restore-selected-summary" class="snapshot-restore-selection" hidden></div>
+            </div>
+        </div>
+
+        <footer class="snapshot-restore-actions">
+            <button type="button" class="btn" id="restore-start-btn" onclick="startRestore()">Start Restore</button>
+            <button type="button" class="btn btn-secondary" onclick="hideRestoreDialog()">Cancel</button>
+            <span id="restore-error" class="snapshot-restore-error" role="alert"></span>
+        </footer>
+    </section>
+
+    <section id="restore-progress" class="snapshot-restore-progress" hidden>
+        <header class="snapshot-restore-progress__head">
+            <span class="badge badge-running" id="restore-status-badge">restoring</span>
+            <h2 class="snapshot-restore-progress__title">Restore in progress</h2>
+        </header>
+        <div class="snapshot-restore-progress__bar" aria-hidden="true">
+            <div id="restore-bar" class="snapshot-restore-progress__fill"></div>
+        </div>
+        <div class="snapshot-restore-progress__stats">
+            <div class="snapshot-restore-metric">
+                <div class="snapshot-restore-metric__value" id="restore-files">0</div>
+                <div class="snapshot-restore-metric__label">Files <span id="restore-files-total">0</span></div>
+            </div>
+            <div class="snapshot-restore-metric">
+                <div class="snapshot-restore-metric__value" id="restore-bytes">0 B</div>
+                <div class="snapshot-restore-metric__label">Written <span id="restore-bytes-total">0 B</span></div>
+            </div>
+            <div class="snapshot-restore-metric">
+                <div class="snapshot-restore-metric__value" id="restore-elapsed">0s</div>
+                <div class="snapshot-restore-metric__label">Elapsed</div>
+            </div>
+        </div>
+        <p class="snapshot-restore-progress__file">Current file: <code id="restore-current-file">—</code></p>
+    </section>
+
+    <section id="restore-result" class="snapshot-restore-result" hidden>
+        <h2 class="snapshot-restore-result__title" id="restore-result-title">Restore complete</h2>
+        <div id="restore-result-body" class="snapshot-restore-result__body"></div>
+    </section>
+</div>
+
+false;
+var restoreID = '';
+var evtSource = null;
+
+
+
+function showRestoreDialog() {
+    var panel = document.getElementById('restore-dialog');
+    panel.hidden = false;
+    panel.classList.add('snapshot-restore-panel--open');
+    document.getElementById('restore-show-btn').hidden = true;
+        panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function hideRestoreDialog() {
+    var panel = document.getElementById('restore-dialog');
+    panel.hidden = true;
+    panel.classList.remove('snapshot-restore-panel--open');
+    document.getElementById('restore-show-btn').hidden = false;
+}
+
+function filterRestoreTree(query) {
+    var q = (query || '').toLowerCase().trim();
+    document.querySelectorAll('#restore-tree .fs-node').forEach(function(node) {
+        var label = node.querySelector('.fs-label');
+        var text = label ? label.textContent.toLowerCase() : '';
+        var match = !q || text.indexOf(q) >= 0;
+        node.style.display = match ? '' : 'none';
+    });
+}
+
+function selectAllRestoreTree() {
+    document.querySelectorAll('#restore-tree .fs-check').forEach(function(cb) {
+        if (cb.closest('.fs-node').style.display !== 'none') cb.checked = true;
+    });
+    updateSelectedSummary();
+}
+
+function clearRestoreSelection() {
+    document.querySelectorAll('#restore-tree .fs-check').forEach(function(cb) { cb.checked = false; });
+    updateSelectedSummary();
+}
+
+
+
+function loadTree(parentEl, treePath) {
+    if (!treePath) {
+        parentEl.innerHTML = '<div class="snapshot-restore-tree-loading">Loading snapshot contents…</div>';
+    }
+    var url = '/api/snapshots/' + snapshotID + '/tree?path=' + encodeURIComponent(treePath);
+    fetch(url)
+    .then(function(r) {
+        if (!r.ok) return r.text().then(function(t) { throw new Error(t); });
+        return r.json();
+    })
+    .then(function(entries) { renderTreeEntries(parentEl, entries); })
+    .catch(function(err) {
+        parentEl.innerHTML = '<div class="snapshot-restore-tree-error">Error: ' + escapeHTML(err.message) + '</div>';
+    });
+}
+
+function fileIcon(name) {
+    var ext = name.lastIndexOf('.') > 0 ? name.substring(name.lastIndexOf('.') + 1).toLowerCase() : '';
+    var map = {sh:'🔧',conf:'⚙️',cfg:'⚙️',yaml:'⚙️',yml:'⚙️',json:'⚙️',xml:'⚙️',ini:'⚙️',
+        log:'📝',txt:'📝',md:'📝',csv:'📝',sql:'📝',
+        jpg:'🖼️',jpeg:'🖼️',png:'🖼️',gif:'🖼️',svg:'🖼️',bmp:'🖼️',ico:'🖼️',
+        zip:'📦',tar:'📦',gz:'📦',bz2:'📦',xz:'📦',rar:'📦','7z':'📦',deb:'📦',rpm:'📦',
+        py:'📄',go:'📄',js:'📄',ts:'📄',c:'📄',h:'📄',rs:'📄',java:'📄',rb:'📄',php:'📄',css:'📄',html:'📄',
+        so:'⚡',dll:'⚡',exe:'⚡',bin:'⚡'};
+    return map[ext] || '📄';
+}
+
+function renderTreeEntries(parentEl, entries) {
+    parentEl.innerHTML = '';
+    if (!entries || entries.length === 0) {
+        parentEl.innerHTML = '<div class="snapshot-restore-tree-empty">This folder is empty.</div>';
+        return;
+    }
+    entries.forEach(function(entry) {
+        var node = document.createElement('div');
+        node.className = 'fs-node';
+
+        var row = document.createElement('div');
+        row.className = 'fs-row';
+
+        var isDir = entry.type === 'dir';
+
+        if (isDir) {
+            var expand = document.createElement('span');
+            expand.className = 'fs-expand';
+            expand.textContent = '\u25B8';
+            row.appendChild(expand);
+        } else {
+            var spacer = document.createElement('span');
+            spacer.className = 'fs-expand';
+            row.appendChild(spacer);
+        }
+
+        var cb = document.createElement('input');
+        cb.type = 'checkbox';
+        cb.dataset.path = entry.path;
+        cb.className = 'fs-check';
+        cb.onchange = function() {
+            node.querySelectorAll('.fs-check').forEach(function(c) { c.checked = cb.checked; });
+            updateSelectedSummary();
+        };
+        row.appendChild(cb);
+
+        var icon = document.createElement('span');
+        icon.className = 'fs-icon';
+        icon.textContent = isDir ? '📁' : fileIcon(entry.name);
+        row.appendChild(icon);
+
+        var label = document.createElement('span');
+        label.className = isDir ? 'fs-label fs-label-dir' : 'fs-label fs-label-file';
+        label.textContent = entry.name;
+        label.title = entry.path || entry.name;
+        row.appendChild(label);
+
+        if (!isDir && entry.size) {
+            var size = document.createElement('span');
+            size.className = 'fs-size';
+            size.textContent = formatBytesJS(entry.size);
+            row.appendChild(size);
+        }
+
+        node.appendChild(row);
+
+        if (isDir) {
+            var children = document.createElement('div');
+            children.className = 'fs-children';
+            children.style.display = 'none';
+            node.appendChild(children);
+            expand.onclick = function(e) { e.stopPropagation(); toggleDir(node, entry.path, expand, children); };
+            row.ondblclick = function(e) { e.stopPropagation(); toggleDir(node, entry.path, expand, children); };
+        }
+
+        parentEl.appendChild(node);
+    });
+    updateSelectedSummary();
+}
+
+function toggleDir(nodeEl, path, expandBtn, childrenEl) {
+    var children = childrenEl || nodeEl.querySelector('.fs-children');
+    if (children.style.display === 'none') {
+        if (children.children.length === 0) {
+            children.innerHTML = '<div class="snapshot-restore-tree-loading">Loading…</div>';
+            loadTree(children, path);
+        }
+        children.style.display = '';
+        expandBtn.textContent = '\u25BE';
+        var icon = nodeEl.querySelector('.fs-icon');
+        if (icon) icon.textContent = '\uD83D\uDCC2';
+    } else {
+        children.style.display = 'none';
+        expandBtn.textContent = '\u25B8';
+        var icon = nodeEl.querySelector('.fs-icon');
+        if (icon) icon.textContent = '\uD83D\uDCC1';
+    }
+}
+
+function getSelectedPaths() {
+    var paths = [];
+    document.querySelectorAll('#restore-tree .fs-check:checked').forEach(function(cb) {
+        if (cb.dataset.path) paths.push(cb.dataset.path);
+    });
+    return paths;
+}
+
+
+function updateSelectedSummary() {
+    var el = document.getElementById('restore-selected-summary');
+        var paths = getSelectedPaths();
+    if (paths.length > 0) {
+        el.hidden = false;
+        el.textContent = paths.length + ' path' + (paths.length === 1 ? '' : 's') + ' selected — partial restore';
+    } else {
+        el.hidden = false;
+        el.textContent = 'All files in snapshot (nothing selected)';
+    }
+}
+
+function startRestore() {
+    var btn = document.getElementById('restore-start-btn');
+    var errEl = document.getElementById('restore-error');
+    errEl.textContent = '';
+    btn.disabled = true;
+    btn.textContent = 'Starting…';
+
+    var targetPath = document.getElementById('restore-target').value.trim();
+    var url = '/api/snapshots/' + snapshotID + '/restore';
+    var body = { target_path: targetPath };
+
+    
+    fetch(url, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(body)
+    })
+    .then(function(r) {
+        if (!r.ok) return r.text().then(function(t) { throw new Error(t); });
+        return r.json();
+    })
+    .then(function(data) {
+        restoreID = data.restore_id;
+        document.getElementById('restore-dialog').hidden = true;
+        document.getElementById('restore-progress').hidden = false;
+        document.getElementById('restore-files-total').textContent = data.files_total || '?';
+        document.getElementById('restore-bytes-total').textContent = data.bytes_total ? formatBytesJS(data.bytes_total) : '?';
+        document.getElementById('restore-progress').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        connectSSE();
+    })
+    .catch(function(err) {
+        errEl.textContent = err.message;
+        btn.disabled = false;
+        btn.textContent = 'Start Restore';
+    });
+}
+
+function connectSSE() {
+    evtSource = new EventSource('/api/restore/' + restoreID + '/events');
+    evtSource.onmessage = function(e) {
+        var data = JSON.parse(e.data);
+        if (data.status === 'completed' || data.status === 'failed') {
+            evtSource.close();
+            showResult(data);
+            return;
+        }
+        updateProgress(data);
+    };
+    evtSource.onerror = function() { evtSource.close(); };
+}
+
+function updateProgress(data) {
+    document.getElementById('restore-files').textContent = data.files_restored || 0;
+    document.getElementById('restore-bytes').textContent = formatBytesJS(data.bytes_written || 0);
+    document.getElementById('restore-elapsed').textContent = formatElapsed(data.elapsed || 0);
+    if (data.current_file) {
+        document.getElementById('restore-current-file').textContent = data.current_file;
+    }
+    if (data.files_total > 0) {
+        document.getElementById('restore-files-total').textContent = data.files_total;
+    }
+    if (data.bytes_total > 0) {
+        document.getElementById('restore-bytes-total').textContent = formatBytesJS(data.bytes_total);
+    }
+    if (data.bytes_total > 0) {
+        var pct = Math.min(100, (data.bytes_written / data.bytes_total) * 100);
+        document.getElementById('restore-bar').style.width = pct + '%';
+    }
+}
+
+function showResult(data) {
+    document.getElementById('restore-progress').hidden = true;
+    var resultEl = document.getElementById('restore-result');
+    var titleEl = document.getElementById('restore-result-title');
+    var bodyEl = document.getElementById('restore-result-body');
+    resultEl.hidden = false;
+    resultEl.classList.remove('snapshot-restore-result--ok', 'snapshot-restore-result--fail');
+
+    if (data.status === 'completed') {
+        resultEl.classList.add('snapshot-restore-result--ok');
+        titleEl.textContent = 'Restore complete';
+        bodyEl.innerHTML =
+            '<div class="snapshot-restore-progress__stats">' +
+            '<div class="snapshot-restore-metric"><div class="snapshot-restore-metric__value">' + (data.files_restored || 0) + '</div><div class="snapshot-restore-metric__label">Files restored</div></div>' +
+            '<div class="snapshot-restore-metric"><div class="snapshot-restore-metric__value">' + formatBytesJS(data.bytes_written || 0) + '</div><div class="snapshot-restore-metric__label">Bytes written</div></div>' +
+            '<div class="snapshot-restore-metric"><div class="snapshot-restore-metric__value">' + formatElapsed(data.elapsed || 0) + '</div><div class="snapshot-restore-metric__label">Elapsed</div></div>' +
+            '</div>';
+        if (data.errors && data.errors.length > 0) {
+            bodyEl.innerHTML += '<div class="snapshot-restore-warnings"><strong>Warnings (' + data.errors.length + ')</strong><ul>' +
+                data.errors.map(function(e) { return '<li>' + escapeHTML(e) + '</li>'; }).join('') + '</ul></div>';
+        }
+    } else {
+        resultEl.classList.add('snapshot-restore-result--fail');
+        titleEl.textContent = 'Restore failed';
+        var msg = (data.errors && data.errors.length > 0) ? data.errors[data.errors.length - 1] : 'Unknown error';
+        bodyEl.innerHTML = '<p class="snapshot-restore-error">' + escapeHTML(msg) + '</p>' +
+            '<p class="snapshot-restore-hint">Files restored before failure: ' + (data.files_restored || 0) + '</p>';
+    }
+    resultEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function formatBytesJS(b) {
+    if (b >= 1099511627776) return (b / 1099511627776).toFixed(1) + ' TiB';
+    if (b >= 1073741824) return (b / 1073741824).toFixed(1) + ' GiB';
+    if (b >= 1048576) return (b / 1048576).toFixed(1) + ' MiB';
+    if (b >= 1024) return (b / 1024).toFixed(1) + ' KiB';
+    return b + ' B';
+}
+
+function formatElapsed(secs) {
+    if (secs < 60) return Math.floor(secs) + 's';
+    if (secs < 3600) return Math.floor(secs / 60) + 'm ' + Math.floor(secs % 60) + 's';
+    return Math.floor(secs / 3600) + 'h ' + Math.floor((secs % 3600) / 60) + 'm';
+}
+
+function escapeHTML(s) {
+    var div = document.createElement('div');
+    div.textContent = s;
+    return div.innerHTML;
+}
+
+
+
+(function autoOpenRestore() {
+    var params = new URLSearchParams(window.location.search);
+    if (params.get('restore') !== '1') return;
+    var agentParam = params.get('agent') || '{{$snap.Hostname}}';
+    if (agentParam) {
+        var sel = document.getElementById('restore-agent');
+        if (sel) {
+            for (var i = 0; i < sel.options.length; i++) {
+                if (sel.options[i].value === agentParam) {
+                    sel.selectedIndex = i;
+                    break;
+                }
+            }
+        }
+    }
+    showRestoreDialog();
+})();
+</script>
+{{end}}

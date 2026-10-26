@@ -1,0 +1,30 @@
+[Unit]
+Description=HitStor Backup Server
+Documentation=https://github.com/hooperits/hitstor
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=hitstor
+Group=hitstor
+ExecStart=/usr/bin/hitstor serve --config /etc/hitstor/config.yaml
+EnvironmentFile=-/etc/hitstor/server.env
+WorkingDirectory=/var/lib/hitstor
+Restart=on-failure
+RestartSec=10
+
+# Security hardening (works on Ubuntu 22+/Debian 12+ with full systemd).
+# If your environment fails with status=226/NAMESPACE (Hyper-V VMs,
+# containers, WSL), comment out the lines below.
+ProtectSystem=strict
+ReadWritePaths=/var/lib/hitstor /var/log/hitstor /etc/hitstor
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+
+[Install]
+WantedBy=multi-user.target

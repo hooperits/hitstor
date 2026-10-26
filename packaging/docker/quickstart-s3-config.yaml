@@ -1,0 +1,10 @@
+# S3 quickstart config — used by docker-compose.quickstart.yml --profile s3
+# Credentials match the bundled MinIO service (development only).
+
+repo: s3:http://minio:9000/hitstor-backups
+s3_access_key: minioadmin
+s3_secret_key: minioadmin
+s3_region: us-east-1
+
+# Uncomment to require dashboard login:
+# serve_dashboard_password: changeme

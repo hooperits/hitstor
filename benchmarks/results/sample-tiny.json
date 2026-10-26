@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "timestamp_utc": "2026-07-23T17:30:14Z",
+  "profile": "tiny",
+  "source_bytes": 421302,
+  "source_mib": 0.4,
+  "parallel": "0",
+  "host": {
+    "hostname": "wisdom",
+    "os": "Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+    "arch": "x86_64",
+    "cpus": 6,
+    "mem_total": "26675936 kB",
+    "go_version": "go version go1.24.13 linux/amd64"
+  },
+  "hitstor": {
+    "version": "hitstor vdev (commit unknown, built unknown, linux/amd64)",
+    "full_backup_sec": 0.322921,
+    "incremental_backup_sec": 0.183087,
+    "restore_sec": 0.118662,
+    "repo_bytes": 415599,
+    "full_throughput_mib_s": 1.24,
+    "restore_throughput_mib_s": 3.39
+  },
+  "restic": null
+}

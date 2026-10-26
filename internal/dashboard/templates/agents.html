@@ -1,0 +1,502 @@
+{{define "content"}}
+{{$page := .Content}}
+{{$agents := $page.Agents}}
+
+<div class="agents-toolbar">
+    <p class="agents-toolbar-hint">{{if $agents}}{{len $agents}} registered {{if eq (len $agents) 1}}agent{{else}}agents{{end}}{{else}}No agents registered{{end}}{{if $page.ManagedCount}} &middot; {{$page.ManagedCount}} managed{{end}}</p>
+    <button type="button" class="btn" onclick="toggleAgentsAddPanel()">+ Add Agent</button>
+</div>
+
+{{if $agents}}
+<section class="stats-section agents-stats">
+    <div class="stats-grid stats-grid-compact">
+        <div class="stat-card stat-card-compact">
+            <div class="stat-card-top">
+                <span class="stat-card-label">Total Agents</span>
+                <span class="stat-card-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                </span>
+            </div>
+            <div class="stat-card-value">{{$page.Total}}</div>
+        </div>
+        <div class="stat-card stat-card-compact">
+            <div class="stat-card-top">
+                <span class="stat-card-label">Healthy</span>
+                <span class="stat-card-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                </span>
+            </div>
+            <div class="stat-card-value stat-card-value--ok">{{$page.OKCount}}</div>
+        </div>
+        <div class="stat-card stat-card-compact{{if $page.StaleCount}} stat-card--stale{{end}}">
+            <div class="stat-card-top">
+                <span class="stat-card-label">Stale</span>
+                <span class="stat-card-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                </span>
+            </div>
+            <div class="stat-card-value stat-card-value--{{if $page.StaleCount}}stale{{else}}ok{{end}}">{{$page.StaleCount}}</div>
+        </div>
+        {{if or $page.NeverCount $page.SuspendedCount}}
+        <div class="stat-card stat-card-compact{{if $page.SuspendedCount}} stat-card--stale{{else}} stat-card--never{{end}}">
+            <div class="stat-card-top">
+                <span class="stat-card-label">{{if $page.SuspendedCount}}Suspended{{else}}Never Backed Up{{end}}</span>
+                <span class="stat-card-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+                </span>
+            </div>
+            <div class="stat-card-value stat-card-value--{{if $page.SuspendedCount}}stale{{else}}never{{end}}">{{if $page.SuspendedCount}}{{$page.SuspendedCount}}{{else}}{{$page.NeverCount}}{{end}}</div>
+        </div>
+        {{end}}
+    </div>
+</section>
+{{end}}
+
+<div class="agents-table-panel">
+    <h2 class="section-title agents-table-title">Registered Agents</h2>
+    {{if not $agents}}
+    <div class="empty-state empty-state-agents">
+        <span class="empty-state-icon-wrap" aria-hidden="true">
+            <svg class="empty-state-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        </span>
+        <h3>No agents registered</h3>
+        <p>Scan your network or connect manually to register backup agents.</p>
+        <button type="button" class="btn" onclick="toggleAgentsAddPanel(true)">Add your first agent</button>
+    </div>
+    {{else}}
+    <div class="table-wrap agents-table" id="agents-table" hx-get="/agents" hx-trigger="every 30s" hx-select=".table-wrap.agents-table" hx-swap="outerHTML">
+        <table>
+            <thead>
+                <tr>
+                    <th>Agent</th>
+                    <th>Jobs</th>
+                    <th>Last Backup</th>
+                    <th>Status</th>
+                    <th>Address</th>
+                    <th class="col-actions" aria-label="Actions"></th>
+                </tr>
+            </thead>
+            <tbody>
+                {{range $agents}}
+                <tr class="clickable-row agent-row agent-row--{{.BackupStatus}}" onclick="window.location='/agents/{{.Name}}'">
+                    <td class="agent-name-cell">
+                        <span class="agent-name">{{.Name}}</span>
+                        <span class="agent-type-chip agent-type-chip--{{.TypeLabel}}">{{.TypeLabel}}</span>
+                    </td>
+                    <td class="agent-jobs-cell">{{.JobCount}}</td>
+                    <td class="last-backup-cell last-backup-cell--{{.BackupStatus}}">
+                        {{if .LastBackup}}{{timeAgo .LastBackup}}{{else}}never{{end}}
+                    </td>
+                    <td class="status-cell">
+                        {{if .Suspended}}
+                        <span class="badge badge-critical">suspended</span>
+                        {{else}}
+                        <span class="badge badge-ok">active</span>
+                        <span class="badge {{if eq .BackupStatus "ok"}}badge-ok{{else if eq .BackupStatus "stale"}}badge-stale{{else}}badge-never{{end}}">{{.BackupStatus}}</span>
+                        {{end}}
+                    </td>
+                    <td class="agent-addr-cell" title="{{.AgentAddr}}">{{if .AgentAddr}}{{.AgentAddr}}{{else}}<span class="text-muted">—</span>{{end}}</td>
+                    <td class="col-actions" onclick="event.stopPropagation()">
+                        <div class="action-icons">
+                            <a class="action-icon" href="/agents/{{.Name}}" title="View agent" onclick="event.stopPropagation()">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                            </a>
+                            {{if ne .TypeLabel "server"}}
+                            <button type="button" class="action-icon action-icon-danger" title="Remove agent" onclick="event.stopPropagation(); removeAgent('{{.Name}}')">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                            </button>
+                            {{end}}
+                        </div>
+                    </td>
+                </tr>
+                {{end}}
+            </tbody>
+        </table>
+    </div>
+    {{end}}
+</div>
+
+<div class="agents-add-panel" id="agents-add-panel" hidden>
+    <div class="agents-add-panel__head">
+        <h2 class="section-title">Add Agent</h2>
+        <button type="button" class="agents-add-panel__close" onclick="toggleAgentsAddPanel(false)" aria-label="Close">&times;</button>
+    </div>
+    <div class="agents-add-tabs" role="tablist">
+        <button type="button" class="agents-add-tab agents-add-tab--active" data-tab="scan" onclick="switchAgentsAddTab('scan')">Network Scan</button>
+        <button type="button" class="agents-add-tab" data-tab="manual" onclick="switchAgentsAddTab('manual')">Manual Entry</button>
+    </div>
+
+    <div class="agents-add-tabpanel agents-add-tabpanel--active" id="agents-tab-scan">
+        <div class="agents-add-card">
+            <p class="agents-add-hint">Discover HitStor agents on your local subnet.</p>
+            <div class="form-group">
+                <label for="subnet-select">Subnet</label>
+                <select id="subnet-select">
+                    <option value="">Loading subnets...</option>
+                </select>
+            </div>
+            <button type="button" class="btn" id="scan-btn" onclick="startScan()">Scan Network</button>
+            <div class="agents-scan-progress" id="scan-progress" hidden>
+                <div class="agents-scan-progress__meta">
+                    <span id="scan-status">Scanning...</span>
+                    <span id="scan-pct">0%</span>
+                </div>
+                <div class="agents-scan-progress__track">
+                    <div class="agents-scan-progress__bar" id="scan-bar"></div>
+                </div>
+            </div>
+        </div>
+        <div class="agents-discovery-results" id="discovery-results" hidden>
+            <div class="agents-discovery-results__head">
+                <strong id="discovery-title">Discovered Agents</strong>
+                <span id="discovery-summary" class="agents-discovery-summary"></span>
+            </div>
+            <div class="table-wrap agents-discovery-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>IP</th>
+                            <th>Hostname</th>
+                            <th>OS / Arch</th>
+                            <th>Version</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="discovery-tbody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="agents-add-tabpanel" id="agents-tab-manual" hidden>
+        <div class="agents-add-card">
+            <p class="agents-add-hint">Connect directly to an agent by IP address.</p>
+            <div class="form-group">
+                <label for="manual-ip">Agent IP Address</label>
+                <input type="text" id="manual-ip" placeholder="e.g. 192.168.1.20">
+            </div>
+            <button type="button" class="btn" id="probe-btn" onclick="probeAgent()">Connect</button>
+            <div id="probe-result" class="agents-probe-result" hidden></div>
+        </div>
+    </div>
+</div>
+
+<div id="register-dialog" class="dialog-overlay" hidden role="dialog" aria-modal="true" aria-labelledby="register-dialog-title">
+    <div class="dialog-box">
+        <div class="dialog-header">
+            <h2 id="register-dialog-title">Register Agent</h2>
+            <button type="button" class="dialog-close" onclick="closeRegisterDialog()" aria-label="Close">&times;</button>
+        </div>
+        <div class="dialog-body">
+            <form id="register-form" onsubmit="submitRegister(event)">
+                <div class="form-group">
+                    <label for="reg-name">Agent Name</label>
+                    <input type="text" id="reg-name" placeholder="e.g. web-server-1" required pattern="[a-zA-Z0-9][a-zA-Z0-9_-]*">
+                    <span class="form-hint">Letters, numbers, hyphens, and underscores.</span>
+                </div>
+                <div class="form-group">
+                    <label for="reg-addr">Agent Address</label>
+                    <input type="text" id="reg-addr" readonly class="input-readonly">
+                </div>
+                <div class="form-group">
+                    <label for="reg-token">Agent Token</label>
+                    <input type="password" id="reg-token" placeholder="64-character hex token" required minlength="64" maxlength="64">
+                    <span class="form-hint">Run <code>sudo hitstor-agent show-id</code> on the agent machine.</span>
+                </div>
+                <div id="reg-error" class="form-error" hidden></div>
+                <div class="dialog-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeRegisterDialog()">Cancel</button>
+                    <button type="submit" class="btn" id="reg-btn">Register Agent</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+var discoveredAgents = {};
+var currentEventSource = null;
+
+function toggleAgentsAddPanel(open) {
+    var panel = document.getElementById('agents-add-panel');
+    if (open === undefined) {
+        panel.hidden = !panel.hidden;
+    } else {
+        panel.hidden = !open;
+    }
+}
+
+function switchAgentsAddTab(tab) {
+    document.querySelectorAll('.agents-add-tab').forEach(function(btn) {
+        btn.classList.toggle('agents-add-tab--active', btn.getAttribute('data-tab') === tab);
+    });
+    document.getElementById('agents-tab-scan').hidden = tab !== 'scan';
+    document.getElementById('agents-tab-scan').classList.toggle('agents-add-tabpanel--active', tab === 'scan');
+    document.getElementById('agents-tab-manual').hidden = tab !== 'manual';
+    document.getElementById('agents-tab-manual').classList.toggle('agents-add-tabpanel--active', tab === 'manual');
+}
+
+(function loadSubnets() {
+    fetch('/api/discover/subnets')
+    .then(function(r) { return r.json(); })
+    .then(function(subnets) {
+        var sel = document.getElementById('subnet-select');
+        sel.innerHTML = '';
+        if (subnets.length === 0) {
+            sel.innerHTML = '<option value="">No subnets detected</option>';
+            document.getElementById('scan-btn').disabled = true;
+            return;
+        }
+        subnets.forEach(function(s) {
+            var opt = document.createElement('option');
+            opt.value = s.cidr;
+            opt.textContent = s.label;
+            sel.appendChild(opt);
+        });
+    })
+    .catch(function() {
+        document.getElementById('subnet-select').innerHTML = '<option value="">Failed to load subnets</option>';
+    });
+})();
+
+function startScan() {
+    var cidr = document.getElementById('subnet-select').value;
+    if (!cidr) return;
+
+    var btn = document.getElementById('scan-btn');
+    btn.disabled = true;
+    btn.textContent = 'Scanning...';
+    document.getElementById('scan-progress').hidden = false;
+    document.getElementById('scan-bar').style.width = '0%';
+    document.getElementById('scan-pct').textContent = '0%';
+    document.getElementById('scan-status').textContent = 'Scanning...';
+    document.getElementById('discovery-results').hidden = false;
+    document.getElementById('discovery-tbody').innerHTML = '';
+    document.getElementById('discovery-summary').textContent = '';
+    discoveredAgents = {};
+
+    if (currentEventSource) {
+        currentEventSource.close();
+        currentEventSource = null;
+    }
+
+    fetch('/api/discover/scan', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({cidr: cidr})
+    })
+    .then(function(r) {
+        if (!r.ok) return r.text().then(function(t) { throw new Error(t); });
+        return r.json();
+    })
+    .then(function(data) {
+        var es = new EventSource('/api/operations/' + data.operation_id + '/events');
+        currentEventSource = es;
+
+        es.onmessage = function(e) {
+            var msg = JSON.parse(e.data);
+            if (msg.type === 'agent') {
+                addDiscoveredAgent(msg);
+            } else if (msg.type === 'progress') {
+                var pct = msg.total > 0 ? Math.round((msg.probed / msg.total) * 100) : 0;
+                document.getElementById('scan-bar').style.width = pct + '%';
+                document.getElementById('scan-pct').textContent = pct + '%';
+                document.getElementById('scan-status').textContent = 'Scanned ' + msg.probed + '/' + msg.total + ' — found ' + msg.found;
+            }
+        };
+
+        es.addEventListener('complete', function(e) {
+            es.close();
+            currentEventSource = null;
+            var result = JSON.parse(e.data);
+            btn.disabled = false;
+            btn.textContent = 'Scan Network';
+            document.getElementById('scan-bar').style.width = '100%';
+            document.getElementById('scan-pct').textContent = '100%';
+
+            var found = result.result ? (result.result.agents_found || 0) : 0;
+            if (found === 0) {
+                document.getElementById('scan-status').textContent = 'No agents found on this subnet';
+                document.getElementById('discovery-summary').textContent = 'No agents found';
+            } else {
+                document.getElementById('scan-status').textContent = 'Scan complete';
+                document.getElementById('discovery-summary').textContent = 'Found ' + found + ' agent' + (found !== 1 ? 's' : '');
+            }
+        });
+
+        es.onerror = function() {
+            es.close();
+            currentEventSource = null;
+            btn.disabled = false;
+            btn.textContent = 'Scan Network';
+            document.getElementById('scan-status').textContent = 'Scan connection lost';
+        };
+    })
+    .catch(function(err) {
+        btn.disabled = false;
+        btn.textContent = 'Scan Network';
+        document.getElementById('scan-progress').hidden = true;
+        alert('Scan failed: ' + err.message);
+    });
+}
+
+function addDiscoveredAgent(agent) {
+    discoveredAgents[agent.ip] = agent;
+    var tbody = document.getElementById('discovery-tbody');
+    var tr = document.createElement('tr');
+    tr.id = 'disc-' + agent.ip.replace(/\./g, '-');
+
+    if (agent.registered) {
+        tr.innerHTML = '<td>' + escapeHtml(agent.ip) + '</td>'
+            + '<td>' + escapeHtml(agent.hostname) + '</td>'
+            + '<td>' + escapeHtml(agent.os) + '/' + escapeHtml(agent.arch) + '</td>'
+            + '<td>' + escapeHtml(agent.version) + '</td>'
+            + '<td><span class="badge badge-ok">registered</span></td>';
+    } else {
+        tr.className = 'clickable-row';
+        tr.onclick = function() { openRegisterDialog(agent.ip, agent.hostname); };
+        tr.innerHTML = '<td>' + escapeHtml(agent.ip) + '</td>'
+            + '<td>' + escapeHtml(agent.hostname) + '</td>'
+            + '<td>' + escapeHtml(agent.os) + '/' + escapeHtml(agent.arch) + '</td>'
+            + '<td>' + escapeHtml(agent.version) + '</td>'
+            + '<td><span class="badge badge-pending">new</span></td>';
+    }
+    tbody.appendChild(tr);
+}
+
+function probeAgent() {
+    var ip = document.getElementById('manual-ip').value.trim();
+    if (!ip) return;
+
+    var btn = document.getElementById('probe-btn');
+    var result = document.getElementById('probe-result');
+    btn.disabled = true;
+    btn.textContent = 'Connecting...';
+    result.hidden = true;
+
+    fetch('/api/discover/probe', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ip: ip})
+    })
+    .then(function(r) {
+        if (!r.ok) return r.text().then(function(t) { throw new Error(t); });
+        return r.json();
+    })
+    .then(function(agent) {
+        result.hidden = false;
+        result.innerHTML = '<div class="agents-probe-card">'
+            + '<div><strong>' + escapeHtml(agent.hostname) + '</strong> (' + escapeHtml(agent.ip) + ')</div>'
+            + '<div class="agents-probe-card__meta">' + escapeHtml(agent.os) + '/' + escapeHtml(agent.arch) + ' &mdash; v' + escapeHtml(agent.version) + '</div>'
+            + (agent.registered
+                ? '<div class="agents-probe-card__status"><span class="badge badge-ok">registered</span> as <strong>' + escapeHtml(agent.agent_name) + '</strong></div>'
+                : '<button type="button" class="btn agents-probe-register" onclick="openRegisterDialog(\'' + escapeHtml(agent.ip) + '\', \'' + escapeHtml(agent.hostname) + '\')">Register</button>')
+            + '</div>';
+    })
+    .catch(function(err) {
+        result.hidden = false;
+        result.innerHTML = '<div class="form-error">' + escapeHtml(err.message) + '</div>';
+    })
+    .finally(function() {
+        btn.disabled = false;
+        btn.textContent = 'Connect';
+    });
+}
+
+function openRegisterDialog(ip, hostname) {
+    document.getElementById('reg-name').value = hostname || '';
+    document.getElementById('reg-addr').value = ip + ':8422';
+    document.getElementById('reg-token').value = '';
+    document.getElementById('reg-error').hidden = true;
+    document.getElementById('reg-btn').disabled = false;
+    document.getElementById('reg-btn').textContent = 'Register Agent';
+    document.getElementById('register-dialog').hidden = false;
+}
+
+function closeRegisterDialog() {
+    document.getElementById('register-dialog').hidden = true;
+    document.getElementById('register-form').reset();
+    document.getElementById('reg-error').hidden = true;
+}
+
+function submitRegister(e) {
+    e.preventDefault();
+    registerAgent(
+        document.getElementById('reg-name').value.trim(),
+        document.getElementById('reg-addr').value.trim(),
+        document.getElementById('reg-token').value.trim()
+    );
+}
+
+function registerAgent(name, addr, token) {
+    var errEl = document.getElementById('reg-error');
+    var btn = document.getElementById('reg-btn');
+    errEl.hidden = true;
+    btn.disabled = true;
+    btn.textContent = 'Registering...';
+
+    fetch('/api/agents', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({name: name, agent_addr: addr, token: token})
+    })
+    .then(function(r) {
+        if (!r.ok) return r.text().then(function(t) { throw new Error(t); });
+        return r.json();
+    })
+    .then(function(data) {
+        closeRegisterDialog();
+
+        var ip = addr.replace(/:.*$/, '');
+        var row = document.getElementById('disc-' + ip.replace(/\./g, '-'));
+        if (row) {
+            row.className = '';
+            row.onclick = null;
+            var cells = row.querySelectorAll('td');
+            if (cells.length >= 5) {
+                cells[4].innerHTML = '<span class="badge badge-ok">registered</span>';
+            }
+        }
+
+        var probeResult = document.getElementById('probe-result');
+        if (!probeResult.hidden) {
+            probeResult.innerHTML = '<div class="agents-probe-success">Agent <strong>' + escapeHtml(name) + '</strong> registered successfully.</div>';
+        }
+
+        if (data.warning) {
+            alert(data.warning);
+        }
+
+        setTimeout(function() { window.location.reload(); }, 1000);
+    })
+    .catch(function(err) {
+        errEl.textContent = err.message;
+        errEl.hidden = false;
+    })
+    .finally(function() {
+        btn.disabled = false;
+        btn.textContent = 'Register Agent';
+    });
+}
+
+function removeAgent(name) {
+    var keep = confirm('Remove agent "' + name + '"?\n\nOK = Keep backup jobs (recommended)\nCancel = Also delete jobs');
+    // keep=true means preserve jobs → send keep_jobs=true (or omit)
+    var url = '/api/agents/' + encodeURIComponent(name) + '?keep_jobs=' + (keep ? 'true' : 'false');
+    if (!confirm('Proceed with remove?')) return;
+    fetch(url, {method: 'DELETE'})
+    .then(function(r) {
+        if (!r.ok) return r.text().then(function(t) { throw new Error(t); });
+        window.location.reload();
+    })
+    .catch(function(err) { alert('Error: ' + err.message); });
+}
+
+function escapeHtml(str) {
+    if (!str) return '';
+    var div = document.createElement('div');
+    div.appendChild(document.createTextNode(str));
+    return div.innerHTML;
+}
+</script>
+{{end}}

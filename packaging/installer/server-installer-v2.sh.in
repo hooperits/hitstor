@@ -1,0 +1,74 @@
+#!/bin/sh
+set -e
+
+HITSTOR_VERSION="__VERSION__"
+
+# __INLINE_COMMON__
+# __INLINE_WIZARD_SERVER__
+# __INLINE_VERIFY__
+# __INLINE_UNINSTALL__
+# __INLINE_UPGRADE__
+
+# ---- Main Server Installer ----
+
+main_server() {
+    parse_flags "$@"
+
+    # Handle --version.
+    if [ "$FLAG_VERSION" -eq 1 ]; then
+        echo "HitStor Server Installer v${HITSTOR_VERSION}"
+        exit 0
+    fi
+
+    # Handle --help.
+    if [ "$FLAG_HELP" -eq 1 ]; then
+        show_help "Server"
+        exit 0
+    fi
+
+    banner "Server"
+    check_root
+    check_linux
+    check_systemd
+
+    # Handle --uninstall (no payload extraction needed).
+    if [ "$FLAG_UNINSTALL" -eq 1 ]; then
+        uninstall_server
+        exit 0
+    fi
+
+    # Extract payload.
+    extract_payload
+
+    # Detect existing installation → upgrade path.
+    if [ -f /usr/bin/hitstor ]; then
+        upgrade_server
+        exit 0
+    fi
+
+    # Fresh install: wizard or --no-wizard.
+    if [ "$FLAG_NO_WIZARD" -eq 1 ]; then
+        nowizard_server
+    else
+        wizard_server
+    fi
+
+    install_server_files
+
+    # Verify.
+    if wait_and_verify_server "$GRPC_PORT" "$DASH_PORT"; then
+        print_server_success
+    else
+        echo ""
+        color_print yellow "Installation completed with warnings."
+        color_print yellow "The service may still be starting. Check with:"
+        echo "  sudo systemctl status hitstor-server"
+        echo "  sudo journalctl -u hitstor-server -f"
+        echo ""
+    fi
+}
+
+main_server "$@"
+
+exit 0
+__PAYLOAD_BELOW__

@@ -1,0 +1,79 @@
+# HitStor Server Configuration
+#
+# Copy this file to /etc/hitstor/config.yaml and edit as needed.
+# The systemd service starts the server with: hitstor serve --config /etc/hitstor/config.yaml
+#
+# For CLI management on the server host (as the hits user or root), prefer:
+#   /usr/bin/hitstor --config /etc/hitstor/config.yaml <command>
+# Bare `hitstor` will also discover /etc/hitstor/config.yaml when no user config exists.
+#
+# See: hitstor config show --help
+#      hitstor repo --help
+#      hitstor jobs --help
+#      docs for multi-repo in admin guide.
+
+# Multi-repo configuration (recommended; managed primarily via the dashboard "Storage" page).
+# Each entry can be selected with --repo-name <name> from CLI or used by the server/dashboard.
+# repositories:
+#   - name: Repository1
+#     type: local
+#     path: /repo
+#     password_file: /etc/hitstor/Repository1.password
+#   - name: S3Primary
+#     type: s3
+#     endpoint: https://s3.example.com
+#     bucket: mybucket
+#     region: us-east-1
+#     password_file: /etc/hitstor/S3Primary.password
+#     # access_key_encrypted and secret_key_encrypted are written by the server when you
+#     # enter S3 creds via dashboard (AES-256-GCM + repo master key).
+
+# Legacy single-repo (still supported for simple setups; multi-repo takes precedence when present).
+# Repository location (configured via the dashboard).
+# repo: /var/lib/hitstor/repo
+
+# gRPC server port (default: 8420).
+# serve_port: 8420
+
+# TLS certificate and key paths (used by both gRPC and dashboard HTTPS).
+# If omitted, a self-signed certificate is generated automatically.
+# serve_tls_cert: /etc/hitstor/tls/server.crt
+# serve_tls_key: /etc/hitstor/tls/server.key
+
+# Web dashboard port (HTTPS, default: 8421).
+# serve_dashboard_port: 8421
+
+# Dashboard login password (empty = open access).
+# serve_dashboard_password: changeme
+
+# Alerting: webhook URL for backup failure notifications.
+# alert_webhook_url: https://hooks.slack.com/services/...
+
+# Alerting: hours before an agent is considered stale (default: 25).
+# alert_stale_threshold: 25
+
+# Plugin directory for external plugin binaries.
+# plugin_dir: /usr/lib/hitstor/plugins
+
+# Notifier plugins to load (comma-separated names).
+# alert_notifier_plugins: []
+
+# Hook plugins to load (comma-separated names).
+# hook_plugins: []
+
+# Automatic version check (default: true).
+# update_check: true
+
+# Custom update check URL (empty = GitHub Releases API).
+# update_url:
+
+# Disaster Recovery integrations (secrets encrypted at rest; editable from dashboard Settings).
+# integrations:
+#   gemini_api_key_encrypted: <base64 AES-256-GCM ciphertext>
+#   gemini_model: gemini-1.5-pro
+#   gcp_project: my-gcp-project
+#   aws_role_arn: arn:aws:iam::123456789012:role/HitStorDR
+#   aws_region: us-east-1
+#   azure_tenant: <tenant-id>
+#   azure_client: <client-id>
+#   azure_sub: <subscription-id>

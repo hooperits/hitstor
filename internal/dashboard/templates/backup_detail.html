@@ -1,0 +1,1218 @@
+{{define "content"}}
+{{$data := .Content}}
+{{$job := index $data "Job"}}
+{{$v := index $data "JobView"}}
+<nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="/backups">Backups</a>
+    <span class="breadcrumb-sep">/</span>
+    <span>{{if $v}}{{$v.Name}}{{else if $job}}{{$job.Name}}{{else}}Job{{end}}</span>
+</nav>
+
+<section class="backup-detail-hero backup-detail-hero--{{$v.Status}}">
+    <div class="backup-detail-hero__main">
+        <div class="backup-detail-hero__identity">
+            <div class="backup-detail-hero__badges">
+                {{if $v.Running}}
+                {{if $v.Stale}}<span class="badge badge-stale backup-detail-status-badge">stalled</span>{{else}}<span class="badge badge-running backup-detail-status-badge">running</span>{{end}}
+                {{else if eq $v.Status "ok"}}<span class="badge badge-ok backup-detail-status-badge">healthy</span>
+                {{else if eq $v.Status "overdue"}}<span class="badge badge-stale backup-detail-status-badge">overdue</span>
+                {{else if eq $v.Status "pending"}}<span class="badge badge-pending backup-detail-status-badge">pending</span>
+                {{else if eq $v.Status "disabled"}}<span class="badge badge-disabled backup-detail-status-badge">disabled</span>
+                {{else}}<span class="badge badge-never backup-detail-status-badge">never run</span>{{end}}
+                <span class="job-type-chip">{{$v.JobTypeLabel}}</span>
+            </div>
+            <h1 class="backup-detail-title">{{$v.Name}}</h1>
+            <p class="backup-detail-subtitle">{{$v.SourceLabel}}</p>
+        </div>
+            <div class="backup-detail-hero__actions">
+            <button class="btn" id="run-now-btn" onclick="runNow()" {{if $job.RunNow}}disabled{{end}}>{{if $job.RunNow}}Backup Pending...{{else}}Backup Now{{end}}</button>
+            <button class="btn btn-danger" id="cancel-btn" onclick="cancelBackup()" {{if not (or $job.RunNow $v.Running)}}hidden{{end}}>Cancel Backup</button>
+            <button class="btn backup-detail-delete-btn" onclick="deleteJob()">Delete</button>
+        </div>
+    </div>
+    <div class="backup-detail-stats">
+        <div class="detail-stat-tile detail-stat-tile--last detail-stat-tile--{{if eq $v.Status "never"}}never{{else if eq $v.Status "overdue"}}stale{{else if or (eq $v.Status "running") (eq $v.Status "pending")}}running{{else}}ok{{end}}">
+            <div class="detail-stat-tile__top">
+                <span class="detail-stat-tile__label">Last Run</span>
+                <span class="detail-stat-tile__icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                </span>
+            </div>
+            <div class="detail-stat-tile__value">{{if $v.LastBackup}}{{timeAgo $v.LastBackup}}{{else}}never{{end}}</div>
+        </div>
+        <div class="detail-stat-tile detail-stat-tile--next{{if not $v.ScheduleEnabled}} detail-stat-tile--muted{{end}}">
+            <div class="detail-stat-tile__top">
+                <span class="detail-stat-tile__label">Next Run</span>
+                <span class="detail-stat-tile__icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                </span>
+            </div>
+            <div class="detail-stat-tile__value">{{if $v.ScheduleEnabled}}{{if $v.NextRun}}{{$v.NextRun}}{{else}}—{{end}}{{else}}Off{{end}}</div>
+        </div>
+        <div class="detail-stat-tile detail-stat-tile--verify{{if $v.VerifyFailed}} detail-stat-tile--stale{{else if $v.VerifyOK}} detail-stat-tile--ok{{end}}">
+            <div class="detail-stat-tile__top">
+                <span class="detail-stat-tile__label">Restore verify</span>
+                <span class="detail-stat-tile__icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                </span>
+            </div>
+            <div class="detail-stat-tile__value">
+                {{if $v.VerifyOK}}verified{{else if $v.VerifyFailed}}failed{{else if $v.LastVerifyStatus}}{{$v.LastVerifyStatus}}{{else if $v.VerifyEnabled}}after backup{{else}}off{{end}}
+            </div>
+            {{if $v.LastVerifyAt}}<div class="detail-stat-tile__sub">{{timeAgo $v.LastVerifyAt}}{{if $v.LastVerifyDetail}} · {{$v.LastVerifyDetail}}{{end}}</div>{{end}}
+        </div>
+        <div class="detail-stat-tile detail-stat-tile--agent">
+            <div class="detail-stat-tile__top">
+                <span class="detail-stat-tile__label">Agent</span>
+                <span class="detail-stat-tile__icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+                </span>
+            </div>
+            <div class="detail-stat-tile__value detail-stat-tile__value--chip">
+                <a href="/agents/{{$v.AgentName}}" class="agent-chip">{{$v.AgentName}}</a>
+            </div>
+        </div>
+        <div class="detail-stat-tile detail-stat-tile--repo">
+            <div class="detail-stat-tile__top">
+                <span class="detail-stat-tile__label">Repository</span>
+                <span class="detail-stat-tile__icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+                </span>
+            </div>
+            <div class="detail-stat-tile__value detail-stat-tile__value--chip">
+                <span class="repo-chip">{{$v.RepoName}}</span>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Live Progress Panel (SSE-driven) -->
+<div class="card backup-detail-progress" id="progress-panel" hidden>
+    <h2 class="backup-detail-progress__heading">
+        <span class="badge badge-running" id="progress-phase-badge">uploading</span>
+        Backup in Progress
+    </h2>
+
+    <!-- Phase pipeline -->
+    <div class="phase-pipeline">
+        <div class="phase-step" id="phase-pending">
+            <span class="phase-step-circle"></span>
+            <span>Pending</span>
+        </div>
+        <div class="phase-step-line" id="line-pending-upload"></div>
+        <div class="phase-step" id="phase-uploading">
+            <span class="phase-step-circle"></span>
+            <span>Uploading</span>
+        </div>
+        <div class="phase-step-line" id="line-upload-final"></div>
+        <div class="phase-step" id="phase-finalizing">
+            <span class="phase-step-circle"></span>
+            <span>Finalizing</span>
+        </div>
+        <div class="phase-step-line" id="line-final-done"></div>
+        <div class="phase-step" id="phase-done">
+            <span class="phase-step-circle"></span>
+            <span>Done</span>
+        </div>
+    </div>
+
+    <!-- Progress bar -->
+    <div class="progress-bar-track">
+        <div class="progress-bar-fill uploading" id="progress-bar"></div>
+    </div>
+
+    <!-- Live counters -->
+    <div class="stat-grid">
+        <div class="stat-counter">
+            <div class="stat-counter-value" id="stat-elapsed">0s</div>
+            <div class="stat-counter-label">Elapsed Time</div>
+        </div>
+        <div class="stat-counter">
+            <div class="stat-counter-value" id="stat-speed">-</div>
+            <div class="stat-counter-label">Transfer Speed</div>
+        </div>
+        <div class="stat-counter">
+            <div class="stat-counter-value" id="stat-bytes">0 B</div>
+            <div class="stat-counter-label">Data Uploaded</div>
+        </div>
+        <div class="stat-counter">
+            <div class="stat-counter-value" id="stat-files">0</div>
+            <div class="stat-counter-label">Files Processed</div>
+            <div class="stat-counter-sub" id="stat-files-detail"></div>
+        </div>
+    </div>
+
+    <!-- Completion card (hidden until done) -->
+    <div class="completion-card" id="completion-card" hidden>
+        <h3>Backup Completed</h3>
+        <div class="completion-stats" id="completion-stats"></div>
+    </div>
+</div>
+
+<div class="backup-detail-grid">
+    <div class="backup-detail-panel card backup-detail-panel--protected">
+        <div class="backup-detail-panel__head">
+            <span class="backup-detail-panel__icon backup-detail-panel__icon--protected" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            </span>
+            <h2 class="backup-detail-panel__title">What is protected</h2>
+        </div>
+
+        
+        <div class="detail-paths-tile">
+            <div class="detail-paths-tile__label">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+                Source paths
+            </div>
+            <div id="job-paths-display" class="backup-detail-paths detail-paths-tile__content">
+                {{if $job.Paths}}{{range $job.Paths}}<code class="path-chip">{{.}}</code>{{end}}{{else}}<span class="text-muted">—</span>{{end}}
+            </div>
+            {{if $job.Excludes}}
+            <div class="detail-paths-tile__excludes">
+                <span class="detail-paths-tile__excludes-label">Excludes</span>
+                <div class="backup-detail-paths">
+                    {{range $job.Excludes}}<code class="path-chip path-chip--exclude">{{.}}</code>{{end}}
+                </div>
+            </div>
+            {{end}}
+        </div>
+
+        <div class="detail-meta-tiles">
+            <div class="detail-meta-tile">
+                <span class="detail-meta-tile__label">Consistent snapshot</span>
+                <span class="detail-meta-tile__value">
+                    {{if $job.UseVSS}}<span class="badge badge-ok">VSS / LVM / btrfs</span>{{else}}<span class="text-muted">Direct copy</span>{{end}}
+                </span>
+            </div>
+            <div class="detail-meta-tile">
+                <span class="detail-meta-tile__label">Agent</span>
+                <span class="detail-meta-tile__value"><a href="/agents/{{$v.AgentName}}" class="agent-chip">{{$v.AgentName}}</a></span>
+            </div>
+            <div class="detail-meta-tile detail-meta-tile--wide">
+                <span class="detail-meta-tile__label">Repository</span>
+                <span class="detail-meta-tile__value"><span class="repo-chip">{{$v.RepoName}}</span></span>
+            </div>
+        </div>
+
+        {{if index $data "Managed"}}
+        <div class="detail-accordion" id="paths-accordion">
+            <button type="button" class="detail-accordion__toggle" onclick="toggleDetailAccordion('paths-accordion')" aria-expanded="false" aria-controls="paths-accordion-body">
+                <span>Edit backup paths</span>
+                <svg class="detail-accordion__chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+            <div class="detail-accordion__body" id="paths-accordion-body">
+                <p class="detail-accordion__hint">Browse the agent filesystem and update paths for this job.</p>
+                <div id="edit-fs-tree" class="fs-tree backup-detail-fs-tree">
+                    <div class="text-muted backup-detail-fs-loading">Loading filesystem...</div>
+                </div>
+                <div class="detail-accordion__actions">
+                    <button type="button" class="btn" onclick="saveEditedPaths()">Save Paths</button>
+                    <span id="edit-paths-status"></span>
+                </div>
+                <div id="edit-selected-summary" class="detail-accordion__summary"></div>
+            </div>
+        </div>
+        {{end}}
+        
+    </div>
+
+    <div class="backup-detail-panel card backup-detail-panel--schedule">
+        <div class="backup-detail-panel__head">
+            <span class="backup-detail-panel__icon backup-detail-panel__icon--schedule" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            </span>
+            <h2 class="backup-detail-panel__title">Schedule &amp; settings</h2>
+        </div>
+
+        <div class="detail-schedule-tile{{if not $v.ScheduleEnabled}} detail-schedule-tile--off{{end}}">
+            <span class="detail-schedule-tile__icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            </span>
+            <div class="detail-schedule-tile__content">
+                {{if $v.ScheduleEnabled}}
+                <p class="detail-schedule-tile__primary">{{$v.ScheduleDisplay}}</p>
+                {{if $v.NextRun}}<p class="detail-schedule-tile__next">Next run {{$v.NextRun}}</p>{{end}}
+                {{else}}
+                <p class="detail-schedule-tile__primary detail-schedule-tile__primary--off">Scheduled backups are disabled</p>
+                {{end}}
+                <p class="detail-schedule-tile__meta">Created {{timeFormat $v.CreatedAt}}</p>
+            </div>
+        </div>
+
+        <div class="detail-accordion" id="schedule-accordion">
+            <button type="button" class="detail-accordion__toggle" onclick="toggleDetailAccordion('schedule-accordion')" aria-expanded="false" aria-controls="schedule-accordion-body">
+                <span>Edit schedule</span>
+                <svg class="detail-accordion__chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+            <div class="detail-accordion__body" id="schedule-accordion-body">
+    <form id="edit-schedule-form" onsubmit="saveSchedule(event)">
+        <label style="display:flex; align-items:center; gap:0.5rem; margin-bottom:1rem;">
+            <input type="checkbox" id="edit-sched-enabled"
+                   {{if $job.ScheduleEnabled}}checked{{end}}
+                   onchange="toggleScheduleInputs();">
+            Enable scheduled backups
+        </label>
+        <div style="display:flex; gap:1rem; margin-bottom:1rem;">
+            <label style="display:flex; align-items:center; gap:0.3rem;">
+                <input type="radio" name="sched-mode" value="interval"
+                       {{if not $job.CronExpression}}checked{{end}}
+                       onchange="toggleScheduleMode();">
+                Interval
+            </label>
+            <label style="display:flex; align-items:center; gap:0.3rem;">
+                <input type="radio" name="sched-mode" value="schedule"
+                       onchange="toggleScheduleMode();">
+                Schedule
+            </label>
+            <label style="display:flex; align-items:center; gap:0.3rem;">
+                <input type="radio" name="sched-mode" value="cron"
+                       {{if $job.CronExpression}}checked{{end}}
+                       onchange="toggleScheduleMode();">
+                Advanced
+            </label>
+        </div>
+        <div id="interval-inputs" style="{{if $job.CronExpression}}display:none;{{end}}">
+            <label style="display:flex; align-items:center; gap:0.5rem; margin-bottom:1rem;">
+                Every
+                <input type="number" id="edit-sched-hours"
+                       value="{{if $job.ScheduleHours}}{{$job.ScheduleHours}}{{else}}24{{end}}"
+                       min="1" max="8760" style="width:5rem;">
+                hours
+            </label>
+        </div>
+        <div id="schedule-inputs" style="display:none;">
+            <label style="display:flex; align-items:center; gap:0.5rem; margin-bottom:1rem;">
+                Frequency
+                <select id="sched-frequency" style="width:10rem;" onchange="toggleFrequencyDetails(); updateSchedulePreview();">
+                    <option value="daily">Daily</option>
+                    <option value="weekly">Weekly</option>
+                    <option value="monthly">Monthly</option>
+                </select>
+            </label>
+            <label style="display:flex; align-items:center; gap:0.5rem; margin-bottom:1rem;">
+                Time
+                <select id="sched-hour" style="width:4rem;" onchange="updateSchedulePreview();">
+                    <option value="12">12</option>
+                    <option value="1">1</option>
+                    <option value="2" selected>2</option>
+                    <option value="3">3</option>
+                    <option value="4">4</option>
+                    <option value="5">5</option>
+                    <option value="6">6</option>
+                    <option value="7">7</option>
+                    <option value="8">8</option>
+                    <option value="9">9</option>
+                    <option value="10">10</option>
+                    <option value="11">11</option>
+                </select>
+                :
+                <select id="sched-minute" style="width:4.5rem;" onchange="updateSchedulePreview();">
+                    <option value="0">00</option>
+                    <option value="15">15</option>
+                    <option value="30">30</option>
+                    <option value="45">45</option>
+                </select>
+                <select id="sched-ampm" style="width:4.5rem;" onchange="updateSchedulePreview();">
+                    <option value="AM" selected>AM</option>
+                    <option value="PM">PM</option>
+                </select>
+            </label>
+            <div id="sched-dow-group" style="display:none; margin-bottom:1rem;">
+                <div style="font-size:0.85rem; color:var(--text-muted); margin-bottom:0.4rem;">Days of week</div>
+                <div style="display:flex; gap:0.3rem; flex-wrap:wrap;">
+                    <label class="dow-toggle" style="display:inline-flex; align-items:center; justify-content:center; width:2.8rem; height:2rem; border-radius:4px; cursor:pointer; border:1px solid var(--border); font-size:0.8rem; user-select:none; background:transparent; color:var(--text);">
+                        <input type="checkbox" value="1" onchange="updateDowStyle(this); updateSchedulePreview();" style="display:none;">
+                        <span>Mon</span>
+                    </label>
+                    <label class="dow-toggle" style="display:inline-flex; align-items:center; justify-content:center; width:2.8rem; height:2rem; border-radius:4px; cursor:pointer; border:1px solid var(--border); font-size:0.8rem; user-select:none; background:transparent; color:var(--text);">
+                        <input type="checkbox" value="2" onchange="updateDowStyle(this); updateSchedulePreview();" style="display:none;">
+                        <span>Tue</span>
+                    </label>
+                    <label class="dow-toggle" style="display:inline-flex; align-items:center; justify-content:center; width:2.8rem; height:2rem; border-radius:4px; cursor:pointer; border:1px solid var(--border); font-size:0.8rem; user-select:none; background:transparent; color:var(--text);">
+                        <input type="checkbox" value="3" onchange="updateDowStyle(this); updateSchedulePreview();" style="display:none;">
+                        <span>Wed</span>
+                    </label>
+                    <label class="dow-toggle" style="display:inline-flex; align-items:center; justify-content:center; width:2.8rem; height:2rem; border-radius:4px; cursor:pointer; border:1px solid var(--border); font-size:0.8rem; user-select:none; background:transparent; color:var(--text);">
+                        <input type="checkbox" value="4" onchange="updateDowStyle(this); updateSchedulePreview();" style="display:none;">
+                        <span>Thu</span>
+                    </label>
+                    <label class="dow-toggle" style="display:inline-flex; align-items:center; justify-content:center; width:2.8rem; height:2rem; border-radius:4px; cursor:pointer; border:1px solid var(--border); font-size:0.8rem; user-select:none; background:transparent; color:var(--text);">
+                        <input type="checkbox" value="5" onchange="updateDowStyle(this); updateSchedulePreview();" style="display:none;">
+                        <span>Fri</span>
+                    </label>
+                    <label class="dow-toggle" style="display:inline-flex; align-items:center; justify-content:center; width:2.8rem; height:2rem; border-radius:4px; cursor:pointer; border:1px solid var(--border); font-size:0.8rem; user-select:none; background:transparent; color:var(--text);">
+                        <input type="checkbox" value="6" onchange="updateDowStyle(this); updateSchedulePreview();" style="display:none;">
+                        <span>Sat</span>
+                    </label>
+                    <label class="dow-toggle" style="display:inline-flex; align-items:center; justify-content:center; width:2.8rem; height:2rem; border-radius:4px; cursor:pointer; border:1px solid var(--border); font-size:0.8rem; user-select:none; background:transparent; color:var(--text);">
+                        <input type="checkbox" value="0" onchange="updateDowStyle(this); updateSchedulePreview();" style="display:none;">
+                        <span>Sun</span>
+                    </label>
+                </div>
+                <div id="sched-dow-error" style="font-size:0.8rem; color:var(--danger); margin-top:0.3rem; display:none;">Select at least one day.</div>
+            </div>
+            <div id="sched-dom-group" style="display:none; margin-bottom:1rem;">
+                <label style="display:flex; align-items:center; gap:0.5rem;">
+                    Day of month
+                    <select id="sched-dom" style="width:5rem;" onchange="updateSchedulePreview();"></select>
+                </label>
+            </div>
+            <div id="schedule-preview" style="font-size:0.85rem; color:var(--text-muted); margin:0 0 0.75rem 0;"></div>
+        </div>
+        <div id="cron-inputs" style="{{if not $job.CronExpression}}display:none;{{end}}">
+            <label style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.5rem;">
+                Expression
+                <input type="text" id="edit-cron-expr"
+                       value="{{$job.CronExpression}}"
+                       placeholder="0 2 * * *"
+                       style="width:12rem; font-family:monospace;"
+                       onblur="validateCron();">
+            </label>
+            <div id="cron-preview" style="font-size:0.85rem; color:var(--text-muted); margin:0 0 0.75rem 0;"></div>
+        </div>
+        <div id="tz-inputs" style="{{if not $job.CronExpression}}display:none;{{end}}">
+            <label style="display:flex; align-items:center; gap:0.5rem; margin-bottom:1rem;">
+                Timezone
+                <select id="edit-timezone" style="width:16rem;">
+                    <option value="">Server local</option>
+                </select>
+            </label>
+        </div>
+        <label style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.5rem;">
+            Full re-scan every
+            <input type="number" id="edit-rescan-days"
+                   value="{{$job.FullRescanDays}}"
+                   min="0" max="365"
+                   style="width:5rem;">
+            days
+        </label>
+        <p style="color:var(--text-muted); font-size:0.8rem; margin:0 0 1rem 0;">Set to 0 to disable periodic full re-scans.{{if $job.LastFullBackup}} Last full backup: {{timeAgo $job.LastFullBackup}}{{end}}</p>
+        <label style="display:flex; align-items:center; gap:0.5rem; margin-bottom:1rem;">
+            <input type="checkbox" id="edit-use-vss" {{if $job.UseVSS}}checked{{end}}>
+            Consistent snapshot (VSS / LVM / btrfs)
+        </label>
+        <p style="color:var(--text-muted); font-size:0.8rem; margin:-0.5rem 0 1rem 0;">Windows only. Creates a consistent snapshot before backup for open files and databases.</p>
+        <button type="submit" class="btn">Save Schedule</button>
+        <span id="edit-sched-status" class="detail-form-status"></span>
+    </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function toggleDetailAccordion(id) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    var open = el.classList.toggle('detail-accordion--open');
+    var btn = el.querySelector('.detail-accordion__toggle');
+    if (btn) btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+}
+var jobID = '{{$job.ID}}';
+var agentName = '{{$job.AgentName}}';
+var currentPaths = [{{range $i, $p := $job.Paths}}{{if $i}},{{end}}'{{$p}}'{{end}}];
+var isAgentlessJob = {{if $v.Agentless}}true{{else}}false{{end}};
+
+
+
+
+
+
+
+
+// Render paths as a mini Explorer-style tree.
+(function() {
+    var el = document.getElementById('job-paths-display');
+    if (!el || currentPaths.length === 0) return;
+
+    // Detect Windows paths.
+    var isWin = currentPaths.some(function(p) { return p.indexOf(':\\') >= 0 || p.indexOf(':/') >= 0; });
+    var sep = isWin ? '\\' : '/';
+
+    // Build tree structure from paths.
+    var root = {};
+    currentPaths.forEach(function(p) {
+        var parts = p.split(/[/\\]/).filter(Boolean);
+        var node = root;
+        for (var i = 0; i < parts.length; i++) {
+            var key = parts[i];
+            if (!node[key]) node[key] = {};
+            node[key].__selected = (i === parts.length - 1);
+            node = node[key];
+        }
+    });
+
+    // Render tree to HTML.
+    function renderTree(node, depth) {
+        var keys = Object.keys(node).filter(function(k) { return k !== '__selected'; });
+        if (keys.length === 0) return '';
+        var html = '<div style="padding-left:' + (depth > 0 ? '1.2rem' : '0') + ';">';
+        keys.forEach(function(k) {
+            var isSelected = node[k].__selected;
+            var icon = isSelected ? '\uD83D\uDCC2' : '\uD83D\uDCC1';
+            var style = isSelected
+                ? 'font-weight:600; color:var(--primary);'
+                : 'color:var(--text-muted);';
+            html += '<div style="display:flex; align-items:center; gap:0.3rem; padding:1px 0;">';
+            html += '<span style="font-size:0.9rem;">' + icon + '</span>';
+            html += '<span style="font-size:0.85rem; ' + style + '">' + k + (isSelected ? '' : sep) + '</span>';
+            html += '</div>';
+            html += renderTree(node[k], depth + 1);
+        });
+        html += '</div>';
+        return html;
+    }
+
+    el.innerHTML = renderTree(root, 0);
+})();
+
+// SSE-driven backup progress.
+var backupProgress = (function() {
+    var panel = document.getElementById('progress-panel');
+    var evtSource = null;
+    var wasRunning = false;
+    var isPending = false;
+    var missCount = 0;
+    var maxMiss = 3; // 3 consecutive misses (6s) before declaring done
+    var prevBytes = 0;
+    var prevTime = 0;
+    var lastData = null; // preserve last known SSE data for completion
+    var pendingTimer = null; // elapsed timer during pending state
+    var pendingStart = 0;
+
+    function formatBytesJS(b) {
+        if (b >= 1099511627776) return (b / 1099511627776).toFixed(1) + ' TiB';
+        if (b >= 1073741824) return (b / 1073741824).toFixed(1) + ' GiB';
+        if (b >= 1048576) return (b / 1048576).toFixed(1) + ' MiB';
+        if (b >= 1024) return (b / 1024).toFixed(1) + ' KiB';
+        return b + ' B';
+    }
+
+    function formatNumberJS(n) {
+        if (n < 1000) return String(n);
+        if (n < 1000000) return (n / 1000).toFixed(1) + 'K';
+        return (n / 1000000).toFixed(1) + 'M';
+    }
+
+    function formatElapsed(sec) {
+        var h = Math.floor(sec / 3600);
+        var m = Math.floor((sec % 3600) / 60);
+        var s = Math.floor(sec % 60);
+        if (h > 0) return h + 'h ' + m + 'm ' + s + 's';
+        if (m > 0) return m + 'm ' + s + 's';
+        return s + 's';
+    }
+
+    function setPhase(phase, stale) {
+        var phases = ['pending', 'uploading', 'finalizing', 'done'];
+        var idx = phases.indexOf(phase);
+        if (idx < 0) idx = 1; // default to uploading
+
+        var els = [
+            document.getElementById('phase-pending'),
+            document.getElementById('phase-uploading'),
+            document.getElementById('phase-finalizing'),
+            document.getElementById('phase-done')
+        ];
+        var lines = [
+            document.getElementById('line-pending-upload'),
+            document.getElementById('line-upload-final'),
+            document.getElementById('line-final-done')
+        ];
+
+        for (var i = 0; i < els.length; i++) {
+            els[i].className = 'phase-step';
+            if (i < idx) els[i].className += ' completed';
+            else if (i === idx) els[i].className += ' active';
+        }
+        for (var i = 0; i < lines.length; i++) {
+            lines[i].className = i < idx ? 'phase-step-line completed' : 'phase-step-line';
+        }
+
+        var bar = document.getElementById('progress-bar');
+        bar.className = 'progress-bar-fill';
+        if (phase === 'pending') bar.className += ' uploading'; // use uploading animation
+        else if (stale) bar.className += ' stale';
+        else bar.className += ' ' + phase;
+
+        var badge = document.getElementById('progress-phase-badge');
+        badge.textContent = phase;
+        if (phase === 'pending') {
+            badge.className = 'badge badge-pending';
+        } else if (stale) {
+            badge.className = 'badge badge-stale';
+        } else if (phase === 'done') {
+            badge.className = 'badge badge-ok';
+        } else {
+            badge.className = 'badge badge-running';
+        }
+    }
+
+    function updateStats(s) {
+        lastData = s; // preserve for completion
+        document.getElementById('stat-elapsed').textContent = s.elapsed_human;
+        document.getElementById('stat-bytes').textContent = s.bytes_human;
+        document.getElementById('stat-files').textContent = formatNumberJS(s.files_processed);
+
+        // Compute delta-based speed for smoother display.
+        var now = Date.now();
+        var speed = s.speed_human || '-';
+        if (prevTime > 0 && now - prevTime > 500) {
+            var deltaBytes = s.bytes_uploaded - prevBytes;
+            var deltaSec = (now - prevTime) / 1000;
+            if (deltaSec > 0 && deltaBytes >= 0) {
+                var bps = deltaBytes / deltaSec;
+                if (s.speed_bps > 0) {
+                    bps = bps * 0.7 + s.speed_bps * 0.3;
+                }
+                speed = formatBytesJS(Math.round(bps)) + '/s';
+            }
+        }
+        prevBytes = s.bytes_uploaded;
+        prevTime = now;
+        document.getElementById('stat-speed').textContent = speed;
+
+        // Files detail: new + dedup.
+        var detail = '';
+        if (s.files_processed > 0) {
+            detail = s.files_new + ' new';
+            var dedup = s.files_processed - s.files_new;
+            if (dedup > 0) {
+                detail += ', ' + dedup + ' dedup';
+                if (s.dedup_percent > 0) {
+                    detail += ' (' + s.dedup_percent.toFixed(0) + '%)';
+                }
+            }
+        }
+        if (s.warning) {
+            detail = s.warning + (detail ? ' · ' + detail : '');
+        }
+        document.getElementById('stat-files-detail').textContent = detail;
+    }
+
+    function showCompletion(s) {
+        if (pendingTimer) { clearInterval(pendingTimer); pendingTimer = null; }
+        setPhase('done', false);
+        panel.dataset.phase = 'done';
+
+        var heading = panel.querySelector('h2');
+        if (s.warning) {
+            heading.innerHTML = '<span class="badge badge-stale">partial</span> Backup Completed with Warnings';
+        } else {
+            heading.innerHTML = '<span class="badge badge-ok">done</span> Backup Completed';
+        }
+
+        var card = document.getElementById('completion-card');
+        var stats = document.getElementById('completion-stats');
+        stats.innerHTML =
+            '<div><div class="completion-stat-value">' + (s.elapsed_human || '-') + '</div><div class="completion-stat-label">Duration</div></div>' +
+            '<div><div class="completion-stat-value">' + (s.bytes_human || '0 B') + '</div><div class="completion-stat-label">Data Uploaded</div></div>' +
+            '<div><div class="completion-stat-value">' + formatNumberJS(s.files_new || 0) + '</div><div class="completion-stat-label">New Files</div></div>' +
+            '<div><div class="completion-stat-value">' + formatNumberJS((s.files_processed || 0) - (s.files_new || 0)) + '</div><div class="completion-stat-label">Unchanged Files</div></div>';
+        card.hidden = false;
+
+        // Refresh page after 8s to update job info.
+        setTimeout(function() { location.reload(); }, 8000);
+    }
+
+    function showPending() {
+        isPending = true;
+        panel.hidden = false;
+        panel.dataset.phase = 'pending';
+        setPhase('pending', false);
+
+        var heading = panel.querySelector('h2');
+        if (isAgentlessJob) {
+            heading.innerHTML = '<span class="badge badge-pending" id="progress-phase-badge">pending</span> Starting on server';
+        } else {
+            heading.innerHTML = '<span class="badge badge-pending" id="progress-phase-badge">pending</span> Waiting for Agent';
+        }
+
+        document.getElementById('stat-elapsed').textContent = '0s';
+        document.getElementById('stat-speed').textContent = 'waiting...';
+        document.getElementById('stat-bytes').textContent = '-';
+        document.getElementById('stat-files').textContent = '-';
+        document.getElementById('stat-files-detail').textContent = isAgentlessJob
+            ? 'Collecting Microsoft 365 data on the backup server'
+            : 'Agent will pick up within ~5 min';
+
+        // Run a local timer for elapsed while pending.
+        pendingStart = Date.now();
+        if (pendingTimer) clearInterval(pendingTimer);
+        pendingTimer = setInterval(function() {
+            var sec = (Date.now() - pendingStart) / 1000;
+            document.getElementById('stat-elapsed').textContent = formatElapsed(sec);
+        }, 1000);
+
+        // Start SSE if not already running.
+        if (!evtSource) startSSE();
+    }
+
+    function startSSE() {
+        evtSource = new EventSource('/api/backup-progress/events');
+        evtSource.onmessage = function(e) {
+            try {
+                var data = JSON.parse(e.data);
+                var sessions = data.sessions || [];
+                var found = null;
+                for (var i = 0; i < sessions.length; i++) {
+                    if (sessions[i].job_id === jobID) {
+                        found = sessions[i];
+                        break;
+                    }
+                }
+
+                if (found) {
+                    // Transition from pending to running.
+                    if (isPending) {
+                        isPending = false;
+                        if (pendingTimer) { clearInterval(pendingTimer); pendingTimer = null; }
+                        panel.dataset.phase = found.phase || 'uploading';
+                        var heading = panel.querySelector('h2');
+                        var phaseLabel = found.phase || 'uploading';
+                        var title = isAgentlessJob && phaseLabel === 'collecting'
+                            ? 'Collecting on server'
+                            : 'Backup in Progress';
+                        heading.innerHTML = '<span class="badge badge-running" id="progress-phase-badge">' + phaseLabel + '</span> ' + title;
+                    }
+                    missCount = 0;
+                    wasRunning = true;
+                    panel.hidden = false;
+                    panel.dataset.phase = found.phase || 'uploading';
+                    // Show cancel button while backup is active.
+                    document.getElementById('cancel-btn').hidden = false;
+
+                    // Server reports "done" for recently completed sessions.
+                    if (found.phase === 'done') {
+                        document.getElementById('cancel-btn').hidden = true;
+                        updateStats(found);
+                        showCompletion(lastData || found);
+                        evtSource.close();
+                        evtSource = null;
+                        return;
+                    }
+
+                    setPhase(found.phase, found.stale);
+                    updateStats(found);
+                } else if (wasRunning) {
+                    // If cancelled via button, don't show completion.
+                    if (window._backupCancelled) {
+                        evtSource.close();
+                        evtSource = null;
+                        return;
+                    }
+                    missCount++;
+                    if (missCount >= maxMiss) {
+                        document.getElementById('cancel-btn').hidden = true;
+                        showCompletion(lastData || {});
+                        evtSource.close();
+                        evtSource = null;
+                    }
+                }
+            } catch(err) { /* ignore parse errors */ }
+        };
+        evtSource.onerror = function() {
+            evtSource.close();
+            evtSource = null;
+            setTimeout(startSSE, 5000);
+        };
+    }
+
+    // Show panel immediately if server-side detected a running session.
+    {{if index $data "Progress"}}
+    panel.hidden = false;
+    panel.dataset.phase = 'uploading';
+    wasRunning = true;
+    {{end}}
+
+    // Show pending state if RunNow flag is set (page loaded while pending).
+    {{if $job.RunNow}}
+    showPending();
+    {{end}}
+
+    startSSE();
+
+    // Expose showPending for the runNow button.
+    return { showPending: showPending };
+})();
+
+function runNow() {
+    var forceFull = confirm('Force a full re-scan? (OK = full re-scan, Cancel = incremental)');
+    if (!confirm('Trigger an immediate ' + (forceFull ? 'full' : 'incremental') + ' backup for "{{$job.Name}}"?')) return;
+    var btn = document.getElementById('run-now-btn');
+    btn.disabled = true;
+    btn.textContent = 'Triggering...';
+    fetch('/api/backups/' + jobID + '/run', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({force_full: forceFull})
+    })
+    .then(function(r) {
+        if (!r.ok) return r.text().then(function(t) { throw new Error(t); });
+        btn.textContent = 'Backup Pending...';
+        btn.style.opacity = '0.6';
+        // Immediately show progress panel in pending state.
+        backupProgress.showPending();
+    })
+    .catch(function(err) {
+        alert('Error: ' + err.message);
+        btn.disabled = false;
+        btn.textContent = 'Backup Now';
+    });
+}
+
+function cancelBackup() {
+    if (!confirm('Cancel the running backup for "{{$job.Name}}"?')) return;
+    var btn = document.getElementById('cancel-btn');
+    btn.disabled = true;
+    btn.textContent = 'Cancelling...';
+    fetch('/api/backups/' + jobID + '/cancel', {method: 'POST'})
+    .then(function(r) {
+        if (!r.ok) return r.text().then(function(t) { throw new Error(t); });
+        return r.json();
+    })
+    .then(function(data) {
+        btn.hidden = true;
+        // Reset the Backup Now button.
+        var runBtn = document.getElementById('run-now-btn');
+        runBtn.disabled = false;
+        runBtn.textContent = 'Backup Now';
+        runBtn.style.opacity = '';
+        // Hide progress panel immediately.
+        var panel = document.getElementById('progress-panel');
+        panel.hidden = true;
+        delete panel.dataset.phase;
+        // Signal SSE handler that we cancelled.
+        window._backupCancelled = true;
+    })
+    .catch(function(err) {
+        alert('Error: ' + err.message);
+        btn.disabled = false;
+        btn.textContent = 'Cancel Backup';
+    });
+}
+
+function deleteJob() {
+    if (!confirm('Delete backup job "{{$job.Name}}"? This cannot be undone.')) return;
+    fetch('/api/backups/' + jobID, {method: 'DELETE'})
+    .then(function(r) {
+        if (!r.ok) return r.text().then(function(t) { throw new Error(t); });
+        window.location = '/backups';
+    })
+    .catch(function(err) { alert('Error: ' + err.message); });
+}
+
+function toggleScheduleMode() {
+    var mode = document.querySelector('input[name="sched-mode"]:checked').value;
+    document.getElementById('interval-inputs').style.display = mode === 'interval' ? '' : 'none';
+    document.getElementById('schedule-inputs').style.display = mode === 'schedule' ? '' : 'none';
+    document.getElementById('cron-inputs').style.display = mode === 'cron' ? '' : 'none';
+    document.getElementById('tz-inputs').style.display = mode === 'interval' ? 'none' : '';
+    if (mode === 'schedule') updateSchedulePreview();
+    if (mode === 'cron') validateCron();
+}
+
+function toggleScheduleInputs() {
+    // No-op for now; mode toggle handles visibility.
+}
+
+function toggleFrequencyDetails() {
+    var freq = document.getElementById('sched-frequency').value;
+    document.getElementById('sched-dow-group').style.display = freq === 'weekly' ? '' : 'none';
+    document.getElementById('sched-dom-group').style.display = freq === 'monthly' ? '' : 'none';
+}
+
+function buildCronFromVisual() {
+    var freq = document.getElementById('sched-frequency').value;
+    var hour = parseInt(document.getElementById('sched-hour').value);
+    var minute = document.getElementById('sched-minute').value;
+    var ampm = document.getElementById('sched-ampm').value;
+    if (ampm === 'AM' && hour === 12) hour = 0;
+    else if (ampm === 'PM' && hour !== 12) hour += 12;
+
+    if (freq === 'daily') return minute + ' ' + hour + ' * * *';
+    if (freq === 'weekly') {
+        var days = [];
+        document.querySelectorAll('#sched-dow-group input:checked').forEach(function(cb) {
+            days.push(cb.value);
+        });
+        if (days.length === 0) return null;
+        return minute + ' ' + hour + ' * * ' + days.join(',');
+    }
+    if (freq === 'monthly') {
+        var dom = document.getElementById('sched-dom').value;
+        return minute + ' ' + hour + ' ' + dom + ' * *';
+    }
+    return minute + ' ' + hour + ' * * *';
+}
+
+function parseVisualFromCron(expr) {
+    var parts = expr.trim().split(/\s+/);
+    if (parts.length !== 5) return false;
+    var minute = parts[0], hour = parts[1], dom = parts[2], month = parts[3], dow = parts[4];
+    if (!/^\d+$/.test(minute) || !/^\d+$/.test(hour)) return false;
+    if (month !== '*') return false;
+    var h = parseInt(hour), m = parseInt(minute);
+    if ([0, 15, 30, 45].indexOf(m) === -1) return false;
+    if (h < 0 || h > 23) return false;
+    var ampm = h >= 12 ? 'PM' : 'AM';
+    var h12 = h % 12; if (h12 === 0) h12 = 12;
+
+    if (dom === '*' && dow === '*') {
+        setVisualControls('daily', h12, m, ampm, [], 1);
+        return true;
+    }
+    if (dom === '*' && /^[0-6](,[0-6])*$/.test(dow)) {
+        setVisualControls('weekly', h12, m, ampm, dow.split(','), 1);
+        return true;
+    }
+    if (/^\d+$/.test(dom) && dow === '*') {
+        var d = parseInt(dom);
+        if (d < 1 || d > 31) return false;
+        setVisualControls('monthly', h12, m, ampm, [], d);
+        return true;
+    }
+    return false;
+}
+
+function setVisualControls(freq, hour, minute, ampm, dowDays, dom) {
+    document.getElementById('sched-frequency').value = freq;
+    document.getElementById('sched-hour').value = hour;
+    document.getElementById('sched-minute').value = minute;
+    document.getElementById('sched-ampm').value = ampm;
+    document.querySelectorAll('#sched-dow-group input').forEach(function(cb) {
+        cb.checked = dowDays.indexOf(cb.value) >= 0;
+        updateDowStyle(cb);
+    });
+    document.getElementById('sched-dom').value = dom;
+    toggleFrequencyDetails();
+}
+
+function updateDowStyle(cb) {
+    var label = cb.closest('.dow-toggle');
+    if (!label) return;
+    if (cb.checked) {
+        label.style.background = 'var(--primary)';
+        label.style.color = '#fff';
+        label.style.borderColor = 'var(--primary)';
+    } else {
+        label.style.background = 'transparent';
+        label.style.color = 'var(--text)';
+        label.style.borderColor = 'var(--border)';
+    }
+    // Validate at least one day selected for weekly.
+    var freq = document.getElementById('sched-frequency').value;
+    if (freq === 'weekly') {
+        var any = document.querySelector('#sched-dow-group input:checked');
+        document.getElementById('sched-dow-error').style.display = any ? 'none' : '';
+    }
+}
+
+function updateSchedulePreview() {
+    var expr = buildCronFromVisual();
+    var preview = document.getElementById('schedule-preview');
+    if (!expr) {
+        preview.style.color = 'var(--danger)';
+        preview.textContent = 'Select at least one day.';
+        return;
+    }
+    var tz = document.getElementById('edit-timezone').value;
+    var url = '/api/backups/validate-cron?expr=' + encodeURIComponent(expr);
+    if (tz) url += '&tz=' + encodeURIComponent(tz);
+    fetch(url)
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+        if (data.valid) {
+            preview.style.color = 'var(--ok)';
+            var text = data.description;
+            if (data.next_3 && data.next_3.length > 0) {
+                text += ' — Next: ' + new Date(data.next_3[0]).toLocaleString();
+            }
+            preview.textContent = text;
+        } else {
+            preview.style.color = 'var(--danger)';
+            preview.textContent = data.error;
+        }
+    })
+    .catch(function() { preview.textContent = ''; });
+}
+
+function validateCron() {
+    var expr = document.getElementById('edit-cron-expr').value.trim();
+    var preview = document.getElementById('cron-preview');
+    if (!expr) { preview.textContent = ''; return; }
+    var tz = document.getElementById('edit-timezone').value;
+    var url = '/api/backups/validate-cron?expr=' + encodeURIComponent(expr);
+    if (tz) url += '&tz=' + encodeURIComponent(tz);
+    fetch(url)
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+        if (data.valid) {
+            preview.style.color = 'var(--ok)';
+            var text = data.description;
+            if (data.next_3 && data.next_3.length > 0) {
+                text += ' — Next: ' + new Date(data.next_3[0]).toLocaleString();
+            }
+            preview.textContent = text;
+        } else {
+            preview.style.color = 'var(--danger)';
+            preview.textContent = data.error;
+        }
+    })
+    .catch(function() { preview.textContent = ''; });
+}
+
+function loadTimezones() {
+    fetch('/api/timezones')
+    .then(function(r) { return r.json(); })
+    .then(function(zones) {
+        var sel = document.getElementById('edit-timezone');
+        var current = '{{$job.Timezone}}';
+        zones.forEach(function(tz) {
+            var opt = document.createElement('option');
+            opt.value = tz;
+            opt.textContent = tz;
+            if (tz === current) opt.selected = true;
+            sel.appendChild(opt);
+        });
+    });
+}
+loadTimezones();
+
+// Populate day-of-month dropdown.
+(function() {
+    var sel = document.getElementById('sched-dom');
+    for (var i = 1; i <= 31; i++) {
+        var opt = document.createElement('option');
+        opt.value = i;
+        opt.textContent = i;
+        sel.appendChild(opt);
+    }
+})();
+
+// On load: detect correct schedule mode.
+(function() {
+    var cronExpr = '{{$job.CronExpression}}';
+    if (cronExpr) {
+        if (parseVisualFromCron(cronExpr)) {
+            document.querySelector('input[name="sched-mode"][value="schedule"]').checked = true;
+            toggleScheduleMode();
+            updateSchedulePreview();
+        } else {
+            validateCron();
+        }
+    }
+})();
+
+function saveSchedule(e) {
+    e.preventDefault();
+    var status = document.getElementById('edit-sched-status');
+    status.textContent = 'Saving...';
+    status.style.color = 'var(--text-muted)';
+
+    var mode = document.querySelector('input[name="sched-mode"]:checked').value;
+    var body = {
+        schedule_enabled: document.getElementById('edit-sched-enabled').checked,
+        schedule_hours: parseInt(document.getElementById('edit-sched-hours').value) || 24,
+        full_rescan_days: parseInt(document.getElementById('edit-rescan-days').value) || 0,
+        use_vss: document.getElementById('edit-use-vss').checked,
+        cron_expression: '',
+        timezone: ''
+    };
+    if (mode === 'cron') {
+        body.cron_expression = document.getElementById('edit-cron-expr').value.trim();
+        body.timezone = document.getElementById('edit-timezone').value;
+    } else if (mode === 'schedule') {
+        var expr = buildCronFromVisual();
+        if (!expr) {
+            status.textContent = 'Select at least one day for weekly schedule.';
+            status.style.color = 'var(--danger)';
+            return;
+        }
+        body.cron_expression = expr;
+        body.timezone = document.getElementById('edit-timezone').value;
+    }
+
+    fetch('/api/backups/' + jobID, {
+        method: 'PUT',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(body)
+    })
+    .then(function(r) {
+        if (!r.ok) return r.text().then(function(t) { throw new Error(t); });
+        status.textContent = 'Saved';
+        status.style.color = 'var(--ok)';
+    })
+    .catch(function(err) {
+        status.textContent = err.message;
+        status.style.color = 'var(--danger)';
+    });
+}
+
+{{if index $data "Managed"}}
+// Filesystem tree browser for editing paths.
+function loadEditTree(parentEl, path) {
+    fetch('/api/agents/' + encodeURIComponent(agentName) + '/browse', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({path: path})
+    })
+    .then(function(r) {
+        if (!r.ok) return r.text().then(function(t) { throw new Error(t); });
+        return r.json();
+    })
+    .then(function(entries) { renderEditEntries(parentEl, entries); })
+    .catch(function(err) {
+        parentEl.innerHTML = '<div style="color:var(--danger);">Error: ' + err.message + '</div>';
+    });
+}
+
+function isEditAncestorChecked(el) {
+    var p = el.closest('.fs-children');
+    while (p) {
+        var parentNode = p.closest('.fs-node');
+        if (!parentNode) break;
+        var parentCb = parentNode.querySelector(':scope > .fs-row > .fs-check');
+        if (parentCb && parentCb.checked) return true;
+        p = parentNode.closest('.fs-children');
+    }
+    return false;
+}
+
+function cascadeEditCheck(nodeEl, checked) {
+    nodeEl.querySelectorAll('.fs-check').forEach(function(cb) { cb.checked = checked; });
+}
+
+function renderEditEntries(parentEl, entries) {
+    parentEl.innerHTML = '';
+    var parentChecked = isEditAncestorChecked(parentEl);
+    entries.forEach(function(entry) {
+        var node = document.createElement('div');
+        node.className = 'fs-node';
+
+        var row = document.createElement('div');
+        row.className = 'fs-row';
+
+        if (entry.is_dir && entry.has_children) {
+            var expand = document.createElement('span');
+            expand.className = 'fs-expand';
+            expand.textContent = '\u25B8';
+            node.appendChild(expand);
+        } else {
+            var spacer = document.createElement('span');
+            spacer.className = 'fs-expand';
+            if (entry.is_dir) { spacer.textContent = '\u25B8'; spacer.style.opacity = '0.3'; }
+            node.appendChild(spacer);
+        }
+
+        if (entry.is_dir) {
+            var cb = document.createElement('input');
+            cb.type = 'checkbox';
+            cb.dataset.path = entry.path;
+            cb.className = 'fs-check';
+            cb.checked = parentChecked || currentPaths.indexOf(entry.path) !== -1;
+            cb.onchange = function() { cascadeEditCheck(node, cb.checked); updateEditSummary(); };
+            row.appendChild(cb);
+        }
+
+        var icon = document.createElement('span');
+        icon.className = 'fs-icon';
+        icon.textContent = entry.is_dir ? '\uD83D\uDCC1' : '\uD83D\uDCC4';
+        row.appendChild(icon);
+
+        var label = document.createElement('span');
+        label.className = entry.is_dir ? 'fs-label fs-label-dir' : 'fs-label fs-label-file';
+        label.textContent = entry.name;
+        if (!entry.readable) { label.style.opacity = '0.4'; label.title = 'Not readable'; }
+        row.appendChild(label);
+
+        node.appendChild(row);
+
+        var children = document.createElement('div');
+        children.className = 'fs-children';
+        children.style.display = 'none';
+        node.appendChild(children);
+
+        if (entry.is_dir && entry.has_children) {
+            expand.onclick = function(e) { e.stopPropagation(); toggleEditDir(node, entry.path, expand); };
+            row.ondblclick = function(e) { e.stopPropagation(); toggleEditDir(node, entry.path, expand); };
+        }
+
+        parentEl.appendChild(node);
+    });
+}
+
+function toggleEditDir(nodeEl, path, expandBtn) {
+    var children = nodeEl.querySelector('.fs-children');
+    if (children.style.display === 'none') {
+        if (children.children.length === 0) {
+            children.innerHTML = '<div style="color:var(--text-muted); font-style:italic; padding:3px 4px;">Loading...</div>';
+            loadEditTree(children, path);
+        }
+        children.style.display = '';
+        expandBtn.textContent = '\u25BE';
+        var icon = nodeEl.querySelector('.fs-icon');
+        if (icon) icon.textContent = '\uD83D\uDCC2';
+    } else {
+        children.style.display = 'none';
+        expandBtn.textContent = '\u25B8';
+        var icon = nodeEl.querySelector('.fs-icon');
+        if (icon) icon.textContent = '\uD83D\uDCC1';
+    }
+}
+
+function getEditSelectedPaths() {
+    var all = [];
+    document.querySelectorAll('#edit-fs-tree .fs-check:checked').forEach(function(cb) {
+        all.push(cb.dataset.path);
+    });
+    all.sort();
+    var paths = [];
+    for (var i = 0; i < all.length; i++) {
+        var dominated = false;
+        for (var j = 0; j < paths.length; j++) {
+            if (all[i].indexOf(paths[j] + '/') === 0 || all[i].indexOf(paths[j] + '\\') === 0) { dominated = true; break; }
+        }
+        if (!dominated) paths.push(all[i]);
+    }
+    return paths;
+}
+
+function updateEditSummary() {
+    var paths = getEditSelectedPaths();
+    var el = document.getElementById('edit-selected-summary');
+    el.textContent = paths.length > 0 ? 'Selected: ' + paths.join(', ') : '';
+}
+
+function saveEditedPaths() {
+    var paths = getEditSelectedPaths();
+    if (paths.length === 0) {
+        alert('Select at least one directory to back up.');
+        return;
+    }
+    var status = document.getElementById('edit-paths-status');
+    status.textContent = 'Saving...';
+    status.style.color = 'var(--text-muted)';
+
+    fetch('/api/backups/' + jobID, {
+        method: 'PUT',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({paths: paths})
+    })
+    .then(function(r) {
+        if (!r.ok) return r.text().then(function(t) { throw new Error(t); });
+        status.textContent = 'Saved';
+        status.style.color = 'var(--ok)';
+        currentPaths = paths;
+    })
+    .catch(function(err) {
+        status.textContent = err.message;
+        status.style.color = 'var(--danger)';
+    });
+}
+
+loadEditTree(document.getElementById('edit-fs-tree'), '');
+updateEditSummary();
+{{end}}
+</script>
+{{end}}

@@ -1,0 +1,139 @@
+site_name: HitStor Documentation
+site_description: Encrypted, deduplicated backup tool written in Go
+site_url: https://hooperits.github.io/hitstor/
+repo_url: https://github.com/hooperits/hitstor
+repo_name: hooperits/hitstor
+
+theme:
+  name: material
+  logo: assets/logo.png
+  favicon: assets/favicon.png
+  icon:
+    repo: fontawesome/brands/github
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.sections
+    - navigation.tabs
+    - navigation.expand
+    - navigation.top
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+    - content.tabs.link
+
+nav:
+  - Home: index.md
+  - Installation:
+    - installation/index.md
+    - Quick Start: installation/quickstart.md
+    - Linux Quick Install: installation/linux-installer.md
+    - Linux Packages: installation/linux-packages.md
+    - Build from Source: installation/linux-source.md
+    - Windows Server: installation/windows-server.md
+    - Windows Agent: installation/windows-agent.md
+    - Docker: installation/docker.md
+    - Upgrading: installation/upgrading.md
+  - User Guide:
+    - user-guide/index.md
+    - Getting Started: user-guide/getting-started.md
+    - Backup: user-guide/backup.md
+    - Restore: user-guide/restore.md
+    - Disaster Recovery: user-guide/disaster-recovery.md
+    - Bare-Metal Restore: user-guide/bare-metal-restore.md
+    - Snapshots: user-guide/snapshots.md
+    - Retention: user-guide/retention.md
+    - Configuration: user-guide/configuration.md
+    - Plugins: user-guide/plugins.md
+  - Administration:
+    - admin-guide/index.md
+    - Server Setup: admin-guide/server-setup.md
+    - TLS Certificates: admin-guide/tls-certificates.md
+    - Backup Jobs: admin-guide/backup-jobs.md
+    - Agent Management: admin-guide/agent-management.md
+    - Agent Discovery: admin-guide/agent-discovery.md
+    - Agent Deployment: admin-guide/agent-deployment.md
+    - Dashboard: admin-guide/dashboard.md
+    - Server Settings: admin-guide/settings.md
+    - Monitoring: admin-guide/monitoring.md
+    - Scheduling: admin-guide/scheduling.md
+    - Sentinel: admin-guide/sentinel.md
+    - Security: admin-guide/security.md
+    - Roadmap: admin-guide/roadmap.md
+    - Troubleshooting: admin-guide/troubleshooting.md
+  - Reference:
+    - reference/index.md
+    - Server Commands:
+      - reference/commands/index.md
+      - init: reference/commands/init.md
+      - backup: reference/commands/backup.md
+      - restore: reference/commands/restore.md
+      - verify-restore: reference/commands/verify-restore.md
+      - snapshots: reference/commands/snapshots.md
+      - forget: reference/commands/forget.md
+      - prune: reference/commands/prune.md
+      - check: reference/commands/check.md
+      - serve: reference/commands/serve.md
+      - repo: reference/commands/repo.md
+      - jobs: reference/commands/jobs.md
+      - agents: reference/commands/agents.md
+      - bmr: reference/commands/bmr.md
+      - config: reference/commands/config.md
+      - diff: reference/commands/diff.md
+      - du: reference/commands/du.md
+      - version: reference/commands/version.md
+    - Agent Commands:
+      - reference/agent-commands/index.md
+      - backup: reference/agent-commands/backup.md
+      - ping: reference/agent-commands/ping.md
+      - daemon: reference/agent-commands/daemon.md
+      - recover: reference/agent-commands/recover.md
+      - bmr: reference/agent-commands/bmr.md
+      - show-id: reference/agent-commands/show-id.md
+      - service: reference/agent-commands/service.md
+    - Internals: reference/internals.md
+    - Config Reference: reference/config-reference.md
+    - Environment Variables: reference/environment-variables.md
+    - gRPC API: reference/grpc-api.md
+    - API Reference (legacy): reference/api-reference.md
+    - Dashboard HTTP API: reference/dashboard-api.md
+    - Plugin Development: reference/plugin-development.md
+  - Dev Guide:
+    - dev-guide/index.md
+    - Codebase Overview: dev-guide/codebase-overview.md
+    - Dev Environment: dev-guide/dev-environment.md
+    - Build & Packaging: dev-guide/build-and-packaging.md
+    - Server Preparation: dev-guide/server-preparation.md
+    - Testing: dev-guide/testing.md
+    - Benchmarks: dev-guide/benchmarks.md
+    - Release Process: dev-guide/release-process.md
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - tables
+  - toc:
+      permalink: true
+  - attr_list
+
+plugins:
+  - search

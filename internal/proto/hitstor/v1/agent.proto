@@ -1,0 +1,357 @@
+// HitStor Agent Service — gRPC protocol for server-to-agent management.
+//
+// This service runs ON the agent, accepting connections FROM the server.
+// It enables dashboard-driven agent registration, filesystem browsing,
+// and backup path configuration (NetVault-style management).
+
+syntax = "proto3";
+
+package hitstor.v1;
+
+option go_package = "github.com/hooperits/hitstor/internal/proto/hitstor/v1";
+
+// AgentService runs on the agent daemon, accepting connections from the
+// HitStor server for registration, filesystem browsing, and configuration.
+service AgentService {
+  // Register sends the agent its API key and server address.
+  // Called once during the dashboard "Add Agent" flow.
+  // After registration, the agent begins pushing backups to the server.
+  rpc Register(RegisterRequest) returns (RegisterResponse);
+
+  // ListDirectory returns the contents of a single directory on the agent.
+  // Used by the dashboard filesystem tree browser (lazy loading).
+  rpc ListDirectory(ListDirectoryRequest) returns (ListDirectoryResponse);
+
+  // Configure sets the agent's backup paths and exclude patterns.
+  // Called after the admin selects paths in the filesystem browser.
+  rpc Configure(ConfigureRequest) returns (ConfigureResponse);
+
+  // AgentInfo returns the agent's current status and configuration.
+  rpc AgentInfo(AgentInfoRequest) returns (AgentInfoResponse);
+
+  // RestoreData streams file data from the server to the agent for restore.
+  // The server sends a sequence of messages: Begin, then Dir/FileHeader/FileChunk/Symlink
+  // messages for each entry, then End. The agent writes files to disk and responds
+  // with a summary.
+  rpc RestoreData(stream RestoreDataRequest) returns (RestoreDataResponse);
+
+  // WakeUp signals the agent to immediately check its schedule.
+  // Called by the server when a "Backup Now" is triggered from the dashboard,
+  // so the agent picks up the job instantly instead of waiting for the next poll.
+  rpc WakeUp(WakeUpRequest) returns (WakeUpResponse);
+
+  // FetchLogs returns recent agent log entries for the View Logs dashboard.
+  rpc FetchLogs(FetchLogsRequest) returns (FetchLogsResponse);
+
+  // DiscoverDatabases tests a database connection from the agent and lists databases.
+  // Used by the dashboard database backup job wizard.
+  rpc DiscoverDatabases(DiscoverDatabasesRequest) returns (DiscoverDatabasesResponse);
+
+  // CheckRecoveryMedia reports whether the agent's host can build bare-metal
+  // recovery media, and what is missing when it cannot.
+  rpc CheckRecoveryMedia(CheckRecoveryMediaRequest) returns (CheckRecoveryMediaResponse);
+
+  // BuildRecoveryMedia runs ReaR on the agent host and streams the resulting
+  // ISO back to the server, which caches it for later download.
+  //
+  // The image embeds the host's own kernel, drivers and disk layout, so it
+  // cannot be produced server-side. Images run to hundreds of megabytes or
+  // more, hence a stream: neither side buffers the whole thing.
+  rpc BuildRecoveryMedia(BuildRecoveryMediaRequest) returns (stream MediaChunk);
+}
+
+// --- Bare-metal recovery media ---
+
+message CheckRecoveryMediaRequest {
+  // Agent token for authentication.
+  string token = 1;
+}
+
+// ToolStatus is one external command the media build depends on.
+message ToolStatus {
+  string name = 1;
+  string path = 2;
+  // Required marks tools without which media cannot be built at all.
+  bool required = 3;
+  bool found = 4;
+  // Purpose explains why HitStor wants this tool, for an operator reading a
+  // readiness report.
+  string purpose = 5;
+}
+
+message CheckRecoveryMediaResponse {
+  bool ready = 1;
+  string platform = 2;
+  bool rear_installed = 3;
+  string rear_version = 4;
+  string rear_path = 5;
+  // Root reports whether the agent runs with the privileges ReaR needs.
+  bool root = 6;
+  repeated ToolStatus tools = 7;
+  // Blockers are the reasons ready is false, phrased for an operator.
+  repeated string blockers = 8;
+  // Warnings are degradations that still allow a build.
+  repeated string warnings = 9;
+  // Unix seconds when the check ran.
+  int64 checked_at_unix = 10;
+}
+
+message BuildRecoveryMediaRequest {
+  // Agent token for authentication.
+  string token = 1;
+  // Allow recovery onto dissimilar hardware or a VM (ReaR MIGRATION_MODE).
+  bool migration_mode = 2;
+  // Build even when the readiness check reports blockers.
+  bool force = 3;
+  // Server address to prefill in the recovery prompt. Not a credential.
+  string server_addr = 4;
+  // Registered agent name this media recovers, baked into the recovery
+  // prompt. The agent host does not necessarily know what the server calls
+  // it. Not a credential.
+  string agent_name = 5;
+}
+
+// MediaChunk is one message of the recovery media stream. Progress lines and
+// ISO bytes are interleaved on the same stream so the server can report a
+// build as it happens and write the image as it arrives.
+message MediaChunk {
+  oneof payload {
+    // A line of ReaR output, forwarded as the build produces it.
+    string progress = 1;
+    // A slice of the finished ISO.
+    bytes data = 2;
+    // Sent once, after the last data chunk.
+    MediaComplete complete = 3;
+  }
+}
+
+message MediaComplete {
+  // Total ISO size in bytes, for verifying the transfer arrived whole.
+  uint64 size_bytes = 1;
+  // Base name of the image as ReaR wrote it on the agent.
+  string filename = 2;
+  // Unix seconds when the image was built.
+  int64 built_at_unix = 3;
+}
+
+// --- Restore Data ---
+
+message RestoreDataRequest {
+  oneof payload {
+    RestoreBegin begin = 1;
+    RestoreDir dir = 2;
+    RestoreFileHeader file_header = 3;
+    RestoreFileChunk file_chunk = 4;
+    RestoreSymlink symlink = 5;
+    RestoreEnd end = 6;
+  }
+}
+
+message RestoreBegin {
+  // Agent token for authentication.
+  string token = 1;
+  // Hex snapshot ID (for logging).
+  string snapshot_id = 2;
+  // Base directory for restore (empty = original paths).
+  string target_path = 3;
+  // Total files to restore (for progress).
+  uint64 files_total = 4;
+  // Total bytes to restore (for progress).
+  uint64 bytes_total = 5;
+}
+
+message RestoreDir {
+  // Relative path from restore root.
+  string path = 1;
+  uint32 mode = 2;
+  uint32 uid = 3;
+  uint32 gid = 4;
+  int64 mtime_ns = 5;
+  int64 atime_ns = 6;
+}
+
+message RestoreFileHeader {
+  // Relative path from restore root.
+  string path = 1;
+  uint32 mode = 2;
+  uint32 uid = 3;
+  uint32 gid = 4;
+  // Total file size in bytes.
+  uint64 size = 5;
+  int64 mtime_ns = 6;
+  int64 atime_ns = 7;
+}
+
+message RestoreFileChunk {
+  // File content chunk (up to 1MB).
+  bytes data = 1;
+}
+
+message RestoreSymlink {
+  // Relative path from restore root.
+  string path = 1;
+  // Symlink target.
+  string target = 2;
+  uint32 uid = 3;
+  uint32 gid = 4;
+}
+
+message RestoreEnd {}
+
+message RestoreDataResponse {
+  uint64 files_restored = 1;
+  uint64 bytes_written = 2;
+  // Non-fatal errors (permission denied, etc.).
+  repeated string errors = 3;
+}
+
+// --- Registration ---
+
+message RegisterRequest {
+  // Agent token for authentication (64-char hex, must match agent's stored token).
+  string token = 1;
+  // API key for the agent to use when pushing backups to the server.
+  string api_key = 2;
+  // Server gRPC address (host:port) for backup push connections.
+  string server_addr = 3;
+  // PEM-encoded server TLS certificate for agent trust (optional).
+  bytes server_ca_cert = 4;
+}
+
+message RegisterResponse {
+  // Agent hostname as reported by the OS.
+  string hostname = 1;
+  // Agent binary version string.
+  string version = 2;
+  // Operating system (e.g. "linux").
+  string os = 3;
+  // CPU architecture (e.g. "amd64").
+  string arch = 4;
+}
+
+// --- Directory Listing ---
+
+message ListDirectoryRequest {
+  // Agent token for authentication.
+  string token = 1;
+  // Absolute path to list. Empty string returns root-level directories.
+  string path = 2;
+}
+
+message ListDirectoryResponse {
+  repeated DirEntry entries = 1;
+}
+
+message DirEntry {
+  // Base name of the entry.
+  string name = 1;
+  // Absolute path.
+  string path = 2;
+  // True if this entry is a directory.
+  bool is_dir = 3;
+  // Size in bytes (0 for directories).
+  int64 size = 4;
+  // Unix file mode (permissions).
+  uint32 mode = 5;
+  // Whether the agent process can read this entry.
+  bool readable = 6;
+  // Hint: does this directory contain subdirectories? (for expand icon).
+  bool has_children = 7;
+}
+
+// --- Configuration ---
+
+message ConfigureRequest {
+  // Agent token for authentication.
+  string token = 1;
+  // Absolute paths to back up.
+  repeated string backup_paths = 2;
+  // Glob patterns to exclude.
+  repeated string excludes = 3;
+}
+
+message ConfigureResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+// --- Agent Info ---
+
+message AgentInfoRequest {
+  // Agent token for authentication.
+  string token = 1;
+}
+
+message AgentInfoResponse {
+  string hostname = 1;
+  string version = 2;
+  string os = 3;
+  string arch = 4;
+  // Currently configured backup paths.
+  repeated string backup_paths = 5;
+  // Currently configured exclude patterns.
+  repeated string excludes = 6;
+  // Whether the agent has been registered (received API key from server).
+  bool registered = 7;
+  // Configured server address (empty if not registered).
+  string server_addr = 8;
+}
+
+// --- WakeUp ---
+
+message WakeUpRequest {
+  // Agent token for authentication.
+  string token = 1;
+}
+
+message WakeUpResponse {
+  bool acknowledged = 1;
+}
+
+// --- Fetch Logs ---
+
+message FetchLogsRequest {
+  // Agent token for authentication.
+  string token = 1;
+  // Relative window: 15m, 1h, 24h, 7d (empty = no time filter).
+  string since = 2;
+  // Optional level filter: debug, info, warn, error.
+  string level = 3;
+  // Optional free-text search.
+  string query = 4;
+  // Max entries to return (default 500, max 1000).
+  int32 limit = 5;
+}
+
+message FetchLogsResponse {
+  repeated LogEntry entries = 1;
+}
+
+message LogEntry {
+  string time = 1;
+  string level = 2;
+  string source = 3;
+  string component = 4;
+  string message = 5;
+  map<string, string> fields = 6;
+}
+
+// --- Database discovery ---
+
+message DiscoverDatabasesRequest {
+  string token = 1;
+  string db_type = 2;   // "postgres"
+  string host = 3;
+  int32 port = 4;
+  string username = 5;
+  string password = 6;
+  string ssl_mode = 7;  // disable, prefer, require
+}
+
+message DiscoverDatabasesResponse {
+  bool ok = 1;
+  string message = 2;
+  string server_version = 3;
+  string client_version = 4;
+  repeated string databases = 5;
+}

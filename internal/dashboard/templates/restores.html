@@ -1,0 +1,105 @@
+{{define "content"}}
+<div id="restores-app" class="restores-page">
+    <div class="restores-toolbar">
+        <p class="restores-toolbar-hint" id="restores-toolbar-hint">Loading agents...</p>
+    </div>
+
+    <section class="stats-section restores-stats" id="restores-stats" aria-label="Restore summary">
+        <div class="stats-grid stats-grid-compact">
+            <div class="stat-card stat-card-compact">
+                <div class="stat-card-top">
+                    <span class="stat-card-label">Agents with Snapshots</span>
+                    <span class="stat-card-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+                    </span>
+                </div>
+                <div class="stat-card-value" id="restores-stat-agents">0</div>
+            </div>
+            <div class="stat-card stat-card-compact">
+                <div class="stat-card-top">
+                    <span class="stat-card-label">Snapshots</span>
+                    <span class="stat-card-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+                    </span>
+                </div>
+                <div class="stat-card-value" id="restores-stat-snapshots">0</div>
+            </div>
+            <div class="stat-card stat-card-compact stat-card--running" id="restores-stat-active-card" hidden>
+                <div class="stat-card-top">
+                    <span class="stat-card-label">Active Restores</span>
+                    <span class="stat-card-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+                    </span>
+                </div>
+                <div class="stat-card-value stat-card-value--running" id="restores-stat-active">0</div>
+            </div>
+        </div>
+    </section>
+
+    <div class="restores-layout">
+        <aside class="restores-agent-panel" aria-label="Select agent">
+            <h2 class="section-title restores-panel-title">Protected Agents</h2>
+            <div class="restores-agent-search">
+                <input type="search" id="restores-agent-search" placeholder="Search agents..." autocomplete="off" aria-label="Search agents">
+            </div>
+            <ul class="restores-agent-list" id="restores-agent-list" role="listbox" aria-label="Agents">
+                <li class="restores-agent-empty">Loading agents...</li>
+            </ul>
+        </aside>
+
+        <section class="restores-snapshots-panel" aria-label="Snapshots for selected agent">
+            <div class="restores-snapshots-header">
+                <h2 class="section-title restores-panel-title" id="restores-snapshots-title">Snapshots</h2>
+                <div class="restores-snapshots-filters" id="restores-filters">
+                    <label class="restores-filter-label">
+                        Backup type
+                        <select id="restores-type-filter">
+                            <option value="">All types</option>
+                            <option value="files">Files (Linux / Windows)</option>
+                        </select>
+                    </label>
+                    <label class="restores-filter-label" id="restores-repo-filter-wrap" hidden>
+                        Repository
+                        <select id="restores-repo-filter">
+                            <option value="">All repositories</option>
+                        </select>
+                    </label>
+                </div>
+            </div>
+
+            <div id="restores-snapshots-empty" class="empty-state empty-state-restores">
+                <span class="empty-state-icon-wrap" aria-hidden="true">
+                    <svg class="empty-state-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+                </span>
+                <h3>Select an agent</h3>
+                <p>Choose a protected agent on the left to browse recoverable snapshots.</p>
+            </div>
+
+            <div class="table-wrap restores-table" id="restores-table-wrap" hidden>
+                <table class="restores-table" id="restores-table">
+                    <thead>
+                        <tr>
+                            <th>Snapshot</th>
+                            <th>Repository</th>
+                            <th>Time</th>
+                            <th>Backup</th>
+                            <th>Type</th>
+                            <th>Size</th>
+                            <th>Files</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody id="restores-tbody"></tbody>
+                </table>
+            </div>
+        </section>
+    </div>
+
+    <section class="restores-active-panel" id="restores-active-panel" hidden aria-label="Active restore sessions">
+        <h2 class="section-title restores-panel-title">Active Restores</h2>
+        <div id="restores-active-list"></div>
+    </section>
+</div>
+
+<script src="/static/restores.js"></script>
+{{end}}

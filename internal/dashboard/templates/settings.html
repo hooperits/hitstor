@@ -1,0 +1,200 @@
+{{define "content"}}
+<div class="settings-page" id="settings-app" data-active-tab="{{.Content.ActiveTab}}">
+    <nav class="settings-tabs" role="tablist" aria-label="Settings sections">
+        <button type="button" class="settings-tab" data-tab="general" role="tab">General</button>
+        <button type="button" class="settings-tab" data-tab="security" role="tab">Security &amp; TLS</button>
+        <button type="button" class="settings-tab" data-tab="network" role="tab">Network</button>
+        <button type="button" class="settings-tab" data-tab="integrations" role="tab">Integrations</button>
+        <button type="button" class="settings-tab" data-tab="notifications" role="tab">Notifications</button>
+    </nav>
+
+    <div id="settings-restart-banner" class="dr-banner dr-banner-warn hidden" role="status">
+        Restart the HitStor server to apply network, TLS, or password changes.
+    </div>
+
+    <div id="settings-status" class="settings-status" role="status" aria-live="polite"></div>
+
+    <section class="settings-panel" data-panel="general">
+        <h2>General</h2>
+        <form id="settings-general-form" class="settings-form">
+            <label class="settings-field">
+                <input type="checkbox" name="update_check" id="settings-update-check">
+                <span>Check for updates automatically</span>
+            </label>
+            <label class="settings-field">
+                <span>Update check URL</span>
+                <input type="url" name="update_url" id="settings-update-url" placeholder="Leave empty for GitHub Releases">
+            </label>
+            <label class="settings-field">
+                <span>Parallel workers (0 = auto)</span>
+                <input type="number" name="parallel" id="settings-parallel" min="0" step="1">
+            </label>
+            <label class="settings-field">
+                <input type="checkbox" name="sync_writes" id="settings-sync-writes">
+                <span>Sync writes to disk (fsync after rename)</span>
+            </label>
+            <label class="settings-field">
+                <span>Minimum free reserve (bytes)</span>
+                <input type="number" name="min_free_reserve_bytes" id="settings-min-reserve" min="0" step="1">
+            </label>
+            <h3 class="settings-subheading">View Logs retention</h3>
+            <label class="settings-field">
+                <span>In-memory log entries (500–50000)</span>
+                <input type="number" name="log_max_entries" id="settings-log-max-entries" min="500" max="50000" step="100">
+            </label>
+            <label class="settings-field">
+                <input type="checkbox" name="log_file_enabled" id="settings-log-file-enabled">
+                <span>Write logs to rotating file on disk</span>
+            </label>
+            <label class="settings-field">
+                <span>Log file path</span>
+                <input type="text" name="log_file_path" id="settings-log-file-path" placeholder="Default platform path">
+            </label>
+            <label class="settings-field">
+                <span>Rotate when file exceeds (MB)</span>
+                <input type="number" name="log_rotate_max_mb" id="settings-log-rotate-mb" min="1" max="500" step="1">
+            </label>
+            <label class="settings-field">
+                <span>Rotated files to keep</span>
+                <input type="number" name="log_rotate_max_files" id="settings-log-rotate-files" min="1" max="20" step="1">
+            </label>
+            <button type="submit" class="btn btn-primary">Save General</button>
+        </form>
+    </section>
+
+    <section class="settings-panel hidden" data-panel="security">
+        <h2>Security &amp; TLS</h2>
+        <form id="settings-security-form" class="settings-form">
+            <label class="settings-field">
+                <span>Dashboard password</span>
+                <input type="password" name="dashboard_password" id="settings-dashboard-password" placeholder="Leave blank to keep current" autocomplete="new-password">
+                <small id="settings-password-hint" class="settings-hint"></small>
+            </label>
+            <button type="submit" class="btn btn-primary">Save Security</button>
+        </form>
+
+        <div class="settings-card" id="settings-tls-status-card">
+            <h3>TLS certificate</h3>
+            <dl class="settings-dl" id="settings-tls-status"></dl>
+        </div>
+
+        <form id="settings-tls-upload-form" class="settings-form" enctype="multipart/form-data">
+            <h3>Upload certificate</h3>
+            <label class="settings-field">
+                <span>Certificate (PEM)</span>
+                <input type="file" name="cert" id="settings-tls-cert" accept=".pem,.crt,.cer,text/plain">
+            </label>
+            <label class="settings-field">
+                <span>Private key (PEM)</span>
+                <input type="file" name="key" id="settings-tls-key" accept=".pem,.key,text/plain">
+            </label>
+            <button type="submit" class="btn btn-secondary">Upload TLS certificate</button>
+        </form>
+    </section>
+
+    <section class="settings-panel hidden" data-panel="network">
+        <h2>Network</h2>
+        <form id="settings-network-form" class="settings-form">
+            <label class="settings-field">
+                <span>gRPC port</span>
+                <input type="number" name="serve_port" id="settings-serve-port" min="1" max="65535">
+            </label>
+            <label class="settings-field">
+                <span>Dashboard HTTPS port</span>
+                <input type="number" name="serve_dashboard_port" id="settings-dashboard-port" min="1" max="65535">
+            </label>
+            <label class="settings-field">
+                <span>Advertise address (host:port for agents)</span>
+                <input type="text" name="serve_advertise_addr" id="settings-advertise-addr" placeholder="Auto-detect if empty">
+            </label>
+            <button type="submit" class="btn btn-primary">Save Network</button>
+        </form>
+    </section>
+
+    <section class="settings-panel settings-panel--wide hidden" data-panel="integrations">
+        <h2>Integrations</h2>
+        <p class="settings-lead">Connect external services. Open a card to configure — each integration uses its own dialog.</p>
+
+        <div id="settings-env-override-banner" class="dr-banner dr-banner-info hidden">
+            Environment variables are overriding some integration settings.
+            <button type="button" class="btn btn-sm btn-secondary" id="settings-import-env">Import from environment</button>
+        </div>
+
+        <div class="integration-cards">
+            
+            <article class="integration-card" id="integration-card-gemini">
+                <div class="integration-card__icon integration-card__icon--gemini" aria-hidden="true">AI</div>
+                <div class="integration-card__body">
+                    <h3 class="integration-card__title">Gemini</h3>
+                    <p class="integration-card__desc">Ransomware Sentinel (Gemini)</p>
+                    <span class="integration-badge" id="integration-gemini-badge">Not configured</span>
+                </div>
+                <div class="integration-card__actions">
+                    <button type="button" class="btn btn-secondary btn-sm" id="integration-gemini-open">Configure</button>
+                </div>
+            </article>
+
+            </div>
+
+        <!-- Hidden form fields + submit hook for settings.js -->
+        <form id="settings-integrations-form" class="visually-hidden" aria-hidden="true" tabindex="-1">
+            <input type="password" name="gemini_api_key" id="settings-gemini-key">
+            <input type="text" name="gemini_model" id="settings-gemini-model">
+            <button type="button" id="settings-test-gemini"></button>
+            <small id="settings-gemini-hint"></small>
+        </form>
+    </section>
+
+    
+    <!-- Gemini -->
+    <div id="integration-gemini-modal" class="dialog-overlay" hidden role="dialog" aria-modal="true" aria-labelledby="integration-gemini-title">
+        <div class="dialog-box integration-dialog">
+            <div class="dialog-header">
+                <h2 id="integration-gemini-title">Gemini (Sentinel)</h2>
+                <button type="button" class="dialog-close" data-close-modal="integration-gemini-modal" aria-label="Close">&times;</button>
+            </div>
+            <div class="dialog-body">
+                <label class="settings-field">
+                    <span>API key</span>
+                    <input type="password" id="gemini-modal-key" placeholder="Leave blank to keep current" autocomplete="off">
+                    <small id="gemini-modal-hint" class="settings-hint"></small>
+                </label>
+                <label class="settings-field">
+                    <span>Model</span>
+                    <input type="text" id="gemini-modal-model" placeholder="gemini-1.5-pro">
+                </label>
+                <div class="dialog-actions">
+                    <button type="button" class="btn btn-secondary" id="gemini-modal-test">Test connection</button>
+                    <button type="button" class="btn btn-secondary" data-close-modal="integration-gemini-modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="gemini-modal-save">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cloud providers -->
+    
+
+    <section class="settings-panel hidden" data-panel="notifications">
+        <h2>Notifications</h2>
+        <p class="settings-lead">Alert webhook and stale-agent threshold (also used by DR auto-failover).</p>
+        <form id="settings-notifications-form" class="settings-form">
+            <label class="settings-field">
+                <span>Webhook URL</span>
+                <input type="url" name="alert_webhook_url" id="settings-webhook-url" placeholder="https://hooks.example.com/...">
+            </label>
+            <label class="settings-field">
+                <span>Stale threshold (hours)</span>
+                <input type="number" name="alert_stale_threshold" id="settings-stale-threshold" min="1" max="8760">
+            </label>
+            <label class="settings-field">
+                <span>Notifier plugins (comma-separated)</span>
+                <input type="text" name="alert_notifier_plugins" id="settings-notifier-plugins">
+            </label>
+            <button type="button" class="btn btn-secondary" id="settings-test-webhook">Test webhook</button>
+            <button type="submit" class="btn btn-primary">Save Notifications</button>
+        </form>
+    </section>
+</div>
+<script src="/static/settings.js"></script>
+{{end}}

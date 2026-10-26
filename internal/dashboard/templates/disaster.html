@@ -1,0 +1,184 @@
+{{define "content"}}
+<div id="disaster-app" class="disaster-page">
+    <div class="tab-bar" role="tablist" aria-label="Recovery mode">
+        <button type="button" class="tab-btn active" id="dr-tab-guided" role="tab"
+                aria-selected="true" aria-controls="dr-panel-guided">Guided recovery</button>
+        <button type="button" class="tab-btn" id="dr-tab-baremetal" role="tab"
+                aria-selected="false" aria-controls="dr-panel-baremetal">Bare metal</button>
+    </div>
+
+<div id="dr-panel-guided" role="tabpanel" aria-labelledby="dr-tab-guided">
+    <div class="settings-banner settings-banner--info" style="margin-bottom:1rem;">
+        <strong>Filesystem disaster recovery</strong> rebuilds a host from its HitStor file backups
+        (not block-level imaging). Install an agent on the recovery machine first, then run this wizard.
+    </div>
+
+    <section class="stats-section" aria-label="Recovery summary">
+        <div class="stats-grid stats-grid-compact">
+            <div class="stat-card stat-card-compact">
+                <div class="stat-card-top"><span class="stat-card-label">Protected systems</span></div>
+                <div class="stat-card-value" id="dr-stat-systems">0</div>
+            </div>
+            <div class="stat-card stat-card-compact">
+                <div class="stat-card-top"><span class="stat-card-label">Ready for recovery</span></div>
+                <div class="stat-card-value stat-card-value--ok" id="dr-stat-ready">0</div>
+            </div>
+            <div class="stat-card stat-card-compact">
+                <div class="stat-card-top"><span class="stat-card-label">Active recoveries</span></div>
+                <div class="stat-card-value" id="dr-stat-active">0</div>
+            </div>
+        </div>
+    </section>
+
+    <div class="disaster-layout">
+        <aside class="disaster-panel card">
+            <h2 class="section-title">1. Select system</h2>
+            <ul class="disaster-agent-list" id="dr-system-list" role="listbox" aria-label="Protected systems">
+                <li class="text-muted">Loading…</li>
+            </ul>
+        </aside>
+
+        <section class="disaster-panel card disaster-panel--main">
+            <h2 class="section-title">2. Recovery plan</h2>
+            <div id="dr-plan-empty" class="empty-state">
+                <h3>Choose a system</h3>
+                <p>Select a protected agent to build a full-system restore plan from its backup jobs and latest snapshots.</p>
+            </div>
+            <div id="dr-plan" class="hidden">
+                <div class="disaster-plan-meta" id="dr-plan-meta"></div>
+                <div id="dr-warnings" class="hidden" style="margin:0.75rem 0;"></div>
+                <table class="data-table" id="dr-units-table">
+                    <thead>
+                        <tr>
+                            <th></th>
+                            <th>Job</th>
+                            <th>Snapshot</th>
+                            <th>Paths</th>
+                            <th>Size</th>
+                            <th>Verify</th>
+                        </tr>
+                    </thead>
+                    <tbody id="dr-units-body"></tbody>
+                </table>
+
+                <h3 class="section-title" style="margin-top:1.25rem;">3. Recovery target</h3>
+                <div class="form-group">
+                    <label for="dr-target-agent">Target agent (recovery host)</label>
+                    <select id="dr-target-agent" required>
+                        <option value="">Select registered agent…</option>
+                    </select>
+                    <span class="form-hint">Register the replacement host with <code>hitstor-agent</code> before starting.</span>
+                </div>
+                <div class="form-group">
+                    <span class="form-hint" style="display:block;margin-bottom:0.5rem;">Restore mode</span>
+                    <label style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.35rem;">
+                        <input type="radio" name="dr-mode" value="staging" checked>
+                        Staging root (recommended) — restore under a directory, then cut over
+                    </label>
+                    <label style="display:flex;align-items:center;gap:0.5rem;">
+                        <input type="radio" name="dr-mode" value="original">
+                        Original paths — write files to live paths on the target (stop apps first)
+                    </label>
+                </div>
+                <div class="form-group" id="dr-staging-group">
+                    <label for="dr-staging-root">Staging root on target</label>
+                    <input type="text" id="dr-staging-root" placeholder="/recover/hostname or C:\Recover\hostname" style="width:100%;">
+                </div>
+
+                <h3 class="section-title" style="margin-top:1.25rem;">4. Checklist</h3>
+                <ol id="dr-checklist" class="disaster-checklist"></ol>
+
+                <div id="dr-error" class="form-error" style="display:none;margin-top:0.75rem;"></div>
+                <div class="dialog-actions" style="margin-top:1rem;justify-content:flex-start;">
+                    <button type="button" class="btn btn-primary" id="dr-start-btn" disabled>Start full-system recovery</button>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <section class="card" style="margin-top:1.25rem;" id="dr-progress-section">
+        <h2 class="section-title">Recovery progress</h2>
+        <div id="dr-progress-empty" class="text-muted">No disaster recoveries yet in this server session.</div>
+        <div id="dr-progress-list"></div>
+    </section>
+</div>
+
+<div id="dr-panel-baremetal" class="hidden" role="tabpanel" aria-labelledby="dr-tab-baremetal">
+    <div class="settings-banner settings-banner--info" style="margin-bottom:1rem;">
+        <strong>Bare-metal recovery</strong> rebuilds a machine with a blank disk: the rescue media
+        recreates its partitions and bootloader, then pulls the data back from HitStor.
+        Build the media <em>before</em> you need it — it embeds the host's own kernel and disk layout,
+        so it can only be produced on the machine it protects.
+    </div>
+
+    <section class="card">
+        <h2 class="section-title">Protected hosts</h2>
+        <div class="table-wrap">
+            <table class="data-table" id="bmr-hosts-table">
+                <thead>
+                    <tr>
+                        <th>Host</th>
+                        <th>Readiness</th>
+                        <th>Recovery media</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="bmr-hosts-body">
+                    <tr><td colspan="4" class="text-muted">Loading…</td></tr>
+                </tbody>
+            </table>
+        </div>
+        <div id="bmr-error" class="form-error" style="display:none;margin-top:0.75rem;"></div>
+    </section>
+
+    <section class="card hidden" style="margin-top:1.25rem;" id="bmr-build-section">
+        <h2 class="section-title">Build progress</h2>
+        <p class="text-muted" id="bmr-build-host"></p>
+        <pre id="bmr-build-log" class="log-output" style="max-height:20rem;overflow:auto;"></pre>
+    </section>
+
+    <section class="card" style="margin-top:1.25rem;">
+        <h2 class="section-title">Outstanding recovery tokens</h2>
+        <p class="text-muted">
+            The media carries no credentials, so a recovery is authorized by a single-use token you
+            issue when a machine is already down. Tokens are shown once, expire in a day by default,
+            and only work for the host they were issued for.
+        </p>
+        <div class="table-wrap">
+            <table class="data-table">
+                <thead>
+                    <tr><th>Host</th><th>Issued</th><th>Expires</th><th></th></tr>
+                </thead>
+                <tbody id="bmr-tokens-body">
+                    <tr><td colspan="4" class="text-muted">None outstanding.</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <section class="card" style="margin-top:1.25rem;">
+        <h2 class="section-title">Runbook</h2>
+        <ol class="disaster-checklist">
+            <li><strong>Ahead of time:</strong> build recovery media for each host and store the ISO
+                somewhere that survives losing that host. Rebuild it whenever the host's disk layout
+                changes — a stale image recreates the old layout.</li>
+            <li><strong>When a machine is lost:</strong> download its ISO and boot the replacement
+                hardware from it.</li>
+            <li>Issue a recovery token here, for that host.</li>
+            <li>At the rescue console, confirm the server address and host name, then type the token.
+                ReaR recreates the disk layout and the agent announces itself back to this server.</li>
+            <li>Return to <strong>Guided recovery</strong> and start the restore, choosing the
+                announced host as the target. Nothing starts on its own: a bare-metal restore is
+                confirmed by you.</li>
+            <li>When the restore finishes, the rescue system exits and ReaR installs the bootloader.
+                Reboot into the restored system.</li>
+        </ol>
+        <p class="text-muted">
+            The server must be able to reach the rescue host directly at the address it announces.
+        </p>
+    </section>
+</div>
+</div>
+<script src="/static/disaster.js"></script>
+<script src="/static/baremetal.js"></script>
+{{end}}

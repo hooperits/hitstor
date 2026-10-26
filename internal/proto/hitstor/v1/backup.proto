@@ -1,0 +1,301 @@
+// HitStor Backup Service — gRPC protocol for remote agent backups.
+//
+// The agent performs filesystem scanning, chunking (FastCDC), blob ID
+// computation (HMAC-SHA256), and compression (zstd) locally. Only new
+// compressed chunks are streamed to the server. The server handles
+// deduplication verification, encryption (AES-256-GCM), pack assembly,
+// index management, and snapshot creation.
+
+syntax = "proto3";
+
+package hitstor.v1;
+
+option go_package = "github.com/hooperits/hitstor/internal/proto/hitstor/v1";
+
+// BackupService is the primary gRPC service exposed by `hitstor serve`.
+service BackupService {
+  // BeginSession starts a backup session for an authenticated agent.
+  // Returns chunker parameters and the IDKey needed for blob identification.
+  rpc BeginSession(BeginSessionRequest) returns (BeginSessionResponse);
+
+  // CheckBlobs checks which blob IDs the server already has.
+  // Called in batches (recommended: 1000 IDs per call).
+  // Returns only the IDs that are NOT in the repository index.
+  rpc CheckBlobs(CheckBlobsRequest) returns (CheckBlobsResponse);
+
+  // UploadChunks streams compressed chunks to the server.
+  // Only chunks that CheckBlobs reported as "needed" should be sent.
+  // The server encrypts each chunk and packs them into pack files.
+  rpc UploadChunks(stream UploadChunkMessage) returns (UploadChunksResponse);
+
+  // FinalizeBackup sends the complete file/directory tree and closes
+  // the backup session. The server builds tree blobs, creates a snapshot,
+  // saves the index, and returns the snapshot ID with summary statistics.
+  rpc FinalizeBackup(FinalizeBackupRequest) returns (FinalizeBackupResponse);
+
+  // Ping is a health check. Returns server version and repository ID.
+  rpc Ping(PingRequest) returns (PingResponse);
+
+  // GetSchedule returns the backup schedule configured for this agent.
+  // Agent authenticates via API key. Returns schedule and computed next run time.
+  rpc GetSchedule(GetScheduleRequest) returns (GetScheduleResponse);
+
+  // AnnounceForRecovery admits a host booted off bare-metal recovery media.
+  //
+  // Every other restore is server-initiated: the server already knows the
+  // agent's address and dials in. A machine that just booted off rescue media
+  // has whatever address DHCP handed it, which nobody has told the server
+  // about. So the agent calls home — mirroring the backup path — presenting a
+  // single-use recovery token and its current address. The server records
+  // both, then dials back over the existing restore-push path unchanged.
+  rpc AnnounceForRecovery(AnnounceForRecoveryRequest) returns (AnnounceForRecoveryResponse);
+}
+
+// --- Bare-metal recovery announce ---
+
+message AnnounceForRecoveryRequest {
+  // Single-use recovery token minted by an operator from the dashboard.
+  // The rescue media carries no credentials, so this is typed in at recovery
+  // time.
+  string recovery_token = 1;
+  // Registered agent name this media recovers. The token is bound to it.
+  string agent_name = 2;
+  // Where the server can reach this rescue system: host:port of the agent
+  // gRPC listener it just started.
+  string agent_addr = 3;
+  // Hostname the rescue system reports, for the operator's confirmation.
+  string hostname = 4;
+  // Directory the rescue system has mounted the recreated root on, normally
+  // /mnt/local. Reported so the dashboard can show the restore target.
+  string target_path = 5;
+  // Agent token the rescue system generated for its own gRPC listener, so
+  // the server can authenticate when it dials back to push the restore.
+  //
+  // The rescue system cannot know the original agent's token — that lives on
+  // a disk that may no longer exist — and the server does not disclose it.
+  // This token is scoped to the recovery and discarded when it ends.
+  string agent_token = 6;
+}
+
+message AnnounceForRecoveryResponse {
+  // Agent name the token authorized.
+  string agent_name = 1;
+  // Human-readable next step for the operator standing at the console.
+  string message = 2;
+}
+
+// --- Session Management ---
+
+message BeginSessionRequest {
+  // API key for authentication (32-byte hex string).
+  string api_key = 1;
+  // Hostname of the machine being backed up.
+  string hostname = 2;
+  // Absolute paths being backed up on the agent.
+  repeated string paths = 3;
+  // Glob patterns to exclude.
+  repeated string excludes = 4;
+  // Optional tags for the snapshot.
+  repeated string tags = 5;
+  // Backup job ID (links session to a BackupJob). Empty for legacy agents.
+  string job_id = 6;
+}
+
+// PreviousFileEntry carries metadata from the previous snapshot for one file.
+// Sent to the agent in BeginSessionResponse so it can detect unchanged files
+// and reuse their content blob IDs without re-reading the file.
+message PreviousFileEntry {
+  // Relative path within the backup root (matches FileNode.path format).
+  string path = 1;
+  // Modification time in nanoseconds since Unix epoch.
+  int64 mtime_ns = 2;
+  // File size in bytes.
+  int64 size = 3;
+  // Ordered list of 32-byte chunk blob IDs for this file.
+  repeated bytes content_ids = 4;
+}
+
+message BeginSessionResponse {
+  // Unique session identifier (UUID or random hex).
+  string session_id = 1;
+  // 32-byte HMAC-SHA256 key for computing blob IDs.
+  // Agent uses: blob_id = HMAC-SHA256(id_key, chunk_data).
+  bytes id_key = 2;
+  // FastCDC chunker parameters from the repository config.
+  uint32 chunker_min = 3;  // Minimum chunk size in bytes (default: 262144 = 256 KiB).
+  uint32 chunker_avg = 4;  // Average chunk size in bytes (default: 1048576 = 1 MiB).
+  uint32 chunker_max = 5;  // Maximum chunk size in bytes (default: 4194304 = 4 MiB).
+
+  // File metadata from the previous snapshot for incremental change detection.
+  // Empty if no previous snapshot exists or if a full re-scan is required.
+  repeated PreviousFileEntry previous_files = 6;
+
+  // Hex-encoded ID of the parent snapshot (the one previous_files came from).
+  // Empty if this is a full backup.
+  string parent_snapshot_id = 7;
+}
+
+// --- Deduplication ---
+
+message CheckBlobsRequest {
+  string session_id = 1;
+  // Batch of 32-byte blob IDs to check.
+  // Recommended batch size: 1000 IDs per request.
+  repeated bytes blob_ids = 2;
+}
+
+message CheckBlobsResponse {
+  // Subset of blob_ids that the server does NOT have.
+  // The agent should upload these via UploadChunks.
+  repeated bytes needed_ids = 1;
+}
+
+// --- Chunk Upload ---
+
+message UploadChunkMessage {
+  string session_id = 1;
+  // 32-byte blob ID (HMAC-SHA256 of uncompressed chunk data).
+  bytes blob_id = 2;
+  // Zstd-compressed chunk data.
+  bytes compressed_data = 3;
+  // Original uncompressed size in bytes.
+  uint32 uncompressed_length = 4;
+}
+
+message UploadChunksResponse {
+  // Total number of chunks received and stored.
+  uint32 chunks_received = 1;
+  // Total compressed bytes received.
+  uint64 bytes_received = 2;
+}
+
+// --- Finalize ---
+
+message FinalizeBackupRequest {
+  string session_id = 1;
+  // Complete directory tree from the agent's filesystem scan.
+  // Must include all files and directories in the backup paths.
+  repeated FileNode files = 2;
+
+  // Backup type: "full" or "incremental".
+  string backup_type = 3;
+
+  // Hex-encoded snapshot ID of the parent snapshot. Empty for full backups.
+  string parent_snapshot_id = 4;
+
+  // JSON-encoded system profile describing the agent host's disk and boot
+  // layout (see internal/sysprofile). Sent only when the job captures
+  // bare-metal-restore state; the server stores it as a blob referenced by the
+  // snapshot. Empty otherwise.
+  bytes system_profile = 5;
+}
+
+// FileNode represents a file or directory from the agent's filesystem.
+message FileNode {
+  // Relative path within the backup root (forward slashes, no leading slash).
+  string path = 1;
+  // True if this node is a directory.
+  bool is_dir = 2;
+  // Unix file mode (permissions).
+  uint32 mode = 3;
+  // Modification time in nanoseconds since Unix epoch.
+  int64 mtime_ns = 4;
+  // File size in bytes (0 for directories).
+  int64 size = 5;
+  // Owner user ID (Unix).
+  uint32 uid = 6;
+  // Owner group ID (Unix).
+  uint32 gid = 7;
+  // Ordered list of chunk blob IDs (files only).
+  // These are the HMAC-SHA256 IDs computed by the agent.
+  repeated bytes content_ids = 8;
+  // Symlink target path (symlinks only).
+  string link_target = 9;
+  // Extended attributes, keyed by attribute name. On Linux this carries
+  // SELinux contexts, file capabilities, and POSIX ACLs — the system state a
+  // bare-metal restore needs. Empty when the job does not capture xattrs or
+  // the platform has none.
+  map<string, bytes> xattrs = 10;
+}
+
+message FinalizeBackupResponse {
+  // 8-character hex prefix of the snapshot ID.
+  string snapshot_id = 1;
+  // Summary statistics.
+  uint64 files_new = 2;
+  uint64 files_unchanged = 3;
+  uint64 bytes_added = 4;
+  uint64 bytes_processed = 5;
+  double duration_seconds = 6;
+}
+
+// --- Health Check ---
+
+message PingRequest {}
+
+message PingResponse {
+  // HitStor server version string.
+  string version = 1;
+  // 64-character hex repository ID.
+  string repo_id = 2;
+}
+
+// --- Scheduling ---
+
+message GetScheduleRequest {
+  // API key for authentication (32-byte hex string).
+  string api_key = 1;
+}
+
+message GetScheduleResponse {
+  // Deprecated: legacy single-schedule fields. Populated from the first
+  // enabled job for backward compatibility with older agents.
+  bool enabled = 1;
+  int32 interval_hours = 2;
+  int64 next_run_unix = 3;
+
+  // All backup jobs configured for this agent.
+  repeated ScheduledJob jobs = 4;
+}
+
+// ScheduledJob describes one backup job and its computed next run time.
+message ScheduledJob {
+  string job_id = 1;
+  string name = 2;
+  repeated string paths = 3;
+  repeated string excludes = 4;
+  string repo_name = 5;
+  bool enabled = 6;
+  int32 interval_hours = 7;
+  // Computed next backup time as seconds since Unix epoch.
+  int64 next_run_unix = 8;
+  // True when a manual "Backup Now" has been requested via the dashboard.
+  bool run_now = 9;
+
+  // Days between forced full re-scan backups. 0 = never (default).
+  int32 full_rescan_days = 10;
+
+  // Timestamp of the last full backup as seconds since Unix epoch.
+  // 0 if no full backup has been recorded.
+  int64 last_full_backup_unix = 11;
+
+  // 5-field cron expression (minute hour dom month dow).
+  // Empty string means interval mode (use interval_hours).
+  string cron_expression = 12;
+
+  // IANA timezone name (e.g., "America/New_York").
+  // Empty string means server's local timezone.
+  string timezone = 13;
+
+  // Use Volume Shadow Copy Service for consistent snapshots (Windows only).
+  bool use_vss = 14;
+
+  // Job type: "files" (default). HitStor is filesystem-only; any other
+  // value is rejected by the server/agent.
+  string job_type = 15;
+
+  // Fields 16-18 (db_type, db_connection_uri, db_temp_dir) supported a
+  // "database" job type that is no longer part of HitStor's scope.
+  reserved 16, 17, 18;
+  reserved "db_type", "db_connection_uri", "db_temp_dir";
+}

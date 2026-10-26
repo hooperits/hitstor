@@ -1,0 +1,64 @@
+// FilesystemScanner plugin protocol for HitStor.
+//
+// Plugin binaries implement this gRPC service. The host (hitstor) launches
+// the plugin as a subprocess and communicates over this protocol via
+// hashicorp/go-plugin. The Scan RPC uses server-side streaming to return
+// one entry per file/directory/symlink.
+
+syntax = "proto3";
+
+package hitstor.plugin.v1;
+
+option go_package = "github.com/hooperits/hitstor/api/proto/hitstor/plugin/v1";
+
+import "hitstor/plugin/v1/storage.proto";
+
+// FilesystemScanner is the gRPC service that scanner plugins implement.
+service FilesystemScanner {
+  // Configure passes plugin-specific settings after launch.
+  // Called exactly once before any Scan call.
+  // Reuses ConfigureRequest/ConfigureResponse from storage.proto.
+  rpc Configure(ConfigureRequest) returns (ConfigureResponse);
+
+  // Scan walks the given paths with exclude patterns and streams back
+  // one ScanEntry per filesystem entry. Errors for individual files are
+  // returned as entries with error_message set. A fatal error is returned
+  // as a gRPC error.
+  rpc Scan(ScanRequest) returns (stream ScanEntry);
+}
+
+// ScanRequest specifies which paths to scan and which patterns to exclude.
+message ScanRequest {
+  // Absolute paths to scan.
+  repeated string paths = 1;
+  // Glob patterns to exclude.
+  repeated string excludes = 2;
+}
+
+// ScanEntry represents a single filesystem entry returned by the scanner.
+message ScanEntry {
+  // Absolute path to the entry.
+  string path = 1;
+  // Metadata for the entry (nil when error_message is set).
+  NodeInfo node = 2;
+  // Error message if this entry failed (path may be empty).
+  string error_message = 3;
+}
+
+// NodeInfo carries filesystem metadata for a single entry.
+message NodeInfo {
+  string name = 1;
+  // "file", "dir", or "symlink".
+  string type = 2;
+  uint32 mode = 3;
+  uint32 uid = 4;
+  uint32 gid = 5;
+  int64 mtime_ns = 6;
+  int64 atime_ns = 7;
+  int64 ctime_ns = 8;
+  uint64 size = 9;
+  uint64 inode = 10;
+  uint64 links = 11;
+  // Symlink target (empty for non-symlinks).
+  string link_target = 12;
+}

@@ -1,0 +1,45 @@
+// Notifier plugin protocol for HitStor.
+//
+// Plugin binaries implement this gRPC service. The host (hitstor) launches
+// the plugin as a subprocess and communicates over this protocol via
+// hashicorp/go-plugin.
+
+syntax = "proto3";
+
+package hitstor.plugin.v1;
+
+option go_package = "github.com/hooperits/hitstor/api/proto/hitstor/plugin/v1";
+
+import "hitstor/plugin/v1/storage.proto";
+
+// Notifier is the gRPC service that notifier plugins implement.
+// Each RPC corresponds to a method on the notifier.Notifier Go interface.
+service Notifier {
+  // Configure passes plugin-specific settings after launch.
+  // Called exactly once before any Notify call.
+  // Reuses ConfigureRequest/ConfigureResponse from storage.proto.
+  rpc Configure(ConfigureRequest) returns (ConfigureResponse);
+
+  // Notify delivers a backup event notification to the plugin.
+  rpc Notify(NotifyRequest) returns (NotifyResponse);
+}
+
+// NotifyRequest carries a single backup event.
+message NotifyRequest {
+  // Event type (e.g. "backup_failed", "agent_stale").
+  string event_type = 1;
+  // Server identifier (always "hitstor").
+  string server = 2;
+  // RFC3339 timestamp of the event.
+  string timestamp = 3;
+  // Agent name that triggered the event.
+  string agent = 4;
+  // Agent hostname (may be empty).
+  string hostname = 5;
+  // Human-readable event message.
+  string message = 6;
+  // Arbitrary key-value details about the event.
+  map<string, string> details = 7;
+}
+
+message NotifyResponse {}

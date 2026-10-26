@@ -1,0 +1,36 @@
+name: hitstor
+arch: ${ARCH}
+platform: linux
+version: ${VERSION}
+maintainer: "HooperITS <support@hooperits.com>"
+description: "Encrypted, deduplicated backup server with gRPC protocol, web dashboard, and plugin support"
+homepage: "https://github.com/hooperits/hitstor"
+license: "AGPL-3.0-only"
+section: "utils"
+priority: "optional"
+
+contents:
+  - src: ../../bin/hitstor
+    dst: /usr/bin/hitstor
+    file_info:
+      mode: 0755
+
+  - src: ../scripts/grant-hitstor-journal-access.sh
+    dst: /usr/lib/hitstor/grant-journal-access.sh
+    file_info:
+      mode: 0755
+
+  - src: ../systemd/hitstor-server.service
+    dst: /usr/lib/systemd/system/hitstor-server.service
+
+  - src: ../systemd/hitstor-server.env.example
+    dst: /etc/hitstor/server.env.example
+    type: config|noreplace
+
+  - src: ../config/server-config.yaml.example
+    dst: /etc/hitstor/config.yaml.example
+    type: config|noreplace
+
+scripts:
+  postinstall: ../scripts/server-postinstall.sh
+  preremove: ../scripts/server-preremove.sh

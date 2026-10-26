@@ -1,0 +1,841 @@
+{{define "content"}}
+{{$page := .Content}}
+{{$jobs := $page.Jobs}}
+
+<div class="backups-toolbar">
+    <p class="backups-toolbar-hint">{{if $jobs}}{{len $jobs}} scheduled {{if eq (len $jobs) 1}}job{{else}}jobs{{end}}{{else}}No jobs configured{{end}}</p>
+    <button class="btn" onclick="openNewJobDialog()">+ New Backup Job</button>
+</div>
+
+
+{{if not $jobs}}
+<div class="empty-state empty-state-backups">
+    <span class="empty-state-icon-wrap" aria-hidden="true">
+        <svg class="empty-state-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+    </span>
+    <h3>No backup jobs yet</h3>
+    <p>Create a job to schedule filesystem backups on Linux or Windows agents.</p>
+    <button class="btn" onclick="openNewJobDialog()">Create your first job</button>
+</div>
+{{else}}
+<section class="stats-section backups-stats">
+    <div class="stats-grid stats-grid-compact">
+        <div class="stat-card stat-card-compact">
+            <div class="stat-card-top">
+                <span class="stat-card-label">Total Jobs</span>
+                <span class="stat-card-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                </span>
+            </div>
+            <div class="stat-card-value">{{$page.Total}}</div>
+        </div>
+        <div class="stat-card stat-card-compact">
+            <div class="stat-card-top">
+                <span class="stat-card-label">Healthy</span>
+                <span class="stat-card-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                </span>
+            </div>
+            <div class="stat-card-value stat-card-value--ok">{{$page.OKCount}}</div>
+        </div>
+        <div class="stat-card stat-card-compact{{if $page.OverdueCount}} stat-card--stale{{end}}">
+            <div class="stat-card-top">
+                <span class="stat-card-label">Overdue</span>
+                <span class="stat-card-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                </span>
+            </div>
+            <div class="stat-card-value stat-card-value--{{if $page.OverdueCount}}stale{{else}}ok{{end}}">{{$page.OverdueCount}}</div>
+        </div>
+        {{if or $page.RunningCount $page.PendingCount}}
+        <div class="stat-card stat-card-compact stat-card--running">
+            <div class="stat-card-top">
+                <span class="stat-card-label">Active</span>
+                <span class="stat-card-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                </span>
+            </div>
+            <div class="stat-card-value stat-card-value--running">{{$page.ActiveCount}}</div>
+        </div>
+        {{end}}
+    </div>
+</section>
+
+<div class="backups-table-panel">
+    <h2 class="section-title backups-table-title">Scheduled Jobs</h2>
+    <div class="table-wrap backups-table" id="backups-table" hx-get="/backups" hx-trigger="every 2s" hx-select=".table-wrap.backups-table" hx-swap="outerHTML">
+        <table>
+            <thead>
+                <tr>
+                    <th>Job</th>
+                    <th>Agent</th>
+                    <th>Source</th>
+                    <th>Repository</th>
+                    <th>Schedule</th>
+                    <th>Last Run</th>
+                    <th>Restore verify</th>
+                    <th>Status</th>
+                    <th class="col-actions" aria-label="Actions"></th>
+                </tr>
+            </thead>
+            <tbody>
+                {{range $jobs}}
+                <tr class="clickable-row backup-row backup-row--{{.Status}}" onclick="window.location='/backups/{{.ID}}'">
+                    <td class="job-name-cell">
+                        <span class="job-name">{{.Name}}</span>
+                        <span class="job-type-chip">{{.JobTypeLabel}}</span>
+                    </td>
+                    <td><span class="agent-chip">{{.AgentName}}</span></td>
+                    <td class="paths-cell" title="{{range .Paths}}{{.}} {{end}}">{{.SourceLabel}}</td>
+                    <td><span class="repo-chip">{{.RepoName}}</span></td>
+                    <td class="schedule-cell">
+                        {{if .ScheduleEnabled}}
+                        <span class="schedule-primary">{{.ScheduleDisplay}}</span>
+                        {{if .NextRun}}<span class="schedule-next">Next {{.NextRun}}</span>{{end}}
+                        {{else}}<span class="schedule-off">Schedule off</span>{{end}}
+                    </td>
+                    <td class="last-backup-cell last-backup-cell--{{.Status}}">
+                        {{if .LastBackup}}{{timeAgo .LastBackup}}{{else}}never{{end}}
+                    </td>
+                    <td class="verify-cell">
+                        {{if .VerifyOK}}
+                        <span class="badge badge-ok" title="{{.LastVerifyDetail}}">verified</span>
+                        {{else if .VerifyFailed}}
+                        <span class="badge badge-stale" title="{{.LastVerifyDetail}}">verify failed</span>
+                        {{else if .LastVerifyStatus}}
+                        <span class="badge badge-disabled" title="{{.LastVerifyDetail}}">{{.LastVerifyStatus}}</span>
+                        {{else if .VerifyEnabled}}
+                        <span class="text-muted" title="Runs automatically after each backup">pending</span>
+                        {{else}}
+                        <span class="text-muted">off</span>
+                        {{end}}
+                    </td>
+                    <td class="status-cell">
+                        {{if .Running}}
+                        {{if .Stale}}<span class="badge badge-stale">stalled</span>{{else}}<span class="badge badge-running">running</span>{{end}}
+                        <div class="progress-bar-indeterminate{{if .Stale}} progress-bar-stale{{end}}"></div>
+                        <div class="backup-progress-meta">{{.Phase}} &middot; {{if .SpeedHuman}}{{.SpeedHuman}} &middot; {{end}}{{.BytesHuman}} &middot; {{formatNumber .FilesProcessed}} files &middot; {{.ElapsedHuman}}</div>
+                        {{if gt .DedupPercent 10.0}}<div class="backup-progress-dedup">{{printf "%.0f" .DedupPercent}}% dedup</div>{{end}}
+                        {{else}}
+                        <span class="badge {{if eq .Status "ok"}}badge-ok{{else if eq .Status "overdue"}}badge-stale{{else if eq .Status "pending"}}badge-pending{{else if eq .Status "disabled"}}badge-disabled{{else}}badge-never{{end}}">{{.Status}}</span>
+                        {{end}}
+                    </td>
+                    <td class="col-actions" onclick="event.stopPropagation()">
+                        <button class="action-icon action-icon-run" title="Backup Now" onclick="runBackupNow('{{.ID}}', this)" {{if eq .Status "pending"}}disabled{{end}}>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                        </button>
+                    </td>
+                </tr>
+                {{end}}
+            </tbody>
+        </table>
+    </div>
+</div>
+{{end}}
+
+<!-- New Backup Job Dialog -->
+<div id="new-job-dialog" class="dialog-overlay" style="display:none" role="dialog" aria-modal="true" aria-labelledby="new-job-title">
+    <div class="dialog-box dialog-lg">
+        <div class="dialog-header">
+            <h2 id="new-job-title">New Backup Job</h2>
+            <button type="button" class="dialog-close" onclick="closeNewJobDialog()" aria-label="Close">&times;</button>
+        </div>
+        <div class="dialog-body">
+            <form id="new-job-form" onsubmit="submitNewJob(event)">
+                <div class="form-stepper-track" aria-hidden="true">
+                    <div class="form-stepper-step active" data-step="1">1. Type</div>
+                    <div class="form-stepper-step" data-step="2">2. Source</div>
+                    <div class="form-stepper-step" data-step="3">3. Schedule</div>
+                </div>
+
+                <div class="form-step active" data-step="1">
+                    <p class="form-hint" style="margin-bottom:0.75rem;">Choose what you want to protect.</p>
+                    <div class="job-type-grid">
+                        <div class="job-type-card selected" data-type="files">
+                            <strong>Files &amp; Directories</strong>
+                            <span>Backup paths from a remote agent (Windows or Linux).</span>
+                        </div>
+                    </div>
+                    <select id="job-type" required style="display:none;">
+                        <option value="files" selected>Files & Directories</option>
+                    </select>
+                </div>
+
+                <div class="form-step" data-step="2">
+                <div class="form-group">
+                    <label for="job-name">Job Name</label>
+                    <input type="text" id="job-name" placeholder="e.g. web-configs-daily" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="job-agent">Agent</label>
+                    <select id="job-agent" required onchange="onAgentSelected()">
+                        <option value="">Select agent...</option>
+                    </select>
+                </div>
+
+                <select id="job-repo" required style="display:none;">
+                    <option value="">Select repository...</option>
+                </select>
+
+                <!-- File-based source -->
+                <div id="job-file-source">
+                    <div class="form-group">
+                        <label>Backup Paths</label>
+                        <div id="job-fs-tree" class="fs-tree" style="max-height:250px; overflow-y:auto; border:1px solid var(--border); border-radius:4px; padding:0.5rem;">
+                            <div style="color:var(--text-muted); font-style:italic;">Select an agent to browse filesystem.</div>
+                        </div>
+                        <div id="job-selected-paths" style="margin-top:0.5rem; font-size:0.85rem; color:var(--text-muted);"></div>
+                    </div>
+                    <div class="form-group">
+                        <label for="job-excludes">Exclude Patterns (optional)</label>
+                        <input type="text" id="job-excludes" placeholder="*.tmp, *.log">
+                        <span class="form-hint">Comma-separated glob patterns.</span>
+                    </div>
+                    <div class="form-group" id="job-vss-group" style="display:none;">
+                        <label style="display:flex; align-items:center; gap:0.5rem;">
+                            <input type="checkbox" id="job-use-vss">
+                            Consistent snapshot (VSS / LVM / btrfs)
+                        </label>
+                        <span class="form-hint">Reads from a volume snapshot for crash-consistent open files. Windows: VSS. Linux: LVM or btrfs when available (agent needs privileges).</span>
+                    </div>
+                </div>
+</div>
+
+                <div class="form-step" data-step="3">
+                <div class="form-group">
+                    <label for="job-repo-step">Repository</label>
+                    <select id="job-repo-step" onchange="document.getElementById('job-repo').value=this.value" required>
+                        <option value="">Select repository...</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label style="display:flex; align-items:center; gap:0.5rem;">
+                        <input type="checkbox" id="job-sched-enabled" checked>
+                        Enable scheduled backups
+                    </label>
+                    <div style="display:flex; gap:1rem; margin-top:0.5rem;">
+                        <label style="display:flex; align-items:center; gap:0.3rem;">
+                            <input type="radio" name="new-sched-mode" value="interval" checked
+                                   onchange="toggleNewJobSchedMode();">
+                            Interval
+                        </label>
+                        <label style="display:flex; align-items:center; gap:0.3rem;">
+                            <input type="radio" name="new-sched-mode" value="schedule"
+                                   onchange="toggleNewJobSchedMode();">
+                            Schedule
+                        </label>
+                        <label style="display:flex; align-items:center; gap:0.3rem;">
+                            <input type="radio" name="new-sched-mode" value="cron"
+                                   onchange="toggleNewJobSchedMode();">
+                            Advanced
+                        </label>
+                    </div>
+                    <div id="new-interval-inputs" style="margin-top:0.5rem;">
+                        <label style="display:flex; align-items:center; gap:0.5rem;">
+                            Every
+                            <input type="number" id="job-sched-hours" value="24" min="1" max="8760" style="width:5rem;">
+                            hours
+                        </label>
+                    </div>
+                    <div id="new-schedule-inputs" style="display:none; margin-top:0.5rem;">
+                        <label style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.75rem;">
+                            Frequency
+                            <select id="new-sched-frequency" style="width:10rem;" onchange="toggleNewFrequencyDetails(); updateNewSchedulePreview();">
+                                <option value="daily">Daily</option>
+                                <option value="weekly">Weekly</option>
+                                <option value="monthly">Monthly</option>
+                            </select>
+                        </label>
+                        <label style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.75rem;">
+                            Time
+                            <select id="new-sched-hour" style="width:4rem;" onchange="updateNewSchedulePreview();">
+                                <option value="12">12</option>
+                                <option value="1">1</option>
+                                <option value="2" selected>2</option>
+                                <option value="3">3</option>
+                                <option value="4">4</option>
+                                <option value="5">5</option>
+                                <option value="6">6</option>
+                                <option value="7">7</option>
+                                <option value="8">8</option>
+                                <option value="9">9</option>
+                                <option value="10">10</option>
+                                <option value="11">11</option>
+                            </select>
+                            :
+                            <select id="new-sched-minute" style="width:4.5rem;" onchange="updateNewSchedulePreview();">
+                                <option value="0">00</option>
+                                <option value="15">15</option>
+                                <option value="30">30</option>
+                                <option value="45">45</option>
+                            </select>
+                            <select id="new-sched-ampm" style="width:4.5rem;" onchange="updateNewSchedulePreview();">
+                                <option value="AM" selected>AM</option>
+                                <option value="PM">PM</option>
+                            </select>
+                        </label>
+                        <div id="new-sched-dow-group" style="display:none; margin-bottom:0.75rem;">
+                            <div style="font-size:0.85rem; color:var(--text-muted); margin-bottom:0.4rem;">Days of week</div>
+                            <div style="display:flex; gap:0.3rem; flex-wrap:wrap;">
+                                <label class="dow-toggle" style="display:inline-flex; align-items:center; justify-content:center; width:2.8rem; height:2rem; border-radius:4px; cursor:pointer; border:1px solid var(--border); font-size:0.8rem; user-select:none; background:transparent; color:var(--text);">
+                                    <input type="checkbox" value="1" onchange="updateNewDowStyle(this); updateNewSchedulePreview();" style="display:none;">
+                                    <span>Mon</span>
+                                </label>
+                                <label class="dow-toggle" style="display:inline-flex; align-items:center; justify-content:center; width:2.8rem; height:2rem; border-radius:4px; cursor:pointer; border:1px solid var(--border); font-size:0.8rem; user-select:none; background:transparent; color:var(--text);">
+                                    <input type="checkbox" value="2" onchange="updateNewDowStyle(this); updateNewSchedulePreview();" style="display:none;">
+                                    <span>Tue</span>
+                                </label>
+                                <label class="dow-toggle" style="display:inline-flex; align-items:center; justify-content:center; width:2.8rem; height:2rem; border-radius:4px; cursor:pointer; border:1px solid var(--border); font-size:0.8rem; user-select:none; background:transparent; color:var(--text);">
+                                    <input type="checkbox" value="3" onchange="updateNewDowStyle(this); updateNewSchedulePreview();" style="display:none;">
+                                    <span>Wed</span>
+                                </label>
+                                <label class="dow-toggle" style="display:inline-flex; align-items:center; justify-content:center; width:2.8rem; height:2rem; border-radius:4px; cursor:pointer; border:1px solid var(--border); font-size:0.8rem; user-select:none; background:transparent; color:var(--text);">
+                                    <input type="checkbox" value="4" onchange="updateNewDowStyle(this); updateNewSchedulePreview();" style="display:none;">
+                                    <span>Thu</span>
+                                </label>
+                                <label class="dow-toggle" style="display:inline-flex; align-items:center; justify-content:center; width:2.8rem; height:2rem; border-radius:4px; cursor:pointer; border:1px solid var(--border); font-size:0.8rem; user-select:none; background:transparent; color:var(--text);">
+                                    <input type="checkbox" value="5" onchange="updateNewDowStyle(this); updateNewSchedulePreview();" style="display:none;">
+                                    <span>Fri</span>
+                                </label>
+                                <label class="dow-toggle" style="display:inline-flex; align-items:center; justify-content:center; width:2.8rem; height:2rem; border-radius:4px; cursor:pointer; border:1px solid var(--border); font-size:0.8rem; user-select:none; background:transparent; color:var(--text);">
+                                    <input type="checkbox" value="6" onchange="updateNewDowStyle(this); updateNewSchedulePreview();" style="display:none;">
+                                    <span>Sat</span>
+                                </label>
+                                <label class="dow-toggle" style="display:inline-flex; align-items:center; justify-content:center; width:2.8rem; height:2rem; border-radius:4px; cursor:pointer; border:1px solid var(--border); font-size:0.8rem; user-select:none; background:transparent; color:var(--text);">
+                                    <input type="checkbox" value="0" onchange="updateNewDowStyle(this); updateNewSchedulePreview();" style="display:none;">
+                                    <span>Sun</span>
+                                </label>
+                            </div>
+                            <div id="new-sched-dow-error" style="font-size:0.8rem; color:var(--danger); margin-top:0.3rem; display:none;">Select at least one day.</div>
+                        </div>
+                        <div id="new-sched-dom-group" style="display:none; margin-bottom:0.75rem;">
+                            <label style="display:flex; align-items:center; gap:0.5rem;">
+                                Day of month
+                                <select id="new-sched-dom" style="width:5rem;" onchange="updateNewSchedulePreview();"></select>
+                            </label>
+                        </div>
+                        <div id="new-schedule-preview" style="font-size:0.85rem; color:var(--text-muted); margin:0 0 0.5rem 0;"></div>
+                    </div>
+                    <div id="new-cron-inputs" style="display:none; margin-top:0.5rem;">
+                        <label style="display:flex; align-items:center; gap:0.5rem;">
+                            Expression
+                            <input type="text" id="job-cron-expr" placeholder="0 2 * * *" style="width:12rem; font-family:monospace;" onblur="validateNewCron();">
+                        </label>
+                        <div id="new-cron-preview" style="font-size:0.85rem; color:var(--text-muted); margin-top:0.25rem;"></div>
+                    </div>
+                    <div id="new-tz-inputs" style="display:none; margin-top:0.5rem;">
+                        <label style="display:flex; align-items:center; gap:0.5rem;">
+                            Timezone
+                            <select id="job-timezone" style="width:16rem;">
+                                <option value="">Server local</option>
+                            </select>
+                        </label>
+                    </div>
+                </div>
+                </div>
+                <div id="new-job-error" class="form-error" style="display:none"></div>
+                <div class="dialog-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeNewJobDialog()">Cancel</button>
+                    <button type="button" class="btn btn-secondary" id="wizard-back" style="display:none">Back</button>
+                    <button type="button" class="btn" id="wizard-next">Next</button>
+                    <button type="submit" class="btn" id="new-job-btn" style="display:none">Create Job</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+// Load agents and repos for dropdowns.
+(function() {
+    fetch('/api/agents').then(function(r) { return r.json(); }).then(function(agents) {
+        var sel = document.getElementById('job-agent');
+        agents.forEach(function(a) {
+            var opt = document.createElement('option');
+            opt.value = a.name;
+            opt.textContent = a.name;
+            sel.appendChild(opt);
+        });
+    });
+    fetch('/api/repos').then(function(r) { return r.json(); }).then(function(repos) {
+        ['job-repo', 'job-repo-step'].forEach(function(id) {
+            var sel = document.getElementById(id);
+            if (!sel) return;
+            repos.forEach(function(repo) {
+                var opt = document.createElement('option');
+                opt.value = repo.name;
+                opt.textContent = repo.name;
+                sel.appendChild(opt);
+            });
+        });
+    });
+})();
+
+function selectJobType(type) {
+    var select = document.getElementById('job-type');
+    if (select) select.value = type;
+    document.querySelectorAll('.job-type-card').forEach(function (card) {
+        card.classList.toggle('selected', card.getAttribute('data-type') === type);
+    });
+    if (typeof toggleJobTypeFields === 'function') toggleJobTypeFields();
+}
+
+function openNewJobDialog(presetType) {
+    document.getElementById('new-job-dialog').style.display = 'flex';
+    if (window.HitStorWizard) HitStorWizard.init();
+    if (presetType) selectJobType(presetType);
+}
+
+function closeNewJobDialog() {
+    document.getElementById('new-job-dialog').style.display = 'none';
+    document.getElementById('new-job-form').reset();
+    document.getElementById('new-job-error').style.display = 'none';
+    document.getElementById('job-fs-tree').innerHTML = '<div style="color:var(--text-muted); font-style:italic;">Select an agent to browse filesystem.</div>';
+    document.getElementById('job-selected-paths').textContent = '';
+    if (window.HitStorWizard) HitStorWizard.reset();
+}
+
+
+
+function onAgentSelected() {
+    var agentName = document.getElementById('job-agent').value;
+    var tree = document.getElementById('job-fs-tree');
+    var vssGroup = document.getElementById('job-vss-group');
+    if (!agentName) {
+        tree.innerHTML = '<div style="color:var(--text-muted); font-style:italic;">Select an agent to browse filesystem.</div>';
+        vssGroup.style.display = 'none';
+        return;
+    }
+    tree.innerHTML = '<div style="color:var(--text-muted); font-style:italic;">Loading filesystem...</div>';
+    loadJobTree(tree, '', agentName);
+    vssGroup.style.display = '';
+}
+
+function loadJobTree(parentEl, path, agentName) {
+    fetch('/api/agents/' + encodeURIComponent(agentName) + '/browse', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({path: path})
+    })
+    .then(function(r) {
+        if (!r.ok) return r.text().then(function(t) { throw new Error(t); });
+        return r.json();
+    })
+    .then(function(entries) { renderJobEntries(parentEl, entries, agentName); })
+    .catch(function(err) {
+        parentEl.innerHTML = '<div style="color:var(--danger);">Error: ' + err.message + '</div>';
+    });
+}
+
+function isAncestorChecked(el) {
+    var p = el.closest('.fs-children');
+    while (p) {
+        var parentNode = p.closest('.fs-node');
+        if (!parentNode) break;
+        var parentCb = parentNode.querySelector(':scope > .fs-row > .fs-check');
+        if (parentCb && parentCb.checked) return true;
+        p = parentNode.closest('.fs-children');
+    }
+    return false;
+}
+
+function cascadeCheck(nodeEl, checked) {
+    nodeEl.querySelectorAll('.fs-check').forEach(function(cb) { cb.checked = checked; });
+}
+
+function renderJobEntries(parentEl, entries, agentName) {
+    parentEl.innerHTML = '';
+    var parentChecked = isAncestorChecked(parentEl);
+    entries.forEach(function(entry) {
+        var node = document.createElement('div');
+        node.className = 'fs-node';
+
+        var row = document.createElement('div');
+        row.className = 'fs-row';
+
+        if (entry.is_dir && entry.has_children) {
+            var expand = document.createElement('span');
+            expand.className = 'fs-expand';
+            expand.textContent = '\u25B8';
+            node.appendChild(expand);
+        } else {
+            var spacer = document.createElement('span');
+            spacer.className = 'fs-expand';
+            if (entry.is_dir) { spacer.textContent = '\u25B8'; spacer.style.opacity = '0.3'; }
+            node.appendChild(spacer);
+        }
+
+        if (entry.is_dir) {
+            var cb = document.createElement('input');
+            cb.type = 'checkbox';
+            cb.dataset.path = entry.path;
+            cb.className = 'fs-check';
+            if (parentChecked) cb.checked = true;
+            cb.onchange = function() { cascadeCheck(node, cb.checked); updateJobPaths(); };
+            row.appendChild(cb);
+        }
+
+        var icon = document.createElement('span');
+        icon.className = 'fs-icon';
+        icon.textContent = entry.is_dir ? '\uD83D\uDCC1' : '\uD83D\uDCC4';
+        row.appendChild(icon);
+
+        var label = document.createElement('span');
+        label.className = entry.is_dir ? 'fs-label fs-label-dir' : 'fs-label fs-label-file';
+        label.textContent = entry.name;
+        if (!entry.readable) { label.style.opacity = '0.4'; label.title = 'Not readable'; }
+        row.appendChild(label);
+
+        node.appendChild(row);
+
+        var children = document.createElement('div');
+        children.className = 'fs-children';
+        children.style.display = 'none';
+        node.appendChild(children);
+
+        if (entry.is_dir && entry.has_children) {
+            expand.onclick = function(e) { e.stopPropagation(); toggleJobDir(node, entry.path, expand, agentName); };
+            row.ondblclick = function(e) { e.stopPropagation(); toggleJobDir(node, entry.path, expand, agentName); };
+        }
+
+        parentEl.appendChild(node);
+    });
+}
+
+function toggleJobDir(nodeEl, path, expandBtn, agentName) {
+    var children = nodeEl.querySelector('.fs-children');
+    if (children.style.display === 'none') {
+        if (children.children.length === 0) {
+            children.innerHTML = '<div style="color:var(--text-muted); font-style:italic; padding:3px 4px;">Loading...</div>';
+            loadJobTree(children, path, agentName);
+        }
+        children.style.display = '';
+        expandBtn.textContent = '\u25BE';
+        var icon = nodeEl.querySelector('.fs-icon');
+        if (icon) icon.textContent = '\uD83D\uDCC2';
+    } else {
+        children.style.display = 'none';
+        expandBtn.textContent = '\u25B8';
+        var icon = nodeEl.querySelector('.fs-icon');
+        if (icon) icon.textContent = '\uD83D\uDCC1';
+    }
+}
+
+function getJobSelectedPaths() {
+    var all = [];
+    document.querySelectorAll('#job-fs-tree .fs-check:checked').forEach(function(cb) {
+        all.push(cb.dataset.path);
+    });
+    all.sort();
+    var paths = [];
+    for (var i = 0; i < all.length; i++) {
+        var dominated = false;
+        for (var j = 0; j < paths.length; j++) {
+            if (all[i].indexOf(paths[j] + '/') === 0 || all[i].indexOf(paths[j] + '\\') === 0) { dominated = true; break; }
+        }
+        if (!dominated) paths.push(all[i]);
+    }
+    return paths;
+}
+
+function updateJobPaths() {
+    var paths = getJobSelectedPaths();
+    var el = document.getElementById('job-selected-paths');
+    el.textContent = paths.length > 0 ? 'Selected: ' + paths.join(', ') : '';
+}
+
+function toggleJobTypeFields() {
+    var type = document.getElementById('job-type').value || 'files';
+    var fileSrc = document.getElementById('job-file-source');
+    if (fileSrc) fileSrc.style.display = type === 'files' ? '' : 'none';
+    var agentGroup = document.getElementById('job-agent') && document.getElementById('job-agent').closest('.form-group');
+    if (agentGroup) {
+        agentGroup.style.display = '';
+        document.getElementById('job-agent').setAttribute('required', 'required');
+    }
+}
+
+
+
+function submitNewJob(e) {
+    e.preventDefault();
+
+    var repoStep = document.getElementById('job-repo-step');
+    if (repoStep) document.getElementById('job-repo').value = repoStep.value;
+
+    var errEl = document.getElementById('new-job-error');
+    var paths = getJobSelectedPaths();
+    if (paths.length === 0) {
+        errEl.textContent = 'Select at least one backup path.';
+        errEl.style.display = '';
+        return;
+    }
+
+    var excludesStr = document.getElementById('job-excludes').value.trim();
+    var excludes = excludesStr ? excludesStr.split(',').map(function(s) { return s.trim(); }).filter(Boolean) : [];
+
+    var mode = document.querySelector('input[name="new-sched-mode"]:checked').value;
+    var cronExpr = '';
+    if (mode === 'schedule') {
+        cronExpr = buildNewCronFromVisual();
+        if (!cronExpr) return;
+    } else if (mode === 'cron') {
+        cronExpr = document.getElementById('job-cron-expr').value.trim();
+    }
+
+    var agentName = document.getElementById('job-agent').value;
+    if (!agentName) {
+        errEl.textContent = 'Select an agent for this backup job.';
+        errEl.style.display = '';
+        return;
+    }
+
+    var body = {
+        name: document.getElementById('job-name').value.trim(),
+        job_type: 'files',
+        agent_name: agentName,
+        repo_name: document.getElementById('job-repo').value,
+        paths: paths,
+        excludes: excludes,
+        schedule_enabled: document.getElementById('job-sched-enabled').checked,
+        schedule_hours: parseInt(document.getElementById('job-sched-hours').value) || 24,
+        cron_expression: cronExpr,
+        timezone: (mode === 'cron' || mode === 'schedule') ? (document.getElementById('job-timezone').value) : '',
+        use_vss: document.getElementById('job-use-vss').checked
+    };
+
+    errEl.style.display = 'none';
+    document.getElementById('new-job-btn').disabled = true;
+    document.getElementById('new-job-btn').textContent = 'Creating...';
+
+    fetch('/api/backups', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(body)
+    }).then(function(r) {
+        if (!r.ok) return r.text().then(function(t) { throw new Error(t || r.statusText); });
+        return r.json();
+    }).then(function() {
+        window.location.reload();
+    }).catch(function(err) {
+        errEl.textContent = err.message || String(err);
+        errEl.style.display = '';
+        document.getElementById('new-job-btn').disabled = false;
+        document.getElementById('new-job-btn').textContent = 'Create Job';
+    });
+}
+
+function toggleNewJobSchedMode() {
+    var mode = document.querySelector('input[name="new-sched-mode"]:checked').value;
+    document.getElementById('new-interval-inputs').style.display = mode === 'interval' ? '' : 'none';
+    document.getElementById('new-schedule-inputs').style.display = mode === 'schedule' ? '' : 'none';
+    document.getElementById('new-cron-inputs').style.display = mode === 'cron' ? '' : 'none';
+    document.getElementById('new-tz-inputs').style.display = mode === 'interval' ? 'none' : '';
+    if (mode === 'schedule') updateNewSchedulePreview();
+}
+
+function toggleNewFrequencyDetails() {
+    var freq = document.getElementById('new-sched-frequency').value;
+    document.getElementById('new-sched-dow-group').style.display = freq === 'weekly' ? '' : 'none';
+    document.getElementById('new-sched-dom-group').style.display = freq === 'monthly' ? '' : 'none';
+}
+
+function buildNewCronFromVisual() {
+    var freq = document.getElementById('new-sched-frequency').value;
+    var hour = parseInt(document.getElementById('new-sched-hour').value);
+    var minute = parseInt(document.getElementById('new-sched-minute').value);
+    var ampm = document.getElementById('new-sched-ampm').value;
+    if (ampm === 'PM' && hour !== 12) hour += 12;
+    if (ampm === 'AM' && hour === 12) hour = 0;
+    if (freq === 'daily') return minute + ' ' + hour + ' * * *';
+    if (freq === 'weekly') {
+        var days = [];
+        document.querySelectorAll('#new-sched-dow-group input[type=checkbox]:checked').forEach(function(cb) { days.push(cb.value); });
+        if (days.length === 0) {
+            document.getElementById('new-sched-dow-error').style.display = '';
+            return '';
+        }
+        document.getElementById('new-sched-dow-error').style.display = 'none';
+        return minute + ' ' + hour + ' * * ' + days.join(',');
+    }
+    if (freq === 'monthly') {
+        var dom = document.getElementById('new-sched-dom').value || '1';
+        return minute + ' ' + hour + ' ' + dom + ' * *';
+    }
+    return '';
+}
+
+function updateNewSchedulePreview() {
+    var expr = buildNewCronFromVisual();
+    var preview = document.getElementById('new-schedule-preview');
+    if (!expr) { preview.textContent = ''; return; }
+    var tz = document.getElementById('job-timezone').value;
+    var url = '/api/backups/validate-cron?expr=' + encodeURIComponent(expr);
+    if (tz) url += '&tz=' + encodeURIComponent(tz);
+    fetch(url).then(function(r) { return r.json(); }).then(function(data) {
+        if (data.valid) {
+            var text = data.description;
+            if (data.next_3 && data.next_3.length > 0) text += ' — Next: ' + data.next_3[0];
+            preview.style.color = 'var(--text-muted)';
+            preview.textContent = text;
+        } else {
+            preview.style.color = 'var(--danger)';
+            preview.textContent = 'Invalid expression';
+        }
+    }).catch(function() { preview.textContent = ''; });
+}
+
+function updateNewDowStyle(cb) {
+    var label = cb.closest('.dow-toggle');
+    if (!label) return;
+    if (cb.checked) {
+        label.style.background = 'var(--primary)';
+        label.style.color = '#fff';
+        label.style.borderColor = 'var(--primary)';
+    } else {
+        label.style.background = 'transparent';
+        label.style.color = 'var(--text)';
+        label.style.borderColor = 'var(--border)';
+    }
+}
+
+function validateNewCron() {
+    var expr = document.getElementById('job-cron-expr').value.trim();
+    var preview = document.getElementById('new-cron-preview');
+    if (!expr) { preview.textContent = ''; return; }
+    var tz = document.getElementById('job-timezone').value;
+    var url = '/api/backups/validate-cron?expr=' + encodeURIComponent(expr);
+    if (tz) url += '&tz=' + encodeURIComponent(tz);
+    fetch(url).then(function(r) { return r.json(); }).then(function(data) {
+        if (data.valid) {
+            preview.style.color = 'var(--text-muted)';
+            var text = data.description;
+            if (data.next_3 && data.next_3.length > 0) {
+                text += ' — Next: ' + data.next_3[0];
+            }
+            preview.textContent = text;
+        } else {
+            preview.style.color = 'var(--danger)';
+            preview.textContent = 'Invalid expression';
+        }
+    }).catch(function() {
+        preview.textContent = '';
+    });
+}
+
+// Populate day-of-month dropdown for new job dialog.
+(function() {
+    var sel = document.getElementById('new-sched-dom');
+    for (var i = 1; i <= 31; i++) {
+        var opt = document.createElement('option');
+        opt.value = i;
+        opt.textContent = i;
+        sel.appendChild(opt);
+    }
+})();
+
+// Load timezone dropdown for new job dialog.
+(function() {
+    fetch('/api/timezones').then(function(r) { return r.json(); }).then(function(tzList) {
+        var sel = document.getElementById('job-timezone');
+        tzList.forEach(function(tz) {
+            var opt = document.createElement('option');
+            opt.value = tz;
+            opt.textContent = tz;
+            sel.appendChild(opt);
+        });
+    });
+})();
+
+function runBackupNow(jobID, btn) {
+    var forceFull = confirm('Force a full re-scan? (OK = full re-scan, Cancel = incremental)');
+    if (!confirm('Trigger an immediate ' + (forceFull ? 'full' : 'incremental') + ' backup?')) return;
+    btn.disabled = true;
+    btn.style.opacity = '0.4';
+    fetch('/api/backups/' + jobID + '/run', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({force_full: forceFull})
+    })
+    .then(function(r) {
+        if (!r.ok) return r.text().then(function(t) { throw new Error(t); });
+        // Optimistic UI: immediately show running state
+        var row = btn.closest('tr');
+        if (row) {
+            var statusCell = row.querySelectorAll('td')[6]; // Status column (7th)
+            if (statusCell) {
+                statusCell.innerHTML = '<span class="badge badge-running">running</span>' +
+                    '<div class="progress-bar-indeterminate"></div>' +
+                    '<div style="font-size:0.75rem; color:var(--text-muted); margin-top:2px;">starting\u2026</div>';
+            }
+        }
+        // Pause htmx polling so the progress bar stays visible
+        var table = document.getElementById('backups-table');
+        if (table) {
+            table.removeAttribute('hx-trigger');
+            table.removeAttribute('hx-get');
+            htmx.process(table);
+        }
+        // Poll the API manually to update progress, then resume htmx
+        var pollCount = 0;
+        var maxPolls = 15;
+        var pollInterval = setInterval(function() {
+            pollCount++;
+            fetch('/api/active-backups')
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                var sess = null;
+                if (data.sessions) {
+                    for (var i = 0; i < data.sessions.length; i++) {
+                        if (data.sessions[i].job_id === jobID) { sess = data.sessions[i]; break; }
+                    }
+                }
+                if (row) {
+                    var sc = row.querySelectorAll('td')[6];
+                    if (sc && sess) {
+                        sc.innerHTML = '<span class="badge badge-running">running</span>' +
+                            '<div class="progress-bar-indeterminate"></div>' +
+                            '<div style="font-size:0.75rem; color:var(--text-muted); margin-top:2px;">' +
+                            sess.phase + ' \u00b7 ' + sess.bytes_human + ' \u00b7 ' + sess.elapsed_human + '</div>';
+                    } else if (sc && pollCount >= 3) {
+                        // Backup finished — show completion briefly
+                        sc.innerHTML = '<span class="badge badge-ok">ok</span>' +
+                            '<div style="font-size:0.75rem; color:#10b981; margin-top:2px;">completed</div>';
+                        clearInterval(pollInterval);
+                        // Resume htmx polling after 3s
+                        setTimeout(function() {
+                            if (table) {
+                                table.setAttribute('hx-get', '/backups');
+                                table.setAttribute('hx-trigger', 'every 2s');
+                                table.setAttribute('hx-select', '.table-wrap.backups-table');
+                                table.setAttribute('hx-swap', 'outerHTML');
+                                htmx.process(table);
+                            }
+                        }, 3000);
+                        return;
+                    }
+                }
+                if (pollCount >= maxPolls) {
+                    clearInterval(pollInterval);
+                    if (table) {
+                        table.setAttribute('hx-get', '/backups');
+                        table.setAttribute('hx-trigger', 'every 2s');
+                        table.setAttribute('hx-select', '.table-wrap.backups-table');
+                        table.setAttribute('hx-swap', 'outerHTML');
+                        htmx.process(table);
+                    }
+                }
+            });
+        }, 1000);
+    })
+    .catch(function(err) {
+        alert('Error: ' + err.message);
+        btn.disabled = false;
+        btn.style.opacity = '';
+    });
+}
+
+</script>
+{{end}}

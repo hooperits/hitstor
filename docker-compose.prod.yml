@@ -1,0 +1,25 @@
+services:
+  hitstor:
+    build:
+      context: .
+      args:
+        VERSION: "${HITSTOR_VERSION:-dev}"
+    image: hitstor:${HITSTOR_VERSION:-latest}
+    ports:
+      - "8420:8420"    # gRPC server
+      - "8421:8421"    # Web dashboard
+    volumes:
+      - hitstor-data:/var/lib/hitstor
+      - ./config:/etc/hitstor:ro
+    environment:
+      - HITSTOR_PASSWORD=${HITSTOR_PASSWORD:-}
+      - HITSTOR_REPO=/var/lib/hitstor/repo
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8421/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+volumes:
+  hitstor-data:

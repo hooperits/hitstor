@@ -1,0 +1,34 @@
+# HitStor Agent Configuration
+#
+# Copy this file to /etc/hitstor/agent-config.yaml and edit as needed.
+# Environment variables in agent.env take precedence over this file.
+
+# Remote server address (required).
+# agent_server: backup-server.internal:8420
+
+# Agent API key (required). Obtain from: hitstor serve agent add <name>
+# agent_api_key: <64-char-hex-key>
+
+# CA certificate for TLS verification.
+# If omitted, the system CA bundle is used.
+# agent_ca_cert: /etc/hitstor/ca.crt
+
+# Override hostname sent to server (default: system hostname).
+# agent_hostname: my-server
+
+# Default backup paths.
+# agent_paths:
+#   - /etc
+#   - /home
+#   - /var/lib
+
+# Exclude patterns for backup.
+# agent_excludes:
+#   - "*.tmp"
+#   - ".cache"
+
+# Filesystem scanner plugin. The built-in FS scanner plugin is shipped with
+# the agent and installed to the plugin directory by default packages.
+# Use "builtin" (or leave empty for legacy in-process fallback).
+# fs_scanner_plugin: "builtin"
+# plugin_dir: /usr/lib/hitstor/plugins

@@ -1,0 +1,84 @@
+#!/bin/sh
+set -e
+
+HITSTOR_VERSION="__VERSION__"
+
+echo ""
+echo "HitStor Agent v${HITSTOR_VERSION} Installer"
+echo "================================"
+echo ""
+
+# Require root.
+if [ "$(id -u)" -ne 0 ]; then
+    echo "Error: this installer must be run as root (use sudo)" >&2
+    exit 1
+fi
+
+# Check Linux.
+if [ "$(uname -s)" != "Linux" ]; then
+    echo "Error: this installer is for Linux only" >&2
+    exit 1
+fi
+
+# Check systemd.
+if ! command -v systemctl >/dev/null 2>&1; then
+    echo "Error: systemd is required but not found" >&2
+    exit 1
+fi
+
+# Extract payload to temp directory.
+TMPDIR=$(mktemp -d)
+trap 'rm -rf "$TMPDIR"' EXIT
+ARCHIVE=$(awk '/^__PAYLOAD_BELOW__$/{print NR + 1; exit 0;}' "$0")
+tail -n +"$ARCHIVE" "$0" | tar xz -C "$TMPDIR"
+
+# Stop existing service if running (upgrade case).
+if systemctl is-active --quiet hitstor-agent 2>/dev/null; then
+    systemctl stop hitstor-agent
+    echo "[*] Stopped existing hitstor-agent service"
+fi
+
+# Install binary.
+install -m 755 "$TMPDIR/hitstor-agent" /usr/bin/hitstor-agent
+echo "[+] Installed binary to /usr/bin/hitstor-agent"
+
+# Create config directory.
+mkdir -p /etc/hitstor
+echo "[+] Configuration directory ready"
+
+# Install systemd service and timer.
+install -m 644 "$TMPDIR/hitstor-agent.service" /usr/lib/systemd/system/
+install -m 644 "$TMPDIR/hitstor-agent.timer" /usr/lib/systemd/system/
+systemctl daemon-reload
+echo "[+] Systemd service and timer installed"
+
+# Install config examples (always overwrite examples on upgrade).
+install -m 644 "$TMPDIR/agent-config.yaml.example" /etc/hitstor/
+install -m 644 "$TMPDIR/agent.env.example" /etc/hitstor/
+
+# Create working config files only if they don't exist (preserve user edits).
+if [ ! -f /etc/hitstor/agent-config.yaml ]; then
+    install -m 600 "$TMPDIR/agent-config.yaml.example" /etc/hitstor/agent-config.yaml
+fi
+if [ ! -f /etc/hitstor/agent.env ]; then
+    install -m 600 "$TMPDIR/agent.env.example" /etc/hitstor/agent.env
+fi
+echo "[+] Configuration files ready"
+
+# Restart service if it was enabled (upgrade case).
+if systemctl is-enabled --quiet hitstor-agent 2>/dev/null; then
+    systemctl start hitstor-agent
+    echo "[+] Service restarted"
+fi
+
+echo ""
+echo "Installation complete!"
+echo ""
+echo "Next steps:"
+echo "  1. Edit configuration:  sudo nano /etc/hitstor/agent.env"
+echo "  2. Start daemon mode:   sudo systemctl enable --now hitstor-agent"
+echo "     Or use timer mode:   sudo systemctl enable --now hitstor-agent.timer"
+echo ""
+
+exit 0
+__PAYLOAD_BELOW__

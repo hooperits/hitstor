@@ -1,0 +1,21 @@
+[Unit]
+Description=HitStor Backup Agent
+Documentation=https://github.com/hooperits/hitstor
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=root
+ExecStart=/usr/bin/hitstor-agent daemon --config /etc/hitstor/agent-config.yaml
+EnvironmentFile=-/etc/hitstor/agent.env
+Restart=on-failure
+RestartSec=60
+
+# Security hardening.
+# Note: ProtectSystem and PrivateTmp are intentionally omitted because the
+# agent needs full filesystem write access for restore operations.
+NoNewPrivileges=true
+
+[Install]
+WantedBy=multi-user.target

@@ -17,6 +17,11 @@ var (
 )
 
 func main() {
+	// On Windows, detect if running as a service and enter service mode.
+	if runAsService() {
+		return
+	}
+
 	if err := rootCmd.Execute(); err != nil {
 		color := ui.NewColorWriter(os.Stderr, jsonFlag || quietFlag)
 		hint := ui.FormatError(err)

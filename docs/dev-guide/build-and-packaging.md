@@ -284,7 +284,7 @@ Windows installers are built with [NSIS](https://nsis.sourceforge.io/) using scr
 
 ### NSIS Scripts
 
-- `packaging/nsis/hitstor-server.nsi` — server installer (installs to `%PROGRAMFILES%\HitStor`, adds to PATH)
+- `packaging/nsis/hitstor-server.nsi` — server installer (installs to `%PROGRAMFILES%\HitStor`, adds to PATH, optional firewall rules and Windows Service registration; supports `/S`)
 - `packaging/nsis/hitstor-agent.nsi` — agent installer (installs to `%PROGRAMFILES%\HitStor Agent`, optional Windows Service registration)
 
 ## Docker Images

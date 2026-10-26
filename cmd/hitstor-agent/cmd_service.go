@@ -81,7 +81,7 @@ func runServiceInstall(cmd *cobra.Command, args []string) error {
 		svcArgs = append(svcArgs, "--config", configFlag)
 	}
 
-	if err := winsvc.Install(svcNameFlag, svcDisplayFlag, exePath, svcArgs); err != nil {
+	if err := winsvc.Install(svcNameFlag, svcDisplayFlag, "HitStor encrypted remote backup agent", exePath, svcArgs); err != nil {
 		return err
 	}
 

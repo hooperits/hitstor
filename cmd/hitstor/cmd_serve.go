@@ -329,8 +329,12 @@ func runServe(cmd *cobra.Command, args []string) error {
 		sigCh := make(chan os.Signal, 1)
 		signal.Notify(sigCh, shutdownSignals...)
 		go func() {
-			<-sigCh
-			slog.Info("received shutdown signal (unified mode)")
+			select {
+			case <-sigCh:
+				slog.Info("received shutdown signal (unified mode)")
+			case <-cmd.Context().Done():
+				slog.Info("service stop requested (unified mode)")
+			}
 			alertCancel()
 			srv.Stop()
 			httpSrv.Shutdown(context.Background())
@@ -398,13 +402,18 @@ func runServe(cmd *cobra.Command, args []string) error {
 		}()
 	}
 
-	// Graceful shutdown on SIGINT/SIGTERM.
+	// Graceful shutdown on SIGINT/SIGTERM, or when the command context is
+	// cancelled (Windows Service stop request).
 	sigCh := make(chan os.Signal, 1)
 	signal.Notify(sigCh, shutdownSignals...)
 
 	go func() {
-		<-sigCh
-		slog.Info("received shutdown signal")
+		select {
+		case <-sigCh:
+			slog.Info("received shutdown signal")
+		case <-cmd.Context().Done():
+			slog.Info("service stop requested")
+		}
 		alertCancel()
 		srv.Stop()
 		httpSrv.Shutdown(context.Background())

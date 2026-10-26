@@ -1,6 +1,6 @@
 //go:build windows
 
-// Package winsvc provides Windows Service management for the HitStor agent.
+// Package winsvc provides Windows Service management for the HitStor server and agent.
 package winsvc
 
 import (
@@ -19,8 +19,8 @@ func IsService() bool {
 	return ok
 }
 
-// Install registers the agent as a Windows Service.
-func Install(name, displayName, exePath string, args []string) error {
+// Install registers exePath (started with args) as an automatic-start Windows Service.
+func Install(name, displayName, description, exePath string, args []string) error {
 	m, err := mgr.Connect()
 	if err != nil {
 		return fmt.Errorf("connect to service manager: %w", err)
@@ -30,7 +30,7 @@ func Install(name, displayName, exePath string, args []string) error {
 	s, err := m.CreateService(name, exePath, mgr.Config{
 		DisplayName: displayName,
 		StartType:   mgr.StartAutomatic,
-		Description: "HitStor encrypted remote backup agent",
+		Description: description,
 	}, args...)
 	if err != nil {
 		return fmt.Errorf("create service: %w", err)
@@ -47,7 +47,7 @@ func Install(name, displayName, exePath string, args []string) error {
 	return nil
 }
 
-// Uninstall removes the agent Windows Service.
+// Uninstall removes the named Windows Service.
 func Uninstall(name string) error {
 	m, err := mgr.Connect()
 	if err != nil {

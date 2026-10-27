@@ -1,9 +1,10 @@
 # Workload Plugin Architecture
 
-> **Status: phase 1 implemented** (package format, signing, agent plugin
-> manager, `hitstor-agent plugin`, inventory reporting). **Phase 2 in
-> progress:** browse, backup items into snapshots, and workload jobs are
-> implemented; restore is next. Phases 3–4 are in design. The first plugin built on this architecture is Microsoft SQL Server
+> **Status: phases 1 and 2 implemented** (package format, signing, agent
+> plugin manager, inventory, browse, backup into snapshots, workload jobs,
+> and planned restore through the agent). Retention of backup chains
+> (`depends_on`), the SQL Server plugin (phase 3), and the dashboard UI
+> (phase 4) are next. The first plugin built on this architecture is Microsoft SQL Server
 > backup through the Virtual Device Interface (VDI).
 > It supersedes the "workload collector plugin type" entry under
 > [Permanently removed](../admin-guide/roadmap.md#permanently-removed-v200) in

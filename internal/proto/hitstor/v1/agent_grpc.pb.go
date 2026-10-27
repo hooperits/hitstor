@@ -25,16 +25,19 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	AgentService_Register_FullMethodName           = "/hitstor.v1.AgentService/Register"
-	AgentService_ListDirectory_FullMethodName      = "/hitstor.v1.AgentService/ListDirectory"
-	AgentService_Configure_FullMethodName          = "/hitstor.v1.AgentService/Configure"
-	AgentService_AgentInfo_FullMethodName          = "/hitstor.v1.AgentService/AgentInfo"
-	AgentService_RestoreData_FullMethodName        = "/hitstor.v1.AgentService/RestoreData"
-	AgentService_WakeUp_FullMethodName             = "/hitstor.v1.AgentService/WakeUp"
-	AgentService_FetchLogs_FullMethodName          = "/hitstor.v1.AgentService/FetchLogs"
-	AgentService_DiscoverDatabases_FullMethodName  = "/hitstor.v1.AgentService/DiscoverDatabases"
-	AgentService_CheckRecoveryMedia_FullMethodName = "/hitstor.v1.AgentService/CheckRecoveryMedia"
-	AgentService_BuildRecoveryMedia_FullMethodName = "/hitstor.v1.AgentService/BuildRecoveryMedia"
+	AgentService_Register_FullMethodName            = "/hitstor.v1.AgentService/Register"
+	AgentService_ListDirectory_FullMethodName       = "/hitstor.v1.AgentService/ListDirectory"
+	AgentService_Configure_FullMethodName           = "/hitstor.v1.AgentService/Configure"
+	AgentService_AgentInfo_FullMethodName           = "/hitstor.v1.AgentService/AgentInfo"
+	AgentService_RestoreData_FullMethodName         = "/hitstor.v1.AgentService/RestoreData"
+	AgentService_WakeUp_FullMethodName              = "/hitstor.v1.AgentService/WakeUp"
+	AgentService_FetchLogs_FullMethodName           = "/hitstor.v1.AgentService/FetchLogs"
+	AgentService_DiscoverDatabases_FullMethodName   = "/hitstor.v1.AgentService/DiscoverDatabases"
+	AgentService_CheckRecoveryMedia_FullMethodName  = "/hitstor.v1.AgentService/CheckRecoveryMedia"
+	AgentService_BuildRecoveryMedia_FullMethodName  = "/hitstor.v1.AgentService/BuildRecoveryMedia"
+	AgentService_BrowseWorkload_FullMethodName      = "/hitstor.v1.AgentService/BrowseWorkload"
+	AgentService_PlanWorkloadRestore_FullMethodName = "/hitstor.v1.AgentService/PlanWorkloadRestore"
+	AgentService_RestoreWorkload_FullMethodName     = "/hitstor.v1.AgentService/RestoreWorkload"
 )
 
 // AgentServiceClient is the client API for AgentService service.
@@ -80,6 +83,15 @@ type AgentServiceClient interface {
 	// cannot be produced server-side. Images run to hundreds of megabytes or
 	// more, hence a stream: neither side buffers the whole thing.
 	BuildRecoveryMedia(ctx context.Context, in *BuildRecoveryMediaRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[MediaChunk], error)
+	// BrowseWorkload lists the objects an installed workload plugin can back
+	// up, for the dashboard's object picker.
+	BrowseWorkload(ctx context.Context, in *BrowseWorkloadRequest, opts ...grpc.CallOption) (*BrowseWorkloadResponse, error)
+	// PlanWorkloadRestore asks an installed workload plugin which of the
+	// candidate items (found by the server in snapshots) to restore, in order.
+	PlanWorkloadRestore(ctx context.Context, in *PlanWorkloadRestoreRequest, opts ...grpc.CallOption) (*PlanWorkloadRestoreResponse, error)
+	// RestoreWorkload streams planned items from the server; the agent pipes
+	// them into the plugin, verifying each item's SHA-256 on the way.
+	RestoreWorkload(ctx context.Context, opts ...grpc.CallOption) (grpc.ClientStreamingClient[WorkloadRestoreMessage, WorkloadRestoreResponse], error)
 }
 
 type agentServiceClient struct {
@@ -202,6 +214,39 @@ func (c *agentServiceClient) BuildRecoveryMedia(ctx context.Context, in *BuildRe
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type AgentService_BuildRecoveryMediaClient = grpc.ServerStreamingClient[MediaChunk]
 
+func (c *agentServiceClient) BrowseWorkload(ctx context.Context, in *BrowseWorkloadRequest, opts ...grpc.CallOption) (*BrowseWorkloadResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(BrowseWorkloadResponse)
+	err := c.cc.Invoke(ctx, AgentService_BrowseWorkload_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *agentServiceClient) PlanWorkloadRestore(ctx context.Context, in *PlanWorkloadRestoreRequest, opts ...grpc.CallOption) (*PlanWorkloadRestoreResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(PlanWorkloadRestoreResponse)
+	err := c.cc.Invoke(ctx, AgentService_PlanWorkloadRestore_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *agentServiceClient) RestoreWorkload(ctx context.Context, opts ...grpc.CallOption) (grpc.ClientStreamingClient[WorkloadRestoreMessage, WorkloadRestoreResponse], error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	stream, err := c.cc.NewStream(ctx, &AgentService_ServiceDesc.Streams[2], AgentService_RestoreWorkload_FullMethodName, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &grpc.GenericClientStream[WorkloadRestoreMessage, WorkloadRestoreResponse]{ClientStream: stream}
+	return x, nil
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type AgentService_RestoreWorkloadClient = grpc.ClientStreamingClient[WorkloadRestoreMessage, WorkloadRestoreResponse]
+
 // AgentServiceServer is the server API for AgentService service.
 // All implementations must embed UnimplementedAgentServiceServer
 // for forward compatibility.
@@ -245,6 +290,15 @@ type AgentServiceServer interface {
 	// cannot be produced server-side. Images run to hundreds of megabytes or
 	// more, hence a stream: neither side buffers the whole thing.
 	BuildRecoveryMedia(*BuildRecoveryMediaRequest, grpc.ServerStreamingServer[MediaChunk]) error
+	// BrowseWorkload lists the objects an installed workload plugin can back
+	// up, for the dashboard's object picker.
+	BrowseWorkload(context.Context, *BrowseWorkloadRequest) (*BrowseWorkloadResponse, error)
+	// PlanWorkloadRestore asks an installed workload plugin which of the
+	// candidate items (found by the server in snapshots) to restore, in order.
+	PlanWorkloadRestore(context.Context, *PlanWorkloadRestoreRequest) (*PlanWorkloadRestoreResponse, error)
+	// RestoreWorkload streams planned items from the server; the agent pipes
+	// them into the plugin, verifying each item's SHA-256 on the way.
+	RestoreWorkload(grpc.ClientStreamingServer[WorkloadRestoreMessage, WorkloadRestoreResponse]) error
 	mustEmbedUnimplementedAgentServiceServer()
 }
 
@@ -284,6 +338,15 @@ func (UnimplementedAgentServiceServer) CheckRecoveryMedia(context.Context, *Chec
 }
 func (UnimplementedAgentServiceServer) BuildRecoveryMedia(*BuildRecoveryMediaRequest, grpc.ServerStreamingServer[MediaChunk]) error {
 	return status.Error(codes.Unimplemented, "method BuildRecoveryMedia not implemented")
+}
+func (UnimplementedAgentServiceServer) BrowseWorkload(context.Context, *BrowseWorkloadRequest) (*BrowseWorkloadResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method BrowseWorkload not implemented")
+}
+func (UnimplementedAgentServiceServer) PlanWorkloadRestore(context.Context, *PlanWorkloadRestoreRequest) (*PlanWorkloadRestoreResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method PlanWorkloadRestore not implemented")
+}
+func (UnimplementedAgentServiceServer) RestoreWorkload(grpc.ClientStreamingServer[WorkloadRestoreMessage, WorkloadRestoreResponse]) error {
+	return status.Error(codes.Unimplemented, "method RestoreWorkload not implemented")
 }
 func (UnimplementedAgentServiceServer) mustEmbedUnimplementedAgentServiceServer() {}
 func (UnimplementedAgentServiceServer) testEmbeddedByValue()                      {}
@@ -468,6 +531,49 @@ func _AgentService_BuildRecoveryMedia_Handler(srv interface{}, stream grpc.Serve
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type AgentService_BuildRecoveryMediaServer = grpc.ServerStreamingServer[MediaChunk]
 
+func _AgentService_BrowseWorkload_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(BrowseWorkloadRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AgentServiceServer).BrowseWorkload(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AgentService_BrowseWorkload_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AgentServiceServer).BrowseWorkload(ctx, req.(*BrowseWorkloadRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AgentService_PlanWorkloadRestore_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(PlanWorkloadRestoreRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AgentServiceServer).PlanWorkloadRestore(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AgentService_PlanWorkloadRestore_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AgentServiceServer).PlanWorkloadRestore(ctx, req.(*PlanWorkloadRestoreRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AgentService_RestoreWorkload_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(AgentServiceServer).RestoreWorkload(&grpc.GenericServerStream[WorkloadRestoreMessage, WorkloadRestoreResponse]{ServerStream: stream})
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type AgentService_RestoreWorkloadServer = grpc.ClientStreamingServer[WorkloadRestoreMessage, WorkloadRestoreResponse]
+
 // AgentService_ServiceDesc is the grpc.ServiceDesc for AgentService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -507,6 +613,14 @@ var AgentService_ServiceDesc = grpc.ServiceDesc{
 			MethodName: "CheckRecoveryMedia",
 			Handler:    _AgentService_CheckRecoveryMedia_Handler,
 		},
+		{
+			MethodName: "BrowseWorkload",
+			Handler:    _AgentService_BrowseWorkload_Handler,
+		},
+		{
+			MethodName: "PlanWorkloadRestore",
+			Handler:    _AgentService_PlanWorkloadRestore_Handler,
+		},
 	},
 	Streams: []grpc.StreamDesc{
 		{
@@ -518,6 +632,11 @@ var AgentService_ServiceDesc = grpc.ServiceDesc{
 			StreamName:    "BuildRecoveryMedia",
 			Handler:       _AgentService_BuildRecoveryMedia_Handler,
 			ServerStreams: true,
+		},
+		{
+			StreamName:    "RestoreWorkload",
+			Handler:       _AgentService_RestoreWorkload_Handler,
+			ClientStreams: true,
 		},
 	},
 	Metadata: "internal/proto/hitstor/v1/agent.proto",

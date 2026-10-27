@@ -41,6 +41,16 @@ service Workload {
   // Each item is sent as ItemStart, any number of data messages, and ItemEnd.
   // Returning a gRPC error fails the whole backup.
   rpc Backup(BackupRequest) returns (stream BackupMessage);
+
+  // PlanRestore chooses, from the candidate items the host found in
+  // snapshots, which ones to apply and in what order to restore an object to
+  // a point in time (for example full, then differential, then logs).
+  rpc PlanRestore(PlanRestoreRequest) returns (PlanRestoreResponse);
+
+  // Restore applies the planned items. The host sends RestoreBegin, then
+  // each item as RestoreItemStart, any number of data messages, and
+  // RestoreItemEnd, in plan order.
+  rpc Restore(stream RestoreMessage) returns (RestoreResult);
 }
 
 message GetMetadataRequest {}
@@ -111,4 +121,64 @@ message ItemEnd {
   // Plugin-defined metadata for the item, as a JSON value. Stored next to
   // the item and handed back to the plugin when planning a restore.
   bytes metadata = 1;
+}
+
+// RestoreCandidate is an item available in some snapshot.
+message RestoreCandidate {
+  // Opaque reference chosen by the host; returned in the plan.
+  string ref = 1;
+  // Item path as produced by Backup.
+  string item = 2;
+  // Backup kind the item was produced with.
+  string kind = 3;
+  // When the item was backed up (Unix nanoseconds).
+  int64 created_unix_nanos = 4;
+  // Metadata the plugin attached to the item.
+  bytes metadata = 5;
+}
+
+message PlanRestoreRequest {
+  // Object to restore, as in BackupRequest.selection.
+  string object = 1;
+  // Point in time to restore to (Unix nanoseconds); 0 means the latest.
+  int64 target_unix_nanos = 2;
+  // Restore options, e.g. a new database name.
+  map<string, string> options = 3;
+  repeated RestoreCandidate candidates = 4;
+}
+
+message PlanRestoreResponse {
+  // Candidate refs to apply, in order.
+  repeated string refs = 1;
+}
+
+message RestoreMessage {
+  oneof msg {
+    RestoreBegin begin = 1;
+    RestoreItemStart start = 2;
+    // A slice of the current item's bytes.
+    bytes data = 3;
+    RestoreItemEnd end = 4;
+  }
+}
+
+message RestoreBegin {
+  string object = 1;
+  int64 target_unix_nanos = 2;
+  map<string, string> options = 3;
+  // Number of items that follow.
+  int32 item_count = 4;
+}
+
+message RestoreItemStart {
+  string ref = 1;
+  string item = 2;
+  bytes metadata = 3;
+}
+
+message RestoreItemEnd {}
+
+message RestoreResult {
+  // Human-readable summary, e.g. "restored db1 as db1_copy".
+  string message = 1;
 }

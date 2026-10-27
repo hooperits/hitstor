@@ -11,6 +11,10 @@
 //
 //	size_bytes   bytes of data per item (default 1048576)
 //
+// Restore options:
+//
+//	target_dir   directory to write the restored item into (required)
+//
 // Usage:
 //
 //	hitstor-pluginkit pack --source plugins/example/plugin.yaml \
@@ -29,6 +33,8 @@ import (
 	"io"
 	"math/rand/v2"
 	"os"
+	"path"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -55,7 +61,7 @@ func (e *example) Metadata(context.Context) (hitstorplugin.WorkloadMetadata, err
 		Version:         e.manifest.Version,
 		ProtocolVersion: hitstorplugin.WorkloadProtocolVersion,
 		Description:     e.manifest.Description,
-		Capabilities:    []string{"browse", "backup.full"},
+		Capabilities:    []string{"browse", "backup.full", "restore.point_in_time"},
 	}, nil
 }
 
@@ -115,6 +121,61 @@ func (e *example) Backup(ctx context.Context, req hitstorplugin.BackupRequest, s
 		}
 	}
 	return nil
+}
+
+// PlanRestore picks the newest backup of the object taken at or before the
+// target time. Real plugins chain several items here (full, differential,
+// logs).
+func (e *example) PlanRestore(_ context.Context, req hitstorplugin.PlanRestoreRequest) ([]string, error) {
+	var best *hitstorplugin.RestoreCandidate
+	for i, c := range req.Candidates {
+		if !req.Target.IsZero() && c.CreatedAt.After(req.Target) {
+			continue
+		}
+		if best == nil || c.CreatedAt.After(best.CreatedAt) {
+			best = &req.Candidates[i]
+		}
+	}
+	if best == nil {
+		return nil, fmt.Errorf("no backup of %s at or before %s", req.Object, req.Target.Format(time.RFC3339))
+	}
+	return []string{best.Ref}, nil
+}
+
+// Restore writes each item into the target_dir option.
+func (e *example) Restore(_ context.Context, req hitstorplugin.RestoreRequest, items hitstorplugin.RestoreItems) (string, error) {
+	dir := req.Options["target_dir"]
+	if dir == "" {
+		return "", fmt.Errorf("option target_dir is required")
+	}
+	if err := os.MkdirAll(dir, 0o700); err != nil {
+		return "", err
+	}
+	var n int
+	for {
+		it, err := items.Next()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return "", err
+		}
+		dst := filepath.Join(dir, path.Base(it.Item))
+		f, err := os.OpenFile(dst, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0o600)
+		if err != nil {
+			return "", err
+		}
+		if _, err := io.Copy(f, it.Data); err != nil {
+			f.Close()
+			os.Remove(dst)
+			return "", err
+		}
+		if err := f.Close(); err != nil {
+			return "", err
+		}
+		n++
+	}
+	return fmt.Sprintf("restored %s (%d item(s)) into %s", req.Object, n, dir), nil
 }
 
 func isObject(p string) bool {

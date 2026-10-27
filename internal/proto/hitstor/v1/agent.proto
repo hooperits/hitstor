@@ -58,6 +58,18 @@ service AgentService {
   // cannot be produced server-side. Images run to hundreds of megabytes or
   // more, hence a stream: neither side buffers the whole thing.
   rpc BuildRecoveryMedia(BuildRecoveryMediaRequest) returns (stream MediaChunk);
+
+  // BrowseWorkload lists the objects an installed workload plugin can back
+  // up, for the dashboard's object picker.
+  rpc BrowseWorkload(BrowseWorkloadRequest) returns (BrowseWorkloadResponse);
+
+  // PlanWorkloadRestore asks an installed workload plugin which of the
+  // candidate items (found by the server in snapshots) to restore, in order.
+  rpc PlanWorkloadRestore(PlanWorkloadRestoreRequest) returns (PlanWorkloadRestoreResponse);
+
+  // RestoreWorkload streams planned items from the server; the agent pipes
+  // them into the plugin, verifying each item's SHA-256 on the way.
+  rpc RestoreWorkload(stream WorkloadRestoreMessage) returns (WorkloadRestoreResponse);
 }
 
 // --- Bare-metal recovery media ---
@@ -354,4 +366,83 @@ message DiscoverDatabasesResponse {
   string server_version = 3;
   string client_version = 4;
   repeated string databases = 5;
+}
+
+// --- Workload plugins ---
+
+message BrowseWorkloadRequest {
+  string token = 1;
+  string plugin = 2;
+  map<string, string> settings = 3;
+  // Object path to list; empty for the top level.
+  string path = 4;
+}
+
+message BrowseWorkloadResponse {
+  repeated WorkloadObject entries = 1;
+}
+
+message WorkloadObject {
+  string path = 1;
+  string name = 2;
+  string kind = 3;
+  bool selectable = 4;
+  bool has_children = 5;
+}
+
+message WorkloadCandidate {
+  string ref = 1;
+  string item = 2;
+  string kind = 3;
+  int64 created_unix_nanos = 4;
+  bytes metadata = 5;
+}
+
+message PlanWorkloadRestoreRequest {
+  string token = 1;
+  string plugin = 2;
+  map<string, string> settings = 3;
+  string object = 4;
+  // 0 means the latest point available.
+  int64 target_unix_nanos = 5;
+  map<string, string> options = 6;
+  repeated WorkloadCandidate candidates = 7;
+}
+
+message PlanWorkloadRestoreResponse {
+  repeated string refs = 1;
+}
+
+message WorkloadRestoreMessage {
+  oneof payload {
+    WorkloadRestoreBegin begin = 1;
+    WorkloadItemStart start = 2;
+    bytes data = 3;
+    WorkloadItemEnd end = 4;
+  }
+}
+
+message WorkloadRestoreBegin {
+  string token = 1;
+  string plugin = 2;
+  map<string, string> settings = 3;
+  string object = 4;
+  int64 target_unix_nanos = 5;
+  map<string, string> options = 6;
+  int32 item_count = 7;
+}
+
+message WorkloadItemStart {
+  string ref = 1;
+  string item = 2;
+  bytes metadata = 3;
+  // Expected size and hex SHA-256 of the item, from its manifest.
+  int64 size = 4;
+  string sha256 = 5;
+}
+
+message WorkloadItemEnd {}
+
+message WorkloadRestoreResponse {
+  string message = 1;
 }

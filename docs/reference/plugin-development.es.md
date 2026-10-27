@@ -384,8 +384,8 @@ capacidad no soportada.
 | `Configure` | `plugin.Configurable` | Recibe la configuración de plugin de la tarea |
 | `Browse` | `plugin.WorkloadBrowser` | Lista los objetos seleccionables bajo una ruta (por ejemplo instancia → bases de datos) |
 | `Backup` | `plugin.WorkloadBackuper` | Respalda los objetos seleccionados y envía por stream uno o más elementos |
-
-Los RPC de restauración (`PlanRestore`, `Restore`) se están agregando.
+| `PlanRestore` | `plugin.WorkloadRestorer` | Elige qué elementos, y en qué orden, restauran un objeto a un punto en el tiempo |
+| `Restore` | `plugin.WorkloadRestorer` | Aplica los elementos planificados a medida que llegan por stream |
 
 ### Elementos { #items }
 
@@ -423,12 +423,56 @@ La configuración llega por `Configure` y se guarda en la tarea, en el
 servidor. **Nunca ponga secretos en la configuración**: léalos de variables de
 entorno, que el plugin hereda del servicio del agente (`agent.env`).
 
-Para probar un plugin en un equipo sin servidor, instálelo y ejecute:
+### Restauración { #restore }
+
+La restauración ocurre en dos pasos, de modo que toda la lógica de la
+aplicación queda en el plugin:
+
+1. **Planificar.** El servidor reúne los elementos del objeto en las
+   instantáneas (sus manifiestos: ruta, tipo, fecha de creación y metadatos
+   del plugin) y el agente se los pasa a `PlanRestore` junto con el punto en
+   el tiempo objetivo (cero significa el más reciente). El plugin devuelve las
+   referencias a aplicar, en orden; para una base de datos suele ser el último
+   respaldo completo anterior al objetivo, el diferencial posterior y los logs
+   hasta el objetivo.
+2. **Aplicar.** El servidor envía los elementos planificados al agente, que
+   los pasa a `Restore`. El agente verifica el tamaño y el SHA-256 de cada
+   elemento contra su manifiesto antes de que el plugin vea el final del
+   elemento.
+
+```go
+func (p *myPlugin) Restore(ctx context.Context, req plugin.RestoreRequest, items plugin.RestoreItems) (string, error) {
+    for {
+        it, err := items.Next() // io.EOF después del último elemento
+        if err == io.EOF {
+            return "restored " + req.Object, nil
+        }
+        if err != nil {
+            return "", err
+        }
+        if err := p.apply(ctx, req, it.Item, it.Metadata, it.Data); err != nil {
+            return "", err
+        }
+    }
+}
+```
+
+Las opciones de restauración (`req.Options`, por ejemplo un nombre nuevo para
+la base de datos) las indica el operador y las define cada plugin.
+
+### Probar un plugin sin servidor { #trying-a-plugin-without-a-server }
+
+Instale el plugin en un equipo y ejecute:
 
 ```bash
 hitstor-agent plugin browse example
 hitstor-agent plugin test-backup example --select demo/alpha --out /tmp/items
+hitstor-agent plugin test-restore example --from /tmp/items --object demo/alpha \
+    --option target_dir=/tmp/restored
 ```
+
+`test-restore` planifica a partir de los manifiestos de `--from` exactamente
+como el servidor planifica a partir de las instantáneas.
 
 ### Escribir un plugin de carga de trabajo { #writing-a-workload-plugin }
 

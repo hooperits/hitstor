@@ -384,8 +384,8 @@ capability.
 | `Configure` | `plugin.Configurable` | Receive the job's plugin settings |
 | `Browse` | `plugin.WorkloadBrowser` | List selectable objects under a path (for example instance → databases) |
 | `Backup` | `plugin.WorkloadBackuper` | Back up the selected objects, streaming one or more items |
-
-Restore RPCs (`PlanRestore`, `Restore`) are being added.
+| `PlanRestore` | `plugin.WorkloadRestorer` | Choose which items, in what order, restore an object to a point in time |
+| `Restore` | `plugin.WorkloadRestorer` | Apply the planned items as they stream in |
 
 ### Items
 
@@ -422,12 +422,53 @@ Settings arrive through `Configure` and are stored in the job on the server.
 **Never put secrets in settings**: read them from environment variables, which
 the plugin inherits from the agent service (`agent.env`).
 
-To try a plugin on a host without a server, install it and run:
+### Restore
+
+Restore happens in two steps, so all application logic stays in the plugin:
+
+1. **Plan.** The server collects the object's items from the snapshots (their
+   manifests: item path, kind, creation time, and the plugin's metadata) and
+   the agent passes them to `PlanRestore` with the target point in time (zero
+   means the latest). The plugin returns the refs to apply, in order; for a
+   database that is typically the last full backup before the target, the
+   differential after it, and the logs up to the target.
+2. **Apply.** The server streams the planned items to the agent, which pipes
+   them into `Restore`. The agent checks each item's size and SHA-256 against
+   its manifest before the plugin sees the end of the item.
+
+```go
+func (p *myPlugin) Restore(ctx context.Context, req plugin.RestoreRequest, items plugin.RestoreItems) (string, error) {
+    for {
+        it, err := items.Next() // io.EOF after the last item
+        if err == io.EOF {
+            return "restored " + req.Object, nil
+        }
+        if err != nil {
+            return "", err
+        }
+        if err := p.apply(ctx, req, it.Item, it.Metadata, it.Data); err != nil {
+            return "", err
+        }
+    }
+}
+```
+
+Restore options (`req.Options`, for example a new database name) come from
+the operator; they are plugin-defined.
+
+### Trying a plugin without a server
+
+Install the plugin on a host and run:
 
 ```bash
 hitstor-agent plugin browse example
 hitstor-agent plugin test-backup example --select demo/alpha --out /tmp/items
+hitstor-agent plugin test-restore example --from /tmp/items --object demo/alpha \
+    --option target_dir=/tmp/restored
 ```
+
+`test-restore` plans from the manifests under `--from` exactly as the server
+plans from snapshots.
 
 ### Writing a Workload Plugin
 

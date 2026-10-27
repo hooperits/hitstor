@@ -39,6 +39,8 @@ const (
 	Workload_Configure_FullMethodName   = "/hitstor.plugin.v1.Workload/Configure"
 	Workload_Browse_FullMethodName      = "/hitstor.plugin.v1.Workload/Browse"
 	Workload_Backup_FullMethodName      = "/hitstor.plugin.v1.Workload/Backup"
+	Workload_PlanRestore_FullMethodName = "/hitstor.plugin.v1.Workload/PlanRestore"
+	Workload_Restore_FullMethodName     = "/hitstor.plugin.v1.Workload/Restore"
 )
 
 // WorkloadClient is the client API for Workload service.
@@ -61,6 +63,14 @@ type WorkloadClient interface {
 	// Each item is sent as ItemStart, any number of data messages, and ItemEnd.
 	// Returning a gRPC error fails the whole backup.
 	Backup(ctx context.Context, in *BackupRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[BackupMessage], error)
+	// PlanRestore chooses, from the candidate items the host found in
+	// snapshots, which ones to apply and in what order to restore an object to
+	// a point in time (for example full, then differential, then logs).
+	PlanRestore(ctx context.Context, in *PlanRestoreRequest, opts ...grpc.CallOption) (*PlanRestoreResponse, error)
+	// Restore applies the planned items. The host sends RestoreBegin, then
+	// each item as RestoreItemStart, any number of data messages, and
+	// RestoreItemEnd, in plan order.
+	Restore(ctx context.Context, opts ...grpc.CallOption) (grpc.ClientStreamingClient[RestoreMessage, RestoreResult], error)
 }
 
 type workloadClient struct {
@@ -120,6 +130,29 @@ func (c *workloadClient) Backup(ctx context.Context, in *BackupRequest, opts ...
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type Workload_BackupClient = grpc.ServerStreamingClient[BackupMessage]
 
+func (c *workloadClient) PlanRestore(ctx context.Context, in *PlanRestoreRequest, opts ...grpc.CallOption) (*PlanRestoreResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(PlanRestoreResponse)
+	err := c.cc.Invoke(ctx, Workload_PlanRestore_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *workloadClient) Restore(ctx context.Context, opts ...grpc.CallOption) (grpc.ClientStreamingClient[RestoreMessage, RestoreResult], error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	stream, err := c.cc.NewStream(ctx, &Workload_ServiceDesc.Streams[1], Workload_Restore_FullMethodName, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &grpc.GenericClientStream[RestoreMessage, RestoreResult]{ClientStream: stream}
+	return x, nil
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type Workload_RestoreClient = grpc.ClientStreamingClient[RestoreMessage, RestoreResult]
+
 // WorkloadServer is the server API for Workload service.
 // All implementations must embed UnimplementedWorkloadServer
 // for forward compatibility.
@@ -140,6 +173,14 @@ type WorkloadServer interface {
 	// Each item is sent as ItemStart, any number of data messages, and ItemEnd.
 	// Returning a gRPC error fails the whole backup.
 	Backup(*BackupRequest, grpc.ServerStreamingServer[BackupMessage]) error
+	// PlanRestore chooses, from the candidate items the host found in
+	// snapshots, which ones to apply and in what order to restore an object to
+	// a point in time (for example full, then differential, then logs).
+	PlanRestore(context.Context, *PlanRestoreRequest) (*PlanRestoreResponse, error)
+	// Restore applies the planned items. The host sends RestoreBegin, then
+	// each item as RestoreItemStart, any number of data messages, and
+	// RestoreItemEnd, in plan order.
+	Restore(grpc.ClientStreamingServer[RestoreMessage, RestoreResult]) error
 	mustEmbedUnimplementedWorkloadServer()
 }
 
@@ -161,6 +202,12 @@ func (UnimplementedWorkloadServer) Browse(context.Context, *BrowseRequest) (*Bro
 }
 func (UnimplementedWorkloadServer) Backup(*BackupRequest, grpc.ServerStreamingServer[BackupMessage]) error {
 	return status.Error(codes.Unimplemented, "method Backup not implemented")
+}
+func (UnimplementedWorkloadServer) PlanRestore(context.Context, *PlanRestoreRequest) (*PlanRestoreResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method PlanRestore not implemented")
+}
+func (UnimplementedWorkloadServer) Restore(grpc.ClientStreamingServer[RestoreMessage, RestoreResult]) error {
+	return status.Error(codes.Unimplemented, "method Restore not implemented")
 }
 func (UnimplementedWorkloadServer) mustEmbedUnimplementedWorkloadServer() {}
 func (UnimplementedWorkloadServer) testEmbeddedByValue()                  {}
@@ -248,6 +295,31 @@ func _Workload_Backup_Handler(srv interface{}, stream grpc.ServerStream) error {
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type Workload_BackupServer = grpc.ServerStreamingServer[BackupMessage]
 
+func _Workload_PlanRestore_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(PlanRestoreRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WorkloadServer).PlanRestore(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Workload_PlanRestore_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WorkloadServer).PlanRestore(ctx, req.(*PlanRestoreRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Workload_Restore_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(WorkloadServer).Restore(&grpc.GenericServerStream[RestoreMessage, RestoreResult]{ServerStream: stream})
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type Workload_RestoreServer = grpc.ClientStreamingServer[RestoreMessage, RestoreResult]
+
 // Workload_ServiceDesc is the grpc.ServiceDesc for Workload service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -267,12 +339,21 @@ var Workload_ServiceDesc = grpc.ServiceDesc{
 			MethodName: "Browse",
 			Handler:    _Workload_Browse_Handler,
 		},
+		{
+			MethodName: "PlanRestore",
+			Handler:    _Workload_PlanRestore_Handler,
+		},
 	},
 	Streams: []grpc.StreamDesc{
 		{
 			StreamName:    "Backup",
 			Handler:       _Workload_Backup_Handler,
 			ServerStreams: true,
+		},
+		{
+			StreamName:    "Restore",
+			Handler:       _Workload_Restore_Handler,
+			ClientStreams: true,
 		},
 	},
 	Metadata: "hitstor/plugin/v1/workload.proto",

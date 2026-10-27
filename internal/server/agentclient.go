@@ -241,3 +241,20 @@ func (c *AgentClient) BuildRecoveryMedia(ctx context.Context, cache *MediaCache,
 
 	return writer.Commit()
 }
+
+// BrowseWorkload lists the objects a workload plugin on the agent can back up.
+func (c *AgentClient) BrowseWorkload(ctx context.Context, req *pb.BrowseWorkloadRequest) (*pb.BrowseWorkloadResponse, error) {
+	return c.agent.BrowseWorkload(ctx, req)
+}
+
+// PlanWorkloadRestore asks a workload plugin on the agent which candidate
+// items to restore, in order.
+func (c *AgentClient) PlanWorkloadRestore(ctx context.Context, req *pb.PlanWorkloadRestoreRequest) (*pb.PlanWorkloadRestoreResponse, error) {
+	return c.agent.PlanWorkloadRestore(ctx, req)
+}
+
+// RestoreWorkload opens the stream that carries planned items to the agent.
+// The caller sends a begin message, the items, and closes with CloseAndRecv.
+func (c *AgentClient) RestoreWorkload(ctx context.Context) (pb.AgentService_RestoreWorkloadClient, error) {
+	return c.agent.RestoreWorkload(ctx)
+}

@@ -1,10 +1,11 @@
 # Arquitectura de plugins de carga de trabajo
 
-> **Estado: fase 1 implementada** (formato de paquete, firma, gestor de
-> plugins del agente, `hitstor-agent plugin` y reporte de inventario).
-> **Fase 2 en curso:** ya están la exploración de objetos, el respaldo de
-> elementos en instantáneas y las tareas de carga de trabajo; sigue la
-> restauración. Las fases 3 y 4 están en diseño. El primer plugin construido sobre esta
+> **Estado: fases 1 y 2 implementadas** (formato de paquete, firma, gestor
+> de plugins del agente, inventario, exploración de objetos, respaldo en
+> instantáneas, tareas de carga de trabajo y restauración planificada a
+> través del agente). Siguen la retención de cadenas de respaldo
+> (`depends_on`), el plugin de SQL Server (fase 3) y la interfaz del
+> dashboard (fase 4). El primer plugin construido sobre esta
 > arquitectura respalda Microsoft SQL Server mediante la Virtual Device
 > Interface (VDI). Reemplaza la entrada "tipo de plugin
 > recolector de cargas de trabajo" de la sección

@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -9,6 +11,7 @@ import (
 	"path/filepath"
 	"strings"
 	"text/tabwriter"
+	"time"
 
 	"github.com/spf13/cobra"
 
@@ -123,7 +126,7 @@ HitStor key, or one listed in plugin_trusted_keys.`,
 		},
 	}
 
-	cmd.AddCommand(install, upgrade, list, info, remove, newPluginBrowseCmd(), newPluginTestBackupCmd())
+	cmd.AddCommand(install, upgrade, list, info, remove, newPluginBrowseCmd(), newPluginTestBackupCmd(), newPluginTestRestoreCmd())
 	return cmd
 }
 
@@ -209,12 +212,13 @@ plugin's connection settings and output on this host.`,
 			if err := os.Mkdir(outDir, 0o700); err != nil {
 				return fmt.Errorf("--out must be a new directory: %w", err)
 			}
-			_, c, closeAll, err := openInstalledWorkload(args[0], settings)
+			p, c, closeAll, err := openInstalledWorkload(args[0], settings)
 			if err != nil {
 				return err
 			}
 			defer closeAll()
 
+			digests := make(map[string]string)
 			items, err := c.Backup(cmd.Context(), hitstorplugin.BackupRequest{Selection: selection, Kind: kind, Options: options},
 				func(itemPath string, data io.Reader) error {
 					dst := filepath.Join(outDir, filepath.FromSlash(itemPath))
@@ -225,21 +229,32 @@ plugin's connection settings and output on this host.`,
 					if err != nil {
 						return err
 					}
-					if _, err := io.Copy(f, data); err != nil {
+					h := sha256.New()
+					if _, err := io.Copy(io.MultiWriter(f, h), data); err != nil {
 						f.Close()
 						return err
 					}
+					digests[itemPath] = hex.EncodeToString(h.Sum(nil))
 					return f.Close()
 				})
 			if err != nil {
 				return err
 			}
+			// Same manifest the agent stores in snapshots, so test-restore
+			// can plan from this directory the way the server plans from
+			// snapshots.
+			created := time.Now().UTC()
 			for _, it := range items {
-				if len(it.Metadata) > 0 {
-					dst := filepath.Join(outDir, filepath.FromSlash(it.Path)) + hitstorplugin.MetadataSuffix
-					if err := os.WriteFile(dst, it.Metadata, 0o600); err != nil {
-						return err
-					}
+				m, err := json.MarshalIndent(hitstorplugin.ItemManifest{
+					Plugin: p.ID, PluginVersion: p.Version, Item: it.Path, Kind: kind,
+					Size: it.Size, SHA256: digests[it.Path], CreatedAt: created, Metadata: it.Metadata,
+				}, "", "  ")
+				if err != nil {
+					return err
+				}
+				dst := filepath.Join(outDir, filepath.FromSlash(it.Path)) + hitstorplugin.MetadataSuffix
+				if err := os.WriteFile(dst, m, 0o600); err != nil {
+					return err
 				}
 			}
 			if jsonFlag {
@@ -356,4 +371,129 @@ func installedPlugins() ([]pluginmgr.InstalledPlugin, error) {
 		return nil, err
 	}
 	return mgr.List()
+}
+
+func newPluginTestRestoreCmd() *cobra.Command {
+	var (
+		settings, options map[string]string
+		fromDir, object   string
+		at                string
+	)
+	cmd := &cobra.Command{
+		Use:   "test-restore <id>",
+		Short: "Restore an object from a test-backup directory (diagnostics; no server involved)",
+		Long: `Plan and run a plugin restore from items written by test-backup.
+
+The plugin chooses the items to apply from the manifests under --from, exactly
+as it would from snapshots, and restores --object with the given --option
+values. Nothing is read from or sent to the server.`,
+		Args: cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			var target time.Time
+			if at != "" {
+				t, err := time.Parse(time.RFC3339, at)
+				if err != nil {
+					return fmt.Errorf("--at: %w", err)
+				}
+				target = t
+			}
+			cands, err := localCandidates(fromDir, object)
+			if err != nil {
+				return err
+			}
+			if len(cands) == 0 {
+				return fmt.Errorf("no backups of %s under %s", object, fromDir)
+			}
+
+			_, c, closeAll, err := openInstalledWorkload(args[0], settings)
+			if err != nil {
+				return err
+			}
+			defer closeAll()
+
+			var list []hitstorplugin.RestoreCandidate
+			for _, lc := range cands {
+				list = append(list, lc.RestoreCandidate)
+			}
+			refs, err := c.PlanRestore(cmd.Context(), hitstorplugin.PlanRestoreRequest{Object: object, Target: target, Options: options, Candidates: list})
+			if err != nil {
+				return err
+			}
+			byRef := make(map[string]localCandidate, len(cands))
+			for _, lc := range cands {
+				byRef[lc.Ref] = lc
+			}
+			var files []*os.File
+			defer func() {
+				for _, f := range files {
+					f.Close()
+				}
+			}()
+			var items hitstorplugin.SliceItems
+			for _, ref := range refs {
+				lc := byRef[ref]
+				f, err := os.Open(lc.path)
+				if err != nil {
+					return err
+				}
+				files = append(files, f)
+				items = append(items, &hitstorplugin.RestoreItem{Ref: ref, Item: lc.Item, Metadata: lc.Metadata, Data: f})
+				if !quietFlag && !jsonFlag {
+					fmt.Printf("apply %s\n", lc.Item)
+				}
+			}
+			msg, err := c.Restore(cmd.Context(), hitstorplugin.RestoreRequest{Object: object, Target: target, Options: options, ItemCount: len(items)}, &items)
+			if err != nil {
+				return err
+			}
+			if jsonFlag {
+				return writePluginJSON(map[string]any{"plan": refs, "message": msg})
+			}
+			fmt.Println(msg)
+			return nil
+		},
+	}
+	f := cmd.Flags()
+	f.StringVar(&fromDir, "from", "", "directory written by test-backup")
+	f.StringVar(&object, "object", "", "object to restore")
+	f.StringVar(&at, "at", "", "point in time to restore to (RFC 3339; default: latest)")
+	f.StringToStringVar(&settings, "setting", nil, "plugin setting key=value (repeatable)")
+	f.StringToStringVar(&options, "option", nil, "restore option key=value (repeatable)")
+	cmd.MarkFlagRequired("from")
+	cmd.MarkFlagRequired("object")
+	return cmd
+}
+
+type localCandidate struct {
+	hitstorplugin.RestoreCandidate
+	path string
+}
+
+// localCandidates reads the item manifests under dir/object.
+func localCandidates(dir, object string) ([]localCandidate, error) {
+	root := filepath.Join(dir, filepath.FromSlash(object))
+	var out []localCandidate
+	err := filepath.WalkDir(root, func(p string, d os.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		itemPath, ok := strings.CutSuffix(p, hitstorplugin.MetadataSuffix)
+		if d.IsDir() || !ok {
+			return nil
+		}
+		data, err := os.ReadFile(p)
+		if err != nil {
+			return err
+		}
+		var m hitstorplugin.ItemManifest
+		if err := json.Unmarshal(data, &m); err != nil {
+			return fmt.Errorf("%s: %w", p, err)
+		}
+		out = append(out, localCandidate{
+			RestoreCandidate: hitstorplugin.RestoreCandidate{Ref: m.Item, Item: m.Item, Kind: m.Kind, CreatedAt: m.CreatedAt, Metadata: m.Metadata},
+			path:             itemPath,
+		})
+		return nil
+	})
+	return out, err
 }

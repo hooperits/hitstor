@@ -82,6 +82,10 @@ Unless noted, endpoints require dashboard authentication when `serve_dashboard_p
 | `POST` | `/api/snapshots/{id}/restore` | Start agent restore (`agent_name`, `target_path`, optional `includes`) |
 | `GET` | `/api/restores` | List restore sessions |
 | `GET` | `/api/restore/{id}/events` | SSE restore progress |
+| `GET` | `/api/agents/{name}/plugins/{plugin}/browse?path=` | List the objects a workload plugin on the agent can back up |
+| `GET` | `/api/workload/points?agent=&plugin=&object=` | Items available to restore a workload object, oldest first |
+| `POST` | `/api/workload/restores` | Start a workload restore (`agent_name`, `plugin`, `object`; optional `source_agent` to restore another agent's backups, `target` time, `options`, `plugin_settings`) |
+| `GET` | `/api/workload/restores/{id}` | Workload restore status: plan, bytes sent, result |
 
 ## Progress & Operations
 

@@ -12,6 +12,7 @@ hitstor-agent plugin info <id>
 hitstor-agent plugin remove <id>
 hitstor-agent plugin browse <id> [path]
 hitstor-agent plugin test-backup <id> --select <object> --out <dir>
+hitstor-agent plugin test-restore <id> --from <dir> --object <object> [--at <time>]
 ```
 
 ## Description
@@ -47,7 +48,8 @@ so the server knows which workloads each agent can handle.
 | `info <id>` | Show details of one plugin, including its capabilities and binary path |
 | `remove <id>` | Uninstall a plugin. Snapshots it produced stay in the repository. Refused while a backup is using the plugin |
 | `browse <id> [path]` | List the objects the plugin can back up, under `path` (top level when omitted) |
-| `test-backup <id>` | Diagnostics: run a backup of `--select` objects and write the items and their metadata into the new directory `--out`. Nothing is sent to the server |
+| `test-backup <id>` | Diagnostics: run a backup of `--select` objects and write the items and their manifests into the new directory `--out`. Nothing is sent to the server |
+| `test-restore <id>` | Diagnostics: plan and run a restore of `--object` from a `test-backup` directory, optionally to the point in time `--at` (RFC 3339) |
 
 ## Flags
 
@@ -55,11 +57,12 @@ so the server knows which workloads each agent can handle.
 |------|---------|-------------|
 | `--store` | `plugin_store_dir`, else the platform default | Plugin store directory |
 | `--allow-downgrade` | `false` | `upgrade` only: allow installing an older version |
-| `--setting key=value` | | `browse`, `test-backup`: plugin setting (repeatable) |
+| `--setting key=value` | | `browse`, `test-backup`, `test-restore`: plugin setting (repeatable) |
 | `--select` | | `test-backup`: object to back up (repeatable) |
 | `--kind` | `full` | `test-backup`: backup kind |
-| `--option key=value` | | `test-backup`: backup option (repeatable) |
+| `--option key=value` | | `test-backup`: backup option; `test-restore`: restore option (repeatable) |
 | `--out` | | `test-backup`: directory to create for the items |
+| `--from`, `--object`, `--at` | | `test-restore`: source directory, object, and optional point in time |
 | `--json` | `false` | Print results as JSON |
 
 Without `--config`, the command reads the installed agent's configuration

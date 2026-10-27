@@ -95,6 +95,14 @@ func runDaemon(cmd *cobra.Command, args []string) error {
 		Version:    Version,
 	})
 
+	agentSrv.OpenWorkload = func(id string, settings map[string]string) (agent.WorkloadPlugin, func(), error) {
+		_, c, closeAll, err := openInstalledWorkload(id, settings)
+		if err != nil {
+			return nil, nil, err
+		}
+		return c, closeAll, nil
+	}
+
 	// When the server registers us, start the backup loop.
 	registerCh := make(chan struct{}, 1)
 	agentSrv.OnRegister = func(serverAddr, apiKey, caCertPath string) {

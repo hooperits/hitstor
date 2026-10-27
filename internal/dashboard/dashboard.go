@@ -55,6 +55,12 @@ type Dashboard struct {
 	// Restore session manager.
 	restores *RestoreManager
 
+	// Workload plugin restores, by session ID (*WorkloadRestoreSession).
+	workloadRestores sync.Map
+
+	// dialAgent replaces pinned-TLS agent dialing. Tests only.
+	dialAgent func(name, addr string) (*server.AgentClient, error)
+
 	// Disaster recovery orchestrator (multi-job full-system restore).
 	disaster *DisasterManager
 
@@ -351,6 +357,10 @@ func (d *Dashboard) Handler() http.Handler {
 	mux.Handle("POST /api/agents/{name}/browse", d.protect(http.HandlerFunc(d.handleAPIAgentBrowse)))
 	mux.Handle("POST /api/agents/{name}/configure", d.protect(http.HandlerFunc(d.handleAPIAgentConfigure)))
 	mux.Handle("GET /api/agents/{name}/info", d.protect(http.HandlerFunc(d.handleAPIAgentInfo)))
+	mux.Handle("GET /api/agents/{name}/plugins/{plugin}/browse", d.protect(http.HandlerFunc(d.handleAPIWorkloadBrowse)))
+	mux.Handle("GET /api/workload/points", d.protect(http.HandlerFunc(d.handleAPIWorkloadPoints)))
+	mux.Handle("POST /api/workload/restores", d.protect(http.HandlerFunc(d.handleAPIStartWorkloadRestore)))
+	mux.Handle("GET /api/workload/restores/{id}", d.protect(http.HandlerFunc(d.handleAPIGetWorkloadRestore)))
 	mux.Handle("DELETE /api/agents/{name}", d.protect(http.HandlerFunc(d.handleAPIRemoveAgent)))
 	mux.Handle("POST /api/agents/{name}/suspend", d.protect(http.HandlerFunc(d.handleAPIAgentSuspend)))
 	mux.Handle("POST /api/agents/{name}/unsuspend", d.protect(http.HandlerFunc(d.handleAPIAgentUnsuspend)))

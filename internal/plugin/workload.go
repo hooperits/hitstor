@@ -19,12 +19,51 @@ const WorkloadProtocolVersion = 1
 
 // WorkloadMetadata identifies a workload plugin and what it can do.
 type WorkloadMetadata struct {
-	ID              string   `json:"id"`
-	Name            string   `json:"name"`
-	Version         string   `json:"version"`
-	ProtocolVersion int32    `json:"protocol_version"`
-	Description     string   `json:"description,omitempty"`
-	Capabilities    []string `json:"capabilities,omitempty"`
+	ID              string      `json:"id"`
+	Name            string      `json:"name"`
+	Version         string      `json:"version"`
+	ProtocolVersion int32       `json:"protocol_version"`
+	Description     string      `json:"description,omitempty"`
+	Capabilities    []string    `json:"capabilities,omitempty"`
+	Fields          []FieldSpec `json:"fields,omitempty"`
+}
+
+// Field scopes.
+const (
+	FieldScopeSettings = "settings"
+	FieldScopeBackup   = "backup"
+	FieldScopeRestore  = "restore"
+)
+
+// FieldSpec declares one form field the dashboard renders for a plugin.
+// Label and Help are keyed by language code; "en" is the fallback.
+type FieldSpec struct {
+	Key      string            `json:"key"`
+	Scope    string            `json:"scope"`
+	Type     string            `json:"type"` // string, bool, number, choice
+	Label    map[string]string `json:"label"`
+	Help     map[string]string `json:"help,omitempty"`
+	Default  string            `json:"default,omitempty"`
+	Choices  []string          `json:"choices,omitempty"`
+	Required bool              `json:"required,omitempty"`
+}
+
+func fieldsToProto(fs []FieldSpec) []*pb.FieldSpec {
+	out := make([]*pb.FieldSpec, 0, len(fs))
+	for _, f := range fs {
+		out = append(out, &pb.FieldSpec{Key: f.Key, Scope: f.Scope, Type: f.Type, Label: f.Label, Help: f.Help,
+			Default: f.Default, Choices: f.Choices, Required: f.Required})
+	}
+	return out
+}
+
+func fieldsFromProto(fs []*pb.FieldSpec) []FieldSpec {
+	out := make([]FieldSpec, 0, len(fs))
+	for _, f := range fs {
+		out = append(out, FieldSpec{Key: f.Key, Scope: f.Scope, Type: f.Type, Label: f.Label, Help: f.Help,
+			Default: f.Default, Choices: f.Choices, Required: f.Required})
+	}
+	return out
 }
 
 // Workload is implemented by workload plugin binaries. Plugins may also
@@ -70,6 +109,7 @@ func (s *workloadGRPCServer) GetMetadata(ctx context.Context, _ *pb.GetMetadataR
 		ProtocolVersion: m.ProtocolVersion,
 		Description:     m.Description,
 		Capabilities:    m.Capabilities,
+		Fields:          fieldsToProto(m.Fields),
 	}, nil
 }
 
@@ -103,6 +143,7 @@ func (c *WorkloadGRPCClient) Metadata(ctx context.Context) (WorkloadMetadata, er
 		ProtocolVersion: m.ProtocolVersion,
 		Description:     m.Description,
 		Capabilities:    m.Capabilities,
+		Fields:          fieldsFromProto(m.Fields),
 	}, nil
 }
 

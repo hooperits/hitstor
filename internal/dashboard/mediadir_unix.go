@@ -22,3 +22,16 @@ func defaultMediaCacheDir() string {
 	}
 	return systemDir
 }
+
+// defaultPluginPackageDir is where uploaded plugin packages are kept, with
+// the same fallback as the media cache for an unprivileged server.
+func defaultPluginPackageDir() string {
+	const systemDir = "/var/lib/hitstor/plugin-packages"
+	if os.Geteuid() == 0 {
+		return systemDir
+	}
+	if cacheDir, err := os.UserCacheDir(); err == nil {
+		return filepath.Join(cacheDir, "hitstor", "plugin-packages")
+	}
+	return systemDir
+}

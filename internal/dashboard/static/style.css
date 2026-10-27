@@ -6044,3 +6044,17 @@ body.dr-drawer-open {
     background: var(--bg-card);
     border: 1px solid var(--border);
 }
+
+/* Workload plugins (plugins.js) */
+.plugin-tree { list-style: none; margin: 0; padding-left: 1.1rem; }
+.plugin-tree-box { max-height: 240px; overflow: auto; border: 1px solid var(--border); border-radius: 6px; padding: 0.5rem; }
+.plugin-tree-box > .plugin-tree { padding-left: 0; }
+.plugin-tree li { padding: 0.15rem 0; }
+.plugin-tree-toggle { width: 1.4rem; height: 1.4rem; line-height: 1; padding: 0; border: 1px solid var(--border); border-radius: 4px; background: transparent; color: inherit; cursor: pointer; }
+.plugin-fieldset { border: 1px solid var(--border); border-radius: 6px; padding: 0.5rem 0.75rem; margin: 0 0 1rem; }
+.plugin-fieldset:has(> div:empty) { display: none; }
+.plugin-field-check { display: flex; gap: 0.5rem; align-items: center; font-weight: normal; }
+.plugin-error { color: var(--danger, #c0392b); margin: 0.5rem 0; white-space: pre-wrap; }
+.plugin-install-row, .plugin-upload-row { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; margin: 0.75rem 0; }
+.plugin-point { cursor: pointer; }
+.plugin-point:hover { background: var(--hover, rgba(127, 127, 127, 0.08)); }

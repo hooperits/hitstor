@@ -223,6 +223,8 @@ AgentService se ejecuta en cada agente (puerto predeterminado 8422) y atiende la
 | `BrowseWorkload` | Unaria | Lista los objetos que un plugin de carga de trabajo instalado puede respaldar |
 | `PlanWorkloadRestore` | Unaria | Pregunta a un plugin de carga de trabajo qué elementos candidatos restaurar y en qué orden |
 | `RestoreWorkload` | Streaming del cliente | Envía al agente los elementos planificados; el agente verifica el SHA-256 de cada uno y lo pasa al plugin |
+| `InstallPlugin` | Streaming del cliente | Envía un paquete de plugin al agente, que lo verifica y lo instala con su propia configuración de confianza |
+| `RemovePlugin` | Unaria | Desinstala un plugin (se rechaza mientras una tarea lo usa) |
 
 ### Autenticación de AgentService { #agentservice-authentication }
 

@@ -1,8 +1,9 @@
 # Arquitectura de plugins de carga de trabajo
 
-> **Estado: fases 1 a 3 implementadas** (framework de plugins, respaldo y
-> restauración de cargas de trabajo, retención de cadenas de respaldo y el
-> plugin de SQL Server). Sigue la interfaz del dashboard (fase 4). El primer plugin construido sobre esta
+> **Estado: implementado** (fases 1 a 4): framework de plugins e instalación
+> remota, respaldo y restauración de cargas de trabajo, retención de cadenas
+> de respaldo, el plugin de SQL Server y las páginas del dashboard basadas en
+> los campos que declara cada plugin. El primer plugin construido sobre esta
 > arquitectura respalda Microsoft SQL Server mediante la Virtual Device
 > Interface (VDI). Reemplaza la entrada "tipo de plugin
 > recolector de cargas de trabajo" de la sección
@@ -81,8 +82,8 @@ entrypoint: bin/hitstor-plugin-mssql.exe
 publisher: hitstor             # selecciona la clave de confianza
 ```
 
-Las capacidades (tipos de respaldo, opciones de restauración y esquemas de
-formularios) no se duplican en el manifiesto. El agente se las pide al plugin
+Las capacidades (tipos de respaldo, opciones de restauración y campos de
+formulario) no se duplican en el manifiesto. El agente se las pide al plugin
 con `GetMetadata`, de modo que el binario es la única fuente de verdad.
 
 ### Firma y confianza { #signing-and-trust }
@@ -137,7 +138,7 @@ servido sobre el mismo intercambio de go-plugin que los demás tipos:
 
 | RPC | Propósito |
 |-----|-----------|
-| `GetMetadata` | Id, versión y versión de protocolo del plugin, capacidades y esquemas de formularios para tareas, restauraciones y configuración |
+| `GetMetadata` | Id, versión y versión de protocolo del plugin, capacidades y campos de formulario para tareas, restauraciones y configuración |
 | `Configure` | Ajustes de conexión (instancia, autenticación) |
 | `Browse` | Árbol de objetos seleccionables, p. ej. instancia → bases de datos, para el selector de objetos del dashboard |
 | `Backup` | Recibe la selección y el tipo de respaldo; devuelve por stream uno o más **elementos**: nombre, bytes y un blob de metadatos opaco |
@@ -193,16 +194,19 @@ más.
 
 ## Servidor y dashboard { #server-and-dashboard }
 
-- Las tareas ganan un campo `plugin` junto a `job_type` (`files` sigue siendo
-  el valor por defecto). La configuración de la tarea se guarda como un mapa
-  opaco validado contra el esquema del plugin.
+- Las tareas de carga de trabajo (`job_type: workload`) guardan el id del
+  plugin, los objetos seleccionados, el tipo de respaldo, la configuración del
+  plugin y las opciones de respaldo como valores opacos; solo el plugin los
+  interpreta.
 - El dashboard dibuja los formularios de tareas, restauraciones y
-  configuración a partir del esquema declarativo de `GetMetadata`. El esquema
-  es un subconjunto pequeño de JSON Schema con tipos de campo, enumeraciones,
-  valores por defecto y visibilidad condicional. Los plugins nunca traen HTML.
-- **Agentes → Plugins** muestra los plugins instalados en cada agente, con
-  acciones para instalar, actualizar y desinstalar. **Configuración → Plugins**
-  administra los paquetes subidos.
+  configuración a partir de los campos que cada plugin declara en
+  `GetMetadata` (`FieldSpec`: clave, alcance, tipo `string`, `bool`, `number`
+  o `choice`, etiquetas y ayuda por idioma, valor por defecto y opciones). Los
+  plugins nunca traen HTML.
+- La página del agente muestra los plugins instalados en ese agente, con
+  acciones para instalar, actualizar y desinstalar. **Configuración →
+  Plugins** administra los paquetes subidos. Se rechaza quitar un plugin que
+  todavía usa una tarea.
 
 ## Primer plugin: SQL Server (VDI) { #first-plugin-sql-server-vdi }
 

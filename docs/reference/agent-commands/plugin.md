@@ -36,7 +36,9 @@ Only then does the new version become active. If any step fails, the
 previously installed version stays active and untouched.
 
 The agent reports its installed plugins to the server on every schedule poll,
-so the server knows which workloads each agent can handle.
+so the server knows which workloads each agent can handle. Plugins can also be
+installed from the dashboard (**Settings → Plugins**, then the agent's page);
+the agent applies exactly the same checks to packages pushed by the server.
 
 ## Subcommands
 

@@ -86,6 +86,11 @@ Salvo que se indique lo contrario, los endpoints requieren autenticación en el 
 | `GET` | `/api/workload/points?agent=&plugin=&object=` | Elementos disponibles para restaurar un objeto de carga de trabajo, del más antiguo al más reciente |
 | `POST` | `/api/workload/restores` | Inicia una restauración de carga de trabajo (`agent_name`, `plugin`, `object`; opcionales: `source_agent` para restaurar respaldos de otro agente, `target` para el punto en el tiempo, `options` y `plugin_settings`) |
 | `GET` | `/api/workload/restores/{id}` | Estado de una restauración de carga de trabajo: plan, bytes enviados y resultado |
+| `GET` | `/api/plugin-packages` | Lista los paquetes de plugins cargados |
+| `POST` | `/api/plugin-packages` | Carga un paquete de plugin (el archivo `.hpk` como cuerpo `application/octet-stream`); se rechaza si no está firmado por una clave de confianza |
+| `DELETE` | `/api/plugin-packages/{file}` | Elimina un paquete cargado |
+| `POST` | `/api/agents/{name}/plugins` | Instala un paquete cargado en un agente administrado (`package`; opcionales `upgrade` y `allow_downgrade`); el agente lo vuelve a verificar |
+| `DELETE` | `/api/agents/{name}/plugins/{id}` | Desinstala un plugin de un agente administrado; se rechaza mientras una tarea lo usa |
 
 ## Progreso y operaciones { #progress-operations }
 

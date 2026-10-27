@@ -54,16 +54,17 @@ const inUsePrefix = ".inuse-"
 
 // InstalledPlugin is one entry of installed-plugins.json.
 type InstalledPlugin struct {
-	ID              string    `json:"id"`
-	Name            string    `json:"name"`
-	Version         string    `json:"version"`
-	Description     string    `json:"description,omitempty"`
-	Status          string    `json:"status"`
-	ProtocolVersion int       `json:"protocol_version"`
-	Capabilities    []string  `json:"capabilities,omitempty"`
-	Signer          string    `json:"signer,omitempty"` // base64 public key; empty when unsigned
-	Entrypoint      string    `json:"entrypoint"`       // relative to the version directory
-	InstalledAt     time.Time `json:"installed_at"`
+	ID              string             `json:"id"`
+	Name            string             `json:"name"`
+	Version         string             `json:"version"`
+	Description     string             `json:"description,omitempty"`
+	Status          string             `json:"status"`
+	ProtocolVersion int                `json:"protocol_version"`
+	Capabilities    []string           `json:"capabilities,omitempty"`
+	Fields          []plugin.FieldSpec `json:"fields,omitempty"`
+	Signer          string             `json:"signer,omitempty"` // base64 public key; empty when unsigned
+	Entrypoint      string             `json:"entrypoint"`       // relative to the version directory
+	InstalledAt     time.Time          `json:"installed_at"`
 }
 
 type registryFile struct {
@@ -238,6 +239,7 @@ func (m *Manager) Install(ctx context.Context, pkgPath string, opts InstallOptio
 		Status:          plugin.PluginStatusActive,
 		ProtocolVersion: man.ProtocolVersion,
 		Capabilities:    meta.Capabilities,
+		Fields:          meta.Fields,
 		Signer:          pkg.Signer(),
 		Entrypoint:      man.Entrypoint,
 		InstalledAt:     time.Now().UTC(),

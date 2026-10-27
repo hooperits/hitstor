@@ -69,6 +69,28 @@ message WorkloadMetadata {
   string description = 5;
   // Capability identifiers, e.g. "backup.full", "restore.point_in_time".
   repeated string capabilities = 6;
+  // Fields the dashboard renders for this plugin's settings, backup options,
+  // and restore options. The dashboard knows nothing else about a plugin.
+  repeated FieldSpec fields = 7;
+}
+
+// FieldSpec declares one form field.
+message FieldSpec {
+  // Key in the settings or options map.
+  string key = 1;
+  // "settings" (Configure, stored in the job), "backup" (BackupRequest
+  // options), or "restore" (restore options).
+  string scope = 2;
+  // "string", "bool", "number", or "choice".
+  string type = 3;
+  // Display label and help text by language code ("en" is required).
+  map<string, string> label = 4;
+  map<string, string> help = 5;
+  // Default value, as text.
+  string default = 6;
+  // Allowed values for type "choice".
+  repeated string choices = 7;
+  bool required = 8;
 }
 
 message BrowseRequest {

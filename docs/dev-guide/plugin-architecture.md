@@ -1,8 +1,8 @@
 # Workload Plugin Architecture
 
-> **Status: phases 1–3 implemented** (plugin framework, workload backup and
-> restore, backup-chain retention, and the SQL Server plugin). The dashboard
-> UI (phase 4) is next. The first plugin built on this architecture is Microsoft SQL Server
+> **Status: implemented** (phases 1–4): plugin framework and remote
+> installation, workload backup and restore, backup-chain retention, the SQL
+> Server plugin, and the dashboard pages driven by plugin-declared fields. The first plugin built on this architecture is Microsoft SQL Server
 > backup through the Virtual Device Interface (VDI).
 > It supersedes the "workload collector plugin type" entry under
 > [Permanently removed](../admin-guide/roadmap.md#permanently-removed-v200) in
@@ -78,7 +78,7 @@ entrypoint: bin/hitstor-plugin-mssql.exe
 publisher: hitstor             # selects the trusted key
 ```
 
-The capabilities (backup kinds, restore options, and form schemas) are not
+The capabilities (backup kinds, restore options, and form fields) are not
 duplicated in the manifest. The agent asks the plugin for them through
 `GetMetadata`, so the binary is the single source of truth.
 
@@ -132,7 +132,7 @@ over the existing go-plugin handshake:
 
 | RPC | Purpose |
 |-----|---------|
-| `GetMetadata` | Plugin id, version, protocol version, capabilities, and form schemas for jobs, restores, and settings |
+| `GetMetadata` | Plugin id, version, protocol version, capabilities, and the form fields for jobs, restores, and settings |
 | `Configure` | Connection settings (instance, authentication) |
 | `Browse` | Tree of selectable objects, e.g. instance → databases, for the dashboard object picker |
 | `Backup` | Takes the selection and backup kind; streams back one or more **items**: name, bytes, and an opaque metadata blob |
@@ -185,14 +185,16 @@ more.
 
 ## Server and dashboard
 
-- Jobs gain a `plugin` field next to `job_type` (`files` stays the default).
-  The job's settings are stored as an opaque map validated against the plugin
-  schema.
-- The dashboard renders job, restore, and settings forms from the declarative
-  schema in `GetMetadata`. The schema is a small JSON Schema subset with field
-  types, enums, defaults, and conditional visibility. Plugins never ship HTML.
-- **Agents → Plugins** lists the plugins installed on each agent, with install,
-  upgrade, and remove actions. **Settings → Plugins** manages uploaded packages.
+- Workload jobs (`job_type: workload`) store the plugin id, the selected
+  objects, the backup kind, the plugin settings, and the backup options as
+  opaque values; only the plugin interprets them.
+- The dashboard renders job, restore, and settings forms from the fields each
+  plugin declares in `GetMetadata` (`FieldSpec`: key, scope, type `string`,
+  `bool`, `number`, or `choice`, labels and help per language, default,
+  choices). Plugins never ship HTML.
+- The agent page lists the plugins installed on that agent, with install,
+  upgrade, and remove actions. **Settings → Plugins** manages uploaded
+  packages. Removing a plugin that a job still uses is refused.
 
 ## First plugin: SQL Server (VDI)
 

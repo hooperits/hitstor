@@ -86,6 +86,11 @@ Unless noted, endpoints require dashboard authentication when `serve_dashboard_p
 | `GET` | `/api/workload/points?agent=&plugin=&object=` | Items available to restore a workload object, oldest first |
 | `POST` | `/api/workload/restores` | Start a workload restore (`agent_name`, `plugin`, `object`; optional `source_agent` to restore another agent's backups, `target` time, `options`, `plugin_settings`) |
 | `GET` | `/api/workload/restores/{id}` | Workload restore status: plan, bytes sent, result |
+| `GET` | `/api/plugin-packages` | List uploaded plugin packages |
+| `POST` | `/api/plugin-packages` | Upload a plugin package (the `.hpk` file as an `application/octet-stream` body); rejected unless signed by a trusted key |
+| `DELETE` | `/api/plugin-packages/{file}` | Delete an uploaded package |
+| `POST` | `/api/agents/{name}/plugins` | Install an uploaded package on a managed agent (`package`, optional `upgrade`, `allow_downgrade`); the agent verifies it again |
+| `DELETE` | `/api/agents/{name}/plugins/{id}` | Uninstall a plugin from a managed agent; refused while a job uses it |
 
 ## Progress & Operations
 

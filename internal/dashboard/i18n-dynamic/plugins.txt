@@ -1,0 +1,11 @@
+# Workload plugins (plugins.js): backup kinds, plugin status, and workload restore status.
+full
+differential
+log
+active
+degraded
+unregistered
+planning
+restoring
+completed
+failed

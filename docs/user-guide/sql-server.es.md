@@ -26,7 +26,11 @@ cifra como cualquier otra instantánea (snapshot).
 
 ## Instalar el plugin { #install-the-plugin }
 
-En el servidor de SQL Server, en una consola con privilegios elevados:
+Desde el dashboard: cargue el paquete en **Configuración → Plugins** y luego,
+en la página del agente, elija **Instalar** en la sección **Plugins**. El
+agente verifica la firma del paquete antes de instalarlo.
+
+O bien, en el servidor de SQL Server, en una consola con privilegios elevados:
 
 ```powershell
 hitstor-agent plugin install hitstor-plugin-mssql-0.1.0-windows-amd64.hpk
@@ -81,8 +85,12 @@ respaldo; programe tareas separadas por tipo. Un plan habitual:
 | Diferencial diario | `differential` | Todos los días 01:00 |
 | Log | `log` | Cada 15 minutos |
 
-Cree las tareas con la API del dashboard (las páginas del dashboard llegan en
-una versión posterior):
+En el dashboard, elija **Nueva tarea de respaldo → Aplicación (plugin)**,
+seleccione el agente y el plugin `mssql`, marque las bases en el árbol de
+objetos y defina el tipo de respaldo, la configuración de conexión, las
+opciones y la programación cron.
+
+La misma tarea con la API del dashboard:
 
 ```bash
 curl -X POST https://<servidor>:8420/api/backups -H 'Content-Type: application/json' -d '{
@@ -108,6 +116,11 @@ consecutivos se dedupliquen; HitStor comprime los fragmentos de todos modos.
     cadena y configure `copy_only` en la otra.
 
 ## Restaurar { #restore }
+
+En el dashboard, abra **Restauraciones → Restaurar desde un respaldo con
+plugin**: elija el agente, la base y el punto más reciente o un punto en el
+tiempo (haga clic en un respaldo de la lista para usar su fecha) y defina las
+opciones de restauración.
 
 El servidor reúne los respaldos de la base desde las instantáneas; el plugin
 elige el respaldo completo más reciente terminado antes del punto objetivo, el
@@ -165,8 +178,6 @@ hitstor-agent plugin test-restore mssql --from C:\Temp\sales-backup `
   diferenciales.
 - Un stream VDI por base de datos; las bases de una tarea se respaldan una
   tras otra.
-- Las páginas del dashboard para tareas y restauraciones de SQL Server aún no
-  están disponibles; use la API.
 
 ## Consulte también { #see-also }
 

@@ -264,6 +264,20 @@ message AgentPlugin {
   repeated string capabilities = 6;
   // Base64 ed25519 public key that signed the package; empty when unsigned.
   string signer = 7;
+  // Form fields the plugin declares (settings, backup and restore options).
+  repeated PluginField fields = 8;
+}
+
+// PluginField mirrors the workload protocol's FieldSpec.
+message PluginField {
+  string key = 1;
+  string scope = 2;
+  string type = 3;
+  map<string, string> label = 4;
+  map<string, string> help = 5;
+  string default = 6;
+  repeated string choices = 7;
+  bool required = 8;
 }
 
 message GetScheduleResponse {
@@ -324,4 +338,5 @@ message ScheduledJob {
   map<string, string> plugin_settings = 20;
   repeated string selection = 21;
   string backup_kind = 22;
+  map<string, string> backup_options = 23;
 }

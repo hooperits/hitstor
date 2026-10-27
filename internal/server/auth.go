@@ -18,6 +18,7 @@ import (
 
 	"github.com/hooperits/hitstor/internal/config"
 	"github.com/hooperits/hitstor/internal/crypto"
+	"github.com/hooperits/hitstor/internal/plugin"
 )
 
 // Job types.
@@ -122,6 +123,9 @@ type AgentPlugin struct {
 	ProtocolVersion int      `json:"protocol_version"`
 	Capabilities    []string `json:"capabilities,omitempty"`
 	Signer          string   `json:"signer,omitempty"`
+	// Fields are the form fields the plugin declares, rendered by the
+	// dashboard for job settings and backup/restore options.
+	Fields []plugin.FieldSpec `json:"fields,omitempty"`
 }
 
 // BackupJob defines a scheduled backup targeting one agent and one repository.
@@ -168,6 +172,8 @@ type BackupJob struct {
 	PluginSettings map[string]string `json:"plugin_settings,omitempty"`
 	Selection      []string          `json:"selection,omitempty"`
 	BackupKind     string            `json:"backup_kind,omitempty"`
+	// BackupOptions are passed with each run (e.g. copy_only).
+	BackupOptions map[string]string `json:"backup_options,omitempty"`
 }
 
 // registryData is the versioned envelope stored in agents.json.

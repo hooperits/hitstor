@@ -1,9 +1,10 @@
 # Roadmap
 
-HitStor is a **filesystem backup and restore product for Windows and Linux**, and
-the roadmap exists to make it excellent at exactly that. Work that does not
-improve backing up and restoring files fast, safely, and verifiably is out of
-scope by default.
+HitStor is a **backup and restore product for Windows and Linux**: filesystems
+in the core, and applications through installable
+[workload plugins](../dev-guide/plugin-architecture.md). The roadmap exists to
+make it excellent at that. Work that does not improve backing up and restoring
+data fast, safely, and verifiably is out of scope by default.
 
 ## Shipped
 
@@ -21,6 +22,8 @@ scope by default.
 | Guided disaster recovery | Multi-job full-system restore onto a rebuilt host |
 | Benchmarks | Reproducible backup/restore harness, optional restic comparison |
 | Ransomware Sentinel | Gemini telemetry over filesystem snapshots (optional) |
+| Workload plugins | Signed `.hpk` packages installed per agent, locally or from the dashboard; backup and point-in-time restore through the agent; chain-aware retention |
+| [SQL Server](../user-guide/sql-server.md) | `mssql` plugin over VDI: full, differential, and log backups; point-in-time restore |
 
 ## Now
 
@@ -55,13 +58,17 @@ these land together rather than as independent features.
 
 ## Permanently removed (v2.0.0)
 
-These are **not** deferred — they were removed from the product and are not
-planned to return:
+These were removed from the product and are not planned to return in their
+original form:
 
 - Microsoft 365 and Google Workspace backup
-- Database backup (PostgreSQL, MySQL, MariaDB, SQL Server, Oracle)
+- The built-in database integrations (PostgreSQL, MySQL, MariaDB, SQL Server, Oracle)
 - Cloud VM agentless backup (GCP, AWS, Azure) and VMware/vSphere
 - The workload collector plugin type that served them
+
+Database backup now comes back as installable
+[workload plugins](../dev-guide/plugin-architecture.md) that run on the
+database host, starting with [SQL Server](../user-guide/sql-server.md).
 
 Existing `config.yaml` files containing `collector_plugins` or the related
 integration keys still load; those keys are simply ignored (unknown fields).

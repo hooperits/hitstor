@@ -11,7 +11,7 @@ HitStor is an encrypted, deduplicated backup platform written in Go (`CGO_ENABLE
 - **Bare-metal restore** — ReaR-based recovery media for Linux hosts
 - **Embedded dashboard** — monitoring, scheduling, restore
 
-HitStor is filesystem-only (Windows and Linux). M365, Google Workspace, database, and cloud-VM/VMware backup were permanently removed in v2.0.0 — see [Roadmap](../admin-guide/roadmap.md#permanently-removed-v200).
+The core backs up filesystems (Windows and Linux); applications are backed up through installable workload plugins (`plugins/`, see [Workload Plugin Architecture](plugin-architecture.md)), starting with SQL Server. M365, Google Workspace, the built-in database integrations, and cloud-VM/VMware backup were removed in v2.0.0 — see [Roadmap](../admin-guide/roadmap.md#permanently-removed-v200).
 
 ## Directory Layout
 

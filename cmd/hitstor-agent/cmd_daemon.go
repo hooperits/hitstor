@@ -103,6 +103,12 @@ func runDaemon(cmd *cobra.Command, args []string) error {
 		return c, closeAll, nil
 	}
 
+	if mgr, err := newPluginManager(); err == nil {
+		agentSrv.Plugins = mgr
+	} else {
+		slog.Warn("plugin manager unavailable; remote plugin installs disabled", "error", err)
+	}
+
 	// When the server registers us, start the backup loop.
 	registerCh := make(chan struct{}, 1)
 	agentSrv.OnRegister = func(serverAddr, apiKey, caCertPath string) {
@@ -446,6 +452,7 @@ func runWorkloadJob(ctx context.Context, client *agent.Client, job agent.JobSche
 		Request: hitstorplugin.BackupRequest{
 			Selection: job.Selection,
 			Kind:      job.BackupKind,
+			Options:   job.BackupOptions,
 		},
 	}
 	result, err := b.Run(ctx)

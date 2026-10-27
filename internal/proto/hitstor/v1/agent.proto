@@ -70,6 +70,13 @@ service AgentService {
   // RestoreWorkload streams planned items from the server; the agent pipes
   // them into the plugin, verifying each item's SHA-256 on the way.
   rpc RestoreWorkload(stream WorkloadRestoreMessage) returns (WorkloadRestoreResponse);
+
+  // InstallPlugin streams a plugin package from the server. The agent
+  // verifies it against its own trusted keys, exactly as a local install.
+  rpc InstallPlugin(stream InstallPluginMessage) returns (InstallPluginResponse);
+
+  // RemovePlugin uninstalls a plugin; refused while a job uses it.
+  rpc RemovePlugin(RemovePluginRequest) returns (RemovePluginResponse);
 }
 
 // --- Bare-metal recovery media ---
@@ -446,3 +453,39 @@ message WorkloadItemEnd {}
 message WorkloadRestoreResponse {
   string message = 1;
 }
+
+// --- Plugin installation ---
+
+message InstallPluginMessage {
+  oneof payload {
+    InstallPluginBegin begin = 1;
+    // Package bytes, in order.
+    bytes data = 2;
+  }
+}
+
+message InstallPluginBegin {
+  string token = 1;
+  // Package file name, for messages only.
+  string file_name = 2;
+  // Package size in bytes.
+  int64 size = 3;
+  // Replace an installed version instead of failing.
+  bool upgrade = 4;
+  bool allow_downgrade = 5;
+}
+
+message InstallPluginResponse {
+  string id = 1;
+  string name = 2;
+  string version = 3;
+  string status = 4;
+  string signer = 5;
+}
+
+message RemovePluginRequest {
+  string token = 1;
+  string id = 2;
+}
+
+message RemovePluginResponse {}

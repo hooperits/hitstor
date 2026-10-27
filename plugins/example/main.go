@@ -62,6 +62,12 @@ func (e *example) Metadata(context.Context) (hitstorplugin.WorkloadMetadata, err
 		ProtocolVersion: hitstorplugin.WorkloadProtocolVersion,
 		Description:     e.manifest.Description,
 		Capabilities:    []string{"browse", "backup.full", "restore.point_in_time"},
+		Fields: []hitstorplugin.FieldSpec{
+			{Key: "size_bytes", Scope: hitstorplugin.FieldScopeSettings, Type: "number", Default: "1048576",
+				Label: map[string]string{"en": "Bytes per item", "es": "Bytes por elemento"}},
+			{Key: "target_dir", Scope: hitstorplugin.FieldScopeRestore, Type: "string", Required: true,
+				Label: map[string]string{"en": "Target folder", "es": "Carpeta de destino"}},
+		},
 	}, nil
 }
 

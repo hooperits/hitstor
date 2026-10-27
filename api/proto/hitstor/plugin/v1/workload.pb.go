@@ -87,7 +87,10 @@ type WorkloadMetadata struct {
 	// One-line description.
 	Description string `protobuf:"bytes,5,opt,name=description,proto3" json:"description,omitempty"`
 	// Capability identifiers, e.g. "backup.full", "restore.point_in_time".
-	Capabilities  []string `protobuf:"bytes,6,rep,name=capabilities,proto3" json:"capabilities,omitempty"`
+	Capabilities []string `protobuf:"bytes,6,rep,name=capabilities,proto3" json:"capabilities,omitempty"`
+	// Fields the dashboard renders for this plugin's settings, backup options,
+	// and restore options. The dashboard knows nothing else about a plugin.
+	Fields        []*FieldSpec `protobuf:"bytes,7,rep,name=fields,proto3" json:"fields,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -164,6 +167,121 @@ func (x *WorkloadMetadata) GetCapabilities() []string {
 	return nil
 }
 
+func (x *WorkloadMetadata) GetFields() []*FieldSpec {
+	if x != nil {
+		return x.Fields
+	}
+	return nil
+}
+
+// FieldSpec declares one form field.
+type FieldSpec struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Key in the settings or options map.
+	Key string `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
+	// "settings" (Configure, stored in the job), "backup" (BackupRequest
+	// options), or "restore" (restore options).
+	Scope string `protobuf:"bytes,2,opt,name=scope,proto3" json:"scope,omitempty"`
+	// "string", "bool", "number", or "choice".
+	Type string `protobuf:"bytes,3,opt,name=type,proto3" json:"type,omitempty"`
+	// Display label and help text by language code ("en" is required).
+	Label map[string]string `protobuf:"bytes,4,rep,name=label,proto3" json:"label,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	Help  map[string]string `protobuf:"bytes,5,rep,name=help,proto3" json:"help,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	// Default value, as text.
+	Default string `protobuf:"bytes,6,opt,name=default,proto3" json:"default,omitempty"`
+	// Allowed values for type "choice".
+	Choices       []string `protobuf:"bytes,7,rep,name=choices,proto3" json:"choices,omitempty"`
+	Required      bool     `protobuf:"varint,8,opt,name=required,proto3" json:"required,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *FieldSpec) Reset() {
+	*x = FieldSpec{}
+	mi := &file_hitstor_plugin_v1_workload_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *FieldSpec) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*FieldSpec) ProtoMessage() {}
+
+func (x *FieldSpec) ProtoReflect() protoreflect.Message {
+	mi := &file_hitstor_plugin_v1_workload_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use FieldSpec.ProtoReflect.Descriptor instead.
+func (*FieldSpec) Descriptor() ([]byte, []int) {
+	return file_hitstor_plugin_v1_workload_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *FieldSpec) GetKey() string {
+	if x != nil {
+		return x.Key
+	}
+	return ""
+}
+
+func (x *FieldSpec) GetScope() string {
+	if x != nil {
+		return x.Scope
+	}
+	return ""
+}
+
+func (x *FieldSpec) GetType() string {
+	if x != nil {
+		return x.Type
+	}
+	return ""
+}
+
+func (x *FieldSpec) GetLabel() map[string]string {
+	if x != nil {
+		return x.Label
+	}
+	return nil
+}
+
+func (x *FieldSpec) GetHelp() map[string]string {
+	if x != nil {
+		return x.Help
+	}
+	return nil
+}
+
+func (x *FieldSpec) GetDefault() string {
+	if x != nil {
+		return x.Default
+	}
+	return ""
+}
+
+func (x *FieldSpec) GetChoices() []string {
+	if x != nil {
+		return x.Choices
+	}
+	return nil
+}
+
+func (x *FieldSpec) GetRequired() bool {
+	if x != nil {
+		return x.Required
+	}
+	return false
+}
+
 type BrowseRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Object path to list; empty for the top level.
@@ -174,7 +292,7 @@ type BrowseRequest struct {
 
 func (x *BrowseRequest) Reset() {
 	*x = BrowseRequest{}
-	mi := &file_hitstor_plugin_v1_workload_proto_msgTypes[2]
+	mi := &file_hitstor_plugin_v1_workload_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -186,7 +304,7 @@ func (x *BrowseRequest) String() string {
 func (*BrowseRequest) ProtoMessage() {}
 
 func (x *BrowseRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_hitstor_plugin_v1_workload_proto_msgTypes[2]
+	mi := &file_hitstor_plugin_v1_workload_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -199,7 +317,7 @@ func (x *BrowseRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BrowseRequest.ProtoReflect.Descriptor instead.
 func (*BrowseRequest) Descriptor() ([]byte, []int) {
-	return file_hitstor_plugin_v1_workload_proto_rawDescGZIP(), []int{2}
+	return file_hitstor_plugin_v1_workload_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *BrowseRequest) GetPath() string {
@@ -218,7 +336,7 @@ type BrowseResponse struct {
 
 func (x *BrowseResponse) Reset() {
 	*x = BrowseResponse{}
-	mi := &file_hitstor_plugin_v1_workload_proto_msgTypes[3]
+	mi := &file_hitstor_plugin_v1_workload_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -230,7 +348,7 @@ func (x *BrowseResponse) String() string {
 func (*BrowseResponse) ProtoMessage() {}
 
 func (x *BrowseResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_hitstor_plugin_v1_workload_proto_msgTypes[3]
+	mi := &file_hitstor_plugin_v1_workload_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -243,7 +361,7 @@ func (x *BrowseResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BrowseResponse.ProtoReflect.Descriptor instead.
 func (*BrowseResponse) Descriptor() ([]byte, []int) {
-	return file_hitstor_plugin_v1_workload_proto_rawDescGZIP(), []int{3}
+	return file_hitstor_plugin_v1_workload_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *BrowseResponse) GetEntries() []*BrowseEntry {
@@ -272,7 +390,7 @@ type BrowseEntry struct {
 
 func (x *BrowseEntry) Reset() {
 	*x = BrowseEntry{}
-	mi := &file_hitstor_plugin_v1_workload_proto_msgTypes[4]
+	mi := &file_hitstor_plugin_v1_workload_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -284,7 +402,7 @@ func (x *BrowseEntry) String() string {
 func (*BrowseEntry) ProtoMessage() {}
 
 func (x *BrowseEntry) ProtoReflect() protoreflect.Message {
-	mi := &file_hitstor_plugin_v1_workload_proto_msgTypes[4]
+	mi := &file_hitstor_plugin_v1_workload_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -297,7 +415,7 @@ func (x *BrowseEntry) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BrowseEntry.ProtoReflect.Descriptor instead.
 func (*BrowseEntry) Descriptor() ([]byte, []int) {
-	return file_hitstor_plugin_v1_workload_proto_rawDescGZIP(), []int{4}
+	return file_hitstor_plugin_v1_workload_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *BrowseEntry) GetPath() string {
@@ -349,7 +467,7 @@ type BackupRequest struct {
 
 func (x *BackupRequest) Reset() {
 	*x = BackupRequest{}
-	mi := &file_hitstor_plugin_v1_workload_proto_msgTypes[5]
+	mi := &file_hitstor_plugin_v1_workload_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -361,7 +479,7 @@ func (x *BackupRequest) String() string {
 func (*BackupRequest) ProtoMessage() {}
 
 func (x *BackupRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_hitstor_plugin_v1_workload_proto_msgTypes[5]
+	mi := &file_hitstor_plugin_v1_workload_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -374,7 +492,7 @@ func (x *BackupRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BackupRequest.ProtoReflect.Descriptor instead.
 func (*BackupRequest) Descriptor() ([]byte, []int) {
-	return file_hitstor_plugin_v1_workload_proto_rawDescGZIP(), []int{5}
+	return file_hitstor_plugin_v1_workload_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *BackupRequest) GetSelection() []string {
@@ -412,7 +530,7 @@ type BackupMessage struct {
 
 func (x *BackupMessage) Reset() {
 	*x = BackupMessage{}
-	mi := &file_hitstor_plugin_v1_workload_proto_msgTypes[6]
+	mi := &file_hitstor_plugin_v1_workload_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -424,7 +542,7 @@ func (x *BackupMessage) String() string {
 func (*BackupMessage) ProtoMessage() {}
 
 func (x *BackupMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_hitstor_plugin_v1_workload_proto_msgTypes[6]
+	mi := &file_hitstor_plugin_v1_workload_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -437,7 +555,7 @@ func (x *BackupMessage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BackupMessage.ProtoReflect.Descriptor instead.
 func (*BackupMessage) Descriptor() ([]byte, []int) {
-	return file_hitstor_plugin_v1_workload_proto_rawDescGZIP(), []int{6}
+	return file_hitstor_plugin_v1_workload_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *BackupMessage) GetMsg() isBackupMessage_Msg {
@@ -507,7 +625,7 @@ type ItemStart struct {
 
 func (x *ItemStart) Reset() {
 	*x = ItemStart{}
-	mi := &file_hitstor_plugin_v1_workload_proto_msgTypes[7]
+	mi := &file_hitstor_plugin_v1_workload_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -519,7 +637,7 @@ func (x *ItemStart) String() string {
 func (*ItemStart) ProtoMessage() {}
 
 func (x *ItemStart) ProtoReflect() protoreflect.Message {
-	mi := &file_hitstor_plugin_v1_workload_proto_msgTypes[7]
+	mi := &file_hitstor_plugin_v1_workload_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -532,7 +650,7 @@ func (x *ItemStart) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ItemStart.ProtoReflect.Descriptor instead.
 func (*ItemStart) Descriptor() ([]byte, []int) {
-	return file_hitstor_plugin_v1_workload_proto_rawDescGZIP(), []int{7}
+	return file_hitstor_plugin_v1_workload_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *ItemStart) GetPath() string {
@@ -553,7 +671,7 @@ type ItemEnd struct {
 
 func (x *ItemEnd) Reset() {
 	*x = ItemEnd{}
-	mi := &file_hitstor_plugin_v1_workload_proto_msgTypes[8]
+	mi := &file_hitstor_plugin_v1_workload_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -565,7 +683,7 @@ func (x *ItemEnd) String() string {
 func (*ItemEnd) ProtoMessage() {}
 
 func (x *ItemEnd) ProtoReflect() protoreflect.Message {
-	mi := &file_hitstor_plugin_v1_workload_proto_msgTypes[8]
+	mi := &file_hitstor_plugin_v1_workload_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -578,7 +696,7 @@ func (x *ItemEnd) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ItemEnd.ProtoReflect.Descriptor instead.
 func (*ItemEnd) Descriptor() ([]byte, []int) {
-	return file_hitstor_plugin_v1_workload_proto_rawDescGZIP(), []int{8}
+	return file_hitstor_plugin_v1_workload_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *ItemEnd) GetMetadata() []byte {
@@ -607,7 +725,7 @@ type RestoreCandidate struct {
 
 func (x *RestoreCandidate) Reset() {
 	*x = RestoreCandidate{}
-	mi := &file_hitstor_plugin_v1_workload_proto_msgTypes[9]
+	mi := &file_hitstor_plugin_v1_workload_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -619,7 +737,7 @@ func (x *RestoreCandidate) String() string {
 func (*RestoreCandidate) ProtoMessage() {}
 
 func (x *RestoreCandidate) ProtoReflect() protoreflect.Message {
-	mi := &file_hitstor_plugin_v1_workload_proto_msgTypes[9]
+	mi := &file_hitstor_plugin_v1_workload_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -632,7 +750,7 @@ func (x *RestoreCandidate) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RestoreCandidate.ProtoReflect.Descriptor instead.
 func (*RestoreCandidate) Descriptor() ([]byte, []int) {
-	return file_hitstor_plugin_v1_workload_proto_rawDescGZIP(), []int{9}
+	return file_hitstor_plugin_v1_workload_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *RestoreCandidate) GetRef() string {
@@ -685,7 +803,7 @@ type PlanRestoreRequest struct {
 
 func (x *PlanRestoreRequest) Reset() {
 	*x = PlanRestoreRequest{}
-	mi := &file_hitstor_plugin_v1_workload_proto_msgTypes[10]
+	mi := &file_hitstor_plugin_v1_workload_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -697,7 +815,7 @@ func (x *PlanRestoreRequest) String() string {
 func (*PlanRestoreRequest) ProtoMessage() {}
 
 func (x *PlanRestoreRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_hitstor_plugin_v1_workload_proto_msgTypes[10]
+	mi := &file_hitstor_plugin_v1_workload_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -710,7 +828,7 @@ func (x *PlanRestoreRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PlanRestoreRequest.ProtoReflect.Descriptor instead.
 func (*PlanRestoreRequest) Descriptor() ([]byte, []int) {
-	return file_hitstor_plugin_v1_workload_proto_rawDescGZIP(), []int{10}
+	return file_hitstor_plugin_v1_workload_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *PlanRestoreRequest) GetObject() string {
@@ -751,7 +869,7 @@ type PlanRestoreResponse struct {
 
 func (x *PlanRestoreResponse) Reset() {
 	*x = PlanRestoreResponse{}
-	mi := &file_hitstor_plugin_v1_workload_proto_msgTypes[11]
+	mi := &file_hitstor_plugin_v1_workload_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -763,7 +881,7 @@ func (x *PlanRestoreResponse) String() string {
 func (*PlanRestoreResponse) ProtoMessage() {}
 
 func (x *PlanRestoreResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_hitstor_plugin_v1_workload_proto_msgTypes[11]
+	mi := &file_hitstor_plugin_v1_workload_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -776,7 +894,7 @@ func (x *PlanRestoreResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PlanRestoreResponse.ProtoReflect.Descriptor instead.
 func (*PlanRestoreResponse) Descriptor() ([]byte, []int) {
-	return file_hitstor_plugin_v1_workload_proto_rawDescGZIP(), []int{11}
+	return file_hitstor_plugin_v1_workload_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *PlanRestoreResponse) GetRefs() []string {
@@ -801,7 +919,7 @@ type RestoreMessage struct {
 
 func (x *RestoreMessage) Reset() {
 	*x = RestoreMessage{}
-	mi := &file_hitstor_plugin_v1_workload_proto_msgTypes[12]
+	mi := &file_hitstor_plugin_v1_workload_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -813,7 +931,7 @@ func (x *RestoreMessage) String() string {
 func (*RestoreMessage) ProtoMessage() {}
 
 func (x *RestoreMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_hitstor_plugin_v1_workload_proto_msgTypes[12]
+	mi := &file_hitstor_plugin_v1_workload_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -826,7 +944,7 @@ func (x *RestoreMessage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RestoreMessage.ProtoReflect.Descriptor instead.
 func (*RestoreMessage) Descriptor() ([]byte, []int) {
-	return file_hitstor_plugin_v1_workload_proto_rawDescGZIP(), []int{12}
+	return file_hitstor_plugin_v1_workload_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *RestoreMessage) GetMsg() isRestoreMessage_Msg {
@@ -914,7 +1032,7 @@ type RestoreBegin struct {
 
 func (x *RestoreBegin) Reset() {
 	*x = RestoreBegin{}
-	mi := &file_hitstor_plugin_v1_workload_proto_msgTypes[13]
+	mi := &file_hitstor_plugin_v1_workload_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -926,7 +1044,7 @@ func (x *RestoreBegin) String() string {
 func (*RestoreBegin) ProtoMessage() {}
 
 func (x *RestoreBegin) ProtoReflect() protoreflect.Message {
-	mi := &file_hitstor_plugin_v1_workload_proto_msgTypes[13]
+	mi := &file_hitstor_plugin_v1_workload_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -939,7 +1057,7 @@ func (x *RestoreBegin) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RestoreBegin.ProtoReflect.Descriptor instead.
 func (*RestoreBegin) Descriptor() ([]byte, []int) {
-	return file_hitstor_plugin_v1_workload_proto_rawDescGZIP(), []int{13}
+	return file_hitstor_plugin_v1_workload_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *RestoreBegin) GetObject() string {
@@ -981,7 +1099,7 @@ type RestoreItemStart struct {
 
 func (x *RestoreItemStart) Reset() {
 	*x = RestoreItemStart{}
-	mi := &file_hitstor_plugin_v1_workload_proto_msgTypes[14]
+	mi := &file_hitstor_plugin_v1_workload_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -993,7 +1111,7 @@ func (x *RestoreItemStart) String() string {
 func (*RestoreItemStart) ProtoMessage() {}
 
 func (x *RestoreItemStart) ProtoReflect() protoreflect.Message {
-	mi := &file_hitstor_plugin_v1_workload_proto_msgTypes[14]
+	mi := &file_hitstor_plugin_v1_workload_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1006,7 +1124,7 @@ func (x *RestoreItemStart) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RestoreItemStart.ProtoReflect.Descriptor instead.
 func (*RestoreItemStart) Descriptor() ([]byte, []int) {
-	return file_hitstor_plugin_v1_workload_proto_rawDescGZIP(), []int{14}
+	return file_hitstor_plugin_v1_workload_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *RestoreItemStart) GetRef() string {
@@ -1038,7 +1156,7 @@ type RestoreItemEnd struct {
 
 func (x *RestoreItemEnd) Reset() {
 	*x = RestoreItemEnd{}
-	mi := &file_hitstor_plugin_v1_workload_proto_msgTypes[15]
+	mi := &file_hitstor_plugin_v1_workload_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1050,7 +1168,7 @@ func (x *RestoreItemEnd) String() string {
 func (*RestoreItemEnd) ProtoMessage() {}
 
 func (x *RestoreItemEnd) ProtoReflect() protoreflect.Message {
-	mi := &file_hitstor_plugin_v1_workload_proto_msgTypes[15]
+	mi := &file_hitstor_plugin_v1_workload_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1063,7 +1181,7 @@ func (x *RestoreItemEnd) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RestoreItemEnd.ProtoReflect.Descriptor instead.
 func (*RestoreItemEnd) Descriptor() ([]byte, []int) {
-	return file_hitstor_plugin_v1_workload_proto_rawDescGZIP(), []int{15}
+	return file_hitstor_plugin_v1_workload_proto_rawDescGZIP(), []int{16}
 }
 
 type RestoreResult struct {
@@ -1076,7 +1194,7 @@ type RestoreResult struct {
 
 func (x *RestoreResult) Reset() {
 	*x = RestoreResult{}
-	mi := &file_hitstor_plugin_v1_workload_proto_msgTypes[16]
+	mi := &file_hitstor_plugin_v1_workload_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1088,7 +1206,7 @@ func (x *RestoreResult) String() string {
 func (*RestoreResult) ProtoMessage() {}
 
 func (x *RestoreResult) ProtoReflect() protoreflect.Message {
-	mi := &file_hitstor_plugin_v1_workload_proto_msgTypes[16]
+	mi := &file_hitstor_plugin_v1_workload_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1101,7 +1219,7 @@ func (x *RestoreResult) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RestoreResult.ProtoReflect.Descriptor instead.
 func (*RestoreResult) Descriptor() ([]byte, []int) {
-	return file_hitstor_plugin_v1_workload_proto_rawDescGZIP(), []int{16}
+	return file_hitstor_plugin_v1_workload_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *RestoreResult) GetMessage() string {
@@ -1116,14 +1234,31 @@ var File_hitstor_plugin_v1_workload_proto protoreflect.FileDescriptor
 const file_hitstor_plugin_v1_workload_proto_rawDesc = "" +
 	"\n" +
 	" hitstor/plugin/v1/workload.proto\x12\x11hitstor.plugin.v1\x1a\x1fhitstor/plugin/v1/storage.proto\"\x14\n" +
-	"\x12GetMetadataRequest\"\xc1\x01\n" +
+	"\x12GetMetadataRequest\"\xf7\x01\n" +
 	"\x10WorkloadMetadata\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x18\n" +
 	"\aversion\x18\x03 \x01(\tR\aversion\x12)\n" +
 	"\x10protocol_version\x18\x04 \x01(\x05R\x0fprotocolVersion\x12 \n" +
 	"\vdescription\x18\x05 \x01(\tR\vdescription\x12\"\n" +
-	"\fcapabilities\x18\x06 \x03(\tR\fcapabilities\"#\n" +
+	"\fcapabilities\x18\x06 \x03(\tR\fcapabilities\x124\n" +
+	"\x06fields\x18\a \x03(\v2\x1c.hitstor.plugin.v1.FieldSpecR\x06fields\"\x85\x03\n" +
+	"\tFieldSpec\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05scope\x18\x02 \x01(\tR\x05scope\x12\x12\n" +
+	"\x04type\x18\x03 \x01(\tR\x04type\x12=\n" +
+	"\x05label\x18\x04 \x03(\v2'.hitstor.plugin.v1.FieldSpec.LabelEntryR\x05label\x12:\n" +
+	"\x04help\x18\x05 \x03(\v2&.hitstor.plugin.v1.FieldSpec.HelpEntryR\x04help\x12\x18\n" +
+	"\adefault\x18\x06 \x01(\tR\adefault\x12\x18\n" +
+	"\achoices\x18\a \x03(\tR\achoices\x12\x1a\n" +
+	"\brequired\x18\b \x01(\bR\brequired\x1a8\n" +
+	"\n" +
+	"LabelEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\x1a7\n" +
+	"\tHelpEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"#\n" +
 	"\rBrowseRequest\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\"J\n" +
 	"\x0eBrowseResponse\x128\n" +
@@ -1212,59 +1347,65 @@ func file_hitstor_plugin_v1_workload_proto_rawDescGZIP() []byte {
 	return file_hitstor_plugin_v1_workload_proto_rawDescData
 }
 
-var file_hitstor_plugin_v1_workload_proto_msgTypes = make([]protoimpl.MessageInfo, 20)
+var file_hitstor_plugin_v1_workload_proto_msgTypes = make([]protoimpl.MessageInfo, 23)
 var file_hitstor_plugin_v1_workload_proto_goTypes = []any{
 	(*GetMetadataRequest)(nil),  // 0: hitstor.plugin.v1.GetMetadataRequest
 	(*WorkloadMetadata)(nil),    // 1: hitstor.plugin.v1.WorkloadMetadata
-	(*BrowseRequest)(nil),       // 2: hitstor.plugin.v1.BrowseRequest
-	(*BrowseResponse)(nil),      // 3: hitstor.plugin.v1.BrowseResponse
-	(*BrowseEntry)(nil),         // 4: hitstor.plugin.v1.BrowseEntry
-	(*BackupRequest)(nil),       // 5: hitstor.plugin.v1.BackupRequest
-	(*BackupMessage)(nil),       // 6: hitstor.plugin.v1.BackupMessage
-	(*ItemStart)(nil),           // 7: hitstor.plugin.v1.ItemStart
-	(*ItemEnd)(nil),             // 8: hitstor.plugin.v1.ItemEnd
-	(*RestoreCandidate)(nil),    // 9: hitstor.plugin.v1.RestoreCandidate
-	(*PlanRestoreRequest)(nil),  // 10: hitstor.plugin.v1.PlanRestoreRequest
-	(*PlanRestoreResponse)(nil), // 11: hitstor.plugin.v1.PlanRestoreResponse
-	(*RestoreMessage)(nil),      // 12: hitstor.plugin.v1.RestoreMessage
-	(*RestoreBegin)(nil),        // 13: hitstor.plugin.v1.RestoreBegin
-	(*RestoreItemStart)(nil),    // 14: hitstor.plugin.v1.RestoreItemStart
-	(*RestoreItemEnd)(nil),      // 15: hitstor.plugin.v1.RestoreItemEnd
-	(*RestoreResult)(nil),       // 16: hitstor.plugin.v1.RestoreResult
-	nil,                         // 17: hitstor.plugin.v1.BackupRequest.OptionsEntry
-	nil,                         // 18: hitstor.plugin.v1.PlanRestoreRequest.OptionsEntry
-	nil,                         // 19: hitstor.plugin.v1.RestoreBegin.OptionsEntry
-	(*ConfigureRequest)(nil),    // 20: hitstor.plugin.v1.ConfigureRequest
-	(*ConfigureResponse)(nil),   // 21: hitstor.plugin.v1.ConfigureResponse
+	(*FieldSpec)(nil),           // 2: hitstor.plugin.v1.FieldSpec
+	(*BrowseRequest)(nil),       // 3: hitstor.plugin.v1.BrowseRequest
+	(*BrowseResponse)(nil),      // 4: hitstor.plugin.v1.BrowseResponse
+	(*BrowseEntry)(nil),         // 5: hitstor.plugin.v1.BrowseEntry
+	(*BackupRequest)(nil),       // 6: hitstor.plugin.v1.BackupRequest
+	(*BackupMessage)(nil),       // 7: hitstor.plugin.v1.BackupMessage
+	(*ItemStart)(nil),           // 8: hitstor.plugin.v1.ItemStart
+	(*ItemEnd)(nil),             // 9: hitstor.plugin.v1.ItemEnd
+	(*RestoreCandidate)(nil),    // 10: hitstor.plugin.v1.RestoreCandidate
+	(*PlanRestoreRequest)(nil),  // 11: hitstor.plugin.v1.PlanRestoreRequest
+	(*PlanRestoreResponse)(nil), // 12: hitstor.plugin.v1.PlanRestoreResponse
+	(*RestoreMessage)(nil),      // 13: hitstor.plugin.v1.RestoreMessage
+	(*RestoreBegin)(nil),        // 14: hitstor.plugin.v1.RestoreBegin
+	(*RestoreItemStart)(nil),    // 15: hitstor.plugin.v1.RestoreItemStart
+	(*RestoreItemEnd)(nil),      // 16: hitstor.plugin.v1.RestoreItemEnd
+	(*RestoreResult)(nil),       // 17: hitstor.plugin.v1.RestoreResult
+	nil,                         // 18: hitstor.plugin.v1.FieldSpec.LabelEntry
+	nil,                         // 19: hitstor.plugin.v1.FieldSpec.HelpEntry
+	nil,                         // 20: hitstor.plugin.v1.BackupRequest.OptionsEntry
+	nil,                         // 21: hitstor.plugin.v1.PlanRestoreRequest.OptionsEntry
+	nil,                         // 22: hitstor.plugin.v1.RestoreBegin.OptionsEntry
+	(*ConfigureRequest)(nil),    // 23: hitstor.plugin.v1.ConfigureRequest
+	(*ConfigureResponse)(nil),   // 24: hitstor.plugin.v1.ConfigureResponse
 }
 var file_hitstor_plugin_v1_workload_proto_depIdxs = []int32{
-	4,  // 0: hitstor.plugin.v1.BrowseResponse.entries:type_name -> hitstor.plugin.v1.BrowseEntry
-	17, // 1: hitstor.plugin.v1.BackupRequest.options:type_name -> hitstor.plugin.v1.BackupRequest.OptionsEntry
-	7,  // 2: hitstor.plugin.v1.BackupMessage.start:type_name -> hitstor.plugin.v1.ItemStart
-	8,  // 3: hitstor.plugin.v1.BackupMessage.end:type_name -> hitstor.plugin.v1.ItemEnd
-	18, // 4: hitstor.plugin.v1.PlanRestoreRequest.options:type_name -> hitstor.plugin.v1.PlanRestoreRequest.OptionsEntry
-	9,  // 5: hitstor.plugin.v1.PlanRestoreRequest.candidates:type_name -> hitstor.plugin.v1.RestoreCandidate
-	13, // 6: hitstor.plugin.v1.RestoreMessage.begin:type_name -> hitstor.plugin.v1.RestoreBegin
-	14, // 7: hitstor.plugin.v1.RestoreMessage.start:type_name -> hitstor.plugin.v1.RestoreItemStart
-	15, // 8: hitstor.plugin.v1.RestoreMessage.end:type_name -> hitstor.plugin.v1.RestoreItemEnd
-	19, // 9: hitstor.plugin.v1.RestoreBegin.options:type_name -> hitstor.plugin.v1.RestoreBegin.OptionsEntry
-	0,  // 10: hitstor.plugin.v1.Workload.GetMetadata:input_type -> hitstor.plugin.v1.GetMetadataRequest
-	20, // 11: hitstor.plugin.v1.Workload.Configure:input_type -> hitstor.plugin.v1.ConfigureRequest
-	2,  // 12: hitstor.plugin.v1.Workload.Browse:input_type -> hitstor.plugin.v1.BrowseRequest
-	5,  // 13: hitstor.plugin.v1.Workload.Backup:input_type -> hitstor.plugin.v1.BackupRequest
-	10, // 14: hitstor.plugin.v1.Workload.PlanRestore:input_type -> hitstor.plugin.v1.PlanRestoreRequest
-	12, // 15: hitstor.plugin.v1.Workload.Restore:input_type -> hitstor.plugin.v1.RestoreMessage
-	1,  // 16: hitstor.plugin.v1.Workload.GetMetadata:output_type -> hitstor.plugin.v1.WorkloadMetadata
-	21, // 17: hitstor.plugin.v1.Workload.Configure:output_type -> hitstor.plugin.v1.ConfigureResponse
-	3,  // 18: hitstor.plugin.v1.Workload.Browse:output_type -> hitstor.plugin.v1.BrowseResponse
-	6,  // 19: hitstor.plugin.v1.Workload.Backup:output_type -> hitstor.plugin.v1.BackupMessage
-	11, // 20: hitstor.plugin.v1.Workload.PlanRestore:output_type -> hitstor.plugin.v1.PlanRestoreResponse
-	16, // 21: hitstor.plugin.v1.Workload.Restore:output_type -> hitstor.plugin.v1.RestoreResult
-	16, // [16:22] is the sub-list for method output_type
-	10, // [10:16] is the sub-list for method input_type
-	10, // [10:10] is the sub-list for extension type_name
-	10, // [10:10] is the sub-list for extension extendee
-	0,  // [0:10] is the sub-list for field type_name
+	2,  // 0: hitstor.plugin.v1.WorkloadMetadata.fields:type_name -> hitstor.plugin.v1.FieldSpec
+	18, // 1: hitstor.plugin.v1.FieldSpec.label:type_name -> hitstor.plugin.v1.FieldSpec.LabelEntry
+	19, // 2: hitstor.plugin.v1.FieldSpec.help:type_name -> hitstor.plugin.v1.FieldSpec.HelpEntry
+	5,  // 3: hitstor.plugin.v1.BrowseResponse.entries:type_name -> hitstor.plugin.v1.BrowseEntry
+	20, // 4: hitstor.plugin.v1.BackupRequest.options:type_name -> hitstor.plugin.v1.BackupRequest.OptionsEntry
+	8,  // 5: hitstor.plugin.v1.BackupMessage.start:type_name -> hitstor.plugin.v1.ItemStart
+	9,  // 6: hitstor.plugin.v1.BackupMessage.end:type_name -> hitstor.plugin.v1.ItemEnd
+	21, // 7: hitstor.plugin.v1.PlanRestoreRequest.options:type_name -> hitstor.plugin.v1.PlanRestoreRequest.OptionsEntry
+	10, // 8: hitstor.plugin.v1.PlanRestoreRequest.candidates:type_name -> hitstor.plugin.v1.RestoreCandidate
+	14, // 9: hitstor.plugin.v1.RestoreMessage.begin:type_name -> hitstor.plugin.v1.RestoreBegin
+	15, // 10: hitstor.plugin.v1.RestoreMessage.start:type_name -> hitstor.plugin.v1.RestoreItemStart
+	16, // 11: hitstor.plugin.v1.RestoreMessage.end:type_name -> hitstor.plugin.v1.RestoreItemEnd
+	22, // 12: hitstor.plugin.v1.RestoreBegin.options:type_name -> hitstor.plugin.v1.RestoreBegin.OptionsEntry
+	0,  // 13: hitstor.plugin.v1.Workload.GetMetadata:input_type -> hitstor.plugin.v1.GetMetadataRequest
+	23, // 14: hitstor.plugin.v1.Workload.Configure:input_type -> hitstor.plugin.v1.ConfigureRequest
+	3,  // 15: hitstor.plugin.v1.Workload.Browse:input_type -> hitstor.plugin.v1.BrowseRequest
+	6,  // 16: hitstor.plugin.v1.Workload.Backup:input_type -> hitstor.plugin.v1.BackupRequest
+	11, // 17: hitstor.plugin.v1.Workload.PlanRestore:input_type -> hitstor.plugin.v1.PlanRestoreRequest
+	13, // 18: hitstor.plugin.v1.Workload.Restore:input_type -> hitstor.plugin.v1.RestoreMessage
+	1,  // 19: hitstor.plugin.v1.Workload.GetMetadata:output_type -> hitstor.plugin.v1.WorkloadMetadata
+	24, // 20: hitstor.plugin.v1.Workload.Configure:output_type -> hitstor.plugin.v1.ConfigureResponse
+	4,  // 21: hitstor.plugin.v1.Workload.Browse:output_type -> hitstor.plugin.v1.BrowseResponse
+	7,  // 22: hitstor.plugin.v1.Workload.Backup:output_type -> hitstor.plugin.v1.BackupMessage
+	12, // 23: hitstor.plugin.v1.Workload.PlanRestore:output_type -> hitstor.plugin.v1.PlanRestoreResponse
+	17, // 24: hitstor.plugin.v1.Workload.Restore:output_type -> hitstor.plugin.v1.RestoreResult
+	19, // [19:25] is the sub-list for method output_type
+	13, // [13:19] is the sub-list for method input_type
+	13, // [13:13] is the sub-list for extension type_name
+	13, // [13:13] is the sub-list for extension extendee
+	0,  // [0:13] is the sub-list for field type_name
 }
 
 func init() { file_hitstor_plugin_v1_workload_proto_init() }
@@ -1273,12 +1414,12 @@ func file_hitstor_plugin_v1_workload_proto_init() {
 		return
 	}
 	file_hitstor_plugin_v1_storage_proto_init()
-	file_hitstor_plugin_v1_workload_proto_msgTypes[6].OneofWrappers = []any{
+	file_hitstor_plugin_v1_workload_proto_msgTypes[7].OneofWrappers = []any{
 		(*BackupMessage_Start)(nil),
 		(*BackupMessage_Data)(nil),
 		(*BackupMessage_End)(nil),
 	}
-	file_hitstor_plugin_v1_workload_proto_msgTypes[12].OneofWrappers = []any{
+	file_hitstor_plugin_v1_workload_proto_msgTypes[13].OneofWrappers = []any{
 		(*RestoreMessage_Begin)(nil),
 		(*RestoreMessage_Start)(nil),
 		(*RestoreMessage_Data)(nil),
@@ -1290,7 +1431,7 @@ func file_hitstor_plugin_v1_workload_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_hitstor_plugin_v1_workload_proto_rawDesc), len(file_hitstor_plugin_v1_workload_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   20,
+			NumMessages:   23,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

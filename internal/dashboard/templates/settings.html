@@ -6,6 +6,7 @@
         <button type="button" class="settings-tab" data-tab="network" role="tab">{{t "Network"}}</button>
         <button type="button" class="settings-tab" data-tab="integrations" role="tab">{{t "Integrations"}}</button>
         <button type="button" class="settings-tab" data-tab="notifications" role="tab">{{t "Notifications"}}</button>
+        <button type="button" class="settings-tab" data-tab="plugins" role="tab">{{t "Plugins"}}</button>
     </nav>
 
     <div id="settings-restart-banner" class="dr-banner dr-banner-warn hidden" role="status">
@@ -195,6 +196,14 @@
             <button type="submit" class="btn btn-primary">{{t "Save Notifications"}}</button>
         </form>
     </section>
+
+    <section class="settings-panel settings-panel--wide hidden" data-panel="plugins">
+        <h2>{{t "Plugins"}}</h2>
+        <p class="settings-lead">{{t "Workload plugin packages (.hpk) available to install on agents. Agents verify each package's signature before installing it."}}</p>
+        <div id="plugin-packages">{{t "Loading..."}}</div>
+    </section>
 </div>
 <script src="/static/settings.js"></script>
+<script src="/static/plugins.js"></script>
+<script>HitStorPlugins.packagesPanel(document.getElementById('plugin-packages'));</script>
 {{end}}

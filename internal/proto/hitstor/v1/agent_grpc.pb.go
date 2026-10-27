@@ -38,6 +38,8 @@ const (
 	AgentService_BrowseWorkload_FullMethodName      = "/hitstor.v1.AgentService/BrowseWorkload"
 	AgentService_PlanWorkloadRestore_FullMethodName = "/hitstor.v1.AgentService/PlanWorkloadRestore"
 	AgentService_RestoreWorkload_FullMethodName     = "/hitstor.v1.AgentService/RestoreWorkload"
+	AgentService_InstallPlugin_FullMethodName       = "/hitstor.v1.AgentService/InstallPlugin"
+	AgentService_RemovePlugin_FullMethodName        = "/hitstor.v1.AgentService/RemovePlugin"
 )
 
 // AgentServiceClient is the client API for AgentService service.
@@ -92,6 +94,11 @@ type AgentServiceClient interface {
 	// RestoreWorkload streams planned items from the server; the agent pipes
 	// them into the plugin, verifying each item's SHA-256 on the way.
 	RestoreWorkload(ctx context.Context, opts ...grpc.CallOption) (grpc.ClientStreamingClient[WorkloadRestoreMessage, WorkloadRestoreResponse], error)
+	// InstallPlugin streams a plugin package from the server. The agent
+	// verifies it against its own trusted keys, exactly as a local install.
+	InstallPlugin(ctx context.Context, opts ...grpc.CallOption) (grpc.ClientStreamingClient[InstallPluginMessage, InstallPluginResponse], error)
+	// RemovePlugin uninstalls a plugin; refused while a job uses it.
+	RemovePlugin(ctx context.Context, in *RemovePluginRequest, opts ...grpc.CallOption) (*RemovePluginResponse, error)
 }
 
 type agentServiceClient struct {
@@ -247,6 +254,29 @@ func (c *agentServiceClient) RestoreWorkload(ctx context.Context, opts ...grpc.C
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type AgentService_RestoreWorkloadClient = grpc.ClientStreamingClient[WorkloadRestoreMessage, WorkloadRestoreResponse]
 
+func (c *agentServiceClient) InstallPlugin(ctx context.Context, opts ...grpc.CallOption) (grpc.ClientStreamingClient[InstallPluginMessage, InstallPluginResponse], error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	stream, err := c.cc.NewStream(ctx, &AgentService_ServiceDesc.Streams[3], AgentService_InstallPlugin_FullMethodName, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &grpc.GenericClientStream[InstallPluginMessage, InstallPluginResponse]{ClientStream: stream}
+	return x, nil
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type AgentService_InstallPluginClient = grpc.ClientStreamingClient[InstallPluginMessage, InstallPluginResponse]
+
+func (c *agentServiceClient) RemovePlugin(ctx context.Context, in *RemovePluginRequest, opts ...grpc.CallOption) (*RemovePluginResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(RemovePluginResponse)
+	err := c.cc.Invoke(ctx, AgentService_RemovePlugin_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // AgentServiceServer is the server API for AgentService service.
 // All implementations must embed UnimplementedAgentServiceServer
 // for forward compatibility.
@@ -299,6 +329,11 @@ type AgentServiceServer interface {
 	// RestoreWorkload streams planned items from the server; the agent pipes
 	// them into the plugin, verifying each item's SHA-256 on the way.
 	RestoreWorkload(grpc.ClientStreamingServer[WorkloadRestoreMessage, WorkloadRestoreResponse]) error
+	// InstallPlugin streams a plugin package from the server. The agent
+	// verifies it against its own trusted keys, exactly as a local install.
+	InstallPlugin(grpc.ClientStreamingServer[InstallPluginMessage, InstallPluginResponse]) error
+	// RemovePlugin uninstalls a plugin; refused while a job uses it.
+	RemovePlugin(context.Context, *RemovePluginRequest) (*RemovePluginResponse, error)
 	mustEmbedUnimplementedAgentServiceServer()
 }
 
@@ -347,6 +382,12 @@ func (UnimplementedAgentServiceServer) PlanWorkloadRestore(context.Context, *Pla
 }
 func (UnimplementedAgentServiceServer) RestoreWorkload(grpc.ClientStreamingServer[WorkloadRestoreMessage, WorkloadRestoreResponse]) error {
 	return status.Error(codes.Unimplemented, "method RestoreWorkload not implemented")
+}
+func (UnimplementedAgentServiceServer) InstallPlugin(grpc.ClientStreamingServer[InstallPluginMessage, InstallPluginResponse]) error {
+	return status.Error(codes.Unimplemented, "method InstallPlugin not implemented")
+}
+func (UnimplementedAgentServiceServer) RemovePlugin(context.Context, *RemovePluginRequest) (*RemovePluginResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method RemovePlugin not implemented")
 }
 func (UnimplementedAgentServiceServer) mustEmbedUnimplementedAgentServiceServer() {}
 func (UnimplementedAgentServiceServer) testEmbeddedByValue()                      {}
@@ -574,6 +615,31 @@ func _AgentService_RestoreWorkload_Handler(srv interface{}, stream grpc.ServerSt
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type AgentService_RestoreWorkloadServer = grpc.ClientStreamingServer[WorkloadRestoreMessage, WorkloadRestoreResponse]
 
+func _AgentService_InstallPlugin_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(AgentServiceServer).InstallPlugin(&grpc.GenericServerStream[InstallPluginMessage, InstallPluginResponse]{ServerStream: stream})
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type AgentService_InstallPluginServer = grpc.ClientStreamingServer[InstallPluginMessage, InstallPluginResponse]
+
+func _AgentService_RemovePlugin_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RemovePluginRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AgentServiceServer).RemovePlugin(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AgentService_RemovePlugin_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AgentServiceServer).RemovePlugin(ctx, req.(*RemovePluginRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // AgentService_ServiceDesc is the grpc.ServiceDesc for AgentService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -621,6 +687,10 @@ var AgentService_ServiceDesc = grpc.ServiceDesc{
 			MethodName: "PlanWorkloadRestore",
 			Handler:    _AgentService_PlanWorkloadRestore_Handler,
 		},
+		{
+			MethodName: "RemovePlugin",
+			Handler:    _AgentService_RemovePlugin_Handler,
+		},
 	},
 	Streams: []grpc.StreamDesc{
 		{
@@ -636,6 +706,11 @@ var AgentService_ServiceDesc = grpc.ServiceDesc{
 		{
 			StreamName:    "RestoreWorkload",
 			Handler:       _AgentService_RestoreWorkload_Handler,
+			ClientStreams: true,
+		},
+		{
+			StreamName:    "InstallPlugin",
+			Handler:       _AgentService_InstallPlugin_Handler,
 			ClientStreams: true,
 		},
 	},

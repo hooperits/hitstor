@@ -10,6 +10,7 @@ import (
 	"github.com/hooperits/hitstor/internal/backend"
 	"github.com/hooperits/hitstor/internal/cron"
 	"github.com/hooperits/hitstor/internal/hook"
+	"github.com/hooperits/hitstor/internal/plugin"
 	pb "github.com/hooperits/hitstor/internal/proto/hitstor/v1"
 	"github.com/hooperits/hitstor/internal/repository"
 	"google.golang.org/grpc/codes"
@@ -416,6 +417,7 @@ func (s *Server) GetSchedule(ctx context.Context, req *pb.GetScheduleRequest) (*
 				ProtocolVersion: int(p.ProtocolVersion),
 				Capabilities:    p.Capabilities,
 				Signer:          p.Signer,
+				Fields:          pluginFieldsFromProto(p.Fields),
 			})
 		}
 		// Inventory is informational: never fail the schedule poll over it.
@@ -444,6 +446,7 @@ func (s *Server) GetSchedule(ctx context.Context, req *pb.GetScheduleRequest) (*
 			PluginSettings: j.PluginSettings,
 			Selection:      j.Selection,
 			BackupKind:     j.BackupKind,
+			BackupOptions:  j.BackupOptions,
 		}
 		if j.LastFullBackup != nil {
 			sj.LastFullBackupUnix = j.LastFullBackup.Unix()
@@ -585,4 +588,13 @@ func findPreviousSnapshot(repo *repository.Repository, jobID string) (*repositor
 		return nil, backend.ID{}, false
 	}
 	return bestSnap, bestID, true
+}
+
+func pluginFieldsFromProto(fs []*pb.PluginField) []plugin.FieldSpec {
+	out := make([]plugin.FieldSpec, 0, len(fs))
+	for _, f := range fs {
+		out = append(out, plugin.FieldSpec{Key: f.Key, Scope: f.Scope, Type: f.Type, Label: f.Label, Help: f.Help,
+			Default: f.Default, Choices: f.Choices, Required: f.Required})
+	}
+	return out
 }

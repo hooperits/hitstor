@@ -58,6 +58,10 @@ type Dashboard struct {
 	// Workload plugin restores, by session ID (*WorkloadRestoreSession).
 	workloadRestores sync.Map
 
+	// pluginPackages overrides where uploaded plugin packages are kept.
+	// Tests only; empty uses defaultPluginPackageDir.
+	pluginPackages string
+
 	// dialAgent replaces pinned-TLS agent dialing. Tests only.
 	dialAgent func(name, addr string) (*server.AgentClient, error)
 
@@ -359,6 +363,11 @@ func (d *Dashboard) Handler() http.Handler {
 	mux.Handle("GET /api/agents/{name}/info", d.protect(http.HandlerFunc(d.handleAPIAgentInfo)))
 	mux.Handle("GET /api/agents/{name}/plugins/{plugin}/browse", d.protect(http.HandlerFunc(d.handleAPIWorkloadBrowse)))
 	mux.Handle("GET /api/workload/points", d.protect(http.HandlerFunc(d.handleAPIWorkloadPoints)))
+	mux.Handle("GET /api/plugin-packages", d.protect(http.HandlerFunc(d.handleAPIPluginPackages)))
+	mux.Handle("POST /api/plugin-packages", d.protect(http.HandlerFunc(d.handleAPIUploadPluginPackage)))
+	mux.Handle("DELETE /api/plugin-packages/{file}", d.protect(http.HandlerFunc(d.handleAPIDeletePluginPackage)))
+	mux.Handle("POST /api/agents/{name}/plugins", d.protect(http.HandlerFunc(d.handleAPIInstallAgentPlugin)))
+	mux.Handle("DELETE /api/agents/{name}/plugins/{id}", d.protect(http.HandlerFunc(d.handleAPIRemoveAgentPlugin)))
 	mux.Handle("POST /api/workload/restores", d.protect(http.HandlerFunc(d.handleAPIStartWorkloadRestore)))
 	mux.Handle("GET /api/workload/restores/{id}", d.protect(http.HandlerFunc(d.handleAPIGetWorkloadRestore)))
 	mux.Handle("DELETE /api/agents/{name}", d.protect(http.HandlerFunc(d.handleAPIRemoveAgent)))

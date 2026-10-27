@@ -39,7 +39,9 @@ versión instalada anteriormente sigue activa y sin cambios.
 
 El agente informa al servidor sus plugins instalados cada vez que consulta su
 programación, así el servidor sabe qué cargas de trabajo puede atender cada
-agente.
+agente. Los plugins también se pueden instalar desde el dashboard
+(**Configuración → Plugins** y luego la página del agente); el agente aplica
+exactamente las mismas verificaciones a los paquetes que envía el servidor.
 
 ## Subcomandos { #subcommands }
 

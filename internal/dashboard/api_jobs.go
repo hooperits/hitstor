@@ -52,6 +52,7 @@ type backupJobJSON struct {
 	PluginSettings map[string]string `json:"plugin_settings,omitempty"`
 	Selection      []string          `json:"selection,omitempty"`
 	BackupKind     string            `json:"backup_kind,omitempty"`
+	BackupOptions  map[string]string `json:"backup_options,omitempty"`
 }
 
 func jobToJSON(c *i18n.Catalog, j server.BackupJob) backupJobJSON {
@@ -112,6 +113,7 @@ func jobToJSON(c *i18n.Catalog, j server.BackupJob) backupJobJSON {
 		PluginSettings:    j.PluginSettings,
 		Selection:         j.Selection,
 		BackupKind:        j.BackupKind,
+		BackupOptions:     j.BackupOptions,
 	}
 	if j.LastVerifyAt != nil {
 		ts := j.LastVerifyAt.Format(time.RFC3339)
@@ -176,6 +178,7 @@ type createBackupJobRequest struct {
 	PluginSettings map[string]string `json:"plugin_settings"`
 	Selection      []string          `json:"selection"`
 	BackupKind     string            `json:"backup_kind"`
+	BackupOptions  map[string]string `json:"backup_options"`
 }
 
 // validateJobType accepts filesystem and workload plugin jobs.
@@ -280,6 +283,7 @@ func (d *Dashboard) handleAPICreateBackupJob(w http.ResponseWriter, r *http.Requ
 		job.PluginSettings = req.PluginSettings
 		job.Selection = req.Selection
 		job.BackupKind = req.BackupKind
+		job.BackupOptions = req.BackupOptions
 	}
 	if err := server.ValidateJob(job); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -370,6 +374,9 @@ func (d *Dashboard) handleAPIUpdateBackupJob(w http.ResponseWriter, r *http.Requ
 		if req.BackupKind != "" {
 			updated.BackupKind = req.BackupKind
 		}
+		if req.BackupOptions != nil {
+			updated.BackupOptions = req.BackupOptions
+		}
 	} else {
 		updated.UseVSS = req.UseVSS
 		updated.JobType = server.JobTypeFiles
@@ -404,8 +411,8 @@ func (d *Dashboard) handleAPIRunBackupJob(w http.ResponseWriter, r *http.Request
 		http.Error(w, "job not found", http.StatusNotFound)
 		return
 	}
-	if len(job.Paths) == 0 {
-		http.Error(w, "job has no paths configured", http.StatusBadRequest)
+	if err := server.ValidateJob(*job); err != nil || (!server.IsWorkloadJobType(job.JobType) && len(job.Paths) == 0) {
+		http.Error(w, "job has nothing to back up (no paths or selected objects)", http.StatusBadRequest)
 		return
 	}
 	if job.RunNow {

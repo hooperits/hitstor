@@ -2,6 +2,7 @@
 <div id="restores-app" class="restores-page">
     <div class="restores-toolbar">
         <p class="restores-toolbar-hint" id="restores-toolbar-hint">{{t "Loading agents..."}}</p>
+        <button type="button" class="btn btn-secondary" onclick="HitStorPlugins.openRestoreDialog()">{{t "Restore from a Plugin Backup"}}</button>
     </div>
 
     <section class="stats-section restores-stats" id="restores-stats" aria-label="{{t "Restore summary"}}">
@@ -102,4 +103,5 @@
 </div>
 
 <script src="/static/restores.js"></script>
+<script src="/static/plugins.js"></script>
 {{end}}

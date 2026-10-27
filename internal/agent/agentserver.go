@@ -59,6 +59,10 @@ type AgentServer struct {
 	// OpenWorkload launches installed workload plugins for browse and
 	// restore requests from the server. Nil disables those RPCs.
 	OpenWorkload WorkloadOpener
+
+	// Plugins installs and removes plugins pushed by the server. Nil
+	// disables those RPCs.
+	Plugins PluginInstaller
 }
 
 // RestoreOutcome summarizes one completed RestoreData stream.

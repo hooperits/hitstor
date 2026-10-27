@@ -223,6 +223,8 @@ The AgentService runs on each agent (default port 8422) and handles server-to-ag
 | `BrowseWorkload` | Unary | List the objects an installed workload plugin can back up |
 | `PlanWorkloadRestore` | Unary | Ask a workload plugin which candidate items to restore, in order |
 | `RestoreWorkload` | Client streaming | Stream planned items to the agent, which verifies each item's SHA-256 and pipes it into the plugin |
+| `InstallPlugin` | Client streaming | Stream a plugin package to the agent, which verifies and installs it with its own trust settings |
+| `RemovePlugin` | Unary | Uninstall a plugin (refused while a job uses it) |
 
 ### AgentService Authentication
 

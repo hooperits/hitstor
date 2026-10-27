@@ -37,6 +37,7 @@ func (p *mssqlPlugin) Metadata(context.Context) (hitstorplugin.WorkloadMetadata,
 			"browse", "backup.full", "backup.differential", "backup.log",
 			"restore.point_in_time", "restore.rename",
 		},
+		Fields: fields,
 	}, nil
 }
 

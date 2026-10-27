@@ -8,6 +8,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/hooperits/hitstor/internal/plugin"
 	"github.com/hooperits/hitstor/internal/pluginmgr"
 	pb "github.com/hooperits/hitstor/internal/proto/hitstor/v1"
 	"google.golang.org/grpc"
@@ -245,6 +246,7 @@ type JobSchedule struct {
 	PluginSettings map[string]string
 	Selection      []string
 	BackupKind     string
+	BackupOptions  map[string]string
 }
 
 // ScheduleInfo holds the schedule returned by the server.
@@ -273,6 +275,7 @@ func (c *Client) GetScheduleReportingPlugins(ctx context.Context, apiKey string,
 			ProtocolVersion: int32(p.ProtocolVersion),
 			Capabilities:    p.Capabilities,
 			Signer:          p.Signer,
+			Fields:          pluginFieldsToProto(p.Fields),
 		})
 	}
 	return c.getSchedule(ctx, req)
@@ -313,6 +316,7 @@ func (c *Client) getSchedule(ctx context.Context, req *pb.GetScheduleRequest) (*
 			PluginSettings:     j.PluginSettings,
 			Selection:          j.Selection,
 			BackupKind:         j.BackupKind,
+			BackupOptions:      j.BackupOptions,
 		})
 	}
 
@@ -357,4 +361,13 @@ func (c *Client) AnnounceForRecovery(ctx context.Context, req *pb.AnnounceForRec
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 	return c.backup.AnnounceForRecovery(ctx, req)
+}
+
+func pluginFieldsToProto(fs []plugin.FieldSpec) []*pb.PluginField {
+	out := make([]*pb.PluginField, 0, len(fs))
+	for _, f := range fs {
+		out = append(out, &pb.PluginField{Key: f.Key, Scope: f.Scope, Type: f.Type, Label: f.Label, Help: f.Help,
+			Default: f.Default, Choices: f.Choices, Required: f.Required})
+	}
+	return out
 }

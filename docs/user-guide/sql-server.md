@@ -26,7 +26,11 @@ snapshot.
 
 ## Install the plugin
 
-On the SQL Server host, in an elevated prompt:
+From the dashboard: upload the package under **Settings → Plugins**, then open
+the agent's page and choose **Install** in its **Plugins** section. The agent
+verifies the package signature before installing it.
+
+Or on the SQL Server host, in an elevated prompt:
 
 ```powershell
 hitstor-agent plugin install hitstor-plugin-mssql-0.1.0-windows-amd64.hpk
@@ -78,8 +82,11 @@ kind; schedule separate jobs per kind. A common plan:
 | Daily differential | `differential` | Daily 01:00 |
 | Log | `log` | Every 15 minutes |
 
-Create the jobs through the dashboard API (the dashboard pages arrive in a
-later release):
+In the dashboard, choose **New Backup Job → Application (plugin)**, pick the
+agent and the `mssql` plugin, select the databases in the object tree, and set
+the backup kind, connection settings, options, and cron schedule.
+
+The same job through the dashboard API:
 
 ```bash
 curl -X POST https://<server>:8420/api/backups -H 'Content-Type: application/json' -d '{
@@ -104,6 +111,10 @@ deduplicate; HitStor compresses the chunks anyway.
     that case let one tool own the chain and set `copy_only` on the other.
 
 ## Restore
+
+In the dashboard, open **Restores → Restore from a Plugin Backup**: choose the
+agent, the database, and either the latest point or a point in time (click a
+backup in the list to use its time), then set the restore options.
 
 The server collects the database's backups from the snapshots; the plugin
 chooses the newest full backup finished by the target point, the newest
@@ -159,8 +170,6 @@ hitstor-agent plugin test-restore mssql --from C:\Temp\sales-backup `
   a job plan that also takes differentials.
 - One database per VDI stream; databases in a job are backed up one after
   another.
-- Dashboard pages for SQL Server jobs and restores are not available yet; use
-  the API.
 
 ## See also
 

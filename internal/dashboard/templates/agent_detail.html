@@ -85,6 +85,18 @@
     </div>
     <div id="live-info-content" class="agent-detail-live-loading">{{t "Loading agent info..."}}</div>
 </div>
+
+<div class="card agent-detail-plugins-panel">
+    <div class="agent-detail-panel__head">
+        <span class="agent-detail-panel__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3 3-3 3-3-3z"/><path d="M5 9l3 3-3 3-3-3z"/><path d="M19 9l3 3-3 3-3-3z"/><path d="M12 16l3 3-3 3-3-3z"/></svg>
+        </span>
+        <h2 class="agent-detail-panel__title">{{t "Plugins"}}</h2>
+    </div>
+    <div id="agent-plugins">{{t "Loading..."}}</div>
+</div>
+<script src="/static/plugins.js"></script>
+<script>HitStorPlugins.agentPanel(document.getElementById('agent-plugins'), {{$a.Name}});</script>
 {{end}}
 
 <div class="agent-detail-jobs-panel">

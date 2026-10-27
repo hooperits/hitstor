@@ -155,6 +155,10 @@
                             <strong>{{t "Files & Directories"}}</strong>
                             <span>{{t "Backup paths from a remote agent (Windows or Linux)."}}</span>
                         </div>
+                        <div class="job-type-card" data-type="workload" onclick="closeNewJobDialog(); HitStorPlugins.openJobDialog();">
+                            <strong>{{t "Application (plugin)"}}</strong>
+                            <span>{{t "Databases and other applications, through a plugin installed on the agent."}}</span>
+                        </div>
                     </div>
                     <select id="job-type" required style="display:none;">
                         <option value="files" selected>{{t "Files & Directories"}}</option>
@@ -347,6 +351,7 @@
     </div>
 </div>
 
+<script src="/static/plugins.js"></script>
 <script>
 // Load agents and repos for dropdowns.
 (function() {

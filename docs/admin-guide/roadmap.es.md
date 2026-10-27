@@ -1,9 +1,11 @@
 # Hoja de ruta
 
-HitStor es un **producto de respaldo y restauración de sistemas de archivos para Windows y Linux**,
-y la hoja de ruta existe para que sea excelente exactamente en eso. Por defecto, queda fuera
-del alcance todo trabajo que no mejore la capacidad de respaldar y restaurar archivos de forma
-rápida, segura y verificable.
+HitStor es un **producto de respaldo y restauración para Windows y Linux**: sistemas de
+archivos en el núcleo y aplicaciones mediante
+[plugins de carga de trabajo](../dev-guide/plugin-architecture.md) instalables. La hoja de
+ruta existe para que sea excelente en eso. Por defecto, queda fuera del alcance todo trabajo
+que no mejore la capacidad de respaldar y restaurar datos de forma rápida, segura y
+verificable.
 
 ## Entregado { #shipped }
 
@@ -21,6 +23,8 @@ rápida, segura y verificable.
 | Recuperación ante desastres guiada | Restauración completa del sistema con varias tareas sobre un host reconstruido |
 | Benchmarks | Arnés reproducible de respaldo/restauración, comparación opcional con restic |
 | Ransomware Sentinel | Telemetría de Gemini sobre instantáneas del sistema de archivos (opcional) |
+| Plugins de carga de trabajo | Paquetes `.hpk` firmados que se instalan por agente, localmente o desde el dashboard; respaldo y restauración a un punto en el tiempo a través del agente; retención que respeta las cadenas de respaldo |
+| [SQL Server](../user-guide/sql-server.md) | Plugin `mssql` sobre VDI: respaldos completos, diferenciales y de log; restauración a un punto en el tiempo |
 
 ## Ahora { #now }
 
@@ -55,13 +59,17 @@ que estas piezas se entregarán juntas y no como funcionalidades independientes.
 
 ## Eliminado de forma permanente (v2.0.0) { #permanently-removed-v200 }
 
-Estos elementos **no** están pospuestos: se eliminaron del producto y no está previsto
-que regresen:
+Estos elementos se eliminaron del producto y no está previsto que regresen en su forma
+original:
 
 - Respaldo de Microsoft 365 y Google Workspace
-- Respaldo de bases de datos (PostgreSQL, MySQL, MariaDB, SQL Server, Oracle)
+- Las integraciones de bases de datos incorporadas (PostgreSQL, MySQL, MariaDB, SQL Server, Oracle)
 - Respaldo sin agente de VM en la nube (GCP, AWS, Azure) y VMware/vSphere
 - El tipo de plugin recolector de cargas de trabajo (workload collector) que los atendía
+
+El respaldo de bases de datos regresa ahora como
+[plugins de carga de trabajo](../dev-guide/plugin-architecture.md) instalables que se ejecutan
+en el servidor de la base de datos, empezando por [SQL Server](../user-guide/sql-server.md).
 
 Los archivos `config.yaml` existentes que contengan `collector_plugins` o las claves de
 integración relacionadas siguen cargándose; esas claves simplemente se ignoran (campos desconocidos).

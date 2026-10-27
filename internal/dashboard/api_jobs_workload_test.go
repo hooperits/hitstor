@@ -57,7 +57,16 @@ func TestAPICreateWorkloadJob(t *testing.T) {
 	if upd.Code != http.StatusOK {
 		t.Fatalf("update: %d %s", upd.Code, upd.Body)
 	}
+	// Run now works for workload jobs, which have no paths.
+	run := httptest.NewRecorder()
+	dash.Handler().ServeHTTP(run, httptest.NewRequest("POST", "/api/backups/"+got.ID+"/run", nil))
+	if run.Code >= 400 {
+		t.Fatalf("run now: %d %s", run.Code, run.Body)
+	}
 	job := dash.registry.GetJob(got.ID)
+	if !job.RunNow {
+		t.Fatal("run now not recorded")
+	}
 	if job.JobType != "workload" || job.Plugin != "example" || job.Selection[0] != "demo/beta" || job.BackupKind != "full" {
 		t.Fatalf("after update = %+v", job)
 	}

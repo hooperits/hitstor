@@ -55,11 +55,7 @@ func runDaemon(cmd *cobra.Command, args []string) error {
 	// secrets such as database passwords from.
 	loadEnvFile(agent.DefaultEnvPath)
 
-	// Only the daemon runs plugin jobs: any in-use marker now is left over
-	// from a previous run that crashed.
-	if mgr, err := newPluginManager(); err == nil {
-		mgr.ClearInUse()
-	}
+	clearStalePluginMarkers()
 
 	// Check listen port from environment variable if not set via flag.
 	if !cmd.Flags().Changed("listen-port") {
@@ -95,19 +91,7 @@ func runDaemon(cmd *cobra.Command, args []string) error {
 		Version:    Version,
 	})
 
-	agentSrv.OpenWorkload = func(id string, settings map[string]string) (agent.WorkloadPlugin, func(), error) {
-		_, c, closeAll, err := openInstalledWorkload(id, settings)
-		if err != nil {
-			return nil, nil, err
-		}
-		return c, closeAll, nil
-	}
-
-	if mgr, err := newPluginManager(); err == nil {
-		agentSrv.Plugins = mgr
-	} else {
-		slog.Warn("plugin manager unavailable; remote plugin installs disabled", "error", err)
-	}
+	enablePlugins(agentSrv)
 
 	// When the server registers us, start the backup loop.
 	registerCh := make(chan struct{}, 1)

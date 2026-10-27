@@ -35,7 +35,9 @@ func serviceBackup(ctx context.Context) error {
 	setupLogging()
 
 	// Load credentials from agent.env (Windows doesn't have systemd EnvironmentFile).
+	// Workload plugins inherit this environment.
 	loadEnvFile(agent.DefaultEnvPath)
+	clearStalePluginMarkers()
 
 	pollIntervalFlag = defaultPollInterval
 
@@ -68,6 +70,7 @@ func serviceBackup(ctx context.Context) error {
 		ConfigPath: configFlag,
 		Version:    Version,
 	})
+	enablePlugins(agentSrv)
 
 	// When the server registers us, start the backup loop.
 	registerCh := make(chan struct{}, 1)

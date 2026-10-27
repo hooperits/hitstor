@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"strings"
@@ -496,4 +497,31 @@ func localCandidates(dir, object string) ([]localCandidate, error) {
 		return nil
 	})
 	return out, err
+}
+
+// enablePlugins lets the server browse, restore through, install, and remove
+// workload plugins on this agent. Both the daemon and the Windows service
+// call it.
+func enablePlugins(agentSrv *agent.AgentServer) {
+	agentSrv.OpenWorkload = func(id string, settings map[string]string) (agent.WorkloadPlugin, func(), error) {
+		_, c, closeAll, err := openInstalledWorkload(id, settings)
+		if err != nil {
+			return nil, nil, err
+		}
+		return c, closeAll, nil
+	}
+	if mgr, err := newPluginManager(); err == nil {
+		agentSrv.Plugins = mgr
+	} else {
+		slog.Warn("plugin manager unavailable; remote plugin installs disabled", "error", err)
+	}
+}
+
+// clearStalePluginMarkers removes in-use markers at startup. Only the
+// running agent (daemon or service) runs plugin jobs, so any marker found
+// now was left by a previous run that crashed.
+func clearStalePluginMarkers() {
+	if mgr, err := newPluginManager(); err == nil {
+		mgr.ClearInUse()
+	}
 }

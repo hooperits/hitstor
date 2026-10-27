@@ -40,7 +40,8 @@ Used by `hitstor serve` to configure the gRPC server and web dashboard.
 | `serve_tls_cert` | string | | `--tls-cert` | Path to TLS certificate file |
 | `serve_tls_key` | string | | `--tls-key` | Path to TLS private key file |
 | `serve_dashboard_port` | int | `8421` | `--dashboard-port` | HTTP dashboard listen port |
-| `serve_dashboard_password` | string | | | Dashboard login password (sensitive -- empty means open access) |
+| `serve_dashboard_password` | string | | | Dashboard login password (sensitive -- if empty, a random one is generated at startup and logged once; see [Dashboard Password](../installation/quickstart.md#dashboard-password)) |
+| `serve_dashboard_language` | string | | | Default dashboard language code (`en`, `es`). Empty uses the browser language; users can still switch with the selector. See [Translations](../dev-guide/translations.md#choosing-the-language) |
 | `serve_advertise_addr` | string | | `--advertise-addr` | Address advertised to agents for registration (use when server is behind NAT) |
 | `update_check` | bool | `true` | | Enable automatic version checks. When enabled, the server checks for updates every 24 hours and shows a banner in the dashboard. |
 | `update_url` | string | | | Custom update check URL (empty = GitHub Releases API) |

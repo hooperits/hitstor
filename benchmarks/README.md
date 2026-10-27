@@ -1,3 +1,5 @@
+**English** | [Español](README.es.md)
+
 # HitStor performance benchmarks
 
 Reproducible **backup / incremental / restore** timings for filesystem workloads, with an optional **restic** comparison.

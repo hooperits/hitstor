@@ -32,6 +32,8 @@ Encrypted, deduplicated backups for your infrastructure.
 
 </div>
 
+**English** | [Español](README.es.md)
+
 ---
 
 ## Table of Contents

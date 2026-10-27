@@ -110,7 +110,7 @@ If it only lists `127.0.0.1` and `localhost`, the certificate does not contain t
     hitstor-agent --ca-cert /etc/hitstor/server.crt ping
     ```
 
-    O via config:
+    Or via config:
 
     ```yaml
     agent_ca_cert: /etc/hitstor/server.crt

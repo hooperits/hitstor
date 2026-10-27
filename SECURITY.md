@@ -1,3 +1,5 @@
+**English** | [Español](SECURITY.es.md)
+
 # Security Policy
 
 HitStor stores encrypted backups and runs privileged agents, so we take security reports seriously.

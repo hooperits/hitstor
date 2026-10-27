@@ -1,3 +1,5 @@
+**English** | [Español](CONTRIBUTING.es.md)
+
 # Contributing to HitStor
 
 Thanks for your interest in improving HitStor! Bug reports, documentation fixes and pull requests are welcome.

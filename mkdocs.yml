@@ -120,6 +120,7 @@ nav:
     - Testing: dev-guide/testing.md
     - Benchmarks: dev-guide/benchmarks.md
     - Release Process: dev-guide/release-process.md
+    - Translations: dev-guide/translations.md
 
 markdown_extensions:
   - admonition
@@ -137,3 +138,77 @@ markdown_extensions:
 
 plugins:
   - search
+  - i18n:
+      docs_structure: suffix
+      fallback_to_default: true
+      reconfigure_material: true
+      reconfigure_search: true
+      languages:
+        - locale: en
+          default: true
+          name: English
+          build: true
+        - locale: es
+          name: Español
+          build: true
+          site_name: Documentación de HitStor
+          site_description: Herramienta de respaldo cifrado y deduplicado escrita en Go
+          nav_translations:
+            Home: Inicio
+            Installation: Instalación
+            Quick Start: Inicio rápido
+            Linux Quick Install: Instalación rápida en Linux
+            Linux Packages: Paquetes de Linux
+            Build from Source: Compilar desde el código fuente
+            Docker: Docker
+            Windows Server: Windows Server
+            Windows Agent: Agente de Windows
+            Upgrading: Actualización
+            User Guide: Guía del usuario
+            Getting Started: Primeros pasos
+            Configuration: Configuración
+            Backup: Respaldo
+            Restore: Restauración
+            Snapshots: Instantáneas
+            Retention: Retención
+            Disaster Recovery: Recuperación ante desastres
+            Bare-Metal Restore: Restauración bare-metal
+            Plugins: Plugins
+            Administration: Administración
+            Server Setup: Puesta en marcha del servidor
+            TLS Certificates: Certificados TLS
+            Backup Jobs: Tareas de respaldo
+            Agent Management: Administración de agentes
+            Agent Discovery: Descubrimiento de agentes
+            Agent Deployment: Despliegue de agentes
+            Scheduling: Programación
+            Dashboard: Dashboard
+            Server Settings: Configuración del servidor
+            Monitoring: Monitoreo
+            Sentinel: Sentinel
+            Security: Seguridad
+            Troubleshooting: Solución de problemas
+            Roadmap: Hoja de ruta
+            Reference: Referencia
+            Server Commands: Comandos del servidor
+            Agent Commands: Comandos del agente
+            Config Reference: Referencia de configuración
+            Environment Variables: Variables de entorno
+            Dashboard HTTP API: API HTTP del dashboard
+            gRPC API: API gRPC
+            "API Reference (legacy)": "Referencia de API (heredada)"
+            Plugin Development: Desarrollo de plugins
+            Internals: Funcionamiento interno
+            Dev Guide: Guía de desarrollo
+            Dev Environment: Entorno de desarrollo
+            Codebase Overview: Visión general del código
+            "Build & Packaging": "Compilación y empaquetado"
+            Testing: Pruebas
+            Benchmarks: Benchmarks
+            Server Preparation: Preparación del servidor
+            Release Process: Proceso de publicación de versiones
+            Translations: Traducciones
+
+validation:
+  anchors: warn
+  unrecognized_links: warn

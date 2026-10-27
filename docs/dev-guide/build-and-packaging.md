@@ -310,31 +310,7 @@ Produces `dist/hitstor-VERSION-docker.tar.gz`, a gzipped tarball that can be loa
 
 ## Releases
 
-Pushing a `vX.Y.Z` tag runs two workflows:
-
-- `.github/workflows/release.yml` — runs `go test ./...`, then `make release-assets VERSION=X.Y.Z`, and creates the GitHub release `vX.Y.Z` with every file in `dist/` attached (release notes are generated from the commits).
-- `.github/workflows/docker-publish.yml` — builds and pushes the Docker image to GHCR.
-
-Release assets:
-
-| File | Built by |
-|------|----------|
-| `hitstor-server-X.Y.Z-linux-{amd64,arm64}.run` | `make installer-server`, `make installer-server-arm64` |
-| `hitstor-agent-X.Y.Z-linux-{amd64,arm64}.run` | `make installer-agent`, `make installer-agent-arm64` |
-| `hitstor_X.Y.Z_amd64.deb`, `hitstor-X.Y.Z-1.x86_64.rpm` | `make pkg-server-deb`, `make pkg-server-rpm` |
-| `hitstor-agent_X.Y.Z_amd64.deb`, `hitstor-agent-X.Y.Z-1.x86_64.rpm` | `make pkg-agent-deb`, `make pkg-agent-rpm` |
-| `hitstor-X.Y.Z-windows-amd64-setup.exe` | `make pkg-server-windows` |
-| `hitstor-agent-X.Y.Z-windows-amd64-setup.exe` | `make pkg-agent-windows` |
-| `SHA256SUMS` | `make checksums` |
-
-To cut a release:
-
-```bash
-git tag -a v1.2.0 -m "HitStor 1.2.0"
-git push origin v1.2.0
-```
-
-To build the same assets locally (requires nfpm, NSIS and Pillow for the Windows icon), run `make release-assets VERSION=1.2.0`. `make release` additionally saves the Docker image tarball.
+Pushing a `vX.Y.Z` tag builds every release asset in CI and publishes the GitHub release. See [Release Process](release-process.md).
 
 ## Documentation
 

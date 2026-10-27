@@ -273,7 +273,11 @@ Section "HitStor Agent" SecMain
   ; Only SYSTEM and Administrators may read the agent's secrets (token, TLS
   ; key, API key and plugin passwords in agent.env). SIDs, not names, so
   ; localized Windows (e.g. "Administradores") works too.
-  nsExec::ExecToLog 'icacls "$ConfigDir" /inheritance:r /grant:r *S-1-5-18:(OI)(CI)F /grant:r *S-1-5-32-544:(OI)(CI)F /T /C /Q'
+  ; The folder gets explicit, inheritable entries; its contents are then reset
+  ; to inherit them (applying the folder's (OI)(CI) grant to files directly
+  ; would leave them with no access at all).
+  nsExec::ExecToLog 'icacls "$ConfigDir" /inheritance:r /grant:r *S-1-5-18:(OI)(CI)F /grant:r *S-1-5-32-544:(OI)(CI)F /C /Q'
+  nsExec::ExecToLog 'icacls "$ConfigDir\*" /reset /T /C /Q'
 
   ; Write agent-config.yaml if it doesn't exist (preserve on upgrade).
   IfFileExists "$ConfigDir\agent-config.yaml" +3

@@ -1,0 +1,7 @@
+# Storage detail and snapshot detail pages: snapshot type badges (t(s.type), {{t $snap.Type}}),
+# snapshot backup type badge (t(s.backup_type)) and repository alert level (t(repo.alert_level)).
+full
+incremental
+files
+critical
+warning

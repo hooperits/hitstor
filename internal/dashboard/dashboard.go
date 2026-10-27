@@ -12,6 +12,7 @@ import (
 
 	"github.com/hooperits/hitstor/internal/backend"
 	"github.com/hooperits/hitstor/internal/config"
+	"github.com/hooperits/hitstor/internal/i18n"
 	"github.com/hooperits/hitstor/internal/repository"
 	"github.com/hooperits/hitstor/internal/server"
 )
@@ -32,7 +33,7 @@ type Dashboard struct {
 	cfg              *config.Config
 	srv              *server.Server
 	opts             Options
-	templates        map[string]*template.Template
+	templates        map[string]map[string]*template.Template // language → page → template
 	mu               sync.RWMutex
 	sessions         map[string]time.Time // token -> expiry
 	loginLimits      *loginLimiter
@@ -102,10 +103,9 @@ func (d *Dashboard) mediaCache() *server.MediaCache {
 
 // New creates a new Dashboard.
 func New(repo *repository.Repository, registry *server.AgentRegistry, be backend.Backend, activeSessionsFn func() int, opts Options) (*Dashboard, error) {
-	funcMap := template.FuncMap{
+	baseFuncs := template.FuncMap{
 		"formatBytes":  formatBytes,
 		"formatNumber": formatNumber,
-		"timeAgo":      timeAgo,
 		"shortID":      shortID,
 		"urlquery":     url.QueryEscape,
 		"statusClass":  statusClass,
@@ -146,7 +146,7 @@ func New(repo *repository.Repository, registry *server.AgentRegistry, be backend
 		registry:         registry,
 		be:               be,
 		opts:             opts,
-		templates:        make(map[string]*template.Template),
+		templates:        make(map[string]map[string]*template.Template),
 		sessions:         make(map[string]time.Time),
 		loginLimits:      newLoginLimiter(),
 		activeSessionsFn: activeSessionsFn,
@@ -154,23 +154,35 @@ func New(repo *repository.Repository, registry *server.AgentRegistry, be backend
 		sizeCache:        make(map[string]int64),
 	}
 
-	// Parse page templates (each page + layout).
+	// Parse page templates (each page + layout) once per language, with the
+	// translation helpers bound to that language's catalog.
 	pages := []string{"overview", "backups", "backup_detail", "restores", "disaster", "agents", "agent_detail", "snapshot_detail", "storage", "storage_detail", "logs", "settings"}
-	for _, page := range pages {
-		files := []string{"layout.html", page + ".html"}
-		t, err := template.New("").Funcs(funcMap).ParseFS(subFS, files...)
-		if err != nil {
-			return nil, fmt.Errorf("dashboard: parse template %s: %w", page, err)
+	for _, lang := range i18n.Languages() {
+		funcMap := template.FuncMap{}
+		for k, v := range baseFuncs {
+			funcMap[k] = v
 		}
-		d.templates[page] = t
-	}
+		for k, v := range langFuncs(i18n.Get(lang.Code)) {
+			funcMap[k] = v
+		}
+		set := make(map[string]*template.Template, len(pages)+1)
+		for _, page := range pages {
+			files := []string{"layout.html", "i18n.html", page + ".html"}
+			t, err := template.New("").Funcs(funcMap).ParseFS(subFS, files...)
+			if err != nil {
+				return nil, fmt.Errorf("dashboard: parse template %s: %w", page, err)
+			}
+			set[page] = t
+		}
 
-	// Login is standalone (no layout).
-	loginTmpl, err := template.New("").Funcs(funcMap).ParseFS(subFS, "login.html")
-	if err != nil {
-		return nil, fmt.Errorf("dashboard: parse login template: %w", err)
+		// Login is standalone (no layout).
+		loginTmpl, err := template.New("").Funcs(funcMap).ParseFS(subFS, "login.html", "i18n.html")
+		if err != nil {
+			return nil, fmt.Errorf("dashboard: parse login template: %w", err)
+		}
+		set["login"] = loginTmpl
+		d.templates[lang.Code] = set
 	}
-	d.templates["login"] = loginTmpl
 
 	return d, nil
 }
@@ -236,6 +248,7 @@ func (d *Dashboard) Handler() http.Handler {
 	mux.HandleFunc("GET /login", d.handleLoginPage)
 	mux.HandleFunc("POST /login", d.handleLoginSubmit)
 	mux.HandleFunc("POST /logout", d.handleLogout)
+	mux.HandleFunc("GET /language", d.handleSetLanguage)
 
 	// Pages.
 	mux.Handle("GET /{$}", d.protect(http.HandlerFunc(d.handleOverview)))
@@ -349,13 +362,15 @@ func (d *Dashboard) Handler() http.Handler {
 
 	return crossOriginProtect(mux)
 }
-func (d *Dashboard) render(w http.ResponseWriter, page string, data any) {
-	t, ok := d.templates[page]
+func (d *Dashboard) render(w http.ResponseWriter, r *http.Request, page string, data any) {
+	t, ok := d.templates[d.language(r)][page]
 	if !ok {
 		http.Error(w, "template not found", http.StatusInternalServerError)
 		return
 	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.Header().Set("Content-Language", d.language(r))
+	w.Header().Add("Vary", "Cookie, Accept-Language")
 
 	// Login uses its own template name; pages use "layout".
 	tmplName := "layout"
@@ -401,35 +416,40 @@ func formatNumber(n uint64) string {
 }
 
 func timeAgo(v any) string {
+	return timeAgoIn(i18n.Get(i18n.Default), v)
+}
+
+// timeAgoIn renders a relative time ("5m ago") using catalog c.
+func timeAgoIn(c *i18n.Catalog, v any) string {
 	var t time.Time
 	switch x := v.(type) {
 	case time.Time:
 		t = x
 	case *time.Time:
 		if x == nil {
-			return "never"
+			return c.T("never")
 		}
 		t = *x
 	default:
 		return "—"
 	}
 	if t.IsZero() {
-		return "never"
+		return c.T("never")
 	}
 	d := time.Since(t)
 	switch {
 	case d < time.Minute:
-		return "just now"
+		return c.T("just now")
 	case d < time.Hour:
-		return fmt.Sprintf("%dm ago", int(d.Minutes()))
+		return c.Tf("{n}m ago", "n", int(d.Minutes()))
 	case d < 24*time.Hour:
-		return fmt.Sprintf("%dh ago", int(d.Hours()))
+		return c.Tf("{n}h ago", "n", int(d.Hours()))
 	default:
 		days := int(d.Hours() / 24)
 		if days == 1 {
-			return "1 day ago"
+			return c.T("1 day ago")
 		}
-		return fmt.Sprintf("%d days ago", days)
+		return c.Tf("{n} days ago", "n", days)
 	}
 }
 

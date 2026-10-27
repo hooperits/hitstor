@@ -14,6 +14,7 @@ import (
 	"strings"
 
 	"github.com/hooperits/hitstor/internal/cron"
+	"github.com/hooperits/hitstor/internal/i18n"
 	"github.com/hooperits/hitstor/internal/server"
 )
 
@@ -47,7 +48,7 @@ type backupJobJSON struct {
 	LastVerifyBytes   uint64   `json:"last_verify_bytes,omitempty"`
 }
 
-func jobToJSON(j server.BackupJob) backupJobJSON {
+func jobToJSON(c *i18n.Catalog, j server.BackupJob) backupJobJSON {
 	var lastBackup *string
 	if j.LastBackup != nil {
 		ts := j.LastBackup.Format(time.RFC3339)
@@ -110,7 +111,7 @@ func jobToJSON(j server.BackupJob) backupJobJSON {
 	// Compute cron description and next run time.
 	if j.CronExpression != "" {
 		if expr, err := cron.Parse(j.CronExpression); err == nil {
-			result.CronDescription = expr.Describe()
+			result.CronDescription = describeCron(c, expr)
 
 			loc := time.Local
 			if j.Timezone != "" {
@@ -141,7 +142,7 @@ func (d *Dashboard) handleAPIBackupJobs(w http.ResponseWriter, r *http.Request) 
 	jobs := d.registry.ListJobs()
 	result := make([]backupJobJSON, 0, len(jobs))
 	for _, j := range jobs {
-		result = append(result, jobToJSON(j))
+		result = append(result, jobToJSON(d.catalog(r), j))
 	}
 	writeJSON(w, result)
 }
@@ -247,7 +248,7 @@ func (d *Dashboard) handleAPICreateBackupJob(w http.ResponseWriter, r *http.Requ
 	}
 
 	w.WriteHeader(http.StatusCreated)
-	writeJSON(w, jobToJSON(job))
+	writeJSON(w, jobToJSON(d.catalog(r), job))
 }
 
 func (d *Dashboard) handleAPIGetBackupJob(w http.ResponseWriter, r *http.Request) {
@@ -257,7 +258,7 @@ func (d *Dashboard) handleAPIGetBackupJob(w http.ResponseWriter, r *http.Request
 		http.Error(w, "job not found", http.StatusNotFound)
 		return
 	}
-	writeJSON(w, jobToJSON(*job))
+	writeJSON(w, jobToJSON(d.catalog(r), *job))
 }
 
 func (d *Dashboard) handleAPIUpdateBackupJob(w http.ResponseWriter, r *http.Request) {
@@ -321,7 +322,7 @@ func (d *Dashboard) handleAPIUpdateBackupJob(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	writeJSON(w, jobToJSON(updated))
+	writeJSON(w, jobToJSON(d.catalog(r), updated))
 }
 
 func (d *Dashboard) handleAPIDeleteBackupJob(w http.ResponseWriter, r *http.Request) {
@@ -467,7 +468,7 @@ func (d *Dashboard) handleAPIValidateCron(w http.ResponseWriter, r *http.Request
 
 	writeJSON(w, map[string]any{
 		"valid":       true,
-		"description": parsed.Describe(),
+		"description": describeCron(d.catalog(r), parsed),
 		"next_3":      next3,
 	})
 }

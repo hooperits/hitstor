@@ -1,18 +1,20 @@
 package dashboard
 
 import (
-	"fmt"
 	"net/http"
 	"strings"
 	"time"
 
 	"github.com/hooperits/hitstor/internal/cron"
+	"github.com/hooperits/hitstor/internal/i18n"
 	"github.com/hooperits/hitstor/internal/repository"
 	"github.com/hooperits/hitstor/internal/server"
 )
 
 type pageData struct {
-	Title           string
+	Title           string // English message key, translated in the layout
+	TitleRaw        bool   // Title is user data (job, agent, repo name): shown as is
+	TitleID         string // value for the {id} placeholder in Title
 	Subtitle        string
 	Version         string
 	RepoID          string
@@ -83,7 +85,9 @@ type jobView struct {
 	VerifyFailed     bool
 }
 
-func buildJobView(j server.BackupJob, sess *server.SessionInfo, now time.Time) jobView {
+// buildJobView prepares a job for display; schedule and date text are in
+// catalog c's language.
+func buildJobView(c *i18n.Catalog, j server.BackupJob, sess *server.SessionInfo, now time.Time) jobView {
 	status := "never"
 	if j.RunNow {
 		status = "pending"
@@ -101,11 +105,11 @@ func buildJobView(j server.BackupJob, sess *server.SessionInfo, now time.Time) j
 		}
 	}
 
-	schedDisplay := fmt.Sprintf("every %dh", j.ScheduleHours)
+	schedDisplay := c.Tf("every {n}h", "n", j.ScheduleHours)
 	var nextRun string
 	if j.CronExpression != "" {
 		if expr, err := cron.Parse(j.CronExpression); err == nil {
-			schedDisplay = expr.Describe()
+			schedDisplay = describeCron(c, expr)
 			loc := time.Local
 			if j.Timezone != "" {
 				if tzLoc, tzErr := time.LoadLocation(j.Timezone); tzErr == nil {
@@ -120,12 +124,12 @@ func buildJobView(j server.BackupJob, sess *server.SessionInfo, now time.Time) j
 			}
 			next := expr.Next(from)
 			if !next.IsZero() {
-				nextRun = next.In(loc).Format("Jan 2 3:04 PM")
+				nextRun = dateTimeIn(c, next.In(loc))
 			}
 		}
 	} else if j.ScheduleEnabled && j.ScheduleHours > 0 && j.LastBackup != nil {
 		next := j.LastBackup.Add(time.Duration(j.ScheduleHours) * time.Hour)
-		nextRun = next.Format("Jan 2 3:04 PM")
+		nextRun = dateTimeIn(c, next)
 	}
 
 	v := jobView{
@@ -135,7 +139,7 @@ func buildJobView(j server.BackupJob, sess *server.SessionInfo, now time.Time) j
 		JobTypeLabel:     "Files",
 		AgentName:        j.AgentName,
 		Paths:            j.Paths,
-		SourceLabel:      formatJobSource(j),
+		SourceLabel:      formatJobSource(c, j),
 		RepoName:         j.RepoName,
 		ScheduleEnabled:  j.ScheduleEnabled,
 		ScheduleHours:    j.ScheduleHours,
@@ -180,13 +184,12 @@ func buildJobView(j server.BackupJob, sess *server.SessionInfo, now time.Time) j
 	return v
 }
 
-func formatJobSource(job server.BackupJob) string {
+func formatJobSource(c *i18n.Catalog, job server.BackupJob) string {
 	if len(job.Paths) > 0 {
-		label := job.Paths[0]
 		if len(job.Paths) > 1 {
-			label += fmt.Sprintf(" +%d more", len(job.Paths)-1)
+			return c.Tf("{path} +{n} more", "path", job.Paths[0], "n", len(job.Paths)-1)
 		}
-		return label
+		return job.Paths[0]
 	}
 
 	return "—"
@@ -262,7 +265,7 @@ func (d *Dashboard) handleOverview(w http.ResponseWriter, r *http.Request) {
 		"Alerts":         alerts,
 	})
 
-	d.render(w, "overview", data)
+	d.render(w, r, "overview", data)
 }
 
 type agentView struct {
@@ -344,7 +347,7 @@ func (d *Dashboard) handleAgents(w http.ResponseWriter, r *http.Request) {
 		"SuspendedCount": suspendedCount,
 		"ManagedCount":   managedCount,
 	})
-	d.render(w, "agents", data)
+	d.render(w, r, "agents", data)
 }
 
 func (d *Dashboard) handleAgentDetail(w http.ResponseWriter, r *http.Request) {
@@ -375,7 +378,7 @@ func (d *Dashboard) handleAgentDetail(w http.ResponseWriter, r *http.Request) {
 			sCopy := s
 			sess = &sCopy
 		}
-		jv := buildJobView(j, sess, now)
+		jv := buildJobView(d.catalog(r), j, sess, now)
 		jobViews = append(jobViews, jv)
 		switch jv.Status {
 		case "ok":
@@ -399,7 +402,8 @@ func (d *Dashboard) handleAgentDetail(w http.ResponseWriter, r *http.Request) {
 		"OverdueCount": overdueCount,
 		"ActiveCount":  runningCount + pendingCount,
 	})
-	d.render(w, "agent_detail", data)
+	data.TitleRaw = true
+	d.render(w, r, "agent_detail", data)
 }
 
 func (d *Dashboard) handleBackups(w http.ResponseWriter, r *http.Request) {
@@ -423,7 +427,7 @@ func (d *Dashboard) handleBackups(w http.ResponseWriter, r *http.Request) {
 			sCopy := s
 			sess = &sCopy
 		}
-		views = append(views, buildJobView(j, sess, now))
+		views = append(views, buildJobView(d.catalog(r), j, sess, now))
 	}
 
 	var okCount, overdueCount, runningCount, pendingCount int
@@ -449,7 +453,7 @@ func (d *Dashboard) handleBackups(w http.ResponseWriter, r *http.Request) {
 		"PendingCount": pendingCount,
 		"ActiveCount":  runningCount + pendingCount,
 	})
-	d.render(w, "backups", data)
+	d.render(w, r, "backups", data)
 }
 
 func (d *Dashboard) handleBackupDetail(w http.ResponseWriter, r *http.Request) {
@@ -491,7 +495,7 @@ func (d *Dashboard) handleBackupDetail(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	jv := buildJobView(*job, sess, time.Now())
+	jv := buildJobView(d.catalog(r), *job, sess, time.Now())
 
 	data := d.newPageData(job.Name, "Backup job details", "backups", map[string]any{
 		"Job":        job,
@@ -501,7 +505,8 @@ func (d *Dashboard) handleBackupDetail(w http.ResponseWriter, r *http.Request) {
 		"Managed":    managed,
 		"Progress":   progress,
 	})
-	d.render(w, "backup_detail", data)
+	data.TitleRaw = true
+	d.render(w, r, "backup_detail", data)
 }
 
 type snapshotAgentGroup struct {
@@ -537,7 +542,8 @@ func (d *Dashboard) handleStorageDetail(w http.ResponseWriter, r *http.Request) 
 		"HostFilter":     hostFilter,
 		"ActiveRestores": activeRestores,
 	})
-	d.render(w, "storage_detail", data)
+	data.TitleRaw = true
+	d.render(w, r, "storage_detail", data)
 }
 
 func (d *Dashboard) handleSnapshotDetail(w http.ResponseWriter, r *http.Request) {
@@ -592,12 +598,13 @@ func (d *Dashboard) handleSnapshotDetail(w http.ResponseWriter, r *http.Request)
 		}
 	}
 
-	data := d.newPageData("Snapshot "+shortID(found.ID), "Recover files from this backup point", "restores", map[string]any{
+	data := d.newPageData("Snapshot {id}", "Recover files from this backup point", "restores", map[string]any{
 		"Snapshot": found,
 		"Agents":   agentNames,
 		"RepoName": found.RepoName,
 	})
-	d.render(w, "snapshot_detail", data)
+	data.TitleID = shortID(found.ID)
+	d.render(w, r, "snapshot_detail", data)
 }
 
 func (d *Dashboard) handleRestores(w http.ResponseWriter, r *http.Request) {
@@ -607,10 +614,10 @@ func (d *Dashboard) handleRestores(w http.ResponseWriter, r *http.Request) {
 		"restores",
 		nil,
 	)
-	d.render(w, "restores", data)
+	d.render(w, r, "restores", data)
 }
 
 func (d *Dashboard) handleStorage(w http.ResponseWriter, r *http.Request) {
 	data := d.newPageData("Storage", "Repository storage and health", "storage", nil)
-	d.render(w, "storage", data)
+	d.render(w, r, "storage", data)
 }

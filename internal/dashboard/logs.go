@@ -40,7 +40,7 @@ type logsRetention struct {
 }
 
 func (d *Dashboard) handleLogsPage(w http.ResponseWriter, r *http.Request) {
-	d.render(w, "logs", d.newPageData("View Logs", "Server and integration activity", "logs", nil))
+	d.render(w, r, "logs", d.newPageData("View Logs", "Server and integration activity", "logs", nil))
 }
 
 func (d *Dashboard) handleAPILogs(w http.ResponseWriter, r *http.Request) {

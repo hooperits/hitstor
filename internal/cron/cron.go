@@ -134,19 +134,34 @@ func parseItem(s string, fd fieldDef) (uint64, error) {
 	return bits, nil
 }
 
-// Describe returns a human-readable description of the cron expression.
+// Describe returns a human-readable English description of the cron expression.
 func (e Expression) Describe() string {
+	return e.DescribeWith(englishMessage, formatTime)
+}
+
+// englishMessage fills {name} placeholders without translating msg.
+func englishMessage(msg string, pairs ...any) string {
+	for i := 0; i+1 < len(pairs); i += 2 {
+		msg = strings.ReplaceAll(msg, "{"+fmt.Sprint(pairs[i])+"}", fmt.Sprint(pairs[i+1]))
+	}
+	return msg
+}
+
+// DescribeWith is Describe with the sentences translated by tr (English
+// messages with {placeholders}, e.g. "Every day at {time}") and times of day
+// formatted by clock.
+func (e Expression) DescribeWith(tr func(msg string, pairs ...any) string, clock func(hour, minute int) string) string {
 	// Every minute.
 	if e.allSet(e.Minute, 0, 59) && e.allSet(e.Hour, 0, 23) &&
 		e.allSet(e.Dom, 1, 31) && e.allSet(e.Month, 1, 12) && e.allSet(e.Dow, 0, 6) {
-		return "Every minute"
+		return tr("Every minute")
 	}
 
 	// Step pattern: */N in minute field, all other fields wildcard.
 	if e.allSet(e.Hour, 0, 23) && e.allSet(e.Dom, 1, 31) &&
 		e.allSet(e.Month, 1, 12) && e.allSet(e.Dow, 0, 6) {
 		if step := e.detectStep(e.Minute, 0, 59); step > 1 {
-			return fmt.Sprintf("Every %d minutes", step)
+			return tr("Every {n} minutes", "n", step)
 		}
 	}
 
@@ -155,24 +170,24 @@ func (e Expression) Describe() string {
 	hourBit := e.singleBit(e.Hour, 0, 23)
 
 	if minBit >= 0 && hourBit >= 0 {
-		timeStr := formatTime(hourBit, minBit)
+		timeStr := clock(hourBit, minBit)
 
 		// Specific day-of-month.
 		if !e.allSet(e.Dom, 1, 31) && e.allSet(e.Dow, 0, 6) && e.allSet(e.Month, 1, 12) {
 			domBit := e.singleBit(e.Dom, 1, 31)
 			if domBit >= 0 {
-				return fmt.Sprintf("Day %d of every month at %s", domBit, timeStr)
+				return tr("Day {day} of every month at {time}", "day", domBit, "time", timeStr)
 			}
 		}
 
 		// Weekday pattern (Mon-Fri).
 		if e.allSet(e.Dom, 1, 31) && e.allSet(e.Month, 1, 12) && e.Dow == weekdayBits() {
-			return fmt.Sprintf("Every weekday at %s", timeStr)
+			return tr("Every weekday at {time}", "time", timeStr)
 		}
 
 		// Every day.
 		if e.allSet(e.Dom, 1, 31) && e.allSet(e.Month, 1, 12) && e.allSet(e.Dow, 0, 6) {
-			return fmt.Sprintf("Every day at %s", timeStr)
+			return tr("Every day at {time}", "time", timeStr)
 		}
 	}
 

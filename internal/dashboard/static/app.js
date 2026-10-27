@@ -26,7 +26,7 @@
         btn.addEventListener('click', function () {
             var show = input.type === 'password';
             input.type = show ? 'text' : 'password';
-            btn.textContent = show ? 'Hide' : 'Show';
+            btn.textContent = show ? t('Hide') : t('Show');
         });
     }
 
@@ -102,7 +102,7 @@
             var type = this.syncJobTypeFromUI();
             if (this.current === 1) {
                 if (!type) {
-                    alert('Select a backup job type.');
+                    alert(t('Select a backup job type.'));
                     return;
                 }
                 if (typeof toggleJobTypeFields === 'function') toggleJobTypeFields();
@@ -110,13 +110,13 @@
             if (this.current === 2) {
                 var name = document.getElementById('job-name').value.trim();
                 if (!name) {
-                    alert('Enter a job name.');
+                    alert(t('Enter a job name.'));
                     return;
                 }
                 if (type === 'files' || type === 'database') {
                     var agent = document.getElementById('job-agent').value;
                     if (!agent) {
-                        alert('Select an agent for this backup job.');
+                        alert(t('Select an agent for this backup job.'));
                         return;
                     }
                 }

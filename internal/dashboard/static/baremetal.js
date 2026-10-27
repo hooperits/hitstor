@@ -58,17 +58,17 @@
   // exactly the host that needs attention.
   function readinessCell(h) {
     if (!h.reachable) {
-      return '<span class="badge badge-stale">Unknown</span>' +
-        '<div class="text-muted">' + escapeHtml(h.error || 'agent did not answer') + '</div>';
+      return '<span class="badge badge-stale">' + escapeHtml(t('Unknown')) + '</span>' +
+        '<div class="text-muted">' + escapeHtml(h.error || t('agent did not answer')) + '</div>';
     }
     if (h.ready) {
       var version = h.rear_version ? '<div class="text-muted">' + escapeHtml(h.rear_version) + '</div>' : '';
-      return '<span class="badge badge-ok">Ready</span>' + version;
+      return '<span class="badge badge-ok">' + escapeHtml(t('Ready')) + '</span>' + version;
     }
     var blockers = (h.blockers || []).map(function (b) {
       return '<li>' + escapeHtml(b) + '</li>';
     }).join('');
-    return '<span class="badge badge-stale">Not ready</span>' +
+    return '<span class="badge badge-stale">' + escapeHtml(t('Not ready')) + '</span>' +
       (blockers ? '<ul class="text-muted">' + blockers + '</ul>' : '');
   }
 
@@ -76,11 +76,11 @@
   // layout and is the most common way this feature quietly fails.
   function mediaCell(h) {
     if (!h.has_media) {
-      return '<span class="text-muted">Not built</span>';
+      return '<span class="text-muted">' + escapeHtml(t('Not built')) + '</span>';
     }
     var age = Number(h.media_age_days) || 0;
     var ageClass = age >= 90 ? 'badge-stale' : 'badge-ok';
-    var ageText = age === 0 ? 'today' : age + ' day' + (age === 1 ? '' : 's') + ' old';
+    var ageText = age === 0 ? t('today') : age === 1 ? t('1 day old') : t('{n} days old', { n: age });
     return '<span class="badge ' + ageClass + '">' + escapeHtml(ageText) + '</span>' +
       '<div class="text-muted">' + formatBytes(h.media_size_bytes) +
       ' · ' + escapeHtml(formatWhen(h.media_built_at)) + '</div>';
@@ -88,18 +88,18 @@
 
   function actionsCell(h) {
     var agent = escapeHtml(h.agent);
-    var buildLabel = h.has_media ? 'Rebuild' : 'Build media';
+    var buildLabel = h.has_media ? t('Rebuild') : t('Build media');
     var buttons =
       '<button type="button" class="btn btn-sm" data-bmr-build="' + agent + '"' +
       (h.building ? ' disabled' : '') + '>' +
-      (h.building ? 'Building…' : buildLabel) + '</button> ';
+      escapeHtml(h.building ? t('Building…') : buildLabel) + '</button> ';
 
     if (h.has_media) {
       buttons +=
-        '<a class="btn btn-sm" href="/api/bmr/media/' + encodeURIComponent(h.agent) + '/download">Download</a> ' +
-        '<button type="button" class="btn btn-sm btn-danger" data-bmr-delete="' + agent + '">Delete</button> ';
+        '<a class="btn btn-sm" href="/api/bmr/media/' + encodeURIComponent(h.agent) + '/download">' + escapeHtml(t('Download')) + '</a> ' +
+        '<button type="button" class="btn btn-sm btn-danger" data-bmr-delete="' + agent + '">' + escapeHtml(t('Delete')) + '</button> ';
     }
-    buttons += '<button type="button" class="btn btn-sm" data-bmr-prepare="' + agent + '">Issue token</button>';
+    buttons += '<button type="button" class="btn btn-sm" data-bmr-prepare="' + agent + '">' + escapeHtml(t('Issue token')) + '</button>';
     return buttons;
   }
 
@@ -109,14 +109,14 @@
 
     if (!hosts.length) {
       body.innerHTML = '<tr><td colspan="4" class="text-muted">' +
-        'No agents registered. Add one from the Agents page first.</td></tr>';
+        escapeHtml(t('No agents registered. Add one from the Agents page first.')) + '</td></tr>';
       return;
     }
 
     body.innerHTML = hosts.map(function (h) {
       var name = '<strong>' + escapeHtml(h.agent) + '</strong>';
       if (h.recovering) {
-        name += ' <span class="badge badge-running">Recovering</span>';
+        name += ' <span class="badge badge-running">' + escapeHtml(t('Recovering')) + '</span>';
       }
       if (h.addr) {
         name += '<div class="text-muted">' + escapeHtml(h.addr) + '</div>';
@@ -139,7 +139,7 @@
         hosts = Array.isArray(data) ? data : [];
         renderHosts();
       })
-      .catch(function (err) { setError('Could not load host readiness: ' + err); });
+      .catch(function (err) { setError(t('Could not load host readiness: {error}', { error: err })); });
   }
 
   // --- Media build ----------------------------------------------------------
@@ -153,14 +153,13 @@
   function buildMedia(agent) {
     setError('');
     if (!window.confirm(
-      'Build recovery media on ' + agent + '?\n\n' +
-      'This runs ReaR on the protected host and reads every disk on it. ' +
-      'It takes several minutes and adds load to a machine that may be in production.')) {
+      t('Build recovery media on {agent}?', { agent: agent }) + '\n\n' +
+      t('This runs ReaR on the protected host and reads every disk on it. It takes several minutes and adds load to a machine that may be in production.'))) {
       return;
     }
 
     $('bmr-build-section').classList.remove('hidden');
-    $('bmr-build-host').textContent = 'Building recovery media on ' + agent + '…';
+    $('bmr-build-host').textContent = t('Building recovery media on {agent}…', { agent: agent });
     $('bmr-build-log').textContent = '';
 
     fetch('/api/bmr/media/' + encodeURIComponent(agent) + '/build', {
@@ -174,7 +173,7 @@
       followBuild(data.operation_id, agent);
       loadHosts();
     }).catch(function (err) {
-      setError('Could not start the build: ' + err.message);
+      setError(t('Could not start the build: {error}', { error: err.message }));
       $('bmr-build-host').textContent = '';
     });
   }
@@ -192,9 +191,9 @@
       try { data = JSON.parse(e.data); } catch (err) { /* keep the log as-is */ }
 
       if (data.status === 'completed') {
-        $('bmr-build-host').textContent = 'Recovery media for ' + agent + ' is ready to download.';
+        $('bmr-build-host').textContent = t('Recovery media for {agent} is ready to download.', { agent: agent });
       } else {
-        $('bmr-build-host').textContent = 'The build on ' + agent + ' failed.';
+        $('bmr-build-host').textContent = t('The build on {agent} failed.', { agent: agent });
         if (data.result && data.result.error) setError(data.result.error);
       }
       loadHosts();
@@ -208,9 +207,8 @@
   }
 
   function deleteMedia(agent) {
-    if (!window.confirm('Delete the cached recovery media for ' + agent + '?\n\n' +
-      'You will not be able to recover this host from bare metal until it is rebuilt — ' +
-      'which needs the host itself to be running.')) {
+    if (!window.confirm(t('Delete the cached recovery media for {agent}?', { agent: agent }) + '\n\n' +
+      t('You will not be able to recover this host from bare metal until it is rebuilt — which needs the host itself to be running.'))) {
       return;
     }
     fetch('/api/bmr/media/' + encodeURIComponent(agent), { method: 'DELETE' })
@@ -218,7 +216,7 @@
         if (!r.ok) return r.text().then(function (t) { throw new Error(t); });
         loadHosts();
       })
-      .catch(function (err) { setError('Could not delete the media: ' + err.message); });
+      .catch(function (err) { setError(t('Could not delete the media: {error}', { error: err.message })); });
   }
 
   // --- Recovery tokens ------------------------------------------------------
@@ -232,18 +230,17 @@
     }).then(function (r) {
       if (!r.ok) return r.text().then(function (t) { throw new Error(t); });
       return r.json();
-    }).then(function (t) {
+    }).then(function (tok) {
       // Shown once, and never readable again: prompt() keeps it selectable so
       // an operator can copy it before it is gone.
       window.prompt(
-        'Recovery token for ' + agent + '\n\n' +
-        'Type this at the rescue console. It works once, only for this host, ' +
-        'and expires ' + formatWhen(t.expires_at) + '.\n\n' +
-        'Copy it now — it cannot be shown again.',
-        t.token);
+        t('Recovery token for {agent}', { agent: agent }) + '\n\n' +
+        t('Type this at the rescue console. It works once, only for this host, and expires {when}.', { when: formatWhen(tok.expires_at) }) + '\n\n' +
+        t('Copy it now — it cannot be shown again.'),
+        tok.token);
       loadTokens();
     }).catch(function (err) {
-      setError('Could not issue a recovery token: ' + err.message);
+      setError(t('Could not issue a recovery token: {error}', { error: err.message }));
     });
   }
 
@@ -253,7 +250,7 @@
         if (!r.ok) return r.text().then(function (t) { throw new Error(t); });
         loadTokens();
       })
-      .catch(function (err) { setError('Could not revoke the token: ' + err.message); });
+      .catch(function (err) { setError(t('Could not revoke the token: {error}', { error: err.message })); });
   }
 
   function loadTokens() {
@@ -265,16 +262,16 @@
         if (!body) return;
 
         if (!tokens.length) {
-          body.innerHTML = '<tr><td colspan="4" class="text-muted">None outstanding.</td></tr>';
+          body.innerHTML = '<tr><td colspan="4" class="text-muted">' + escapeHtml(t('None outstanding.')) + '</td></tr>';
           return;
         }
-        body.innerHTML = tokens.map(function (t) {
+        body.innerHTML = tokens.map(function (tok) {
           return '<tr>' +
-            '<td>' + escapeHtml(t.agent) + '</td>' +
-            '<td>' + escapeHtml(formatWhen(t.created_at)) + '</td>' +
-            '<td>' + escapeHtml(formatWhen(t.expires_at)) + '</td>' +
+            '<td>' + escapeHtml(tok.agent) + '</td>' +
+            '<td>' + escapeHtml(formatWhen(tok.created_at)) + '</td>' +
+            '<td>' + escapeHtml(formatWhen(tok.expires_at)) + '</td>' +
             '<td><button type="button" class="btn btn-sm btn-danger" data-bmr-revoke="' +
-            escapeHtml(t.id) + '">Revoke</button></td>' +
+            escapeHtml(tok.id) + '">' + escapeHtml(t('Revoke')) + '</button></td>' +
             '</tr>';
         }).join('');
       })

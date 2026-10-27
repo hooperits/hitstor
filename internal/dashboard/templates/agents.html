@@ -3,8 +3,8 @@
 {{$agents := $page.Agents}}
 
 <div class="agents-toolbar">
-    <p class="agents-toolbar-hint">{{if $agents}}{{len $agents}} registered {{if eq (len $agents) 1}}agent{{else}}agents{{end}}{{else}}No agents registered{{end}}{{if $page.ManagedCount}} &middot; {{$page.ManagedCount}} managed{{end}}</p>
-    <button type="button" class="btn" onclick="toggleAgentsAddPanel()">+ Add Agent</button>
+    <p class="agents-toolbar-hint">{{if $agents}}{{if eq (len $agents) 1}}{{t "1 registered agent"}}{{else}}{{tf "{n} registered agents" "n" (len $agents)}}{{end}}{{else}}{{t "No agents registered"}}{{end}}{{if $page.ManagedCount}} &middot; {{tf "{n} managed" "n" $page.ManagedCount}}{{end}}</p>
+    <button type="button" class="btn" onclick="toggleAgentsAddPanel()">+ {{t "Add Agent"}}</button>
 </div>
 
 {{if $agents}}
@@ -12,7 +12,7 @@
     <div class="stats-grid stats-grid-compact">
         <div class="stat-card stat-card-compact">
             <div class="stat-card-top">
-                <span class="stat-card-label">Total Agents</span>
+                <span class="stat-card-label">{{t "Total Agents"}}</span>
                 <span class="stat-card-icon" aria-hidden="true">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
                 </span>
@@ -21,7 +21,7 @@
         </div>
         <div class="stat-card stat-card-compact">
             <div class="stat-card-top">
-                <span class="stat-card-label">Healthy</span>
+                <span class="stat-card-label">{{t "Healthy"}}</span>
                 <span class="stat-card-icon" aria-hidden="true">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
                 </span>
@@ -30,7 +30,7 @@
         </div>
         <div class="stat-card stat-card-compact{{if $page.StaleCount}} stat-card--stale{{end}}">
             <div class="stat-card-top">
-                <span class="stat-card-label">Stale</span>
+                <span class="stat-card-label">{{t "Stale"}}</span>
                 <span class="stat-card-icon" aria-hidden="true">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
                 </span>
@@ -40,7 +40,7 @@
         {{if or $page.NeverCount $page.SuspendedCount}}
         <div class="stat-card stat-card-compact{{if $page.SuspendedCount}} stat-card--stale{{else}} stat-card--never{{end}}">
             <div class="stat-card-top">
-                <span class="stat-card-label">{{if $page.SuspendedCount}}Suspended{{else}}Never Backed Up{{end}}</span>
+                <span class="stat-card-label">{{if $page.SuspendedCount}}{{t "Suspended"}}{{else}}{{t "Never Backed Up"}}{{end}}</span>
                 <span class="stat-card-icon" aria-hidden="true">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
                 </span>
@@ -53,27 +53,27 @@
 {{end}}
 
 <div class="agents-table-panel">
-    <h2 class="section-title agents-table-title">Registered Agents</h2>
+    <h2 class="section-title agents-table-title">{{t "Registered Agents"}}</h2>
     {{if not $agents}}
     <div class="empty-state empty-state-agents">
         <span class="empty-state-icon-wrap" aria-hidden="true">
             <svg class="empty-state-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
         </span>
-        <h3>No agents registered</h3>
-        <p>Scan your network or connect manually to register backup agents.</p>
-        <button type="button" class="btn" onclick="toggleAgentsAddPanel(true)">Add your first agent</button>
+        <h3>{{t "No agents registered"}}</h3>
+        <p>{{t "Scan your network or connect manually to register backup agents."}}</p>
+        <button type="button" class="btn" onclick="toggleAgentsAddPanel(true)">{{t "Add your first agent"}}</button>
     </div>
     {{else}}
     <div class="table-wrap agents-table" id="agents-table" hx-get="/agents" hx-trigger="every 30s" hx-select=".table-wrap.agents-table" hx-swap="outerHTML">
         <table>
             <thead>
                 <tr>
-                    <th>Agent</th>
-                    <th>Jobs</th>
-                    <th>Last Backup</th>
-                    <th>Status</th>
-                    <th>Address</th>
-                    <th class="col-actions" aria-label="Actions"></th>
+                    <th>{{t "Agent"}}</th>
+                    <th>{{t "Jobs"}}</th>
+                    <th>{{t "Last Backup"}}</th>
+                    <th>{{t "Status"}}</th>
+                    <th>{{t "Address"}}</th>
+                    <th class="col-actions" aria-label="{{t "Actions"}}"></th>
                 </tr>
             </thead>
             <tbody>
@@ -81,28 +81,28 @@
                 <tr class="clickable-row agent-row agent-row--{{.BackupStatus}}" onclick="window.location='/agents/{{.Name}}'">
                     <td class="agent-name-cell">
                         <span class="agent-name">{{.Name}}</span>
-                        <span class="agent-type-chip agent-type-chip--{{.TypeLabel}}">{{.TypeLabel}}</span>
+                        <span class="agent-type-chip agent-type-chip--{{.TypeLabel}}">{{t .TypeLabel}}</span>
                     </td>
                     <td class="agent-jobs-cell">{{.JobCount}}</td>
                     <td class="last-backup-cell last-backup-cell--{{.BackupStatus}}">
-                        {{if .LastBackup}}{{timeAgo .LastBackup}}{{else}}never{{end}}
+                        {{if .LastBackup}}{{timeAgo .LastBackup}}{{else}}{{t "never"}}{{end}}
                     </td>
                     <td class="status-cell">
                         {{if .Suspended}}
-                        <span class="badge badge-critical">suspended</span>
+                        <span class="badge badge-critical">{{t "suspended"}}</span>
                         {{else}}
-                        <span class="badge badge-ok">active</span>
-                        <span class="badge {{if eq .BackupStatus "ok"}}badge-ok{{else if eq .BackupStatus "stale"}}badge-stale{{else}}badge-never{{end}}">{{.BackupStatus}}</span>
+                        <span class="badge badge-ok">{{t "active"}}</span>
+                        <span class="badge {{if eq .BackupStatus "ok"}}badge-ok{{else if eq .BackupStatus "stale"}}badge-stale{{else}}badge-never{{end}}">{{t .BackupStatus}}</span>
                         {{end}}
                     </td>
                     <td class="agent-addr-cell" title="{{.AgentAddr}}">{{if .AgentAddr}}{{.AgentAddr}}{{else}}<span class="text-muted">—</span>{{end}}</td>
                     <td class="col-actions" onclick="event.stopPropagation()">
                         <div class="action-icons">
-                            <a class="action-icon" href="/agents/{{.Name}}" title="View agent" onclick="event.stopPropagation()">
+                            <a class="action-icon" href="/agents/{{.Name}}" title="{{t "View agent"}}" onclick="event.stopPropagation()">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                             </a>
                             {{if ne .TypeLabel "server"}}
-                            <button type="button" class="action-icon action-icon-danger" title="Remove agent" onclick="event.stopPropagation(); removeAgent('{{.Name}}')">
+                            <button type="button" class="action-icon action-icon-danger" title="{{t "Remove agent"}}" onclick="event.stopPropagation(); removeAgent('{{.Name}}')">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
                             </button>
                             {{end}}
@@ -118,27 +118,27 @@
 
 <div class="agents-add-panel" id="agents-add-panel" hidden>
     <div class="agents-add-panel__head">
-        <h2 class="section-title">Add Agent</h2>
-        <button type="button" class="agents-add-panel__close" onclick="toggleAgentsAddPanel(false)" aria-label="Close">&times;</button>
+        <h2 class="section-title">{{t "Add Agent"}}</h2>
+        <button type="button" class="agents-add-panel__close" onclick="toggleAgentsAddPanel(false)" aria-label="{{t "Close"}}">&times;</button>
     </div>
     <div class="agents-add-tabs" role="tablist">
-        <button type="button" class="agents-add-tab agents-add-tab--active" data-tab="scan" onclick="switchAgentsAddTab('scan')">Network Scan</button>
-        <button type="button" class="agents-add-tab" data-tab="manual" onclick="switchAgentsAddTab('manual')">Manual Entry</button>
+        <button type="button" class="agents-add-tab agents-add-tab--active" data-tab="scan" onclick="switchAgentsAddTab('scan')">{{t "Network Scan"}}</button>
+        <button type="button" class="agents-add-tab" data-tab="manual" onclick="switchAgentsAddTab('manual')">{{t "Manual Entry"}}</button>
     </div>
 
     <div class="agents-add-tabpanel agents-add-tabpanel--active" id="agents-tab-scan">
         <div class="agents-add-card">
-            <p class="agents-add-hint">Discover HitStor agents on your local subnet.</p>
+            <p class="agents-add-hint">{{t "Discover HitStor agents on your local subnet."}}</p>
             <div class="form-group">
-                <label for="subnet-select">Subnet</label>
+                <label for="subnet-select">{{t "Subnet"}}</label>
                 <select id="subnet-select">
-                    <option value="">Loading subnets...</option>
+                    <option value="">{{t "Loading subnets..."}}</option>
                 </select>
             </div>
-            <button type="button" class="btn" id="scan-btn" onclick="startScan()">Scan Network</button>
+            <button type="button" class="btn" id="scan-btn" onclick="startScan()">{{t "Scan Network"}}</button>
             <div class="agents-scan-progress" id="scan-progress" hidden>
                 <div class="agents-scan-progress__meta">
-                    <span id="scan-status">Scanning...</span>
+                    <span id="scan-status">{{t "Scanning..."}}</span>
                     <span id="scan-pct">0%</span>
                 </div>
                 <div class="agents-scan-progress__track">
@@ -148,7 +148,7 @@
         </div>
         <div class="agents-discovery-results" id="discovery-results" hidden>
             <div class="agents-discovery-results__head">
-                <strong id="discovery-title">Discovered Agents</strong>
+                <strong id="discovery-title">{{t "Discovered Agents"}}</strong>
                 <span id="discovery-summary" class="agents-discovery-summary"></span>
             </div>
             <div class="table-wrap agents-discovery-table">
@@ -156,10 +156,10 @@
                     <thead>
                         <tr>
                             <th>IP</th>
-                            <th>Hostname</th>
-                            <th>OS / Arch</th>
-                            <th>Version</th>
-                            <th>Status</th>
+                            <th>{{t "Hostname"}}</th>
+                            <th>{{t "OS / Arch"}}</th>
+                            <th>{{t "Version"}}</th>
+                            <th>{{t "Status"}}</th>
                         </tr>
                     </thead>
                     <tbody id="discovery-tbody"></tbody>
@@ -170,12 +170,12 @@
 
     <div class="agents-add-tabpanel" id="agents-tab-manual" hidden>
         <div class="agents-add-card">
-            <p class="agents-add-hint">Connect directly to an agent by IP address.</p>
+            <p class="agents-add-hint">{{t "Connect directly to an agent by IP address."}}</p>
             <div class="form-group">
-                <label for="manual-ip">Agent IP Address</label>
-                <input type="text" id="manual-ip" placeholder="e.g. 192.168.1.20">
+                <label for="manual-ip">{{t "Agent IP Address"}}</label>
+                <input type="text" id="manual-ip" placeholder="{{tf "e.g. {example}" "example" "192.168.1.20"}}">
             </div>
-            <button type="button" class="btn" id="probe-btn" onclick="probeAgent()">Connect</button>
+            <button type="button" class="btn" id="probe-btn" onclick="probeAgent()">{{t "Connect"}}</button>
             <div id="probe-result" class="agents-probe-result" hidden></div>
         </div>
     </div>
@@ -184,29 +184,29 @@
 <div id="register-dialog" class="dialog-overlay" hidden role="dialog" aria-modal="true" aria-labelledby="register-dialog-title">
     <div class="dialog-box">
         <div class="dialog-header">
-            <h2 id="register-dialog-title">Register Agent</h2>
-            <button type="button" class="dialog-close" onclick="closeRegisterDialog()" aria-label="Close">&times;</button>
+            <h2 id="register-dialog-title">{{t "Register Agent"}}</h2>
+            <button type="button" class="dialog-close" onclick="closeRegisterDialog()" aria-label="{{t "Close"}}">&times;</button>
         </div>
         <div class="dialog-body">
             <form id="register-form" onsubmit="submitRegister(event)">
                 <div class="form-group">
-                    <label for="reg-name">Agent Name</label>
-                    <input type="text" id="reg-name" placeholder="e.g. web-server-1" required pattern="[a-zA-Z0-9][a-zA-Z0-9_-]*">
-                    <span class="form-hint">Letters, numbers, hyphens, and underscores.</span>
+                    <label for="reg-name">{{t "Agent Name"}}</label>
+                    <input type="text" id="reg-name" placeholder="{{tf "e.g. {example}" "example" "web-server-1"}}" required pattern="[a-zA-Z0-9][a-zA-Z0-9_-]*">
+                    <span class="form-hint">{{t "Letters, numbers, hyphens, and underscores."}}</span>
                 </div>
                 <div class="form-group">
-                    <label for="reg-addr">Agent Address</label>
+                    <label for="reg-addr">{{t "Agent Address"}}</label>
                     <input type="text" id="reg-addr" readonly class="input-readonly">
                 </div>
                 <div class="form-group">
-                    <label for="reg-token">Agent Token</label>
-                    <input type="password" id="reg-token" placeholder="64-character hex token" required minlength="64" maxlength="64">
-                    <span class="form-hint">Run <code>sudo hitstor-agent show-id</code> on the agent machine.</span>
+                    <label for="reg-token">{{t "Agent Token"}}</label>
+                    <input type="password" id="reg-token" placeholder="{{t "64-character hex token"}}" required minlength="64" maxlength="64">
+                    <span class="form-hint">{{t "Run"}} <code>sudo hitstor-agent show-id</code> {{t "on the agent machine."}}</span>
                 </div>
                 <div id="reg-error" class="form-error" hidden></div>
                 <div class="dialog-actions">
-                    <button type="button" class="btn btn-secondary" onclick="closeRegisterDialog()">Cancel</button>
-                    <button type="submit" class="btn" id="reg-btn">Register Agent</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeRegisterDialog()">{{t "Cancel"}}</button>
+                    <button type="submit" class="btn" id="reg-btn">{{t "Register Agent"}}</button>
                 </div>
             </form>
         </div>
@@ -243,7 +243,7 @@ function switchAgentsAddTab(tab) {
         var sel = document.getElementById('subnet-select');
         sel.innerHTML = '';
         if (subnets.length === 0) {
-            sel.innerHTML = '<option value="">No subnets detected</option>';
+            sel.innerHTML = '<option value="">' + escapeHtml(t('No subnets detected')) + '</option>';
             document.getElementById('scan-btn').disabled = true;
             return;
         }
@@ -255,7 +255,7 @@ function switchAgentsAddTab(tab) {
         });
     })
     .catch(function() {
-        document.getElementById('subnet-select').innerHTML = '<option value="">Failed to load subnets</option>';
+        document.getElementById('subnet-select').innerHTML = '<option value="">' + escapeHtml(t('Failed to load subnets')) + '</option>';
     });
 })();
 
@@ -265,11 +265,11 @@ function startScan() {
 
     var btn = document.getElementById('scan-btn');
     btn.disabled = true;
-    btn.textContent = 'Scanning...';
+    btn.textContent = t('Scanning...');
     document.getElementById('scan-progress').hidden = false;
     document.getElementById('scan-bar').style.width = '0%';
     document.getElementById('scan-pct').textContent = '0%';
-    document.getElementById('scan-status').textContent = 'Scanning...';
+    document.getElementById('scan-status').textContent = t('Scanning...');
     document.getElementById('discovery-results').hidden = false;
     document.getElementById('discovery-tbody').innerHTML = '';
     document.getElementById('discovery-summary').textContent = '';
@@ -301,7 +301,7 @@ function startScan() {
                 var pct = msg.total > 0 ? Math.round((msg.probed / msg.total) * 100) : 0;
                 document.getElementById('scan-bar').style.width = pct + '%';
                 document.getElementById('scan-pct').textContent = pct + '%';
-                document.getElementById('scan-status').textContent = 'Scanned ' + msg.probed + '/' + msg.total + ' — found ' + msg.found;
+                document.getElementById('scan-status').textContent = t('Scanned {probed}/{total} — found {found}', {probed: msg.probed, total: msg.total, found: msg.found});
             }
         };
 
@@ -310,17 +310,17 @@ function startScan() {
             currentEventSource = null;
             var result = JSON.parse(e.data);
             btn.disabled = false;
-            btn.textContent = 'Scan Network';
+            btn.textContent = t('Scan Network');
             document.getElementById('scan-bar').style.width = '100%';
             document.getElementById('scan-pct').textContent = '100%';
 
             var found = result.result ? (result.result.agents_found || 0) : 0;
             if (found === 0) {
-                document.getElementById('scan-status').textContent = 'No agents found on this subnet';
-                document.getElementById('discovery-summary').textContent = 'No agents found';
+                document.getElementById('scan-status').textContent = t('No agents found on this subnet');
+                document.getElementById('discovery-summary').textContent = t('No agents found');
             } else {
-                document.getElementById('scan-status').textContent = 'Scan complete';
-                document.getElementById('discovery-summary').textContent = 'Found ' + found + ' agent' + (found !== 1 ? 's' : '');
+                document.getElementById('scan-status').textContent = t('Scan complete');
+                document.getElementById('discovery-summary').textContent = found === 1 ? t('Found 1 agent') : t('Found {n} agents', {n: found});
             }
         });
 
@@ -328,15 +328,15 @@ function startScan() {
             es.close();
             currentEventSource = null;
             btn.disabled = false;
-            btn.textContent = 'Scan Network';
-            document.getElementById('scan-status').textContent = 'Scan connection lost';
+            btn.textContent = t('Scan Network');
+            document.getElementById('scan-status').textContent = t('Scan connection lost');
         };
     })
     .catch(function(err) {
         btn.disabled = false;
-        btn.textContent = 'Scan Network';
+        btn.textContent = t('Scan Network');
         document.getElementById('scan-progress').hidden = true;
-        alert('Scan failed: ' + err.message);
+        alert(t('Scan failed: {error}', {error: err.message}));
     });
 }
 
@@ -351,7 +351,7 @@ function addDiscoveredAgent(agent) {
             + '<td>' + escapeHtml(agent.hostname) + '</td>'
             + '<td>' + escapeHtml(agent.os) + '/' + escapeHtml(agent.arch) + '</td>'
             + '<td>' + escapeHtml(agent.version) + '</td>'
-            + '<td><span class="badge badge-ok">registered</span></td>';
+            + '<td><span class="badge badge-ok">' + escapeHtml(t('registered')) + '</span></td>';
     } else {
         tr.className = 'clickable-row';
         tr.onclick = function() { openRegisterDialog(agent.ip, agent.hostname); };
@@ -359,7 +359,7 @@ function addDiscoveredAgent(agent) {
             + '<td>' + escapeHtml(agent.hostname) + '</td>'
             + '<td>' + escapeHtml(agent.os) + '/' + escapeHtml(agent.arch) + '</td>'
             + '<td>' + escapeHtml(agent.version) + '</td>'
-            + '<td><span class="badge badge-pending">new</span></td>';
+            + '<td><span class="badge badge-pending">' + escapeHtml(t('new')) + '</span></td>';
     }
     tbody.appendChild(tr);
 }
@@ -371,7 +371,7 @@ function probeAgent() {
     var btn = document.getElementById('probe-btn');
     var result = document.getElementById('probe-result');
     btn.disabled = true;
-    btn.textContent = 'Connecting...';
+    btn.textContent = t('Connecting...');
     result.hidden = true;
 
     fetch('/api/discover/probe', {
@@ -389,8 +389,8 @@ function probeAgent() {
             + '<div><strong>' + escapeHtml(agent.hostname) + '</strong> (' + escapeHtml(agent.ip) + ')</div>'
             + '<div class="agents-probe-card__meta">' + escapeHtml(agent.os) + '/' + escapeHtml(agent.arch) + ' &mdash; v' + escapeHtml(agent.version) + '</div>'
             + (agent.registered
-                ? '<div class="agents-probe-card__status"><span class="badge badge-ok">registered</span> as <strong>' + escapeHtml(agent.agent_name) + '</strong></div>'
-                : '<button type="button" class="btn agents-probe-register" onclick="openRegisterDialog(\'' + escapeHtml(agent.ip) + '\', \'' + escapeHtml(agent.hostname) + '\')">Register</button>')
+                ? '<div class="agents-probe-card__status"><span class="badge badge-ok">' + escapeHtml(t('registered')) + '</span> ' + escapeHtml(t('as')) + ' <strong>' + escapeHtml(agent.agent_name) + '</strong></div>'
+                : '<button type="button" class="btn agents-probe-register" onclick="openRegisterDialog(\'' + escapeHtml(agent.ip) + '\', \'' + escapeHtml(agent.hostname) + '\')">' + escapeHtml(t('Register')) + '</button>')
             + '</div>';
     })
     .catch(function(err) {
@@ -399,7 +399,7 @@ function probeAgent() {
     })
     .finally(function() {
         btn.disabled = false;
-        btn.textContent = 'Connect';
+        btn.textContent = t('Connect');
     });
 }
 
@@ -409,7 +409,7 @@ function openRegisterDialog(ip, hostname) {
     document.getElementById('reg-token').value = '';
     document.getElementById('reg-error').hidden = true;
     document.getElementById('reg-btn').disabled = false;
-    document.getElementById('reg-btn').textContent = 'Register Agent';
+    document.getElementById('reg-btn').textContent = t('Register Agent');
     document.getElementById('register-dialog').hidden = false;
 }
 
@@ -433,7 +433,7 @@ function registerAgent(name, addr, token) {
     var btn = document.getElementById('reg-btn');
     errEl.hidden = true;
     btn.disabled = true;
-    btn.textContent = 'Registering...';
+    btn.textContent = t('Registering...');
 
     fetch('/api/agents', {
         method: 'POST',
@@ -454,13 +454,13 @@ function registerAgent(name, addr, token) {
             row.onclick = null;
             var cells = row.querySelectorAll('td');
             if (cells.length >= 5) {
-                cells[4].innerHTML = '<span class="badge badge-ok">registered</span>';
+                cells[4].innerHTML = '<span class="badge badge-ok">' + escapeHtml(t('registered')) + '</span>';
             }
         }
 
         var probeResult = document.getElementById('probe-result');
         if (!probeResult.hidden) {
-            probeResult.innerHTML = '<div class="agents-probe-success">Agent <strong>' + escapeHtml(name) + '</strong> registered successfully.</div>';
+            probeResult.innerHTML = '<div class="agents-probe-success">' + escapeHtml(t('Agent')) + ' <strong>' + escapeHtml(name) + '</strong> ' + escapeHtml(t('registered successfully.')) + '</div>';
         }
 
         if (data.warning) {
@@ -475,21 +475,21 @@ function registerAgent(name, addr, token) {
     })
     .finally(function() {
         btn.disabled = false;
-        btn.textContent = 'Register Agent';
+        btn.textContent = t('Register Agent');
     });
 }
 
 function removeAgent(name) {
-    var keep = confirm('Remove agent "' + name + '"?\n\nOK = Keep backup jobs (recommended)\nCancel = Also delete jobs');
+    var keep = confirm(t('Remove agent "{name}"?', {name: name}) + '\n\n' + t('OK = Keep backup jobs (recommended)') + '\n' + t('Cancel = Also delete jobs'));
     // keep=true means preserve jobs → send keep_jobs=true (or omit)
     var url = '/api/agents/' + encodeURIComponent(name) + '?keep_jobs=' + (keep ? 'true' : 'false');
-    if (!confirm('Proceed with remove?')) return;
+    if (!confirm(t('Proceed with remove?'))) return;
     fetch(url, {method: 'DELETE'})
     .then(function(r) {
         if (!r.ok) return r.text().then(function(t) { throw new Error(t); });
         window.location.reload();
     })
-    .catch(function(err) { alert('Error: ' + err.message); });
+    .catch(function(err) { alert(t('Error: {error}', {error: err.message})); });
 }
 
 function escapeHtml(str) {

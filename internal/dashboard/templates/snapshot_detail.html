@@ -5,8 +5,8 @@
 {{$agents := index $data "Agents"}}
 
 <div class="snapshot-restore-page">
-    <nav class="breadcrumb" aria-label="Breadcrumb">
-        <a href="/restores">Restores</a>
+    <nav class="breadcrumb" aria-label="{{t "Breadcrumb"}}">
+        <a href="/restores">{{t "Restores"}}</a>
         <span class="breadcrumb-sep">/</span>
         <a href="/storage/{{$repoName}}">{{$repoName}}</a>
         <span class="breadcrumb-sep">/</span>
@@ -17,12 +17,12 @@
         <div class="snapshot-restore-hero__main">
             <div class="snapshot-restore-hero__identity">
                 <div class="snapshot-restore-hero__badges">
-                    <span class="badge badge-{{$snap.Type}} snapshot-restore-type-badge">{{$snap.Type}}</span>
+                    <span class="badge badge-{{$snap.Type}} snapshot-restore-type-badge">{{t $snap.Type}}</span>
                     
                     <span class="badge snapshot-restore-host-badge">{{$snap.Hostname}}</span>
                     
                 </div>
-                <h1 class="snapshot-restore-title">Snapshot <code class="snapshot-restore-id">{{shortID $snap.ID}}</code></h1>
+                <h1 class="snapshot-restore-title">{{t "Snapshot"}} <code class="snapshot-restore-id">{{shortID $snap.ID}}</code></h1>
                 <p class="snapshot-restore-subtitle">
                     <time datetime="{{$snap.Time}}">{{timeAgo $snap.Time}}</time>
                     <span class="snapshot-restore-subtitle-sep">·</span>
@@ -32,7 +32,7 @@
             <div class="snapshot-restore-hero__actions">
                 <button type="button" class="btn" id="restore-show-btn" onclick="showRestoreDialog()">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
-                    Start Restore
+                    {{t "Start Restore"}}
                 </button>
             </div>
         </div>
@@ -40,7 +40,7 @@
         <div class="snapshot-restore-stats">
             <div class="detail-stat-tile detail-stat-tile--last detail-stat-tile--ok">
                 <div class="detail-stat-tile__top">
-                    <span class="detail-stat-tile__label">Files</span>
+                    <span class="detail-stat-tile__label">{{t "Files"}}</span>
                     <span class="detail-stat-tile__icon" aria-hidden="true">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
                     </span>
@@ -49,7 +49,7 @@
             </div>
             <div class="detail-stat-tile detail-stat-tile--repo">
                 <div class="detail-stat-tile__top">
-                    <span class="detail-stat-tile__label">Size</span>
+                    <span class="detail-stat-tile__label">{{t "Size"}}</span>
                     <span class="detail-stat-tile__icon" aria-hidden="true">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
                     </span>
@@ -58,7 +58,7 @@
             </div>
             <div class="detail-stat-tile detail-stat-tile--agent">
                 <div class="detail-stat-tile__top">
-                    <span class="detail-stat-tile__label">Source</span>
+                    <span class="detail-stat-tile__label">{{t "Source"}}</span>
                     <span class="detail-stat-tile__icon" aria-hidden="true">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
                     </span>
@@ -67,7 +67,7 @@
             </div>
             <div class="detail-stat-tile detail-stat-tile--next">
                 <div class="detail-stat-tile__top">
-                    <span class="detail-stat-tile__label">Repository</span>
+                    <span class="detail-stat-tile__label">{{t "Repository"}}</span>
                     <span class="detail-stat-tile__icon" aria-hidden="true">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
                     </span>
@@ -80,7 +80,7 @@
 
         {{if $snap.Paths}}
         <div class="snapshot-restore-paths">
-            <span class="snapshot-restore-paths__label">Backed-up paths</span>
+            <span class="snapshot-restore-paths__label">{{t "Backed-up paths"}}</span>
             <div class="snapshot-restore-paths__list">
                 {{range $snap.Paths}}
                 <code class="snapshot-restore-path-chip">{{.}}</code>
@@ -90,65 +90,77 @@
         {{end}}
 
         <details class="snapshot-restore-meta">
-            <summary>Technical details</summary>
+            <summary>{{t "Technical details"}}</summary>
             <dl class="snapshot-restore-meta__grid">
-                <dt>Snapshot ID</dt>
+                <dt>{{t "Snapshot ID"}}</dt>
                 <dd><code>{{$snap.ID}}</code></dd>
-                <dt>Captured at</dt>
+                <dt>{{t "Captured at"}}</dt>
                 <dd>{{$snap.Time}}</dd>
-                <dt>Type</dt>
-                <dd><span class="badge badge-{{$snap.Type}}">{{$snap.Type}}</span></dd>
+                <dt>{{t "Type"}}</dt>
+                <dd><span class="badge badge-{{$snap.Type}}">{{t $snap.Type}}</span></dd>
             </dl>
         </details>
     </section>
 
-    Configure Restore</h2>
+    <section id="restore-dialog" class="snapshot-restore-panel" hidden>
+        <header class="snapshot-restore-panel__head">
+            <div>
+                <h2 class="snapshot-restore-panel__title">{{t "Configure Restore"}}</h2>
                 <p class="snapshot-restore-panel__lead">
-                    
-                    Choose a target agent and optional paths. Leave the tree unchecked to restore everything in this snapshot.
-                    
+                    {{t "Choose a target agent and optional paths. Leave the tree unchecked to restore everything in this snapshot."}}
                 </p>
             </div>
-            <button type="button" class="btn btn-secondary btn-sm" onclick="hideRestoreDialog()">Close</button>
+            <button type="button" class="btn btn-secondary btn-sm" onclick="hideRestoreDialog()">{{t "Close"}}</button>
         </header>
 
         <div class="snapshot-restore-layout">
             <div class="snapshot-restore-options">
-                Target path
-                    </label>
-                    <input type="text" id="restore-target" class="snapshot-restore-input"
-                        placeholder="Leave empty for original paths">
-                    
-                    <p class="snapshot-restore-hint">Empty restores files to their original locations on the selected agent.</p>
-                    
+                <div class="snapshot-restore-field" id="restore-agent-group">
+                    <label class="snapshot-restore-field__label" for="restore-agent">{{t "Target agent"}}</label>
+                    <select id="restore-agent" class="snapshot-restore-input">
+                        {{range $agents}}<option value="{{.}}">{{.}}</option>{{end}}
+                    </select>
                 </div>
 
-                Files &amp; folders
+                <div class="snapshot-restore-field" id="restore-target-group">
+                    <label class="snapshot-restore-field__label" for="restore-target">
+                        {{t "Target path"}}
+                    </label>
+                    <input type="text" id="restore-target" class="snapshot-restore-input"
+                        placeholder="{{t "Leave empty for original paths"}}">
+                    <p class="snapshot-restore-hint">{{t "Empty restores files to their original locations on the selected agent."}}</p>
+                </div>
+            </div>
+
+            <div class="snapshot-restore-browser">
+                <div class="snapshot-restore-browser__head">
+                    <span class="snapshot-restore-browser__title">
+                        {{t "Files & folders"}}
                     </span>
                     <div class="snapshot-restore-browser__tools">
-                        <input type="search" id="restore-tree-search" class="snapshot-restore-search" placeholder="Filter…" aria-label="Filter tree" oninput="filterRestoreTree(this.value)">
-                        <button type="button" class="btn btn-secondary btn-sm" onclick="selectAllRestoreTree()">Select all</button>
-                        <button type="button" class="btn btn-secondary btn-sm" onclick="clearRestoreSelection()">Clear</button>
+                        <input type="search" id="restore-tree-search" class="snapshot-restore-search" placeholder="{{t "Filter…"}}" aria-label="{{t "Filter tree"}}" oninput="filterRestoreTree(this.value)">
+                        <button type="button" class="btn btn-secondary btn-sm" onclick="selectAllRestoreTree()">{{t "Select all"}}</button>
+                        <button type="button" class="btn btn-secondary btn-sm" onclick="clearRestoreSelection()">{{t "Clear"}}</button>
                     </div>
                 </div>
                 <div id="restore-tree" class="fs-tree snapshot-restore-tree">
-                    <div class="snapshot-restore-tree-loading">Loading snapshot contents…</div>
+                    <div class="snapshot-restore-tree-loading">{{t "Loading snapshot contents…"}}</div>
                 </div>
                 <div id="restore-selected-summary" class="snapshot-restore-selection" hidden></div>
             </div>
         </div>
 
         <footer class="snapshot-restore-actions">
-            <button type="button" class="btn" id="restore-start-btn" onclick="startRestore()">Start Restore</button>
-            <button type="button" class="btn btn-secondary" onclick="hideRestoreDialog()">Cancel</button>
+            <button type="button" class="btn" id="restore-start-btn" onclick="startRestore()">{{t "Start Restore"}}</button>
+            <button type="button" class="btn btn-secondary" onclick="hideRestoreDialog()">{{t "Cancel"}}</button>
             <span id="restore-error" class="snapshot-restore-error" role="alert"></span>
         </footer>
     </section>
 
     <section id="restore-progress" class="snapshot-restore-progress" hidden>
         <header class="snapshot-restore-progress__head">
-            <span class="badge badge-running" id="restore-status-badge">restoring</span>
-            <h2 class="snapshot-restore-progress__title">Restore in progress</h2>
+            <span class="badge badge-running" id="restore-status-badge">{{t "restoring"}}</span>
+            <h2 class="snapshot-restore-progress__title">{{t "Restore in progress"}}</h2>
         </header>
         <div class="snapshot-restore-progress__bar" aria-hidden="true">
             <div id="restore-bar" class="snapshot-restore-progress__fill"></div>
@@ -156,38 +168,38 @@
         <div class="snapshot-restore-progress__stats">
             <div class="snapshot-restore-metric">
                 <div class="snapshot-restore-metric__value" id="restore-files">0</div>
-                <div class="snapshot-restore-metric__label">Files <span id="restore-files-total">0</span></div>
+                <div class="snapshot-restore-metric__label">{{t "Files"}} <span id="restore-files-total">0</span></div>
             </div>
             <div class="snapshot-restore-metric">
                 <div class="snapshot-restore-metric__value" id="restore-bytes">0 B</div>
-                <div class="snapshot-restore-metric__label">Written <span id="restore-bytes-total">0 B</span></div>
+                <div class="snapshot-restore-metric__label">{{t "Written"}} <span id="restore-bytes-total">0 B</span></div>
             </div>
             <div class="snapshot-restore-metric">
                 <div class="snapshot-restore-metric__value" id="restore-elapsed">0s</div>
-                <div class="snapshot-restore-metric__label">Elapsed</div>
+                <div class="snapshot-restore-metric__label">{{t "Elapsed"}}</div>
             </div>
         </div>
-        <p class="snapshot-restore-progress__file">Current file: <code id="restore-current-file">—</code></p>
+        <p class="snapshot-restore-progress__file">{{t "Current file:"}} <code id="restore-current-file">—</code></p>
     </section>
 
     <section id="restore-result" class="snapshot-restore-result" hidden>
-        <h2 class="snapshot-restore-result__title" id="restore-result-title">Restore complete</h2>
+        <h2 class="snapshot-restore-result__title" id="restore-result-title">{{t "Restore complete"}}</h2>
         <div id="restore-result-body" class="snapshot-restore-result__body"></div>
     </section>
 </div>
 
-false;
+<script>
+var snapshotID = '{{$snap.ID}}';
 var restoreID = '';
 var evtSource = null;
-
-
 
 function showRestoreDialog() {
     var panel = document.getElementById('restore-dialog');
     panel.hidden = false;
     panel.classList.add('snapshot-restore-panel--open');
     document.getElementById('restore-show-btn').hidden = true;
-        panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    loadTree(document.getElementById('restore-tree'), '');
+    panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 function hideRestoreDialog() {
@@ -223,7 +235,7 @@ function clearRestoreSelection() {
 
 function loadTree(parentEl, treePath) {
     if (!treePath) {
-        parentEl.innerHTML = '<div class="snapshot-restore-tree-loading">Loading snapshot contents…</div>';
+        parentEl.innerHTML = '<div class="snapshot-restore-tree-loading">' + t('Loading snapshot contents…') + '</div>';
     }
     var url = '/api/snapshots/' + snapshotID + '/tree?path=' + encodeURIComponent(treePath);
     fetch(url)
@@ -233,7 +245,7 @@ function loadTree(parentEl, treePath) {
     })
     .then(function(entries) { renderTreeEntries(parentEl, entries); })
     .catch(function(err) {
-        parentEl.innerHTML = '<div class="snapshot-restore-tree-error">Error: ' + escapeHTML(err.message) + '</div>';
+        parentEl.innerHTML = '<div class="snapshot-restore-tree-error">' + t('Error: {msg}', {msg: escapeHTML(err.message)}) + '</div>';
     });
 }
 
@@ -251,7 +263,7 @@ function fileIcon(name) {
 function renderTreeEntries(parentEl, entries) {
     parentEl.innerHTML = '';
     if (!entries || entries.length === 0) {
-        parentEl.innerHTML = '<div class="snapshot-restore-tree-empty">This folder is empty.</div>';
+        parentEl.innerHTML = '<div class="snapshot-restore-tree-empty">' + t('This folder is empty.') + '</div>';
         return;
     }
     entries.forEach(function(entry) {
@@ -322,7 +334,7 @@ function toggleDir(nodeEl, path, expandBtn, childrenEl) {
     var children = childrenEl || nodeEl.querySelector('.fs-children');
     if (children.style.display === 'none') {
         if (children.children.length === 0) {
-            children.innerHTML = '<div class="snapshot-restore-tree-loading">Loading…</div>';
+            children.innerHTML = '<div class="snapshot-restore-tree-loading">' + t('Loading…') + '</div>';
             loadTree(children, path);
         }
         children.style.display = '';
@@ -348,13 +360,13 @@ function getSelectedPaths() {
 
 function updateSelectedSummary() {
     var el = document.getElementById('restore-selected-summary');
-        var paths = getSelectedPaths();
+    var paths = getSelectedPaths();
     if (paths.length > 0) {
         el.hidden = false;
-        el.textContent = paths.length + ' path' + (paths.length === 1 ? '' : 's') + ' selected — partial restore';
+        el.textContent = paths.length === 1 ? t('1 path selected — partial restore') : t('{n} paths selected — partial restore', {n: paths.length});
     } else {
         el.hidden = false;
-        el.textContent = 'All files in snapshot (nothing selected)';
+        el.textContent = t('All files in snapshot (nothing selected)');
     }
 }
 
@@ -363,13 +375,15 @@ function startRestore() {
     var errEl = document.getElementById('restore-error');
     errEl.textContent = '';
     btn.disabled = true;
-    btn.textContent = 'Starting…';
+    btn.textContent = t('Starting…');
 
     var targetPath = document.getElementById('restore-target').value.trim();
     var url = '/api/snapshots/' + snapshotID + '/restore';
     var body = { target_path: targetPath };
+    body.agent_name = document.getElementById('restore-agent').value;
+    var includes = getSelectedPaths();
+    if (includes.length > 0) body.includes = includes;
 
-    
     fetch(url, {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
@@ -391,7 +405,7 @@ function startRestore() {
     .catch(function(err) {
         errEl.textContent = err.message;
         btn.disabled = false;
-        btn.textContent = 'Start Restore';
+        btn.textContent = t('Start Restore');
     });
 }
 
@@ -438,23 +452,23 @@ function showResult(data) {
 
     if (data.status === 'completed') {
         resultEl.classList.add('snapshot-restore-result--ok');
-        titleEl.textContent = 'Restore complete';
+        titleEl.textContent = t('Restore complete');
         bodyEl.innerHTML =
             '<div class="snapshot-restore-progress__stats">' +
-            '<div class="snapshot-restore-metric"><div class="snapshot-restore-metric__value">' + (data.files_restored || 0) + '</div><div class="snapshot-restore-metric__label">Files restored</div></div>' +
-            '<div class="snapshot-restore-metric"><div class="snapshot-restore-metric__value">' + formatBytesJS(data.bytes_written || 0) + '</div><div class="snapshot-restore-metric__label">Bytes written</div></div>' +
-            '<div class="snapshot-restore-metric"><div class="snapshot-restore-metric__value">' + formatElapsed(data.elapsed || 0) + '</div><div class="snapshot-restore-metric__label">Elapsed</div></div>' +
+            '<div class="snapshot-restore-metric"><div class="snapshot-restore-metric__value">' + (data.files_restored || 0) + '</div><div class="snapshot-restore-metric__label">' + t('Files restored') + '</div></div>' +
+            '<div class="snapshot-restore-metric"><div class="snapshot-restore-metric__value">' + formatBytesJS(data.bytes_written || 0) + '</div><div class="snapshot-restore-metric__label">' + t('Bytes written') + '</div></div>' +
+            '<div class="snapshot-restore-metric"><div class="snapshot-restore-metric__value">' + formatElapsed(data.elapsed || 0) + '</div><div class="snapshot-restore-metric__label">' + t('Elapsed') + '</div></div>' +
             '</div>';
         if (data.errors && data.errors.length > 0) {
-            bodyEl.innerHTML += '<div class="snapshot-restore-warnings"><strong>Warnings (' + data.errors.length + ')</strong><ul>' +
+            bodyEl.innerHTML += '<div class="snapshot-restore-warnings"><strong>' + t('Warnings ({n})', {n: data.errors.length}) + '</strong><ul>' +
                 data.errors.map(function(e) { return '<li>' + escapeHTML(e) + '</li>'; }).join('') + '</ul></div>';
         }
     } else {
         resultEl.classList.add('snapshot-restore-result--fail');
-        titleEl.textContent = 'Restore failed';
-        var msg = (data.errors && data.errors.length > 0) ? data.errors[data.errors.length - 1] : 'Unknown error';
+        titleEl.textContent = t('Restore failed');
+        var msg = (data.errors && data.errors.length > 0) ? data.errors[data.errors.length - 1] : t('Unknown error');
         bodyEl.innerHTML = '<p class="snapshot-restore-error">' + escapeHTML(msg) + '</p>' +
-            '<p class="snapshot-restore-hint">Files restored before failure: ' + (data.files_restored || 0) + '</p>';
+            '<p class="snapshot-restore-hint">' + t('Files restored before failure: {n}', {n: data.files_restored || 0}) + '</p>';
     }
     resultEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }

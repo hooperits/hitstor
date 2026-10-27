@@ -1,0 +1,12 @@
+# Backups page: job status, session phase, verify status and job type label.
+ok
+overdue
+pending
+disabled
+never
+running
+uploading
+finalizing
+done
+skipped
+Files

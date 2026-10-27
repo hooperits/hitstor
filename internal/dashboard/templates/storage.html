@@ -1,15 +1,15 @@
 {{define "content"}}
 
 <div class="storage-toolbar">
-    <p class="storage-toolbar-hint" id="storage-toolbar-hint">Loading repositories...</p>
-    <button type="button" class="btn" onclick="toggleStorageAddPanel()">+ New Repository</button>
+    <p class="storage-toolbar-hint" id="storage-toolbar-hint">{{t "Loading repositories..."}}</p>
+    <button type="button" class="btn" onclick="toggleStorageAddPanel()">+ {{t "New Repository"}}</button>
 </div>
 
-<section class="stats-section storage-fleet-stats" id="storage-fleet-stats" aria-label="Storage fleet summary" hidden>
+<section class="stats-section storage-fleet-stats" id="storage-fleet-stats" aria-label="{{t "Storage fleet summary"}}" hidden>
     <div class="stats-grid stats-grid-compact">
         <div class="stat-card stat-card-compact">
             <div class="stat-card-top">
-                <span class="stat-card-label">Repositories</span>
+                <span class="stat-card-label">{{t "Repositories"}}</span>
                 <span class="stat-card-icon" aria-hidden="true">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
                 </span>
@@ -18,7 +18,7 @@
         </div>
         <div class="stat-card stat-card-compact">
             <div class="stat-card-top">
-                <span class="stat-card-label">Total Protected</span>
+                <span class="stat-card-label">{{t "Total Protected"}}</span>
                 <span class="stat-card-icon" aria-hidden="true">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
                 </span>
@@ -27,60 +27,60 @@
         </div>
         <div class="stat-card stat-card-compact">
             <div class="stat-card-top">
-                <span class="stat-card-label">Snapshots</span>
+                <span class="stat-card-label">{{t "Snapshots"}}</span>
             </div>
             <div class="stat-card-value" id="fleet-stat-snapshots">0</div>
         </div>
         <div class="stat-card stat-card-compact" id="fleet-stat-alerts-card">
             <div class="stat-card-top">
-                <span class="stat-card-label">Alerts</span>
+                <span class="stat-card-label">{{t "Alerts"}}</span>
             </div>
             <div class="stat-card-value stat-card-value--ok" id="fleet-stat-alerts">0</div>
         </div>
     </div>
 </section>
 
-<section class="storage-active-restores" id="storage-active-restores" hidden aria-label="Active restores">
-    <h2 class="section-title storage-section-title">Active Restores</h2>
+<section class="storage-active-restores" id="storage-active-restores" hidden aria-label="{{t "Active restores"}}">
+    <h2 class="section-title storage-section-title">{{t "Active Restores"}}</h2>
     <div id="storage-active-restores-list"></div>
 </section>
 
 <div class="storage-add-panel" id="storage-add-panel" hidden>
     <div class="storage-add-panel__head">
-        <h2 class="section-title">New Repository</h2>
-        <button type="button" class="storage-add-panel__close" onclick="toggleStorageAddPanel(false)" aria-label="Close">&times;</button>
+        <h2 class="section-title">{{t "New Repository"}}</h2>
+        <button type="button" class="storage-add-panel__close" onclick="toggleStorageAddPanel(false)" aria-label="{{t "Close"}}">&times;</button>
     </div>
 
-    <div class="wizard-steps" id="wizard-steps" aria-label="Setup progress">
-        <div class="wizard-step wizard-step--active" data-step="1"><span>1</span> Intention</div>
-        <div class="wizard-step" data-step="2"><span>2</span> Location</div>
-        <div class="wizard-step" data-step="3"><span>3</span> Security</div>
-        <div class="wizard-step" data-step="4"><span>4</span> Review</div>
+    <div class="wizard-steps" id="wizard-steps" aria-label="{{t "Setup progress"}}">
+        <div class="wizard-step wizard-step--active" data-step="1"><span>1</span> {{t "Intention"}}</div>
+        <div class="wizard-step" data-step="2"><span>2</span> {{t "Location"}}</div>
+        <div class="wizard-step" data-step="3"><span>3</span> {{t "Security"}}</div>
+        <div class="wizard-step" data-step="4"><span>4</span> {{t "Review"}}</div>
     </div>
 
     <div class="wizard-panel" id="wizard-step-1">
-        <p class="storage-add-hint">Choose whether to initialize a new repository or connect to an existing one.</p>
+        <p class="storage-add-hint">{{t "Choose whether to initialize a new repository or connect to an existing one."}}</p>
         <div class="intent-cards">
             <button type="button" class="intent-card" data-intent="create" onclick="selectRepoIntent('create', this)">
-                <strong>Create new</strong>
-                <span>Initialize a fresh encrypted repository at a new location.</span>
+                <strong>{{t "Create new"}}</strong>
+                <span>{{t "Initialize a fresh encrypted repository at a new location."}}</span>
             </button>
             <button type="button" class="intent-card" data-intent="connect" onclick="selectRepoIntent('connect', this)">
-                <strong>Connect existing</strong>
-                <span>Attach a repository that was created previously on this server or elsewhere.</span>
+                <strong>{{t "Connect existing"}}</strong>
+                <span>{{t "Attach a repository that was created previously on this server or elsewhere."}}</span>
             </button>
         </div>
     </div>
 
     <div class="wizard-panel" id="wizard-step-2" hidden>
         <div class="storage-location-tabs" role="tablist">
-            <button type="button" class="storage-location-tab storage-location-tab--active" data-tab="local" onclick="switchLocationTab('local')">Local Filesystem</button>
-            <button type="button" class="storage-location-tab" data-tab="s3" onclick="switchLocationTab('s3')">S3 Compatible</button>
+            <button type="button" class="storage-location-tab storage-location-tab--active" data-tab="local" onclick="switchLocationTab('local')">{{t "Local Filesystem"}}</button>
+            <button type="button" class="storage-location-tab" data-tab="s3" onclick="switchLocationTab('s3')">{{t "S3 Compatible"}}</button>
         </div>
 
         <div class="storage-add-card" id="location-local">
             <div class="form-group">
-                <label for="repo-path">Repository Path</label>
+                <label for="repo-path">{{t "Repository Path"}}</label>
                 <input type="text" id="repo-path" placeholder="/var/lib/hitstor/my-repo" oninput="schedulePathValidation()">
                 <div id="path-validation-info" class="form-status" hidden></div>
                 <div id="disk-space-info" class="disk-space-info" hidden></div>
@@ -91,9 +91,9 @@
 
         <div class="storage-add-card" id="location-s3" hidden>
             <div class="form-group">
-                <label for="s3-preset">Provider</label>
+                <label for="s3-preset">{{t "Provider"}}</label>
                 <select id="s3-preset" onchange="applyS3Preset()">
-                    <option value="custom">Custom</option>
+                    <option value="custom">{{t "Custom"}}</option>
                     <option value="aws">AWS S3</option>
                     <option value="minio">MinIO</option>
                     <option value="b2">Backblaze B2</option>
@@ -101,26 +101,26 @@
                 </select>
             </div>
             <div class="form-group">
-                <label for="s3-endpoint">Endpoint URL</label>
+                <label for="s3-endpoint">{{t "Endpoint URL"}}</label>
                 <input type="text" id="s3-endpoint" placeholder="https://s3.amazonaws.com" oninput="resetS3Verified()">
             </div>
             <div class="form-group">
-                <label for="s3-bucket">Bucket</label>
+                <label for="s3-bucket">{{t "Bucket"}}</label>
                 <input type="text" id="s3-bucket" placeholder="my-backup-bucket" oninput="resetS3Verified()">
             </div>
             <div class="form-group">
-                <label for="s3-region">Region</label>
+                <label for="s3-region">{{t "Region"}}</label>
                 <input type="text" id="s3-region" placeholder="us-east-1" value="us-east-1" oninput="resetS3Verified()">
             </div>
             <div class="form-group">
-                <label for="s3-access-key">Access Key</label>
+                <label for="s3-access-key">{{t "Access Key"}}</label>
                 <input type="text" id="s3-access-key" placeholder="AKIAIOSFODNN7EXAMPLE" oninput="resetS3Verified()">
             </div>
             <div class="form-group">
-                <label for="s3-secret-key">Secret Key</label>
-                <input type="password" id="s3-secret-key" placeholder="Secret key" oninput="resetS3Verified()">
+                <label for="s3-secret-key">{{t "Secret Key"}}</label>
+                <input type="password" id="s3-secret-key" placeholder="{{t "Secret key"}}" oninput="resetS3Verified()">
             </div>
-            <button type="button" class="btn btn-secondary" id="s3-test-btn" onclick="testS3Connection()">Test Connection</button>
+            <button type="button" class="btn btn-secondary" id="s3-test-btn" onclick="testS3Connection()">{{t "Test Connection"}}</button>
             <span id="s3-test-status" class="form-status"></span>
             <div id="s3-detect-info" class="detect-info" hidden></div>
         </div>
@@ -128,22 +128,22 @@
 
     <div class="wizard-panel" id="wizard-step-3" hidden>
         <div class="alert-banner alert-banner--warning" id="password-warning">
-            <div class="alert-banner-title">Encryption password cannot be recovered</div>
-            <p>Store this password securely. Without it, your backups cannot be decrypted or restored.</p>
+            <div class="alert-banner-title">{{t "Encryption password cannot be recovered"}}</div>
+            <p>{{t "Store this password securely. Without it, your backups cannot be decrypted or restored."}}</p>
         </div>
         <div class="storage-add-card">
             <div class="form-group">
-                <label for="repo-name">Repository Name</label>
-                <input type="text" id="repo-name" placeholder="e.g. my-backups" pattern="[a-zA-Z0-9][a-zA-Z0-9_-]*">
-                <span class="form-hint">Letters, numbers, hyphens, and underscores. Must start with a letter or number.</span>
+                <label for="repo-name">{{t "Repository Name"}}</label>
+                <input type="text" id="repo-name" placeholder="{{t "e.g. my-backups"}}" pattern="[a-zA-Z0-9][a-zA-Z0-9_-]*">
+                <span class="form-hint">{{t "Letters, numbers, hyphens, and underscores. Must start with a letter or number."}}</span>
             </div>
             <div class="form-group">
-                <label for="repo-password" id="repo-password-label">Encryption Password</label>
-                <input type="password" id="repo-password" placeholder="Strong password for encryption">
+                <label for="repo-password" id="repo-password-label">{{t "Encryption Password"}}</label>
+                <input type="password" id="repo-password" placeholder="{{t "Strong password for encryption"}}">
             </div>
             <div class="form-group">
-                <label for="repo-password-confirm">Confirm Password</label>
-                <input type="password" id="repo-password-confirm" placeholder="Re-enter password">
+                <label for="repo-password-confirm">{{t "Confirm Password"}}</label>
+                <input type="password" id="repo-password-confirm" placeholder="{{t "Re-enter password"}}">
                 <div id="password-match-info" class="form-status" hidden></div>
             </div>
         </div>
@@ -151,7 +151,7 @@
 
     <div class="wizard-panel" id="wizard-step-4" hidden>
         <div class="storage-add-card">
-            <h3 class="wizard-review-title">Review configuration</h3>
+            <h3 class="wizard-review-title">{{t "Review configuration"}}</h3>
             <dl class="wizard-review-list" id="wizard-review-list"></dl>
             <div id="new-repo-error" class="form-error" hidden></div>
         </div>
@@ -159,39 +159,39 @@
 
     <div class="wizard-panel wizard-panel--success" id="wizard-step-success" hidden>
         <div class="storage-success-panel">
-            <h3 id="wizard-success-title">Repository ready</h3>
+            <h3 id="wizard-success-title">{{t "Repository ready"}}</h3>
             <p id="wizard-success-message"></p>
             <div class="wizard-success-actions">
-                <a href="/backups" class="btn">Create backup job</a>
-                <button type="button" class="btn btn-secondary" onclick="finishStorageWizard()">Done</button>
+                <a href="/backups" class="btn">{{t "Create backup job"}}</a>
+                <button type="button" class="btn btn-secondary" onclick="finishStorageWizard()">{{t "Done"}}</button>
             </div>
         </div>
     </div>
 
     <div class="wizard-actions" id="wizard-actions">
-        <button type="button" class="btn btn-secondary" id="wizard-back-btn" onclick="wizardBack()" hidden>Back</button>
-        <button type="button" class="btn" id="wizard-next-btn" onclick="wizardNext()" disabled>Next</button>
+        <button type="button" class="btn btn-secondary" id="wizard-back-btn" onclick="wizardBack()" hidden>{{t "Back"}}</button>
+        <button type="button" class="btn" id="wizard-next-btn" onclick="wizardNext()" disabled>{{t "Next"}}</button>
     </div>
 </div>
 
 <div id="repo-list">
-    <div class="empty">Loading repositories...</div>
+    <div class="empty">{{t "Loading repositories..."}}</div>
 </div>
 
 <!-- Disconnect Confirmation Dialog -->
 <div id="disconnect-dialog" class="dialog-overlay" hidden>
     <div class="dialog-box dialog-sm">
         <div class="dialog-header">
-            <h2>Disconnect Repository</h2>
+            <h2>{{t "Disconnect Repository"}}</h2>
             <button class="dialog-close" onclick="closeDisconnectDialog()">&times;</button>
         </div>
         <div class="dialog-body">
-            <p>Are you sure you want to disconnect <strong id="disconnect-repo-name"></strong>?</p>
-            <p class="form-hint">This removes the repository from the dashboard. Data on disk is not deleted.</p>
+            <p id="disconnect-question"></p>
+            <p class="form-hint">{{t "This removes the repository from the dashboard. Data on disk is not deleted."}}</p>
             <div id="disconnect-error" class="form-error" style="display:none"></div>
             <div class="dialog-actions">
-                <button class="btn btn-secondary" onclick="closeDisconnectDialog()">Cancel</button>
-                <button class="btn btn-danger" id="confirm-disconnect-btn" onclick="confirmDisconnect()">Disconnect</button>
+                <button class="btn btn-secondary" onclick="closeDisconnectDialog()">{{t "Cancel"}}</button>
+                <button class="btn btn-danger" id="confirm-disconnect-btn" onclick="confirmDisconnect()">{{t "Disconnect"}}</button>
             </div>
         </div>
     </div>
@@ -205,17 +205,17 @@
                 <span class="badge repo-type-badge"></span>
                 <span class="badge repo-health-badge" style="display:none"></span>
                 <span class="badge repo-alert-badge" style="display:none"></span>
-                <span class="badge badge-maintenance" style="display:none">Maintenance</span>
+                <span class="badge badge-maintenance" style="display:none">{{t "Maintenance"}}</span>
             </div>
         </div>
         <div class="repo-card-location"></div>
         <div class="repo-card-last-snapshot" style="display:none">
-            <span class="repo-last-label">Last snapshot:</span>
+            <span class="repo-last-label">{{t "Last snapshot:"}}</span>
             <span class="repo-last-value"></span>
         </div>
 
         <div class="repo-disk-section" style="display:none">
-            <div class="repo-disk-heading" title="Free space remaining on the volume where this repository is stored. This is not the size of your backup data — see Total Size below.">Host Disk Space</div>
+            <div class="repo-disk-heading" title="{{t "Free space remaining on the volume where this repository is stored. This is not the size of your backup data — see Total Size below."}}">{{t "Host Disk Space"}}</div>
             <div class="progress-bar-container">
                 <div class="progress-bar">
                     <div class="progress-bar-fill"></div>
@@ -228,43 +228,43 @@
         <div class="repo-card-stats">
             <div class="repo-stat">
                 <span class="repo-stat-value snapshots-count"></span>
-                <span class="repo-stat-label">Snapshots</span>
+                <span class="repo-stat-label">{{t "Snapshots"}}</span>
             </div>
             <div class="repo-stat">
                 <span class="repo-stat-value packs-count"></span>
-                <span class="repo-stat-label">Packs</span>
+                <span class="repo-stat-label">{{t "Packs"}}</span>
             </div>
             <div class="repo-stat">
                 <span class="repo-stat-value total-size"></span>
-                <span class="repo-stat-label">Total Size</span>
+                <span class="repo-stat-label">{{t "Total Size"}}</span>
             </div>
             <div class="repo-stat">
                 <span class="repo-stat-value dedup-ratio"></span>
-                <span class="repo-stat-label">Dedup Ratio</span>
+                <span class="repo-stat-label">{{t "Dedup Ratio"}}</span>
             </div>
             <div class="repo-stat">
                 <span class="repo-stat-value compression-ratio"></span>
-                <span class="repo-stat-label">Compression</span>
+                <span class="repo-stat-label">{{t "Compression"}}</span>
             </div>
             <div class="repo-stat">
                 <span class="repo-stat-value job-count"></span>
-                <span class="repo-stat-label">Backup Jobs</span>
+                <span class="repo-stat-label">{{t "Backup Jobs"}}</span>
             </div>
         </div>
 
         <div class="repo-card-growth">
-            <div class="growth-skeleton">Loading chart...</div>
+            <div class="growth-skeleton">{{t "Loading chart..."}}</div>
             <div class="growth-controls" style="display:none">
                 <select class="growth-range">
-                    <option value="30d" selected>30 days</option>
-                    <option value="90d">90 days</option>
-                    <option value="6m">6 months</option>
-                    <option value="1y">1 year</option>
-                    <option value="all">All time</option>
+                    <option value="30d" selected>{{t "30 days"}}</option>
+                    <option value="90d">{{t "90 days"}}</option>
+                    <option value="6m">{{t "6 months"}}</option>
+                    <option value="1y">{{t "1 year"}}</option>
+                    <option value="all">{{t "All time"}}</option>
                 </select>
                 <select class="growth-granularity">
-                    <option value="daily" selected>Daily</option>
-                    <option value="weekly">Weekly</option>
+                    <option value="daily" selected>{{t "Daily"}}</option>
+                    <option value="weekly">{{t "Weekly"}}</option>
                 </select>
             </div>
             <canvas class="growth-chart" height="150" style="display:none"></canvas>
@@ -280,9 +280,9 @@
         </div>
 
         <div class="repo-card-actions">
-            <button class="btn btn-sm check-btn">Check</button>
-            <button class="btn btn-sm btn-secondary prune-btn">Prune</button>
-            <button class="btn btn-sm btn-danger disconnect-btn">Disconnect</button>
+            <button class="btn btn-sm check-btn">{{t "Check"}}</button>
+            <button class="btn btn-sm btn-secondary prune-btn">{{t "Prune"}}</button>
+            <button class="btn btn-sm btn-danger disconnect-btn">{{t "Disconnect"}}</button>
         </div>
     </div>
 </template>
@@ -367,9 +367,9 @@ function updateWizardNav() {
     backBtn.hidden = wizardState.step <= 1;
     nextBtn.disabled = !canAdvanceWizard();
     if (wizardState.step === 4) {
-        nextBtn.textContent = wizardState.intent === 'connect' ? 'Connect Repository' : 'Create Repository';
+        nextBtn.textContent = wizardState.intent === 'connect' ? t('Connect Repository') : t('Create Repository');
     } else {
-        nextBtn.textContent = 'Next';
+        nextBtn.textContent = t('Next');
     }
 }
 
@@ -454,11 +454,11 @@ function validateLocalPath() {
         var info = document.getElementById('path-validation-info');
         info.hidden = false;
         if (data.valid) {
-            info.textContent = 'Path is valid and writable';
+            info.textContent = t('Path is valid and writable');
             info.className = 'form-status text-ok';
             wizardState.pathValid = true;
         } else {
-            info.textContent = data.error || 'Path validation failed';
+            info.textContent = data.error || t('Path validation failed');
             info.className = 'form-status text-critical';
         }
         if (data.warnings && data.warnings.length) {
@@ -479,8 +479,11 @@ function validateLocalPath() {
             var el = document.getElementById('disk-space-info');
             if (data.valid) {
                 el.hidden = false;
-                el.textContent = formatBytes(data.free_bytes) + ' free of ' + formatBytes(data.total_bytes) +
-                    ' (' + data.used_percent.toFixed(1) + '% used)';
+                el.textContent = t('{free} free of {total} ({pct}% used)', {
+                    free: formatBytes(data.free_bytes),
+                    total: formatBytes(data.total_bytes),
+                    pct: data.used_percent.toFixed(1)
+                });
                 el.className = 'disk-space-info' + (data.used_percent >= 90 ? ' text-critical' : data.used_percent >= 80 ? ' text-warning' : '');
             }
         })
@@ -497,7 +500,7 @@ function validateLocalPath() {
         var el = document.getElementById('detect-info');
         if (data.exists) {
             el.hidden = false;
-            el.textContent = 'Existing repository detected (' + data.snapshots + ' snapshots).';
+            el.textContent = t('Existing repository detected ({n} snapshots).', {n: data.snapshots});
             el.className = 'detect-info text-ok';
         }
     })
@@ -507,7 +510,7 @@ function validateLocalPath() {
 function testS3Connection() {
     var status = document.getElementById('s3-test-status');
     var btn = document.getElementById('s3-test-btn');
-    status.textContent = 'Testing...';
+    status.textContent = t('Testing...');
     status.className = 'form-status';
     btn.disabled = true;
     wizardState.s3Verified = false;
@@ -548,27 +551,27 @@ function testS3Connection() {
         var el = document.getElementById('s3-detect-info');
         if (detect.exists) {
             el.hidden = false;
-            el.textContent = 'Existing repository detected in bucket (' + detect.snapshots + ' snapshots).';
+            el.textContent = t('Existing repository detected in bucket ({n} snapshots).', {n: detect.snapshots});
             el.className = 'detect-info text-ok';
         } else {
             el.hidden = false;
-            el.textContent = 'No existing repository in this bucket — a new one will be initialized.';
+            el.textContent = t('No existing repository in this bucket — a new one will be initialized.');
             el.className = 'detect-info';
         }
         if (wizardState.intent === 'create' && detect.exists) {
             wizardState.s3Verified = false;
-            status.textContent = 'Bucket already contains a repository. Use Connect existing.';
+            status.textContent = t('Bucket already contains a repository. Use Connect existing.');
             status.className = 'form-status text-critical';
         }
         if (wizardState.intent === 'connect' && !detect.exists) {
             wizardState.s3Verified = false;
-            status.textContent = 'No repository found in bucket.';
+            status.textContent = t('No repository found in bucket.');
             status.className = 'form-status text-critical';
         }
         updateWizardNav();
     })
     .catch(function() {
-        status.textContent = 'Connection test failed';
+        status.textContent = t('Connection test failed');
         status.className = 'form-status text-critical';
         wizardState.s3Verified = false;
         updateWizardNav();
@@ -585,7 +588,7 @@ function wizardNext() {
     if (wizardState.step < 3) {
         if (wizardState.step === 2) {
             var label = document.getElementById('repo-password-label');
-            label.textContent = wizardState.intent === 'connect' ? 'Repository Password' : 'Encryption Password';
+            label.textContent = wizardState.intent === 'connect' ? t('Repository Password') : t('Encryption Password');
         }
         showWizardStep(wizardState.step + 1);
         return;
@@ -601,23 +604,23 @@ function wizardNext() {
 function buildReviewSummary() {
     var list = document.getElementById('wizard-review-list');
     var rows = [
-        ['Action', wizardState.intent === 'connect' ? 'Connect existing' : 'Create new'],
-        ['Type', wizardState.locationType === 'local' ? 'Local filesystem' : 'S3 compatible']
+        [t('Action'), wizardState.intent === 'connect' ? t('Connect existing') : t('Create new')],
+        [t('Type'), wizardState.locationType === 'local' ? t('Local filesystem') : t('S3 compatible')]
     ];
     if (wizardState.locationType === 'local') {
-        rows.push(['Path', document.getElementById('repo-path').value.trim()]);
+        rows.push([t('Path'), document.getElementById('repo-path').value.trim()]);
         if (wizardState.localDetect && wizardState.localDetect.exists) {
-            rows.push(['Snapshots', String(wizardState.localDetect.snapshots)]);
+            rows.push([t('Snapshots'), String(wizardState.localDetect.snapshots)]);
         }
     } else {
-        rows.push(['Endpoint', document.getElementById('s3-endpoint').value.trim()]);
-        rows.push(['Bucket', document.getElementById('s3-bucket').value.trim()]);
-        rows.push(['Region', document.getElementById('s3-region').value.trim()]);
+        rows.push([t('Endpoint'), document.getElementById('s3-endpoint').value.trim()]);
+        rows.push([t('Bucket'), document.getElementById('s3-bucket').value.trim()]);
+        rows.push([t('Region'), document.getElementById('s3-region').value.trim()]);
         if (wizardState.s3Detect && wizardState.s3Detect.exists) {
-            rows.push(['Snapshots', String(wizardState.s3Detect.snapshots)]);
+            rows.push([t('Snapshots'), String(wizardState.s3Detect.snapshots)]);
         }
     }
-    rows.push(['Name', document.getElementById('repo-name').value.trim()]);
+    rows.push([t('Name'), document.getElementById('repo-name').value.trim()]);
     list.innerHTML = rows.map(function(r) {
         return '<dt>' + r[0] + '</dt><dd>' + escapeHtml(r[1]) + '</dd>';
     }).join('');
@@ -632,7 +635,7 @@ function submitNewRepo() {
     errEl.hidden = true;
     var nextBtn = document.getElementById('wizard-next-btn');
     nextBtn.disabled = true;
-    nextBtn.textContent = wizardState.intent === 'connect' ? 'Connecting...' : 'Creating...';
+    nextBtn.textContent = wizardState.intent === 'connect' ? t('Connecting...') : t('Creating...');
 
     var body = {
         name: document.getElementById('repo-name').value.trim(),
@@ -665,7 +668,7 @@ function submitNewRepo() {
         document.getElementById('wizard-actions').hidden = true;
         document.getElementById('wizard-step-success').hidden = false;
         document.getElementById('wizard-success-title').textContent =
-            data.action === 'connected' ? 'Repository connected' : 'Repository created';
+            data.action === 'connected' ? t('Repository connected') : t('Repository created');
         document.getElementById('wizard-success-message').textContent = data.message || '';
         document.querySelectorAll('.wizard-step').forEach(function(el) { el.classList.add('wizard-step--done'); });
         loadStorageRepos();
@@ -676,7 +679,7 @@ function submitNewRepo() {
     })
     .finally(function() {
         nextBtn.disabled = false;
-        nextBtn.textContent = wizardState.intent === 'connect' ? 'Connect Repository' : 'Create Repository';
+        nextBtn.textContent = wizardState.intent === 'connect' ? t('Connect Repository') : t('Create Repository');
     });
 }
 
@@ -692,11 +695,11 @@ document.getElementById('repo-password').addEventListener('input', function() {
         match.hidden = true;
     } else if (pw === confirm) {
         match.hidden = false;
-        match.textContent = 'Passwords match';
+        match.textContent = t('Passwords match');
         match.className = 'form-status text-ok';
     } else {
         match.hidden = false;
-        match.textContent = 'Passwords do not match';
+        match.textContent = t('Passwords do not match');
         match.className = 'form-status text-critical';
     }
     updateWizardNav();
@@ -711,7 +714,16 @@ var disconnectRepoName = '';
 
 function showDisconnectDialog(name) {
     disconnectRepoName = name;
-    document.getElementById('disconnect-repo-name').textContent = name;
+    // Build the question around the bold name, keeping the sentence whole for translation.
+    var question = document.getElementById('disconnect-question');
+    var parts = t('Are you sure you want to disconnect {name}?').split('{name}');
+    var strong = document.createElement('strong');
+    strong.id = 'disconnect-repo-name';
+    strong.textContent = name;
+    question.textContent = '';
+    question.appendChild(document.createTextNode(parts[0]));
+    question.appendChild(strong);
+    question.appendChild(document.createTextNode(parts.slice(1).join('{name}')));
     document.getElementById('disconnect-error').hidden = true;
     document.getElementById('disconnect-dialog').hidden = false;
 }
@@ -731,7 +743,7 @@ function confirmDisconnect() {
     })
     .then(function(r) {
         if (!r.ok) return r.json().then(function(data) {
-            var msg = data.error || 'Failed to disconnect';
+            var msg = data.error || t('Failed to disconnect');
             if (data.backup_jobs) msg += ': ' + data.backup_jobs.join(', ');
             throw new Error(msg);
         });
@@ -761,7 +773,7 @@ function startOperation(repoName, type, opts, cardEl) {
 
     opSection.style.display = '';
     resultEl.style.display = 'none';
-    statusEl.textContent = 'Starting ' + type + '...';
+    statusEl.textContent = type === 'check' ? t('Starting check...') : t('Starting prune...');
     statusEl.className = 'operation-status';
     stepEl.textContent = '';
     progressEl.style.width = '0%';
@@ -774,16 +786,16 @@ function startOperation(repoName, type, opts, cardEl) {
     })
     .then(function(r) {
         if (!r.ok) return r.json().then(function(data) {
-            throw new Error(data.error || 'Operation failed');
+            throw new Error(data.error || t('Operation failed'));
         });
         return r.json();
     })
     .then(function(data) {
-        statusEl.textContent = type.charAt(0).toUpperCase() + type.slice(1) + ' running...';
+        statusEl.textContent = type === 'check' ? t('Check running...') : t('Prune running...');
         connectSSE(data.operation_id, cardEl);
     })
     .catch(function(err) {
-        statusEl.textContent = 'Error: ' + err.message;
+        statusEl.textContent = t('Error: {message}', {message: err.message});
         statusEl.className = 'operation-status text-critical';
         actionsEl.style.display = '';
     });
@@ -812,21 +824,21 @@ function connectSSE(opId, cardEl) {
         progressEl.style.width = '100%';
 
         var data = JSON.parse(e.data);
-        statusEl.textContent = data.status === 'completed' ? 'Completed' : 'Failed';
+        statusEl.textContent = data.status === 'completed' ? t('Completed') : t('Failed');
         statusEl.className = 'operation-status ' + (data.status === 'completed' ? 'text-ok' : 'text-critical');
 
         var result = data.result;
         if (result) {
             resultEl.style.display = '';
             if (result.error) {
-                resultEl.innerHTML = '<strong>Error:</strong> ' + result.error;
+                resultEl.innerHTML = '<strong>' + t('Error:') + '</strong> ' + result.error;
                 resultEl.className = 'operation-result text-critical';
             } else if (result.pass !== undefined) {
                 // Check result.
-                var html = '<strong>' + (result.pass ? 'PASS' : 'FAIL') + '</strong>';
-                html += ' &mdash; Mode: ' + (result.deep ? 'Deep' : 'Structural');
+                var html = '<strong>' + (result.pass ? t('PASS') : t('FAIL')) + '</strong>';
+                html += ' &mdash; ' + t('Mode: {mode}', {mode: result.deep ? t('Deep') : t('Structural')});
                 if (result.errors && result.errors.length > 0) {
-                    html += '<br>' + result.errors.length + ' error(s) found:';
+                    html += '<br>' + t('{n} error(s) found:', {n: result.errors.length});
                     result.errors.forEach(function(err) {
                         html += '<br><small>' + err.message + '</small>';
                     });
@@ -835,11 +847,13 @@ function connectSSE(opId, cardEl) {
                 resultEl.className = 'operation-result ' + (result.pass ? 'text-ok' : 'text-critical');
             } else if (result.packs_deleted !== undefined) {
                 // Prune result.
-                var html = '<strong>Prune complete</strong>';
-                if (result.dry_run) html += ' (dry run)';
-                html += '<br>Packs deleted: ' + result.packs_deleted;
-                html += ', Repacked: ' + result.packs_repacked;
-                html += ', Freed: ' + formatBytes(result.bytes_freed);
+                var html = '<strong>' + t('Prune complete') + '</strong>';
+                if (result.dry_run) html += ' ' + t('(dry run)');
+                html += '<br>' + t('Packs deleted: {deleted}, Repacked: {repacked}, Freed: {freed}', {
+                    deleted: result.packs_deleted,
+                    repacked: result.packs_repacked,
+                    freed: formatBytes(result.bytes_freed)
+                });
                 resultEl.innerHTML = html;
                 resultEl.className = 'operation-result text-ok';
             }
@@ -852,7 +866,7 @@ function connectSSE(opId, cardEl) {
 
     source.onerror = function() {
         source.close();
-        statusEl.textContent = 'Connection lost';
+        statusEl.textContent = t('Connection lost');
         statusEl.className = 'operation-status text-critical';
         actionsEl.style.display = '';
     };
@@ -864,23 +878,23 @@ function renderRepoList(data) {
 
     var hint = document.getElementById('storage-toolbar-hint');
     if (hint) {
-        hint.textContent = data.length + ' repositor' + (data.length === 1 ? 'y' : 'ies') + ' configured';
+        hint.textContent = data.length === 1 ? t('1 repository configured') : t('{n} repositories configured', {n: data.length});
     }
 
     renderFleetStats(data);
     loadStorageActiveRestores();
 
     if (!data || data.length === 0) {
-        if (hint) hint.textContent = 'No repositories configured';
+        if (hint) hint.textContent = t('No repositories configured');
         listEl.innerHTML =
             '<div class="empty-state empty-state-storage">' +
             '<span class="empty-state-icon-wrap" aria-hidden="true">' +
             '<svg class="empty-state-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">' +
             '<ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/>' +
             '<path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg></span>' +
-            '<h3>No repositories configured</h3>' +
-            '<p>Create a local or S3 repository to start backing up your agents.</p>' +
-            '<button type="button" class="btn" onclick="toggleStorageAddPanel(true)">Add your first repository</button>' +
+            '<h3>' + t('No repositories configured') + '</h3>' +
+            '<p>' + t('Create a local or S3 repository to start backing up your agents.') + '</p>' +
+            '<button type="button" class="btn" onclick="toggleStorageAddPanel(true)">' + t('Add your first repository') + '</button>' +
             '</div>';
         return;
     }
@@ -903,7 +917,7 @@ function renderRepoList(data) {
         if (repo.alert_level !== 'ok') {
             var alertBadge = card.querySelector('.repo-alert-badge');
             alertBadge.style.display = '';
-            alertBadge.textContent = repo.alert_level;
+            alertBadge.textContent = t(repo.alert_level);
             alertBadge.classList.add(repo.alert_level === 'critical' ? 'badge-critical' : 'badge-warning');
         }
 
@@ -942,10 +956,13 @@ function renderRepoList(data) {
                 fill.classList.add('progress-warning');
             }
 
-            card.querySelector('.progress-bar-label').textContent = pct + '% of host disk used';
+            card.querySelector('.progress-bar-label').textContent = t('{pct}% of host disk used', {pct: pct});
             card.querySelector('.disk-details').textContent =
-                formatBytes(repo.disk_total - repo.disk_free) + ' used of ' + formatBytes(repo.disk_total) +
-                ' on this volume (' + formatBytes(repo.disk_free) + ' free) — separate from backup data size';
+                t('{used} used of {total} on this volume ({free} free) — separate from backup data size', {
+                    used: formatBytes(repo.disk_total - repo.disk_free),
+                    total: formatBytes(repo.disk_total),
+                    free: formatBytes(repo.disk_free)
+                });
         }
 
         // Stats (packs from summary; size/dedup loaded lazily)
@@ -965,7 +982,7 @@ function renderRepoList(data) {
             e.stopPropagation();
             var name = this.getAttribute('data-repo');
             var cardEl = this.closest('.repo-card');
-            var deep = confirm('Run deep verification? (reads all data)\n\nClick OK for deep, Cancel for structural only.');
+            var deep = confirm(t('Run deep verification? (reads all data)') + '\n\n' + t('Click OK for deep, Cancel for structural only.'));
             startOperation(name, 'check', {deep: deep}, cardEl);
         });
 
@@ -975,7 +992,7 @@ function renderRepoList(data) {
         pruneBtn.addEventListener('click', function(e) {
             e.stopPropagation();
             var name = this.getAttribute('data-repo');
-            if (!confirm('Prune repository "' + name + '"?\n\nThis permanently removes unreferenced data to free space.')) return;
+            if (!confirm(t('Prune repository "{name}"?', {name: name}) + '\n\n' + t('This permanently removes unreferenced data to free space.'))) return;
             var cardEl = this.closest('.repo-card');
             startOperation(name, 'prune', {}, cardEl);
         });
@@ -1049,12 +1066,12 @@ function scheduleSummaryMetricsPoll() {
 function loadStorageRepos() {
     var listEl = document.getElementById('repo-list');
     if (!listEl) return;
-    listEl.innerHTML = '<div class="empty">Loading repositories...</div>';
+    listEl.innerHTML = '<div class="empty">' + t('Loading repositories...') + '</div>';
     fetch('/api/repos?summary=1')
         .then(function(r) { return r.json(); })
         .then(function(data) { renderRepoList(data); })
         .catch(function() {
-            listEl.innerHTML = '<div class="empty">Failed to load repositories.</div>';
+            listEl.innerHTML = '<div class="empty">' + t('Failed to load repositories.') + '</div>';
         });
 }
 
@@ -1185,7 +1202,7 @@ function setupLazyGrowthCharts(container, repos) {
                     renderGrowthChart(canvas, points);
                 })
                 .catch(function() {
-                    if (skeleton) skeleton.textContent = 'Chart unavailable';
+                    if (skeleton) skeleton.textContent = t('Chart unavailable');
                 });
         }
 
@@ -1241,7 +1258,7 @@ function renderGrowthChart(canvas, points) {
         data: {
             labels: labels,
             datasets: [{
-                label: 'Storage Size',
+                label: t('Storage Size'),
                 data: data,
                 borderColor: '#4a90d9',
                 backgroundColor: 'rgba(74,144,217,0.1)',
@@ -1271,16 +1288,16 @@ function formatSnapshotTime(iso) {
     var d = new Date(iso);
     if (isNaN(d.getTime())) return iso;
     var secs = Math.floor((Date.now() - d.getTime()) / 1000);
-    if (secs < 3600) return Math.floor(secs / 60) + 'm ago';
-    if (secs < 86400) return Math.floor(secs / 3600) + 'h ago';
-    if (secs < 604800) return Math.floor(secs / 86400) + 'd ago';
+    if (secs < 3600) return t('{n}m ago', {n: Math.floor(secs / 60)});
+    if (secs < 86400) return t('{n}h ago', {n: Math.floor(secs / 3600)});
+    if (secs < 604800) return t('{n}d ago', {n: Math.floor(secs / 86400)});
     return d.toLocaleDateString();
 }
 
 function applyHealthBadge(el, status) {
     if (!el) return;
     el.style.display = '';
-    el.textContent = status;
+    el.textContent = t(status);
     el.classList.remove('badge-ok', 'badge-warning', 'badge-critical');
     if (status === 'ok') el.classList.add('badge-ok');
     else if (status === 'warning') el.classList.add('badge-warning');
@@ -1331,13 +1348,13 @@ function loadStorageActiveRestores() {
             panel.hidden = false;
             list.innerHTML = running.map(function(s) {
                 var pct = s.files_total > 0 ? Math.min(100, Math.round((s.files_restored / s.files_total) * 100)) : 0;
-                var agent = (s.agent_name || 'Restore').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+                var agent = (s.agent_name || t('Restore')).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
                 var snapId = s.snapshot_id ? s.snapshot_id.substring(0, 8).replace(/&/g,'&amp;') : '';
                 return '<div class="storage-restore-active-card">' +
-                    '<div><strong>' + agent + '</strong> — snapshot ' + snapId + '</div>' +
+                    '<div><strong>' + agent + '</strong> — ' + t('snapshot {id}', {id: snapId}) + '</div>' +
                     '<div class="progress-bar-container"><div class="progress-bar"><div class="progress-bar-fill" style="width:' + pct + '%"></div></div>' +
                     '<span class="progress-bar-label">' + pct + '%</span></div>' +
-                    '<a href="/restores" class="storage-restore-link">View in Restores</a></div>';
+                    '<a href="/restores" class="storage-restore-link">' + t('View in Restores') + '</a></div>';
             }).join('');
         })
         .catch(function() {});

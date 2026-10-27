@@ -35,6 +35,8 @@ func GetConfigValue(cfg Config, keyName string) string {
 		return strconv.Itoa(cfg.ServeDashboardPort)
 	case "serve_dashboard_password":
 		return cfg.ServeDashboardPassword
+	case "serve_dashboard_language":
+		return cfg.ServeDashboardLanguage
 	case "alert_webhook_url":
 		return cfg.AlertWebhookURL
 	case "alert_stale_threshold":
@@ -118,6 +120,8 @@ func SetConfigValue(cfg *Config, keyName, value string) {
 		cfg.ServeDashboardPort = n
 	case "serve_dashboard_password":
 		cfg.ServeDashboardPassword = value
+	case "serve_dashboard_language":
+		cfg.ServeDashboardLanguage = value
 	case "alert_webhook_url":
 		cfg.AlertWebhookURL = value
 	case "alert_stale_threshold":
@@ -216,6 +220,8 @@ func ZeroConfigValue(cfg *Config, keyName string) {
 		cfg.ServeDashboardPort = 0
 	case "serve_dashboard_password":
 		cfg.ServeDashboardPassword = ""
+	case "serve_dashboard_language":
+		cfg.ServeDashboardLanguage = ""
 	case "alert_webhook_url":
 		cfg.AlertWebhookURL = ""
 	case "alert_stale_threshold":
@@ -280,6 +286,8 @@ func IsZeroValue(cfg Config, keyName string) bool {
 		return cfg.ServeDashboardPort == 0
 	case "serve_dashboard_password":
 		return cfg.ServeDashboardPassword == ""
+	case "serve_dashboard_language":
+		return cfg.ServeDashboardLanguage == ""
 	case "alert_webhook_url":
 		return cfg.AlertWebhookURL == ""
 	case "alert_stale_threshold":

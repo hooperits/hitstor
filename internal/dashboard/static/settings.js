@@ -71,7 +71,7 @@
 
   function loadSettings() {
     return fetch('/api/settings').then(function (r) {
-      if (!r.ok) throw new Error('Failed to load settings');
+      if (!r.ok) throw new Error(t('Failed to load settings'));
       return r.json();
     }).then(function (data) {
       state = data;
@@ -94,8 +94,8 @@
 
     var s = data.security || {};
     setText('settings-password-hint', s.dashboard_password_configured
-      ? 'Current: ' + (s.dashboard_password_hint || 'configured')
-      : 'No password set (open access)');
+      ? t('Current: {hint}', {hint: s.dashboard_password_hint || t('configured')})
+      : t('No password set (open access)'));
 
     var n = data.network || {};
     setValue('settings-serve-port', n.serve_port);
@@ -103,7 +103,7 @@
     setValue('settings-advertise-addr', n.serve_advertise_addr || '');
 
     var i = data.integrations || {};
-    setText('settings-gemini-hint', i.gemini_configured ? 'Current: ' + (i.gemini_api_key_hint || 'configured') : '');
+    setText('settings-gemini-hint', i.gemini_configured ? t('Current: {hint}', {hint: i.gemini_api_key_hint || t('configured')}) : '');
     setValue('settings-gemini-model', i.gemini_model || '');
     updateIntegrationCards(i);
     populateIntegrationModals(i);
@@ -135,6 +135,14 @@
     if (el) el.textContent = value || '';
   }
 
+  function escapeHTML(s) {
+    return String(s)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
   function loadTLSStatus() {
     fetch('/api/settings/tls/status').then(function (r) {
       if (!r.ok) throw new Error('TLS status unavailable');
@@ -144,19 +152,21 @@
       if (!el) return;
       el.innerHTML = '';
       if (status.source === 'self_signed' && !status.cert_path) {
-        el.innerHTML = '<dt>Source</dt><dd>Auto-generated self-signed certificate</dd>';
+        el.innerHTML = '<dt>' + escapeHTML(t('Source')) + '</dt><dd>' + escapeHTML(t('Auto-generated self-signed certificate')) + '</dd>';
         return;
       }
-      appendDL(el, 'Source', status.source);
-      if (status.cert_path) appendDL(el, 'Certificate path', status.cert_path);
-      if (status.subject) appendDL(el, 'Subject', status.subject);
-      if (status.issuer) appendDL(el, 'Issuer', status.issuer);
+      appendDL(el, t('Source'), t(status.source));
+      if (status.cert_path) appendDL(el, t('Certificate path'), status.cert_path);
+      if (status.subject) appendDL(el, t('Subject'), status.subject);
+      if (status.issuer) appendDL(el, t('Issuer'), status.issuer);
       if (status.not_after) {
-        var exp = status.not_after + (status.expired ? ' (expired)' : ' (' + status.days_left + ' days left)');
-        appendDL(el, 'Expires', exp);
+        var exp = status.expired
+          ? t('{date} (expired)', {date: status.not_after})
+          : t('{date} ({n} days left)', {date: status.not_after, n: status.days_left});
+        appendDL(el, t('Expires'), exp);
       }
       if (status.sans && status.sans.length) {
-        appendDL(el, 'SANs', status.sans.join(', '));
+        appendDL(el, t('SANs'), status.sans.join(', '));
       }
     }).catch(function () {});
   }
@@ -192,7 +202,7 @@
         log_rotate_max_mb: parseInt(document.getElementById('settings-log-rotate-mb').value, 10) || 0,
         log_rotate_max_files: parseInt(document.getElementById('settings-log-rotate-files').value, 10) || 0
       }).then(function () {
-        showStatus('General settings saved.');
+        showStatus(t('General settings saved.'));
         return loadSettings();
       }).catch(function (err) { showStatus(err.message, true); });
     });
@@ -206,7 +216,7 @@
       var body = {};
       if (pw) body.dashboard_password = pw;
       putJSON('/api/settings/security', body).then(function (res) {
-        showStatus('Security settings saved.');
+        showStatus(t('Security settings saved.'));
         if (res.restart_required) showRestartBanner(true);
         document.getElementById('settings-dashboard-password').value = '';
         return loadSettings();
@@ -223,7 +233,7 @@
         serve_dashboard_port: parseInt(document.getElementById('settings-dashboard-port').value, 10),
         serve_advertise_addr: document.getElementById('settings-advertise-addr').value
       }).then(function (res) {
-        showStatus('Network settings saved.');
+        showStatus(t('Network settings saved.'));
         if (res.restart_required) showRestartBanner(true);
         return loadSettings();
       }).catch(function (err) { showStatus(err.message, true); });
@@ -240,7 +250,7 @@
         alert_stale_threshold: parseInt(document.getElementById('settings-stale-threshold').value, 10),
         alert_notifier_plugins: plugins ? plugins.split(',').map(function (s) { return s.trim(); }).filter(Boolean) : []
       }).then(function () {
-        showStatus('Notification settings saved.');
+        showStatus(t('Notification settings saved.'));
         return loadSettings();
       }).catch(function (err) { showStatus(err.message, true); });
     });
@@ -259,7 +269,7 @@
       var key = keyEl ? keyEl.value : '';
       if (key) body.gemini_api_key = key;
       putJSON('/api/settings/integrations', body).then(function () {
-        showStatus('Integration settings saved.');
+        showStatus(t('Integration settings saved.'));
         if (keyEl) keyEl.value = '';
         return loadSettings();
       }).catch(function (err) { showStatus(err.message, true); });
@@ -275,7 +285,7 @@
         if (!r.ok) return r.text().then(function (t) { throw new Error(t || r.statusText); });
         return r.json();
       }).then(function (res) {
-        showStatus('TLS certificate uploaded.');
+        showStatus(t('TLS certificate uploaded.'));
         if (res.restart_required) showRestartBanner(true);
         loadTLSStatus();
         tlsForm.reset();
@@ -287,7 +297,7 @@
   if (importEnvBtn) {
     importEnvBtn.addEventListener('click', function () {
       postJSON('/api/settings/integrations/import-env').then(function () {
-        showStatus('Imported integration settings from environment.');
+        showStatus(t('Imported integration settings from environment.'));
         return loadSettings();
       }).catch(function (err) { showStatus(err.message, true); });
     });
@@ -300,7 +310,7 @@
       var key = document.getElementById('settings-gemini-key').value;
       if (key) body.gemini_api_key = key;
       postJSON('/api/settings/test/gemini', body).then(function (res) {
-        showStatus(res.ok ? 'Gemini connection successful.' : (res.error || 'Gemini test failed'), !res.ok);
+        showStatus(res.ok ? t('Gemini connection successful.') : (res.error || t('Gemini test failed')), !res.ok);
       }).catch(function (err) { showStatus(err.message, true); });
     });
   }
@@ -311,7 +321,7 @@
       postJSON('/api/settings/test/webhook', {
         alert_webhook_url: document.getElementById('settings-webhook-url').value
       }).then(function (res) {
-        showStatus(res.ok ? 'Webhook test sent.' : (res.error || 'Webhook test failed'), !res.ok);
+        showStatus(res.ok ? t('Webhook test sent.') : (res.error || t('Webhook test failed')), !res.ok);
       }).catch(function (err) { showStatus(err.message, true); });
     });
   }
@@ -365,7 +375,7 @@
     i = i || {};
     setValue('gemini-modal-model', i.gemini_model || '');
     setText('gemini-modal-hint', i.gemini_configured
-      ? 'Current: ' + (i.gemini_api_key_hint || 'configured') : '');
+      ? t('Current: {hint}', {hint: i.gemini_api_key_hint || t('configured')}) : '');
   }
 
   function updateIntegrationCards(i) {
@@ -373,10 +383,10 @@
     var geminiBadge = document.getElementById('integration-gemini-badge');
     if (geminiBadge) {
       if (i.gemini_configured) {
-        geminiBadge.textContent = 'Configured';
+        geminiBadge.textContent = t('Configured');
         geminiBadge.className = 'integration-badge integration-badge--ok';
       } else {
-        geminiBadge.textContent = 'Not configured';
+        geminiBadge.textContent = t('Not configured');
         geminiBadge.className = 'integration-badge';
       }
     }
@@ -393,7 +403,7 @@
       var key = document.getElementById('settings-gemini-key').value;
       if (key) body.gemini_api_key = key;
       putJSON('/api/settings/integrations', body).then(function () {
-        showStatus('Gemini settings saved.');
+        showStatus(t('Gemini settings saved.'));
         document.getElementById('gemini-modal-key').value = '';
         closeModal('integration-gemini-modal');
         return loadSettings();
@@ -409,7 +419,7 @@
       var key = document.getElementById('settings-gemini-key').value;
       if (key) body.gemini_api_key = key;
       postJSON('/api/settings/test/gemini', body).then(function (res) {
-        showStatus(res.ok ? 'Gemini connection successful.' : (res.error || 'Gemini test failed'), !res.ok);
+        showStatus(res.ok ? t('Gemini connection successful.') : (res.error || t('Gemini test failed')), !res.ok);
       }).catch(function (err) { showStatus(err.message, true); });
     });
   }

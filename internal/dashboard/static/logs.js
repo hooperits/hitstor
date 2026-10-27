@@ -96,10 +96,10 @@
     var now = Date.now();
     var diff = Math.max(0, now - d.getTime());
     var rel;
-    if (diff < 60000) rel = Math.floor(diff / 1000) + 's ago';
-    else if (diff < 3600000) rel = Math.floor(diff / 60000) + 'm ago';
-    else if (diff < 86400000) rel = Math.floor(diff / 3600000) + 'h ago';
-    else rel = Math.floor(diff / 86400000) + 'd ago';
+    if (diff < 60000) rel = t('{n}s ago', {n: Math.floor(diff / 1000)});
+    else if (diff < 3600000) rel = t('{n}m ago', {n: Math.floor(diff / 60000)});
+    else if (diff < 86400000) rel = t('{n}h ago', {n: Math.floor(diff / 3600000)});
+    else rel = t('{n}d ago', {n: Math.floor(diff / 86400000)});
     var abs = d.toISOString().replace('T', ' ').replace(/\.\d{3}Z$/, ' UTC');
     return { rel: rel, abs: abs, datetime: d.toISOString() };
   }
@@ -122,6 +122,7 @@
   function sourceLabel(source) {
     var s = source || 'server';
     if (s.indexOf('agent:') === 0) return s.slice(6);
+    if (s === 'server' || s === 'system') return t(s);
     return s;
   }
 
@@ -172,18 +173,18 @@
   function renderMeta(data) {
     var count = (data.entries || []).length;
     var retention = data.retention || {};
-    var parts = [count + ' entries'];
+    var parts = [t('{n} entries', {n: count})];
     if (data.summary && data.summary.truncated) {
-      parts.push('truncated at limit');
+      parts.push(t('truncated at limit'));
     }
     if (lastUpdated) {
-      parts.push('updated ' + lastUpdated.toISOString().replace('T', ' ').replace(/\.\d{3}Z$/, ' UTC'));
+      parts.push(t('updated {time}', {time: lastUpdated.toISOString().replace('T', ' ').replace(/\.\d{3}Z$/, ' UTC')}));
     }
     if (retention.log_max_entries) {
-      parts.push('retention ' + retention.log_max_entries + ' in memory');
+      parts.push(t('retention {n} in memory', {n: retention.log_max_entries}));
     }
     if (retention.log_file_enabled) {
-      parts.push('file rotation ' + retention.log_rotate_max_mb + 'MB × ' + retention.log_rotate_max_files);
+      parts.push(t('file rotation {mb}MB × {files}', {mb: retention.log_rotate_max_mb, files: retention.log_rotate_max_files}));
     }
     metaEl.textContent = parts.join(' · ');
   }
@@ -219,7 +220,7 @@
       agents.sort().forEach(function (name) {
         var opt = document.createElement('option');
         opt.value = 'agent:' + name;
-        opt.textContent = 'Agent: ' + name;
+        opt.textContent = t('Agent: {name}', {name: name});
         opt.setAttribute('data-agent', '1');
         sourceEl.appendChild(opt);
       });
@@ -233,12 +234,12 @@
   function emptyMessage() {
     var src = sourceEl.value;
     if (src === 'system' && !lastSources.system) {
-      return 'System logs are not available on this platform.';
+      return t('System logs are not available on this platform.');
     }
     if (src && src.indexOf('agent:') === 0) {
-      return 'No log entries from this agent for the current filters.';
+      return t('No log entries from this agent for the current filters.');
     }
-    return 'No log entries match the current filters.';
+    return t('No log entries match the current filters.');
   }
 
   function renderEntries(entries) {
@@ -252,8 +253,7 @@
 
     var html = '';
     entries.forEach(function (e, idx) {
-      var t = formatTime(e.time);
-      var level = (e.level || 'info').toUpperCase();
+      var tm = formatTime(e.time);
       var src = e.source || 'server';
       var comp = e.component ? '/' + e.component : '';
       var msg = e.message || '';
@@ -266,23 +266,23 @@
       var rowId = 'logs-row-' + idx;
 
       html += '<tr class="logs-row" data-idx="' + idx + '">';
-      html += '<td class="logs-col-time"><time datetime="' + escapeHTML(t.datetime) + '" title="' + escapeHTML(t.abs) + '">' + escapeHTML(t.rel) + '</time></td>';
-      html += '<td class="logs-col-level"><span class="badge ' + levelBadgeClass(e.level) + '">' + escapeHTML(level) + '</span></td>';
+      html += '<td class="logs-col-time"><time datetime="' + escapeHTML(tm.datetime) + '" title="' + escapeHTML(tm.abs) + '">' + escapeHTML(tm.rel) + '</time></td>';
+      html += '<td class="logs-col-level"><span class="badge ' + levelBadgeClass(e.level) + '">' + escapeHTML(t((e.level || 'info').toLowerCase()).toUpperCase()) + '</span></td>';
       html += '<td class="logs-col-source"><span class="logs-source ' + sourceClass(src) + '" title="' + escapeHTML(src + comp) + '">' + escapeHTML(sourceLabel(src)) + '</span></td>';
       html += '<td class="logs-col-message">';
       html += '<span class="logs-message" id="' + rowId + '-msg">' + highlightQuery(displayMsg, query) + '</span>';
       if (truncated) {
-        html += ' <button type="button" class="logs-expand-btn" data-idx="' + idx + '" data-target="' + rowId + '-msg" aria-label="Expand message">more</button>';
+        html += ' <button type="button" class="logs-expand-btn" data-idx="' + idx + '" data-target="' + rowId + '-msg" aria-label="' + escapeHTML(t('Expand message')) + '">' + escapeHTML(t('more')) + '</button>';
       }
       if (link) {
-        html += ' <a class="logs-job-link" href="' + escapeHTML(link) + '">job</a>';
+        html += ' <a class="logs-job-link" href="' + escapeHTML(link) + '">' + escapeHTML(t('job')) + '</a>';
       }
       html += '</td>';
       html += '<td class="logs-col-actions">';
       if (hasFields) {
-        html += '<button type="button" class="btn btn-secondary btn-sm logs-details-btn" data-details="' + rowId + '-details" aria-expanded="false">Fields</button>';
+        html += '<button type="button" class="btn btn-secondary btn-sm logs-details-btn" data-details="' + rowId + '-details" aria-expanded="false">' + escapeHTML(t('Fields')) + '</button>';
       }
-      html += '<button type="button" class="btn btn-secondary btn-sm logs-copy-line" data-idx="' + idx + '" title="Copy line">Copy</button>';
+      html += '<button type="button" class="btn btn-secondary btn-sm logs-copy-line" data-idx="' + idx + '" title="' + escapeHTML(t('Copy line')) + '">' + escapeHTML(t('Copy')) + '</button>';
       html += '</td>';
       html += '</tr>';
 
@@ -305,11 +305,11 @@
   }
 
   function formatEntryLine(e) {
-    var t = formatTime(e.time);
+    var tm = formatTime(e.time);
     var level = (e.level || 'info').toUpperCase();
     var src = e.source || 'server';
     var comp = e.component ? '/' + e.component : '';
-    var line = t.abs + ' [' + level + '] [' + src + comp + '] ' + (e.message || '');
+    var line = tm.abs + ' [' + level + '] [' + src + comp + '] ' + (e.message || '');
     if (e.fields) {
       Object.keys(e.fields).sort().forEach(function (k) {
         line += ' ' + k + '=' + e.fields[k];
@@ -322,10 +322,10 @@
     isLoading = loading;
     if (refreshBtn) {
       refreshBtn.disabled = loading;
-      refreshBtn.textContent = loading ? 'Refreshing…' : 'Refresh';
+      refreshBtn.textContent = loading ? t('Refreshing…') : t('Refresh');
     }
     if (loading && !tbodyEl.querySelector('.logs-row')) {
-      tbodyEl.innerHTML = '<tr class="logs-row-empty"><td colspan="5">Loading logs…</td></tr>';
+      tbodyEl.innerHTML = '<tr class="logs-row-empty"><td colspan="5">' + escapeHTML(t('Loading logs…')) + '</td></tr>';
     }
   }
 
@@ -347,8 +347,8 @@
         renderEntries(data.entries || []);
       })
       .catch(function (err) {
-        tbodyEl.innerHTML = '<tr class="logs-row-empty logs-row-error"><td colspan="5">Failed to load logs: ' + escapeHTML(err.message) + '</td></tr>';
-        showFlash('Failed to load logs: ' + err.message, true);
+        tbodyEl.innerHTML = '<tr class="logs-row-empty logs-row-error"><td colspan="5">' + escapeHTML(t('Failed to load logs: {error}', {error: err.message})) + '</td></tr>';
+        showFlash(t('Failed to load logs: {error}', {error: err.message}), true);
       })
       .finally(function () {
         setLoading(false);
@@ -400,7 +400,7 @@
       if (row) {
         var open = row.classList.toggle('hidden');
         target.setAttribute('aria-expanded', open ? 'false' : 'true');
-        target.textContent = open ? 'Fields' : 'Hide';
+        target.textContent = open ? t('Fields') : t('Hide');
       }
       return;
     }
@@ -415,7 +415,7 @@
       var copyEntry = lastEntries[copyIdx];
       if (copyEntry && navigator.clipboard && navigator.clipboard.writeText) {
         navigator.clipboard.writeText(formatEntryLine(copyEntry)).then(function () {
-          showFlash('Copied log line', false);
+          showFlash(t('Copied log line'), false);
         });
       }
       return;
@@ -472,7 +472,7 @@
     var url = window.location.href;
     if (navigator.clipboard && navigator.clipboard.writeText) {
       navigator.clipboard.writeText(url).then(function () {
-        showFlash('Link copied to clipboard', false);
+        showFlash(t('Link copied to clipboard'), false);
       });
     }
   });

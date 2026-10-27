@@ -1,0 +1,16 @@
+{
+  "Login": "Iniciar sesión",
+  "Encrypted, deduplicated backups for your infrastructure.": "Respaldos cifrados y deduplicados para su infraestructura.",
+  "Agent-based file protection for Windows and Linux": "Protección de archivos mediante agentes para Windows y Linux",
+  "Live progress and restore from the dashboard": "Progreso en vivo y restauración desde el dashboard",
+  "Client-side encryption before data leaves the host": "Cifrado en el origen antes de que los datos salgan del equipo",
+  "Sign in": "Iniciar sesión",
+  "Enter your dashboard password to continue.": "Ingrese la contraseña del dashboard para continuar.",
+  "Invalid password": "Contraseña incorrecta",
+  "Password": "Contraseña",
+  "Dashboard password": "Contraseña del dashboard",
+  "Show password": "Mostrar contraseña",
+  "Show": "Mostrar",
+  "Hide": "Ocultar",
+  "Sign In": "Iniciar sesión"
+}

@@ -204,7 +204,7 @@ func configShowText(cfg config.Config, resolved []config.ResolvedKey) error {
 	fmt.Println("Server settings (from this file):")
 	serverKeys := []string{
 		"serve_port", "serve_advertise_addr", "serve_tls_cert", "serve_tls_key",
-		"serve_dashboard_port", "serve_dashboard_password",
+		"serve_dashboard_port", "serve_dashboard_password", "serve_dashboard_language",
 	}
 	shownServer := false
 	for _, rk := range resolved {
@@ -232,6 +232,7 @@ func configShowText(cfg config.Config, resolved []config.ResolvedKey) error {
 		"repo": true, "password_file": true,
 		"serve_port": true, "serve_advertise_addr": true, "serve_tls_cert": true,
 		"serve_tls_key": true, "serve_dashboard_port": true, "serve_dashboard_password": true,
+		"serve_dashboard_language": true,
 	}
 	for _, rk := range resolved {
 		if legacySkip[rk.Def.Name] {

@@ -1,0 +1,11 @@
+# Recovery pages (restores.js, disaster.js): snapshot types, restore/recovery
+# and unit statuses, and job verify statuses.
+full
+incremental
+running
+pending
+completed
+failed
+ok
+error
+skipped

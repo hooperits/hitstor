@@ -1,0 +1,5 @@
+# Storage page: repository alert level and health status badges.
+ok
+warning
+critical
+error

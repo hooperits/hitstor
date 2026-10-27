@@ -8,6 +8,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/hooperits/hitstor/internal/i18n"
 	"github.com/hooperits/hitstor/internal/repository"
 	"github.com/hooperits/hitstor/internal/server"
 )
@@ -155,7 +156,9 @@ type snapRef struct {
 }
 
 // buildDisasterPlan constructs a recovery plan for sourceAgent from jobs + snapshots.
-func (d *Dashboard) buildDisasterPlan(sourceAgent string) (*DisasterPlan, error) {
+// buildDisasterPlan computes the recovery plan for sourceAgent; its warnings,
+// hints and checklist are written in catalog c's language.
+func (d *Dashboard) buildDisasterPlan(c *i18n.Catalog, sourceAgent string) (*DisasterPlan, error) {
 	if d.registry == nil {
 		return nil, fmt.Errorf("registry not available")
 	}
@@ -172,17 +175,17 @@ func (d *Dashboard) buildDisasterPlan(sourceAgent string) (*DisasterPlan, error)
 	plan := &DisasterPlan{
 		SourceAgent: sourceAgent,
 		Units:       make([]DisasterJobUnit, 0, len(jobs)),
-		Checklist:   defaultDRChecklist(sourceAgent),
+		Checklist:   defaultDRChecklist(c, sourceAgent),
 	}
 
 	if agent := d.registry.GetAgent(sourceAgent); agent != nil {
 		if agent.Suspended {
-			plan.Warnings = append(plan.Warnings, "source agent is suspended (OK if recovering onto a replacement)")
+			plan.Warnings = append(plan.Warnings, c.T("source agent is suspended (OK if recovering onto a replacement)"))
 		}
 		if agent.AgentAddr == "" {
-			plan.SourceOnlineHint = "source agent has no gRPC address on file"
+			plan.SourceOnlineHint = c.T("source agent has no gRPC address on file")
 		} else {
-			plan.SourceOnlineHint = "source agent registered at " + agent.AgentAddr
+			plan.SourceOnlineHint = c.Tf("source agent registered at {addr}", "addr", agent.AgentAddr)
 		}
 		if agent.LastBackup != nil {
 			t := *agent.LastBackup
@@ -190,7 +193,7 @@ func (d *Dashboard) buildDisasterPlan(sourceAgent string) (*DisasterPlan, error)
 			plan.LastBackupStr = t.UTC().Format(time.RFC3339)
 		}
 	} else {
-		plan.Warnings = append(plan.Warnings, "source agent is not in the registry; plan uses hostname matching on snapshots only")
+		plan.Warnings = append(plan.Warnings, c.T("source agent is not in the registry; plan uses hostname matching on snapshots only"))
 	}
 
 	// Index snapshots by repo for job matching.
@@ -214,7 +217,7 @@ func (d *Dashboard) buildDisasterPlan(sourceAgent string) (*DisasterPlan, error)
 		// Fallback: treat hostname-matched latest snapshot as a single unit.
 		best := pickLatestForHost(all, sourceAgent)
 		if best == nil {
-			plan.Warnings = append(plan.Warnings, "no backup jobs or snapshots found for this agent")
+			plan.Warnings = append(plan.Warnings, c.T("no backup jobs or snapshots found for this agent"))
 			return plan, nil
 		}
 		u := DisasterJobUnit{
@@ -247,15 +250,15 @@ func (d *Dashboard) buildDisasterPlan(sourceAgent string) (*DisasterPlan, error)
 			VerifyDetail: j.LastVerifyDetail,
 		}
 		if !server.IsFilesystemJobType(j.JobType) {
-			u.SkipReason = "non-filesystem job type"
+			u.SkipReason = c.T("non-filesystem job type")
 			plan.Units = append(plan.Units, u)
 			continue
 		}
 		ref := pickSnapshotForJob(all, j)
 		if ref == nil {
-			u.SkipReason = "no matching snapshot found"
+			u.SkipReason = c.T("no matching snapshot found")
 			plan.Units = append(plan.Units, u)
-			plan.Warnings = append(plan.Warnings, fmt.Sprintf("job %q has no restorable snapshot", j.Name))
+			plan.Warnings = append(plan.Warnings, c.Tf("job \"{name}\" has no restorable snapshot", "name", j.Name))
 			continue
 		}
 		u.SnapshotID = ref.id
@@ -268,7 +271,7 @@ func (d *Dashboard) buildDisasterPlan(sourceAgent string) (*DisasterPlan, error)
 		}
 		u.Ready = true
 		if j.LastVerifyStatus == "failed" || j.LastVerifyStatus == "error" {
-			plan.Warnings = append(plan.Warnings, fmt.Sprintf("job %q last restore verification was %s", j.Name, j.LastVerifyStatus))
+			plan.Warnings = append(plan.Warnings, c.Tf("job \"{name}\" last restore verification was {status}", "name", j.Name, "status", c.T(j.LastVerifyStatus)))
 		}
 		plan.Units = append(plan.Units, u)
 		plan.ReadyUnits++
@@ -359,21 +362,21 @@ func pickSnapshotForJob(all []snapRef, j server.BackupJob) *snapRef {
 	return best
 }
 
-func defaultDRChecklist(sourceAgent string) []string {
+func defaultDRChecklist(c *i18n.Catalog, sourceAgent string) []string {
 	return []string{
-		"Provision replacement hardware or VM with matching OS (Windows or Linux).",
-		"Install the HitStor agent on the recovery host and register it with this server.",
-		"Ensure the recovery host has enough free disk for all protected paths (or use a staging root).",
-		"Stop applications that would lock files on the recovery host before restore.",
-		"Run guided recovery: original paths (in-place) or staging root (review then cut over).",
-		"After restore completes, verify data and re-enable schedules on the recovery agent.",
-		"Optional: run hitstor verify-restore on the restored snapshot for an extra integrity check.",
-		fmt.Sprintf("Optional: retire or re-register source agent %q once the new host is production.", sourceAgent),
+		c.T("Provision replacement hardware or VM with matching OS (Windows or Linux)."),
+		c.T("Install the HitStor agent on the recovery host and register it with this server."),
+		c.T("Ensure the recovery host has enough free disk for all protected paths (or use a staging root)."),
+		c.T("Stop applications that would lock files on the recovery host before restore."),
+		c.T("Run guided recovery: original paths (in-place) or staging root (review then cut over)."),
+		c.T("After restore completes, verify data and re-enable schedules on the recovery agent."),
+		c.T("Optional: run hitstor verify-restore on the restored snapshot for an extra integrity check."),
+		c.Tf("Optional: retire or re-register source agent \"{name}\" once the new host is production.", "name", sourceAgent),
 	}
 }
 
 // listDisasterPlanSummaries builds a summary row per agent that has jobs or snapshots.
-func (d *Dashboard) listDisasterPlanSummaries() []DisasterPlanSummary {
+func (d *Dashboard) listDisasterPlanSummaries(c *i18n.Catalog) []DisasterPlanSummary {
 	agents := map[string]struct{}{}
 	if d.registry != nil {
 		for _, j := range d.registry.ListJobs() {
@@ -387,7 +390,7 @@ func (d *Dashboard) listDisasterPlanSummaries() []DisasterPlanSummary {
 	}
 	out := make([]DisasterPlanSummary, 0, len(agents))
 	for name := range agents {
-		plan, err := d.buildDisasterPlan(name)
+		plan, err := d.buildDisasterPlan(c, name)
 		if err != nil || plan == nil {
 			continue
 		}
@@ -439,7 +442,7 @@ func (d *Dashboard) resolveRepoForSnapshot(snapIDStr string) (*repository.Reposi
 
 // startDisasterRecovery validates the request, creates a recovery session, and
 // runs job restores sequentially on the target agent.
-func (d *Dashboard) startDisasterRecovery(sourceAgent, targetAgent, mode, stagingRoot string, jobIDs []string) (*DisasterRecovery, error) {
+func (d *Dashboard) startDisasterRecovery(c *i18n.Catalog, sourceAgent, targetAgent, mode, stagingRoot string, jobIDs []string) (*DisasterRecovery, error) {
 	if d.restores == nil {
 		return nil, fmt.Errorf("restore manager not initialized")
 	}
@@ -479,7 +482,7 @@ func (d *Dashboard) startDisasterRecovery(sourceAgent, targetAgent, mode, stagin
 		return nil, fmt.Errorf("staging_root is required when mode=staging")
 	}
 
-	plan, err := d.buildDisasterPlan(sourceAgent)
+	plan, err := d.buildDisasterPlan(c, sourceAgent)
 	if err != nil {
 		return nil, err
 	}

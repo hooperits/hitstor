@@ -49,13 +49,13 @@
       agents = Array.isArray(data) ? data : [];
       var sel = $('dr-target-agent');
       var cur = sel.value;
-      sel.innerHTML = '<option value="">Select registered agent…</option>';
+      sel.innerHTML = '<option value="">' + escapeHtml(t('Select registered agent…')) + '</option>';
       agents.forEach(function (a) {
         var name = a.name || a.Name;
         if (!name) return;
         var opt = document.createElement('option');
         opt.value = name;
-        opt.textContent = name + (a.suspended ? ' (suspended)' : '');
+        opt.textContent = a.suspended ? t('{name} (suspended)', { name: name }) : name;
         if (a.suspended) opt.disabled = true;
         sel.appendChild(opt);
       });
@@ -68,7 +68,7 @@
     var ul = $('dr-system-list');
     ul.innerHTML = '';
     if (!plans.length) {
-      ul.innerHTML = '<li class="text-muted">No protected systems with jobs/snapshots yet.</li>';
+      ul.innerHTML = '<li class="text-muted">' + escapeHtml(t('No protected systems with jobs/snapshots yet.')) + '</li>';
       return;
     }
     plans.forEach(function (p) {
@@ -78,9 +78,9 @@
       li.setAttribute('aria-selected', p.source_agent === selected ? 'true' : 'false');
       li.innerHTML =
         '<strong>' + escapeHtml(p.source_agent) + '</strong>' +
-        '<span class="text-muted">' + p.ready_units + '/' + p.job_count + ' units · ' +
+        '<span class="text-muted">' + escapeHtml(t('{ready}/{total} units', { ready: p.ready_units, total: p.job_count })) + ' · ' +
         formatBytes(p.total_size) + '</span>' +
-        (p.ready ? '<span class="badge badge-ok">ready</span>' : '<span class="badge badge-stale">incomplete</span>');
+        (p.ready ? '<span class="badge badge-ok">' + escapeHtml(t('ready')) + '</span>' : '<span class="badge badge-stale">' + escapeHtml(t('incomplete')) + '</span>');
       li.addEventListener('click', function () { selectSystem(p.source_agent); });
       ul.appendChild(li);
     });
@@ -119,9 +119,9 @@
     var meta = $('dr-plan-meta');
     meta.innerHTML =
       '<p><strong>' + escapeHtml(plan.source_agent) + '</strong> · ' +
-      plan.ready_units + ' restorable unit(s) · ' + formatBytes(plan.total_size) + ' · ' +
-      (plan.total_files || 0) + ' files' +
-      (plan.last_backup_str ? ' · last backup ' + escapeHtml(plan.last_backup_str) : '') +
+      escapeHtml(t('{n} restorable unit(s)', { n: plan.ready_units })) + ' · ' + formatBytes(plan.total_size) + ' · ' +
+      escapeHtml(t('{n} files', { n: plan.total_files || 0 })) +
+      (plan.last_backup_str ? ' · ' + escapeHtml(t('last backup {when}', { when: plan.last_backup_str })) : '') +
       '</p>' +
       (plan.source_online_hint ? '<p class="text-muted">' + escapeHtml(plan.source_online_hint) + '</p>' : '');
 
@@ -153,7 +153,7 @@
         (u.snapshot_time_str ? '<div class="text-muted">' + escapeHtml(u.snapshot_time_str) + '</div>' : '') + '</td>' +
         '<td class="paths-cell">' + escapeHtml((u.paths || []).join(', ') || '—') + '</td>' +
         '<td>' + formatBytes(u.total_size) + '</td>' +
-        '<td>' + (u.verify_status ? escapeHtml(u.verify_status) : '—') + '</td>';
+        '<td>' + (u.verify_status ? escapeHtml(t(u.verify_status)) : '—') + '</td>';
       body.appendChild(tr);
       var cb = tr.querySelector('input[type=checkbox]');
       if (cb) {
@@ -214,7 +214,7 @@
     };
     var btn = $('dr-start-btn');
     btn.disabled = true;
-    btn.textContent = 'Starting…';
+    btn.textContent = t('Starting…');
     fetch('/api/disaster/recover', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -223,11 +223,11 @@
       if (!r.ok) return r.text().then(function (t) { throw new Error(t || r.statusText); });
       return r.json();
     }).then(function () {
-      btn.textContent = 'Start full-system recovery';
+      btn.textContent = t('Start full-system recovery');
       pollRecoveries();
     }).catch(function (err) {
       setError(err.message || String(err));
-      btn.textContent = 'Start full-system recovery';
+      btn.textContent = t('Start full-system recovery');
       updateStartEnabled();
     });
   }
@@ -248,7 +248,7 @@
       box.innerHTML = list.map(function (rec) {
         var units = (rec.units || []).map(function (u) {
           return '<li><strong>' + escapeHtml(u.job_name || u.job_id) + '</strong>: ' +
-            escapeHtml(u.status) +
+            escapeHtml(t(u.status)) +
             (u.restore_id ? ' <code>' + shortID(u.restore_id) + '</code>' : '') +
             (u.error ? ' — ' + escapeHtml(u.error) : '') + '</li>';
         }).join('');
@@ -256,7 +256,7 @@
           '<div><strong>' + escapeHtml(rec.source_agent) + ' → ' + escapeHtml(rec.target_agent) +
           '</strong> · ' + escapeHtml(rec.mode) + ' · <span class="badge ' +
           (rec.status === 'completed' ? 'badge-ok' : rec.status === 'failed' ? 'badge-stale' : 'badge-running') +
-          '">' + escapeHtml(rec.status) + '</span></div>' +
+          '">' + escapeHtml(t(rec.status)) + '</span></div>' +
           '<ul>' + units + '</ul></div>';
       }).join('');
     }).catch(function () { /* ignore poll errors */ });

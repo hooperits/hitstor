@@ -1,0 +1,19 @@
+# Month abbreviations used by dateTimeIn (time.Format("Jan")).
+Jan
+Feb
+Mar
+Apr
+May
+Jun
+Jul
+Aug
+Sep
+Oct
+Nov
+Dec
+# Sentences built by cron.Expression.DescribeWith.
+Every minute
+Every {n} minutes
+Day {day} of every month at {time}
+Every weekday at {time}
+Every day at {time}

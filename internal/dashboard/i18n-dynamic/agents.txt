@@ -1,0 +1,13 @@
+# Agents and overview pages: agent backup status, agent type label, job status and job type label.
+ok
+stale
+never
+suspended
+cli
+managed
+server
+pending
+disabled
+overdue
+running
+Files

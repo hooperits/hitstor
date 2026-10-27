@@ -13,11 +13,11 @@ func (d *Dashboard) handleDisasterPage(w http.ResponseWriter, r *http.Request) {
 		"disaster",
 		nil,
 	)
-	d.render(w, "disaster", data)
+	d.render(w, r, "disaster", data)
 }
 
 func (d *Dashboard) handleAPIDisasterPlans(w http.ResponseWriter, r *http.Request) {
-	writeJSON(w, d.listDisasterPlanSummaries())
+	writeJSON(w, d.listDisasterPlanSummaries(d.catalog(r)))
 }
 
 func (d *Dashboard) handleAPIDisasterPlan(w http.ResponseWriter, r *http.Request) {
@@ -26,7 +26,7 @@ func (d *Dashboard) handleAPIDisasterPlan(w http.ResponseWriter, r *http.Request
 		http.Error(w, "agent is required", http.StatusBadRequest)
 		return
 	}
-	plan, err := d.buildDisasterPlan(agent)
+	plan, err := d.buildDisasterPlan(d.catalog(r), agent)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -52,7 +52,7 @@ func (d *Dashboard) handleAPIDisasterRecover(w http.ResponseWriter, r *http.Requ
 		http.Error(w, "source_agent is required", http.StatusBadRequest)
 		return
 	}
-	rec, err := d.startDisasterRecovery(req.SourceAgent, req.TargetAgent, req.Mode, req.StagingRoot, req.JobIDs)
+	rec, err := d.startDisasterRecovery(d.catalog(r), req.SourceAgent, req.TargetAgent, req.Mode, req.StagingRoot, req.JobIDs)
 	if err != nil {
 		// Client errors vs server
 		msg := err.Error()

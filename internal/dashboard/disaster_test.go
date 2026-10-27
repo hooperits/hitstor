@@ -1,6 +1,7 @@
 package dashboard
 
 import (
+	"github.com/hooperits/hitstor/internal/i18n"
 	"testing"
 	"time"
 
@@ -75,7 +76,7 @@ func TestSanitizePathSegment(t *testing.T) {
 }
 
 func TestDefaultDRChecklist(t *testing.T) {
-	c := defaultDRChecklist("host1")
+	c := defaultDRChecklist(i18n.Get(i18n.Default), "host1")
 	if len(c) < 5 {
 		t.Fatalf("checklist too short: %d", len(c))
 	}

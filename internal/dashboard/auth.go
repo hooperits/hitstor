@@ -137,7 +137,7 @@ func (d *Dashboard) handleLoginPage(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
 	}
-	d.render(w, "login", nil)
+	d.render(w, r, "login", nil)
 }
 
 func (d *Dashboard) handleLoginSubmit(w http.ResponseWriter, r *http.Request) {
@@ -155,7 +155,7 @@ func (d *Dashboard) handleLoginSubmit(w http.ResponseWriter, r *http.Request) {
 	password := r.FormValue("password")
 	if !crypto.VerifyPassword(d.opts.Password, password) {
 		d.loginLimits.fail(ip)
-		d.render(w, "login", map[string]any{"Error": "Invalid password"})
+		d.render(w, r, "login", map[string]any{"Error": "Invalid password"})
 		return
 	}
 

@@ -3,8 +3,8 @@
 {{$jobs := $page.Jobs}}
 
 <div class="backups-toolbar">
-    <p class="backups-toolbar-hint">{{if $jobs}}{{len $jobs}} scheduled {{if eq (len $jobs) 1}}job{{else}}jobs{{end}}{{else}}No jobs configured{{end}}</p>
-    <button class="btn" onclick="openNewJobDialog()">+ New Backup Job</button>
+    <p class="backups-toolbar-hint">{{if $jobs}}{{if eq (len $jobs) 1}}{{t "1 scheduled job"}}{{else}}{{tf "{n} scheduled jobs" "n" (len $jobs)}}{{end}}{{else}}{{t "No jobs configured"}}{{end}}</p>
+    <button class="btn" onclick="openNewJobDialog()">+ {{t "New Backup Job"}}</button>
 </div>
 
 
@@ -13,16 +13,16 @@
     <span class="empty-state-icon-wrap" aria-hidden="true">
         <svg class="empty-state-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
     </span>
-    <h3>No backup jobs yet</h3>
-    <p>Create a job to schedule filesystem backups on Linux or Windows agents.</p>
-    <button class="btn" onclick="openNewJobDialog()">Create your first job</button>
+    <h3>{{t "No backup jobs yet"}}</h3>
+    <p>{{t "Create a job to schedule filesystem backups on Linux or Windows agents."}}</p>
+    <button class="btn" onclick="openNewJobDialog()">{{t "Create your first job"}}</button>
 </div>
 {{else}}
 <section class="stats-section backups-stats">
     <div class="stats-grid stats-grid-compact">
         <div class="stat-card stat-card-compact">
             <div class="stat-card-top">
-                <span class="stat-card-label">Total Jobs</span>
+                <span class="stat-card-label">{{t "Total Jobs"}}</span>
                 <span class="stat-card-icon" aria-hidden="true">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                 </span>
@@ -31,7 +31,7 @@
         </div>
         <div class="stat-card stat-card-compact">
             <div class="stat-card-top">
-                <span class="stat-card-label">Healthy</span>
+                <span class="stat-card-label">{{t "Healthy"}}</span>
                 <span class="stat-card-icon" aria-hidden="true">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
                 </span>
@@ -40,7 +40,7 @@
         </div>
         <div class="stat-card stat-card-compact{{if $page.OverdueCount}} stat-card--stale{{end}}">
             <div class="stat-card-top">
-                <span class="stat-card-label">Overdue</span>
+                <span class="stat-card-label">{{t "Overdue"}}</span>
                 <span class="stat-card-icon" aria-hidden="true">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
                 </span>
@@ -50,7 +50,7 @@
         {{if or $page.RunningCount $page.PendingCount}}
         <div class="stat-card stat-card-compact stat-card--running">
             <div class="stat-card-top">
-                <span class="stat-card-label">Active</span>
+                <span class="stat-card-label">{{t "Active"}}</span>
                 <span class="stat-card-icon" aria-hidden="true">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
                 </span>
@@ -62,20 +62,20 @@
 </section>
 
 <div class="backups-table-panel">
-    <h2 class="section-title backups-table-title">Scheduled Jobs</h2>
+    <h2 class="section-title backups-table-title">{{t "Scheduled Jobs"}}</h2>
     <div class="table-wrap backups-table" id="backups-table" hx-get="/backups" hx-trigger="every 2s" hx-select=".table-wrap.backups-table" hx-swap="outerHTML">
         <table>
             <thead>
                 <tr>
-                    <th>Job</th>
-                    <th>Agent</th>
-                    <th>Source</th>
-                    <th>Repository</th>
-                    <th>Schedule</th>
-                    <th>Last Run</th>
-                    <th>Restore verify</th>
-                    <th>Status</th>
-                    <th class="col-actions" aria-label="Actions"></th>
+                    <th>{{t "Job"}}</th>
+                    <th>{{t "Agent"}}</th>
+                    <th>{{t "Source"}}</th>
+                    <th>{{t "Repository"}}</th>
+                    <th>{{t "Schedule"}}</th>
+                    <th>{{t "Last Run"}}</th>
+                    <th>{{t "Restore verify"}}</th>
+                    <th>{{t "Status"}}</th>
+                    <th class="col-actions" aria-label="{{t "Actions"}}"></th>
                 </tr>
             </thead>
             <tbody>
@@ -83,7 +83,7 @@
                 <tr class="clickable-row backup-row backup-row--{{.Status}}" onclick="window.location='/backups/{{.ID}}'">
                     <td class="job-name-cell">
                         <span class="job-name">{{.Name}}</span>
-                        <span class="job-type-chip">{{.JobTypeLabel}}</span>
+                        <span class="job-type-chip">{{t .JobTypeLabel}}</span>
                     </td>
                     <td><span class="agent-chip">{{.AgentName}}</span></td>
                     <td class="paths-cell" title="{{range .Paths}}{{.}} {{end}}">{{.SourceLabel}}</td>
@@ -91,37 +91,37 @@
                     <td class="schedule-cell">
                         {{if .ScheduleEnabled}}
                         <span class="schedule-primary">{{.ScheduleDisplay}}</span>
-                        {{if .NextRun}}<span class="schedule-next">Next {{.NextRun}}</span>{{end}}
-                        {{else}}<span class="schedule-off">Schedule off</span>{{end}}
+                        {{if .NextRun}}<span class="schedule-next">{{tf "Next {when}" "when" .NextRun}}</span>{{end}}
+                        {{else}}<span class="schedule-off">{{t "Schedule off"}}</span>{{end}}
                     </td>
                     <td class="last-backup-cell last-backup-cell--{{.Status}}">
-                        {{if .LastBackup}}{{timeAgo .LastBackup}}{{else}}never{{end}}
+                        {{if .LastBackup}}{{timeAgo .LastBackup}}{{else}}{{t "never"}}{{end}}
                     </td>
                     <td class="verify-cell">
                         {{if .VerifyOK}}
-                        <span class="badge badge-ok" title="{{.LastVerifyDetail}}">verified</span>
+                        <span class="badge badge-ok" title="{{.LastVerifyDetail}}">{{t "verified"}}</span>
                         {{else if .VerifyFailed}}
-                        <span class="badge badge-stale" title="{{.LastVerifyDetail}}">verify failed</span>
+                        <span class="badge badge-stale" title="{{.LastVerifyDetail}}">{{t "verify failed"}}</span>
                         {{else if .LastVerifyStatus}}
-                        <span class="badge badge-disabled" title="{{.LastVerifyDetail}}">{{.LastVerifyStatus}}</span>
+                        <span class="badge badge-disabled" title="{{.LastVerifyDetail}}">{{t .LastVerifyStatus}}</span>
                         {{else if .VerifyEnabled}}
-                        <span class="text-muted" title="Runs automatically after each backup">pending</span>
+                        <span class="text-muted" title="{{t "Runs automatically after each backup"}}">{{t "pending"}}</span>
                         {{else}}
-                        <span class="text-muted">off</span>
+                        <span class="text-muted">{{t "off"}}</span>
                         {{end}}
                     </td>
                     <td class="status-cell">
                         {{if .Running}}
-                        {{if .Stale}}<span class="badge badge-stale">stalled</span>{{else}}<span class="badge badge-running">running</span>{{end}}
+                        {{if .Stale}}<span class="badge badge-stale">{{t "stalled"}}</span>{{else}}<span class="badge badge-running">{{t "running"}}</span>{{end}}
                         <div class="progress-bar-indeterminate{{if .Stale}} progress-bar-stale{{end}}"></div>
-                        <div class="backup-progress-meta">{{.Phase}} &middot; {{if .SpeedHuman}}{{.SpeedHuman}} &middot; {{end}}{{.BytesHuman}} &middot; {{formatNumber .FilesProcessed}} files &middot; {{.ElapsedHuman}}</div>
-                        {{if gt .DedupPercent 10.0}}<div class="backup-progress-dedup">{{printf "%.0f" .DedupPercent}}% dedup</div>{{end}}
+                        <div class="backup-progress-meta">{{t .Phase}} &middot; {{if .SpeedHuman}}{{.SpeedHuman}} &middot; {{end}}{{.BytesHuman}} &middot; {{tf "{n} files" "n" (formatNumber .FilesProcessed)}} &middot; {{.ElapsedHuman}}</div>
+                        {{if gt .DedupPercent 10.0}}<div class="backup-progress-dedup">{{tf "{pct}% dedup" "pct" (printf "%.0f" .DedupPercent)}}</div>{{end}}
                         {{else}}
-                        <span class="badge {{if eq .Status "ok"}}badge-ok{{else if eq .Status "overdue"}}badge-stale{{else if eq .Status "pending"}}badge-pending{{else if eq .Status "disabled"}}badge-disabled{{else}}badge-never{{end}}">{{.Status}}</span>
+                        <span class="badge {{if eq .Status "ok"}}badge-ok{{else if eq .Status "overdue"}}badge-stale{{else if eq .Status "pending"}}badge-pending{{else if eq .Status "disabled"}}badge-disabled{{else}}badge-never{{end}}">{{t .Status}}</span>
                         {{end}}
                     </td>
                     <td class="col-actions" onclick="event.stopPropagation()">
-                        <button class="action-icon action-icon-run" title="Backup Now" onclick="runBackupNow('{{.ID}}', this)" {{if eq .Status "pending"}}disabled{{end}}>
+                        <button class="action-icon action-icon-run" title="{{t "Backup Now"}}" onclick="runBackupNow('{{.ID}}', this)" {{if eq .Status "pending"}}disabled{{end}}>
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
                         </button>
                     </td>
@@ -137,119 +137,119 @@
 <div id="new-job-dialog" class="dialog-overlay" style="display:none" role="dialog" aria-modal="true" aria-labelledby="new-job-title">
     <div class="dialog-box dialog-lg">
         <div class="dialog-header">
-            <h2 id="new-job-title">New Backup Job</h2>
-            <button type="button" class="dialog-close" onclick="closeNewJobDialog()" aria-label="Close">&times;</button>
+            <h2 id="new-job-title">{{t "New Backup Job"}}</h2>
+            <button type="button" class="dialog-close" onclick="closeNewJobDialog()" aria-label="{{t "Close"}}">&times;</button>
         </div>
         <div class="dialog-body">
             <form id="new-job-form" onsubmit="submitNewJob(event)">
                 <div class="form-stepper-track" aria-hidden="true">
-                    <div class="form-stepper-step active" data-step="1">1. Type</div>
-                    <div class="form-stepper-step" data-step="2">2. Source</div>
-                    <div class="form-stepper-step" data-step="3">3. Schedule</div>
+                    <div class="form-stepper-step active" data-step="1">{{t "1. Type"}}</div>
+                    <div class="form-stepper-step" data-step="2">{{t "2. Source"}}</div>
+                    <div class="form-stepper-step" data-step="3">{{t "3. Schedule"}}</div>
                 </div>
 
                 <div class="form-step active" data-step="1">
-                    <p class="form-hint" style="margin-bottom:0.75rem;">Choose what you want to protect.</p>
+                    <p class="form-hint" style="margin-bottom:0.75rem;">{{t "Choose what you want to protect."}}</p>
                     <div class="job-type-grid">
                         <div class="job-type-card selected" data-type="files">
-                            <strong>Files &amp; Directories</strong>
-                            <span>Backup paths from a remote agent (Windows or Linux).</span>
+                            <strong>{{t "Files & Directories"}}</strong>
+                            <span>{{t "Backup paths from a remote agent (Windows or Linux)."}}</span>
                         </div>
                     </div>
                     <select id="job-type" required style="display:none;">
-                        <option value="files" selected>Files & Directories</option>
+                        <option value="files" selected>{{t "Files & Directories"}}</option>
                     </select>
                 </div>
 
                 <div class="form-step" data-step="2">
                 <div class="form-group">
-                    <label for="job-name">Job Name</label>
-                    <input type="text" id="job-name" placeholder="e.g. web-configs-daily" required>
+                    <label for="job-name">{{t "Job Name"}}</label>
+                    <input type="text" id="job-name" placeholder="{{tf "e.g. {example}" "example" "web-configs-daily"}}" required>
                 </div>
 
                 <div class="form-group">
-                    <label for="job-agent">Agent</label>
+                    <label for="job-agent">{{t "Agent"}}</label>
                     <select id="job-agent" required onchange="onAgentSelected()">
-                        <option value="">Select agent...</option>
+                        <option value="">{{t "Select agent..."}}</option>
                     </select>
                 </div>
 
                 <select id="job-repo" required style="display:none;">
-                    <option value="">Select repository...</option>
+                    <option value="">{{t "Select repository..."}}</option>
                 </select>
 
                 <!-- File-based source -->
                 <div id="job-file-source">
                     <div class="form-group">
-                        <label>Backup Paths</label>
+                        <label>{{t "Backup Paths"}}</label>
                         <div id="job-fs-tree" class="fs-tree" style="max-height:250px; overflow-y:auto; border:1px solid var(--border); border-radius:4px; padding:0.5rem;">
-                            <div style="color:var(--text-muted); font-style:italic;">Select an agent to browse filesystem.</div>
+                            <div style="color:var(--text-muted); font-style:italic;">{{t "Select an agent to browse filesystem."}}</div>
                         </div>
                         <div id="job-selected-paths" style="margin-top:0.5rem; font-size:0.85rem; color:var(--text-muted);"></div>
                     </div>
                     <div class="form-group">
-                        <label for="job-excludes">Exclude Patterns (optional)</label>
+                        <label for="job-excludes">{{t "Exclude Patterns (optional)"}}</label>
                         <input type="text" id="job-excludes" placeholder="*.tmp, *.log">
-                        <span class="form-hint">Comma-separated glob patterns.</span>
+                        <span class="form-hint">{{t "Comma-separated glob patterns."}}</span>
                     </div>
                     <div class="form-group" id="job-vss-group" style="display:none;">
                         <label style="display:flex; align-items:center; gap:0.5rem;">
                             <input type="checkbox" id="job-use-vss">
-                            Consistent snapshot (VSS / LVM / btrfs)
+                            {{t "Consistent snapshot (VSS / LVM / btrfs)"}}
                         </label>
-                        <span class="form-hint">Reads from a volume snapshot for crash-consistent open files. Windows: VSS. Linux: LVM or btrfs when available (agent needs privileges).</span>
+                        <span class="form-hint">{{t "Reads from a volume snapshot for crash-consistent open files. Windows: VSS. Linux: LVM or btrfs when available (agent needs privileges)."}}</span>
                     </div>
                 </div>
 </div>
 
                 <div class="form-step" data-step="3">
                 <div class="form-group">
-                    <label for="job-repo-step">Repository</label>
+                    <label for="job-repo-step">{{t "Repository"}}</label>
                     <select id="job-repo-step" onchange="document.getElementById('job-repo').value=this.value" required>
-                        <option value="">Select repository...</option>
+                        <option value="">{{t "Select repository..."}}</option>
                     </select>
                 </div>
 
                 <div class="form-group">
                     <label style="display:flex; align-items:center; gap:0.5rem;">
                         <input type="checkbox" id="job-sched-enabled" checked>
-                        Enable scheduled backups
+                        {{t "Enable scheduled backups"}}
                     </label>
                     <div style="display:flex; gap:1rem; margin-top:0.5rem;">
                         <label style="display:flex; align-items:center; gap:0.3rem;">
                             <input type="radio" name="new-sched-mode" value="interval" checked
                                    onchange="toggleNewJobSchedMode();">
-                            Interval
+                            {{t "Interval"}}
                         </label>
                         <label style="display:flex; align-items:center; gap:0.3rem;">
                             <input type="radio" name="new-sched-mode" value="schedule"
                                    onchange="toggleNewJobSchedMode();">
-                            Schedule
+                            {{t "Schedule"}}
                         </label>
                         <label style="display:flex; align-items:center; gap:0.3rem;">
                             <input type="radio" name="new-sched-mode" value="cron"
                                    onchange="toggleNewJobSchedMode();">
-                            Advanced
+                            {{t "Advanced"}}
                         </label>
                     </div>
                     <div id="new-interval-inputs" style="margin-top:0.5rem;">
                         <label style="display:flex; align-items:center; gap:0.5rem;">
-                            Every
+                            {{t "Every"}}
                             <input type="number" id="job-sched-hours" value="24" min="1" max="8760" style="width:5rem;">
-                            hours
+                            {{t "hours"}}
                         </label>
                     </div>
                     <div id="new-schedule-inputs" style="display:none; margin-top:0.5rem;">
                         <label style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.75rem;">
-                            Frequency
+                            {{t "Frequency"}}
                             <select id="new-sched-frequency" style="width:10rem;" onchange="toggleNewFrequencyDetails(); updateNewSchedulePreview();">
-                                <option value="daily">Daily</option>
-                                <option value="weekly">Weekly</option>
-                                <option value="monthly">Monthly</option>
+                                <option value="daily">{{t "Daily"}}</option>
+                                <option value="weekly">{{t "Weekly"}}</option>
+                                <option value="monthly">{{t "Monthly"}}</option>
                             </select>
                         </label>
                         <label style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.75rem;">
-                            Time
+                            {{t "Time"}}
                             <select id="new-sched-hour" style="width:4rem;" onchange="updateNewSchedulePreview();">
                                 <option value="12">12</option>
                                 <option value="1">1</option>
@@ -277,42 +277,42 @@
                             </select>
                         </label>
                         <div id="new-sched-dow-group" style="display:none; margin-bottom:0.75rem;">
-                            <div style="font-size:0.85rem; color:var(--text-muted); margin-bottom:0.4rem;">Days of week</div>
+                            <div style="font-size:0.85rem; color:var(--text-muted); margin-bottom:0.4rem;">{{t "Days of week"}}</div>
                             <div style="display:flex; gap:0.3rem; flex-wrap:wrap;">
                                 <label class="dow-toggle" style="display:inline-flex; align-items:center; justify-content:center; width:2.8rem; height:2rem; border-radius:4px; cursor:pointer; border:1px solid var(--border); font-size:0.8rem; user-select:none; background:transparent; color:var(--text);">
                                     <input type="checkbox" value="1" onchange="updateNewDowStyle(this); updateNewSchedulePreview();" style="display:none;">
-                                    <span>Mon</span>
+                                    <span>{{t "Mon"}}</span>
                                 </label>
                                 <label class="dow-toggle" style="display:inline-flex; align-items:center; justify-content:center; width:2.8rem; height:2rem; border-radius:4px; cursor:pointer; border:1px solid var(--border); font-size:0.8rem; user-select:none; background:transparent; color:var(--text);">
                                     <input type="checkbox" value="2" onchange="updateNewDowStyle(this); updateNewSchedulePreview();" style="display:none;">
-                                    <span>Tue</span>
+                                    <span>{{t "Tue"}}</span>
                                 </label>
                                 <label class="dow-toggle" style="display:inline-flex; align-items:center; justify-content:center; width:2.8rem; height:2rem; border-radius:4px; cursor:pointer; border:1px solid var(--border); font-size:0.8rem; user-select:none; background:transparent; color:var(--text);">
                                     <input type="checkbox" value="3" onchange="updateNewDowStyle(this); updateNewSchedulePreview();" style="display:none;">
-                                    <span>Wed</span>
+                                    <span>{{t "Wed"}}</span>
                                 </label>
                                 <label class="dow-toggle" style="display:inline-flex; align-items:center; justify-content:center; width:2.8rem; height:2rem; border-radius:4px; cursor:pointer; border:1px solid var(--border); font-size:0.8rem; user-select:none; background:transparent; color:var(--text);">
                                     <input type="checkbox" value="4" onchange="updateNewDowStyle(this); updateNewSchedulePreview();" style="display:none;">
-                                    <span>Thu</span>
+                                    <span>{{t "Thu"}}</span>
                                 </label>
                                 <label class="dow-toggle" style="display:inline-flex; align-items:center; justify-content:center; width:2.8rem; height:2rem; border-radius:4px; cursor:pointer; border:1px solid var(--border); font-size:0.8rem; user-select:none; background:transparent; color:var(--text);">
                                     <input type="checkbox" value="5" onchange="updateNewDowStyle(this); updateNewSchedulePreview();" style="display:none;">
-                                    <span>Fri</span>
+                                    <span>{{t "Fri"}}</span>
                                 </label>
                                 <label class="dow-toggle" style="display:inline-flex; align-items:center; justify-content:center; width:2.8rem; height:2rem; border-radius:4px; cursor:pointer; border:1px solid var(--border); font-size:0.8rem; user-select:none; background:transparent; color:var(--text);">
                                     <input type="checkbox" value="6" onchange="updateNewDowStyle(this); updateNewSchedulePreview();" style="display:none;">
-                                    <span>Sat</span>
+                                    <span>{{t "Sat"}}</span>
                                 </label>
                                 <label class="dow-toggle" style="display:inline-flex; align-items:center; justify-content:center; width:2.8rem; height:2rem; border-radius:4px; cursor:pointer; border:1px solid var(--border); font-size:0.8rem; user-select:none; background:transparent; color:var(--text);">
                                     <input type="checkbox" value="0" onchange="updateNewDowStyle(this); updateNewSchedulePreview();" style="display:none;">
-                                    <span>Sun</span>
+                                    <span>{{t "Sun"}}</span>
                                 </label>
                             </div>
-                            <div id="new-sched-dow-error" style="font-size:0.8rem; color:var(--danger); margin-top:0.3rem; display:none;">Select at least one day.</div>
+                            <div id="new-sched-dow-error" style="font-size:0.8rem; color:var(--danger); margin-top:0.3rem; display:none;">{{t "Select at least one day."}}</div>
                         </div>
                         <div id="new-sched-dom-group" style="display:none; margin-bottom:0.75rem;">
                             <label style="display:flex; align-items:center; gap:0.5rem;">
-                                Day of month
+                                {{t "Day of month"}}
                                 <select id="new-sched-dom" style="width:5rem;" onchange="updateNewSchedulePreview();"></select>
                             </label>
                         </div>
@@ -320,16 +320,16 @@
                     </div>
                     <div id="new-cron-inputs" style="display:none; margin-top:0.5rem;">
                         <label style="display:flex; align-items:center; gap:0.5rem;">
-                            Expression
+                            {{t "Expression"}}
                             <input type="text" id="job-cron-expr" placeholder="0 2 * * *" style="width:12rem; font-family:monospace;" onblur="validateNewCron();">
                         </label>
                         <div id="new-cron-preview" style="font-size:0.85rem; color:var(--text-muted); margin-top:0.25rem;"></div>
                     </div>
                     <div id="new-tz-inputs" style="display:none; margin-top:0.5rem;">
                         <label style="display:flex; align-items:center; gap:0.5rem;">
-                            Timezone
+                            {{t "Timezone"}}
                             <select id="job-timezone" style="width:16rem;">
-                                <option value="">Server local</option>
+                                <option value="">{{t "Server local"}}</option>
                             </select>
                         </label>
                     </div>
@@ -337,10 +337,10 @@
                 </div>
                 <div id="new-job-error" class="form-error" style="display:none"></div>
                 <div class="dialog-actions">
-                    <button type="button" class="btn btn-secondary" onclick="closeNewJobDialog()">Cancel</button>
-                    <button type="button" class="btn btn-secondary" id="wizard-back" style="display:none">Back</button>
-                    <button type="button" class="btn" id="wizard-next">Next</button>
-                    <button type="submit" class="btn" id="new-job-btn" style="display:none">Create Job</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeNewJobDialog()">{{t "Cancel"}}</button>
+                    <button type="button" class="btn btn-secondary" id="wizard-back" style="display:none">{{t "Back"}}</button>
+                    <button type="button" class="btn" id="wizard-next">{{t "Next"}}</button>
+                    <button type="submit" class="btn" id="new-job-btn" style="display:none">{{t "Create Job"}}</button>
                 </div>
             </form>
         </div>
@@ -392,7 +392,7 @@ function closeNewJobDialog() {
     document.getElementById('new-job-dialog').style.display = 'none';
     document.getElementById('new-job-form').reset();
     document.getElementById('new-job-error').style.display = 'none';
-    document.getElementById('job-fs-tree').innerHTML = '<div style="color:var(--text-muted); font-style:italic;">Select an agent to browse filesystem.</div>';
+    document.getElementById('job-fs-tree').innerHTML = '<div style="color:var(--text-muted); font-style:italic;">' + t('Select an agent to browse filesystem.') + '</div>';
     document.getElementById('job-selected-paths').textContent = '';
     if (window.HitStorWizard) HitStorWizard.reset();
 }
@@ -404,11 +404,11 @@ function onAgentSelected() {
     var tree = document.getElementById('job-fs-tree');
     var vssGroup = document.getElementById('job-vss-group');
     if (!agentName) {
-        tree.innerHTML = '<div style="color:var(--text-muted); font-style:italic;">Select an agent to browse filesystem.</div>';
+        tree.innerHTML = '<div style="color:var(--text-muted); font-style:italic;">' + t('Select an agent to browse filesystem.') + '</div>';
         vssGroup.style.display = 'none';
         return;
     }
-    tree.innerHTML = '<div style="color:var(--text-muted); font-style:italic;">Loading filesystem...</div>';
+    tree.innerHTML = '<div style="color:var(--text-muted); font-style:italic;">' + t('Loading filesystem...') + '</div>';
     loadJobTree(tree, '', agentName);
     vssGroup.style.display = '';
 }
@@ -425,7 +425,7 @@ function loadJobTree(parentEl, path, agentName) {
     })
     .then(function(entries) { renderJobEntries(parentEl, entries, agentName); })
     .catch(function(err) {
-        parentEl.innerHTML = '<div style="color:var(--danger);">Error: ' + err.message + '</div>';
+        parentEl.innerHTML = '<div style="color:var(--danger);">' + t('Error: {message}', {message: err.message}) + '</div>';
     });
 }
 
@@ -485,7 +485,7 @@ function renderJobEntries(parentEl, entries, agentName) {
         var label = document.createElement('span');
         label.className = entry.is_dir ? 'fs-label fs-label-dir' : 'fs-label fs-label-file';
         label.textContent = entry.name;
-        if (!entry.readable) { label.style.opacity = '0.4'; label.title = 'Not readable'; }
+        if (!entry.readable) { label.style.opacity = '0.4'; label.title = t('Not readable'); }
         row.appendChild(label);
 
         node.appendChild(row);
@@ -508,7 +508,7 @@ function toggleJobDir(nodeEl, path, expandBtn, agentName) {
     var children = nodeEl.querySelector('.fs-children');
     if (children.style.display === 'none') {
         if (children.children.length === 0) {
-            children.innerHTML = '<div style="color:var(--text-muted); font-style:italic; padding:3px 4px;">Loading...</div>';
+            children.innerHTML = '<div style="color:var(--text-muted); font-style:italic; padding:3px 4px;">' + t('Loading...') + '</div>';
             loadJobTree(children, path, agentName);
         }
         children.style.display = '';
@@ -543,7 +543,7 @@ function getJobSelectedPaths() {
 function updateJobPaths() {
     var paths = getJobSelectedPaths();
     var el = document.getElementById('job-selected-paths');
-    el.textContent = paths.length > 0 ? 'Selected: ' + paths.join(', ') : '';
+    el.textContent = paths.length > 0 ? t('Selected: {paths}', {paths: paths.join(', ')}) : '';
 }
 
 function toggleJobTypeFields() {
@@ -568,7 +568,7 @@ function submitNewJob(e) {
     var errEl = document.getElementById('new-job-error');
     var paths = getJobSelectedPaths();
     if (paths.length === 0) {
-        errEl.textContent = 'Select at least one backup path.';
+        errEl.textContent = t('Select at least one backup path.');
         errEl.style.display = '';
         return;
     }
@@ -587,7 +587,7 @@ function submitNewJob(e) {
 
     var agentName = document.getElementById('job-agent').value;
     if (!agentName) {
-        errEl.textContent = 'Select an agent for this backup job.';
+        errEl.textContent = t('Select an agent for this backup job.');
         errEl.style.display = '';
         return;
     }
@@ -608,7 +608,7 @@ function submitNewJob(e) {
 
     errEl.style.display = 'none';
     document.getElementById('new-job-btn').disabled = true;
-    document.getElementById('new-job-btn').textContent = 'Creating...';
+    document.getElementById('new-job-btn').textContent = t('Creating...');
 
     fetch('/api/backups', {
         method: 'POST',
@@ -623,7 +623,7 @@ function submitNewJob(e) {
         errEl.textContent = err.message || String(err);
         errEl.style.display = '';
         document.getElementById('new-job-btn').disabled = false;
-        document.getElementById('new-job-btn').textContent = 'Create Job';
+        document.getElementById('new-job-btn').textContent = t('Create Job');
     });
 }
 
@@ -677,12 +677,12 @@ function updateNewSchedulePreview() {
     fetch(url).then(function(r) { return r.json(); }).then(function(data) {
         if (data.valid) {
             var text = data.description;
-            if (data.next_3 && data.next_3.length > 0) text += ' — Next: ' + data.next_3[0];
+            if (data.next_3 && data.next_3.length > 0) text = t('{description} — Next: {next}', {description: text, next: data.next_3[0]});
             preview.style.color = 'var(--text-muted)';
             preview.textContent = text;
         } else {
             preview.style.color = 'var(--danger)';
-            preview.textContent = 'Invalid expression';
+            preview.textContent = t('Invalid expression');
         }
     }).catch(function() { preview.textContent = ''; });
 }
@@ -713,12 +713,12 @@ function validateNewCron() {
             preview.style.color = 'var(--text-muted)';
             var text = data.description;
             if (data.next_3 && data.next_3.length > 0) {
-                text += ' — Next: ' + data.next_3[0];
+                text = t('{description} — Next: {next}', {description: text, next: data.next_3[0]});
             }
             preview.textContent = text;
         } else {
             preview.style.color = 'var(--danger)';
-            preview.textContent = 'Invalid expression';
+            preview.textContent = t('Invalid expression');
         }
     }).catch(function() {
         preview.textContent = '';
@@ -750,8 +750,8 @@ function validateNewCron() {
 })();
 
 function runBackupNow(jobID, btn) {
-    var forceFull = confirm('Force a full re-scan? (OK = full re-scan, Cancel = incremental)');
-    if (!confirm('Trigger an immediate ' + (forceFull ? 'full' : 'incremental') + ' backup?')) return;
+    var forceFull = confirm(t('Force a full re-scan? (OK = full re-scan, Cancel = incremental)'));
+    if (!confirm(forceFull ? t('Trigger an immediate full backup?') : t('Trigger an immediate incremental backup?'))) return;
     btn.disabled = true;
     btn.style.opacity = '0.4';
     fetch('/api/backups/' + jobID + '/run', {
@@ -764,11 +764,11 @@ function runBackupNow(jobID, btn) {
         // Optimistic UI: immediately show running state
         var row = btn.closest('tr');
         if (row) {
-            var statusCell = row.querySelectorAll('td')[6]; // Status column (7th)
+            var statusCell = row.querySelectorAll('td')[7]; // Status column (8th, after Restore verify)
             if (statusCell) {
-                statusCell.innerHTML = '<span class="badge badge-running">running</span>' +
+                statusCell.innerHTML = '<span class="badge badge-running">' + t('running') + '</span>' +
                     '<div class="progress-bar-indeterminate"></div>' +
-                    '<div style="font-size:0.75rem; color:var(--text-muted); margin-top:2px;">starting\u2026</div>';
+                    '<div style="font-size:0.75rem; color:var(--text-muted); margin-top:2px;">' + t('starting…') + '</div>';
             }
         }
         // Pause htmx polling so the progress bar stays visible
@@ -793,16 +793,16 @@ function runBackupNow(jobID, btn) {
                     }
                 }
                 if (row) {
-                    var sc = row.querySelectorAll('td')[6];
+                    var sc = row.querySelectorAll('td')[7];
                     if (sc && sess) {
-                        sc.innerHTML = '<span class="badge badge-running">running</span>' +
+                        sc.innerHTML = '<span class="badge badge-running">' + t('running') + '</span>' +
                             '<div class="progress-bar-indeterminate"></div>' +
                             '<div style="font-size:0.75rem; color:var(--text-muted); margin-top:2px;">' +
-                            sess.phase + ' \u00b7 ' + sess.bytes_human + ' \u00b7 ' + sess.elapsed_human + '</div>';
+                            t(sess.phase) + ' \u00b7 ' + sess.bytes_human + ' \u00b7 ' + sess.elapsed_human + '</div>';
                     } else if (sc && pollCount >= 3) {
                         // Backup finished — show completion briefly
-                        sc.innerHTML = '<span class="badge badge-ok">ok</span>' +
-                            '<div style="font-size:0.75rem; color:#10b981; margin-top:2px;">completed</div>';
+                        sc.innerHTML = '<span class="badge badge-ok">' + t('ok') + '</span>' +
+                            '<div style="font-size:0.75rem; color:#10b981; margin-top:2px;">' + t('completed') + '</div>';
                         clearInterval(pollInterval);
                         // Resume htmx polling after 3s
                         setTimeout(function() {
@@ -831,7 +831,7 @@ function runBackupNow(jobID, btn) {
         }, 1000);
     })
     .catch(function(err) {
-        alert('Error: ' + err.message);
+        alert(t('Error: {message}', {message: err.message}));
         btn.disabled = false;
         btn.style.opacity = '';
     });

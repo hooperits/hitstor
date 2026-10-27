@@ -85,6 +85,7 @@ type Config struct {
 	ServeTLSKey            string   `yaml:"serve_tls_key,omitempty"`
 	ServeDashboardPort     int      `yaml:"serve_dashboard_port,omitempty"`
 	ServeDashboardPassword string   `yaml:"serve_dashboard_password,omitempty"`
+	ServeDashboardLanguage string   `yaml:"serve_dashboard_language,omitempty"`
 	AlertWebhookURL        string   `yaml:"alert_webhook_url,omitempty"`
 	AlertStaleThreshold    int      `yaml:"alert_stale_threshold,omitempty"`
 	AlertNotifierPlugins   []string `yaml:"alert_notifier_plugins,omitempty"`

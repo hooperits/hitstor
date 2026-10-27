@@ -14,5 +14,5 @@ func (d *Dashboard) handleSettingsPage(w http.ResponseWriter, r *http.Request) {
 	data := d.newPageData("Settings", "Server configuration and integrations", "settings", settingsPageData{
 		ActiveTab: tab,
 	})
-	d.render(w, "settings", data)
+	d.render(w, r, "settings", data)
 }

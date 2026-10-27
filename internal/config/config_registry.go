@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+
+	"github.com/hooperits/hitstor/internal/i18n"
 )
 
 // KeyType classifies configuration value types.
@@ -153,8 +155,15 @@ var Registry = []KeyDef{
 		Name:        "serve_dashboard_password",
 		Type:        String,
 		Default:     "",
-		Description: "Dashboard login password (empty = open access)",
+		Description: "Dashboard login password (empty = a random one is generated at startup and logged once)",
 		Sensitive:   true,
+	},
+	{
+		Name:        "serve_dashboard_language",
+		Type:        String,
+		Default:     "",
+		Description: "Default dashboard language code, e.g. en or es (empty = browser language)",
+		ValidateFn:  validateLanguage,
 	},
 	{
 		Name:        "alert_webhook_url",
@@ -358,6 +367,17 @@ func validateNonNegativeInt(value string) error {
 		return fmt.Errorf("invalid value: expected non-negative integer, got %q", value)
 	}
 	return nil
+}
+
+func validateLanguage(value string) error {
+	if value == "" || i18n.Supported(value) {
+		return nil
+	}
+	codes := make([]string, 0, len(i18n.Languages()))
+	for _, l := range i18n.Languages() {
+		codes = append(codes, l.Code)
+	}
+	return fmt.Errorf("unsupported language %q (available: %s)", value, strings.Join(codes, ", "))
 }
 
 func validatePort(value string) error {

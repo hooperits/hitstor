@@ -4,25 +4,25 @@
 {{$hostFilter := index $data "HostFilter"}}
 {{$restores := index $data "ActiveRestores"}}
 
-<nav class="storage-detail-nav" aria-label="Breadcrumb">
-    <a href="/storage" class="storage-detail-back">&larr; Back to Storage</a>
+<nav class="storage-detail-nav" aria-label="{{t "Breadcrumb"}}">
+    <a href="/storage" class="storage-detail-back">&larr; {{t "Back to Storage"}}</a>
     {{if $hostFilter}}
-    <a href="/restores?agent={{urlquery $hostFilter}}" class="storage-detail-restore-link">Restore in Restores &rarr;</a>
+    <a href="/restores?agent={{urlquery $hostFilter}}" class="storage-detail-restore-link">{{t "Restore in Restores"}} &rarr;</a>
     {{else}}
-    <a href="/restores" class="storage-detail-restore-link">Open Restores &rarr;</a>
+    <a href="/restores" class="storage-detail-restore-link">{{t "Open Restores"}} &rarr;</a>
     {{end}}
 </nav>
 
 <!-- Compact repo summary (loaded via JS) -->
 <div id="repo-summary" class="card" style="padding:1rem 1.5rem; margin-bottom:1.5rem;">
-    <div style="color:var(--text-muted); font-size:0.9rem;">Loading repository info...</div>
+    <div style="color:var(--text-muted); font-size:0.9rem;">{{t "Loading repository info..."}}</div>
 </div>
 
 <!-- Collapsible details: growth chart + actions -->
 <details id="repo-details" style="margin-bottom:1.5rem;">
-    <summary style="cursor:pointer; color:var(--primary); font-weight:500; margin-bottom:0.75rem;">Storage Details &amp; Maintenance</summary>
+    <summary style="cursor:pointer; color:var(--primary); font-weight:500; margin-bottom:0.75rem;">{{t "Storage Details & Maintenance"}}</summary>
     <div id="repo-detail-content" class="card" style="padding:1.5rem;">
-        <div style="color:var(--text-muted); font-size:0.9rem;">Expand to load chart and actions...</div>
+        <div style="color:var(--text-muted); font-size:0.9rem;">{{t "Expand to load chart and actions..."}}</div>
     </div>
 </details>
 
@@ -30,16 +30,16 @@
 <div id="disconnect-dialog" class="dialog-overlay" style="display:none">
     <div class="dialog-box dialog-sm">
         <div class="dialog-header">
-            <h2>Disconnect Repository</h2>
+            <h2>{{t "Disconnect Repository"}}</h2>
             <button class="dialog-close" onclick="closeDisconnectDialog()">&times;</button>
         </div>
         <div class="dialog-body">
-            <p>Are you sure you want to disconnect <strong>{{$repoName}}</strong>?</p>
-            <p class="form-hint">This removes the repository from the dashboard. Data on disk is not deleted.</p>
+            <p>{{t "Are you sure you want to disconnect"}} <strong>{{$repoName}}</strong>?</p>
+            <p class="form-hint">{{t "This removes the repository from the dashboard. Data on disk is not deleted."}}</p>
             <div id="disconnect-error" class="form-error" style="display:none"></div>
             <div class="dialog-actions">
-                <button class="btn btn-secondary" onclick="closeDisconnectDialog()">Cancel</button>
-                <button class="btn btn-danger" id="confirm-disconnect-btn" onclick="confirmDisconnect()">Disconnect</button>
+                <button class="btn btn-secondary" onclick="closeDisconnectDialog()">{{t "Cancel"}}</button>
+                <button class="btn btn-danger" id="confirm-disconnect-btn" onclick="confirmDisconnect()">{{t "Disconnect"}}</button>
             </div>
         </div>
     </div>
@@ -49,64 +49,70 @@
 <div id="forget-dialog" class="dialog-overlay" style="display:none">
     <div class="dialog-box dialog-sm">
         <div class="dialog-header">
-            <h2>Delete Snapshots</h2>
+            <h2>{{t "Delete Snapshots"}}</h2>
             <button class="dialog-close" onclick="closeForgetDialog()">&times;</button>
         </div>
         <div class="dialog-body">
-            <p>Permanently delete <strong id="forget-dialog-count">0</strong> snapshot(s) from <strong>{{$repoName}}</strong>?</p>
-            <p class="form-hint">This cannot be undone. Other snapshots are not affected — each one stores a complete, independent file index, so deleting a full or incremental snapshot never breaks the ones before or after it.</p>
+            <p>{{t "Permanently delete"}} <strong id="forget-dialog-count">0</strong> {{t "snapshot(s) from"}} <strong>{{$repoName}}</strong>?</p>
+            <p class="form-hint">{{t "This cannot be undone. Other snapshots are not affected — each one stores a complete, independent file index, so deleting a full or incremental snapshot never breaks the ones before or after it."}}</p>
             <label class="form-checkbox-label" style="display:flex; align-items:center; gap:0.5rem; margin:0.75rem 0;">
-                <input type="checkbox" id="forget-prune-checkbox" checked> Also free the disk space now (Prune)
+                <input type="checkbox" id="forget-prune-checkbox" checked> {{t "Also free the disk space now (Prune)"}}
             </label>
             <div id="forget-error" class="form-error" style="display:none"></div>
             <div class="dialog-actions">
-                <button class="btn btn-secondary" onclick="closeForgetDialog()">Cancel</button>
-                <button class="btn btn-danger" id="confirm-forget-btn" onclick="confirmForget()">Delete</button>
+                <button class="btn btn-secondary" onclick="closeForgetDialog()">{{t "Cancel"}}</button>
+                <button class="btn btn-danger" id="confirm-forget-btn" onclick="confirmForget()">{{t "Delete"}}</button>
             </div>
         </div>
     </div>
 </div>
 
 {{if $restores}}
-<section class="storage-restore-banner" aria-label="Active restores">
+<section class="storage-restore-banner" aria-label="{{t "Active restores"}}">
     {{range $restores}}
     <div class="stat-card stat-card-compact stat-card--running storage-restore-banner-card">
         <div class="stat-card-top">
-            <span class="stat-card-label">Restore in progress</span>
-            <span class="badge badge-running">running</span>
+            <span class="stat-card-label">{{t "Restore in progress"}}</span>
+            <span class="badge badge-running">{{t "running"}}</span>
         </div>
         <div class="storage-restore-banner-body">
-            <strong>{{.AgentName}}</strong> — snapshot {{shortID .SnapshotID}} —
-            {{formatNumber .FilesRestored}}/{{formatNumber .FilesTotal}} files,
+            <strong>{{.AgentName}}</strong> — {{tf "snapshot {id}" "id" (shortID .SnapshotID)}} —
+            {{tf "{done}/{total} files" "done" (formatNumber .FilesRestored) "total" (formatNumber .FilesTotal)}},
             {{formatBytes .BytesWritten}}/{{formatBytes .BytesTotal}}
         </div>
-        <a href="/restores" class="storage-restore-banner-link">View in Restores</a>
+        <a href="/restores" class="storage-restore-banner-link">{{t "View in Restores"}}</a>
     </div>
     {{end}}
 </section>
 {{end}}
 
 <div class="storage-detail-snapshots-header">
-    <h2 class="section-title storage-section-title">Snapshots</h2>
+    <h2 class="section-title storage-section-title">{{t "Snapshots"}}</h2>
     <div id="host-filter" class="storage-host-filter" style="display:none;">
-        <label class="storage-host-filter-label">Agent</label>
+        <label class="storage-host-filter-label">{{t "Agent"}}</label>
         <select id="host-select" class="storage-host-select">
-            <option value="">All</option>
+            <option value="">{{t "All"}}</option>
         </select>
     </div>
 </div>
 
 <div id="snapshot-selection-bar" class="storage-selection-bar" style="display:none; align-items:center; gap:0.75rem; margin-bottom:0.75rem; padding:0.5rem 0.75rem; background:var(--bg-alt, rgba(128,128,128,0.08)); border-radius:6px;">
     <span id="snapshot-selection-count"></span>
-    <button class="btn btn-sm btn-danger" onclick="openForgetDialog()">Delete selected</button>
-    <button class="btn btn-sm btn-secondary" onclick="clearSnapshotSelection()">Clear</button>
+    <button class="btn btn-sm btn-danger" onclick="openForgetDialog()">{{t "Delete selected"}}</button>
+    <button class="btn btn-sm btn-secondary" onclick="clearSnapshotSelection()">{{t "Clear"}}</button>
 </div>
 
 <div id="snapshot-list">
-    <div class="empty">Loading snapshots...</div>
+    <div class="empty">{{t "Loading snapshots..."}}</div>
 </div>
 
 <script>
+// escapeHTML makes server- or agent-supplied text safe to insert with innerHTML.
+function escapeHTML(s) {
+    var div = document.createElement('div');
+    div.textContent = s == null ? '' : String(s);
+    return div.innerHTML;
+}
 var repoName = '{{$repoName}}';
 var hostFilter = '{{$hostFilter}}';
 var detailsLoaded = false;
@@ -144,7 +150,7 @@ fetch('/api/repos/' + encodeURIComponent(repoName))
     });
 })
 .catch(function() {
-    document.getElementById('repo-summary').innerHTML = '<div class="empty">Failed to load repository info.</div>';
+    document.getElementById('repo-summary').innerHTML = '<div class="empty">' + t('Failed to load repository info.') + '</div>';
 });
 
 function renderSummary(repo) {
@@ -154,21 +160,21 @@ function renderSummary(repo) {
     html += '<div style="display:flex; align-items:center; gap:0.75rem;">';
     html += '<span class="badge ' + (repo.type === 's3' ? 'badge-s3' : 'badge-local') + '">' + repo.type + '</span>';
     if (repo.alert_level !== 'ok') {
-        html += '<span class="badge ' + (repo.alert_level === 'critical' ? 'badge-critical' : 'badge-warning') + '">' + repo.alert_level + '</span>';
+        html += '<span class="badge ' + (repo.alert_level === 'critical' ? 'badge-critical' : 'badge-warning') + '">' + t(repo.alert_level) + '</span>';
     }
     if (repo.is_locked) {
-        html += '<span class="badge badge-maintenance">Maintenance</span>';
+        html += '<span class="badge badge-maintenance">' + t('Maintenance') + '</span>';
     }
     html += '<span style="color:var(--text-muted); font-size:0.85rem;">' + repo.location + '</span>';
     html += '</div>';
 
     html += '<div style="display:flex; gap:1.5rem; font-size:0.85rem;">';
-    html += '<span><strong>' + repo.snapshots + '</strong> snapshots</span>';
-    html += '<span><strong>' + formatBytes(repo.total_bytes) + '</strong> total</span>';
-    if (repo.dedup_ratio > 0) html += '<span>dedup <strong>' + repo.dedup_ratio.toFixed(1) + 'x</strong></span>';
+    html += '<span><strong>' + repo.snapshots + '</strong> ' + t('snapshots') + '</span>';
+    html += '<span><strong>' + formatBytes(repo.total_bytes) + '</strong> ' + t('total') + '</span>';
+    if (repo.dedup_ratio > 0) html += '<span>' + t('dedup') + ' <strong>' + repo.dedup_ratio.toFixed(1) + 'x</strong></span>';
     if (repo.disk_total > 0) {
-        html += '<span title="Free space remaining on the volume where this repository is stored — not the size of your backup data.">host disk <strong>' + repo.disk_used_percent.toFixed(1) + '%</strong> used ' +
-            '<span style="color:var(--text-muted); font-size:0.8rem;">(' + formatBytes(repo.disk_total - repo.disk_free) + ' of ' + formatBytes(repo.disk_total) + ')</span></span>';
+        html += '<span title="' + t('Free space remaining on the volume where this repository is stored — not the size of your backup data.') + '">' + t('host disk') + ' <strong>' + repo.disk_used_percent.toFixed(1) + '%</strong> ' + t('used') + ' ' +
+            '<span style="color:var(--text-muted); font-size:0.8rem;">(' + t('{used} of {total}', {used: formatBytes(repo.disk_total - repo.disk_free), total: formatBytes(repo.disk_total)}) + ')</span></span>';
     }
     html += '</div></div>';
 
@@ -186,18 +192,18 @@ function renderDetails(repo) {
     var html = '';
 
     html += '<div class="repo-card-stats" style="margin-bottom:1rem;">';
-    html += '<div class="repo-stat"><span class="repo-stat-value">' + repo.snapshots + '</span><span class="repo-stat-label">Snapshots</span></div>';
-    html += '<div class="repo-stat"><span class="repo-stat-value">' + repo.packs + '</span><span class="repo-stat-label">Packs</span></div>';
-    html += '<div class="repo-stat"><span class="repo-stat-value">' + formatBytes(repo.total_bytes) + '</span><span class="repo-stat-label">Total Size</span></div>';
-    html += '<div class="repo-stat"><span class="repo-stat-value">' + (repo.dedup_ratio > 0 ? repo.dedup_ratio.toFixed(1) + 'x' : '\u2014') + '</span><span class="repo-stat-label">Dedup Ratio</span></div>';
-    html += '<div class="repo-stat"><span class="repo-stat-value">' + (repo.compression_ratio > 0 ? repo.compression_ratio.toFixed(1) + 'x' : '\u2014') + '</span><span class="repo-stat-label">Compression</span></div>';
-    html += '<div class="repo-stat"><span class="repo-stat-value">' + repo.backup_job_count + '</span><span class="repo-stat-label">Backup Jobs</span></div>';
+    html += '<div class="repo-stat"><span class="repo-stat-value">' + repo.snapshots + '</span><span class="repo-stat-label">' + t('Snapshots') + '</span></div>';
+    html += '<div class="repo-stat"><span class="repo-stat-value">' + repo.packs + '</span><span class="repo-stat-label">' + t('Packs') + '</span></div>';
+    html += '<div class="repo-stat"><span class="repo-stat-value">' + formatBytes(repo.total_bytes) + '</span><span class="repo-stat-label">' + t('Total Size') + '</span></div>';
+    html += '<div class="repo-stat"><span class="repo-stat-value">' + (repo.dedup_ratio > 0 ? repo.dedup_ratio.toFixed(1) + 'x' : '\u2014') + '</span><span class="repo-stat-label">' + t('Dedup Ratio') + '</span></div>';
+    html += '<div class="repo-stat"><span class="repo-stat-value">' + (repo.compression_ratio > 0 ? repo.compression_ratio.toFixed(1) + 'x' : '\u2014') + '</span><span class="repo-stat-label">' + t('Compression') + '</span></div>';
+    html += '<div class="repo-stat"><span class="repo-stat-value">' + repo.backup_job_count + '</span><span class="repo-stat-label">' + t('Backup Jobs') + '</span></div>';
     html += '</div>';
 
     html += '<div style="margin-bottom:1rem;">';
     html += '<div class="growth-controls" style="margin-bottom:0.5rem;">';
-    html += '<select class="growth-range" id="growth-range"><option value="30d" selected>30 days</option><option value="90d">90 days</option><option value="6m">6 months</option><option value="1y">1 year</option><option value="all">All time</option></select>';
-    html += '<select class="growth-granularity" id="growth-gran"><option value="daily" selected>Daily</option><option value="weekly">Weekly</option></select>';
+    html += '<select class="growth-range" id="growth-range"><option value="30d" selected>' + t('30 days') + '</option><option value="90d">' + t('90 days') + '</option><option value="6m">' + t('6 months') + '</option><option value="1y">' + t('1 year') + '</option><option value="all">' + t('All time') + '</option></select>';
+    html += '<select class="growth-granularity" id="growth-gran"><option value="daily" selected>' + t('Daily') + '</option><option value="weekly">' + t('Weekly') + '</option></select>';
     html += '</div>';
     html += '<div style="height:180px;"><canvas id="growth-canvas"></canvas></div>';
     html += '</div>';
@@ -208,9 +214,9 @@ function renderDetails(repo) {
     html += '<div class="operation-result" style="display:none"></div></div>';
 
     html += '<div style="display:flex; gap:0.5rem;">';
-    html += '<button class="btn btn-sm" onclick="runCheck()">Check</button>';
-    html += '<button class="btn btn-sm btn-secondary" onclick="runPrune()">Free Unused Space <span style="opacity:.65; font-weight:400;">(Prune)</span></button>';
-    html += '<button class="btn btn-sm btn-danger" onclick="showDisconnectDialog()">Disconnect</button>';
+    html += '<button class="btn btn-sm" onclick="runCheck()">' + t('Check') + '</button>';
+    html += '<button class="btn btn-sm btn-secondary" onclick="runPrune()">' + t('Free Unused Space') + ' <span style="opacity:.65; font-weight:400;">' + t('(Prune)') + '</span></button>';
+    html += '<button class="btn btn-sm btn-danger" onclick="showDisconnectDialog()">' + t('Disconnect') + '</button>';
     html += '</div>';
 
     el.innerHTML = html;
@@ -246,7 +252,7 @@ function renderGrowthChart(points) {
         data: {
             labels: points.map(function(p) { return p.date; }),
             datasets: [{
-                label: 'Storage Size',
+                label: t('Storage Size'),
                 data: points.map(function(p) { return p.total_bytes; }),
                 borderColor: '#4a90d9',
                 backgroundColor: 'rgba(74,144,217,0.1)',
@@ -273,7 +279,7 @@ function loadSnapshots() {
     .then(function(r) { return r.json(); })
     .then(function(data) { renderSnapshots(data); })
     .catch(function() {
-        document.getElementById('snapshot-list').innerHTML = '<div class="empty">Failed to load snapshots.</div>';
+        document.getElementById('snapshot-list').innerHTML = '<div class="empty">' + t('Failed to load snapshots.') + '</div>';
     });
 }
 
@@ -302,25 +308,25 @@ function renderSnapshots(data) {
     selectedSnapshots.clear();
 
     if (!data.agents || data.agents.length === 0) {
-        listEl.innerHTML = '<div class="empty">No snapshots found in this repository.</div>';
+        listEl.innerHTML = '<div class="empty">' + t('No snapshots found in this repository.') + '</div>';
         updateSelectionBar();
         return;
     }
 
     var html = '';
     data.agents.forEach(function(group) {
-        html += '<h3 style="margin-top:1rem; margin-bottom:0.75rem;">' + group.agent + '</h3>';
+        html += '<h3 style="margin-top:1rem; margin-bottom:0.75rem;">' + escapeHTML(group.agent) + '</h3>';
         html += '<div class="table-wrap" style="margin-bottom:1.5rem;"><table><thead><tr>';
-        html += '<th><input type="checkbox" class="group-select-all" aria-label="Select all snapshots for ' + group.agent + '"></th>';
-        html += '<th>ID</th><th>Time</th><th>Backup</th><th>Type</th><th>Parent</th><th>New Files</th><th>Total Files</th><th>Size</th><th>Duration</th><th></th>';
+        html += '<th><input type="checkbox" class="group-select-all" aria-label="' + escapeHTML(t('Select all snapshots for {agent}', {agent: group.agent})) + '"></th>';
+        html += '<th>ID</th><th>' + t('Time') + '</th><th>' + t('Backup') + '</th><th>' + t('Type') + '</th><th>' + t('Parent') + '</th><th>' + t('New Files') + '</th><th>' + t('Total Files') + '</th><th>' + t('Size') + '</th><th>' + t('Duration') + '</th><th></th>';
         html += '</tr></thead><tbody>';
         group.snapshots.forEach(function(s) {
             html += '<tr>';
             html += '<td><input type="checkbox" class="snap-checkbox" data-id="' + s.id + '"></td>';
             html += '<td><a href="/snapshots/' + s.id + '" style="color:var(--primary);"><span class="id">' + shortID(s.id) + '</span></a></td>';
             html += '<td>' + s.time + '</td>';
-            html += '<td><span class="badge badge-muted">' + (s.backup_type || 'files') + '</span></td>';
-            html += '<td><span class="badge badge-' + s.type + '">' + s.type + '</span></td>';
+            html += '<td><span class="badge badge-muted">' + t(s.backup_type || 'files') + '</span></td>';
+            html += '<td><span class="badge badge-' + s.type + '">' + t(s.type) + '</span></td>';
             html += '<td>' + (s.parent_snapshot ? '<span class="id">' + s.parent_snapshot + '</span>' : '&mdash;') + '</td>';
             html += '<td>' + formatNumber(s.files_new) + '</td>';
             html += '<td>' + formatNumber(s.total_files) + '</td>';
@@ -328,8 +334,8 @@ function renderSnapshots(data) {
             html += '<td>' + (s.duration ? s.duration.toFixed(1) + 's' : '&mdash;') + '</td>';
             var restoreAgent = group.agent;
             html += '<td class="storage-snap-actions">' +
-                '<a href="/restores?agent=' + encodeURIComponent(restoreAgent) + '&amp;snapshot=' + encodeURIComponent(s.id) + '" class="btn btn-sm">Restore</a> ' +
-                '<button type="button" class="btn btn-sm btn-danger" onclick="openForgetDialogForOne(\'' + s.id + '\')">Delete</button></td>';
+                '<a href="/restores?agent=' + encodeURIComponent(restoreAgent) + '&amp;snapshot=' + encodeURIComponent(s.id) + '" class="btn btn-sm">' + t('Restore') + '</a> ' +
+                '<button type="button" class="btn btn-sm btn-danger" onclick="openForgetDialogForOne(\'' + s.id + '\')">' + t('Delete') + '</button></td>';
             html += '</tr>';
         });
         html += '</tbody></table></div>';
@@ -377,7 +383,7 @@ function updateSelectionBar() {
         return;
     }
     bar.style.display = 'flex';
-    countEl.textContent = n + ' selected';
+    countEl.textContent = t('{n} selected', {n: n});
 }
 
 function clearSnapshotSelection() {
@@ -417,7 +423,7 @@ function confirmForget() {
         body: JSON.stringify({snapshot_ids: ids, prune: prune})
     })
     .then(function(r) {
-        if (!r.ok) return r.json().then(function(data) { throw new Error(data.error || 'Failed to forget snapshots'); });
+        if (!r.ok) return r.json().then(function(data) { throw new Error(data.error || t('Failed to forget snapshots')); });
         return r.json();
     })
     .then(function(data) {
@@ -429,7 +435,7 @@ function confirmForget() {
         .then(function(repo) { renderSummary(repo); })
         .catch(function() {});
         if (data.failed && data.failed.length > 0) {
-            alert('Deleted ' + data.forgotten + ' snapshot(s). ' + data.failed.length + ' failed.');
+            alert(t('Deleted {n} snapshot(s). {failed} failed.', {n: data.forgotten, failed: data.failed.length}));
         }
     })
     .catch(function(err) {
@@ -443,12 +449,12 @@ loadSnapshots();
 
 function runCheck() {
     var cardEl = document.getElementById('repo-detail-content');
-    var deep = confirm('Run deep verification? (reads all data)\n\nClick OK for deep, Cancel for structural only.');
+    var deep = confirm(t('Run deep verification? (reads all data)') + '\n\n' + t('Click OK for deep, Cancel for structural only.'));
     startOperation('check', {deep: deep}, cardEl);
 }
 
 function runPrune() {
-    if (!confirm('Free unused space in "' + repoName + '"?\n\nThis permanently removes data no longer referenced by any snapshot (a "prune"). It does not delete any snapshots.')) return;
+    if (!confirm(t('Free unused space in "{name}"?', {name: repoName}) + '\n\n' + t('This permanently removes data no longer referenced by any snapshot (a "prune"). It does not delete any snapshots.'))) return;
     startOperation('prune', {}, document.getElementById('repo-detail-content'));
 }
 
@@ -461,7 +467,7 @@ function startOperation(type, opts, cardEl) {
 
     opSection.style.display = '';
     resultEl.style.display = 'none';
-    statusEl.textContent = 'Starting ' + type + '...';
+    statusEl.textContent = type === 'prune' ? t('Starting prune...') : t('Starting check...');
     statusEl.className = 'operation-status';
     stepEl.textContent = '';
     progressEl.style.width = '0%';
@@ -472,15 +478,15 @@ function startOperation(type, opts, cardEl) {
         body: JSON.stringify(opts)
     })
     .then(function(r) {
-        if (!r.ok) return r.json().then(function(data) { throw new Error(data.error || 'Operation failed'); });
+        if (!r.ok) return r.json().then(function(data) { throw new Error(data.error || t('Operation failed')); });
         return r.json();
     })
     .then(function(data) {
-        statusEl.textContent = type.charAt(0).toUpperCase() + type.slice(1) + ' running...';
+        statusEl.textContent = type === 'prune' ? t('Prune running...') : t('Check running...');
         connectSSE(data.operation_id, cardEl);
     })
     .catch(function(err) {
-        statusEl.textContent = 'Error: ' + err.message;
+        statusEl.textContent = t('Error: {msg}', {msg: err.message});
         statusEl.className = 'operation-status text-critical';
     });
 }
@@ -502,31 +508,31 @@ function connectSSE(opId, cardEl) {
         source.close();
         progressEl.style.width = '100%';
         var data = JSON.parse(e.data);
-        statusEl.textContent = data.status === 'completed' ? 'Completed' : 'Failed';
+        statusEl.textContent = data.status === 'completed' ? t('Completed') : t('Failed');
         statusEl.className = 'operation-status ' + (data.status === 'completed' ? 'text-ok' : 'text-critical');
         var result = data.result;
         if (result) {
             resultEl.style.display = '';
             if (result.error) {
-                resultEl.innerHTML = '<strong>Error:</strong> ' + result.error;
+                resultEl.innerHTML = '<strong>' + t('Error:') + '</strong> ' + escapeHTML(result.error);
                 resultEl.className = 'operation-result text-critical';
             } else if (result.pass !== undefined) {
-                var html = '<strong>' + (result.pass ? 'PASS' : 'FAIL') + '</strong> &mdash; Mode: ' + (result.deep ? 'Deep' : 'Structural');
+                var html = '<strong>' + (result.pass ? t('PASS') : t('FAIL')) + '</strong> &mdash; ' + t('Mode: {mode}', {mode: result.deep ? t('Deep') : t('Structural')});
                 if (result.errors && result.errors.length > 0) {
-                    html += '<br>' + result.errors.length + ' error(s):';
-                    result.errors.forEach(function(err) { html += '<br><small>' + err.message + '</small>'; });
+                    html += '<br>' + t('{n} error(s):', {n: result.errors.length});
+                    result.errors.forEach(function(err) { html += '<br><small>' + escapeHTML(err.message) + '</small>'; });
                 }
                 resultEl.innerHTML = html;
                 resultEl.className = 'operation-result ' + (result.pass ? 'text-ok' : 'text-critical');
             } else if (result.packs_deleted !== undefined) {
-                resultEl.innerHTML = '<strong>Prune complete</strong><br>Packs deleted: ' + result.packs_deleted + ', Repacked: ' + result.packs_repacked + ', Freed: ' + formatBytes(result.bytes_freed);
+                resultEl.innerHTML = '<strong>' + t('Prune complete') + '</strong><br>' + t('Packs deleted: {deleted}, Repacked: {repacked}, Freed: {freed}', {deleted: result.packs_deleted, repacked: result.packs_repacked, freed: formatBytes(result.bytes_freed)});
                 resultEl.className = 'operation-result text-ok';
             }
         }
     });
     source.onerror = function() {
         source.close();
-        statusEl.textContent = 'Connection lost';
+        statusEl.textContent = t('Connection lost');
         statusEl.className = 'operation-status text-critical';
     };
 }
@@ -545,7 +551,7 @@ function confirmDisconnect() {
     fetch('/api/repos/' + encodeURIComponent(repoName), { method: 'DELETE' })
     .then(function(r) {
         if (!r.ok) return r.json().then(function(data) {
-            var msg = data.error || 'Failed to disconnect';
+            var msg = data.error || t('Failed to disconnect');
             if (data.backup_jobs) msg += ': ' + data.backup_jobs.join(', ');
             throw new Error(msg);
         });

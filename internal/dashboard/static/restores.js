@@ -32,10 +32,10 @@
         var d = new Date(iso);
         if (isNaN(d.getTime())) return iso;
         var secs = Math.floor((Date.now() - d.getTime()) / 1000);
-        if (secs < 60) return 'just now';
-        if (secs < 3600) return Math.floor(secs / 60) + 'm ago';
-        if (secs < 86400) return Math.floor(secs / 3600) + 'h ago';
-        if (secs < 604800) return Math.floor(secs / 86400) + 'd ago';
+        if (secs < 60) return t('just now');
+        if (secs < 3600) return t('{n}m ago', { n: Math.floor(secs / 60) });
+        if (secs < 86400) return t('{n}h ago', { n: Math.floor(secs / 3600) });
+        if (secs < 604800) return t('{n}d ago', { n: Math.floor(secs / 86400) });
         return d.toLocaleString();
     }
 
@@ -46,7 +46,7 @@
     }
 
     function backupTypeLabel(bt) {
-        return 'Files';
+        return t('Files');
     }
 
     function sourceStatusClass(status, backupType) {
@@ -80,7 +80,7 @@
             })
             .catch(function () {
                 document.getElementById('restores-agent-list').innerHTML =
-                    '<li class="restores-agent-empty">Failed to load sources.</li>';
+                    '<li class="restores-agent-empty">' + escapeHTML(t('Failed to load sources.')) + '</li>';
             });
     }
 
@@ -93,9 +93,11 @@
         var hint = document.getElementById('restores-toolbar-hint');
         if (hint) {
             if (sourcesData.length === 0) {
-                hint.textContent = 'No recoverable snapshots yet';
+                hint.textContent = t('No recoverable snapshots yet');
             } else {
-                hint.textContent = sourcesData.length + ' protected source' + (sourcesData.length === 1 ? '' : 's');
+                hint.textContent = sourcesData.length === 1
+                    ? t('1 protected source')
+                    : t('{n} protected sources', { n: sourcesData.length });
             }
         }
     }
@@ -110,13 +112,13 @@
         if (sourcesData.length === 0) {
             list.innerHTML =
                 '<li class="restores-agent-empty">' +
-                'No snapshots to restore yet. <a href="/backups">Create a backup job</a> first.' +
+                escapeHTML(t('No snapshots to restore yet.')) + ' <a href="/backups">' + escapeHTML(t('Create a backup job')) + '</a> ' + escapeHTML(t('first.')) +
                 '</li>';
             return;
         }
 
         if (filtered.length === 0) {
-            list.innerHTML = '<li class="restores-agent-empty">No sources match your search.</li>';
+            list.innerHTML = '<li class="restores-agent-empty">' + escapeHTML(t('No sources match your search.')) + '</li>';
             return;
         }
 
@@ -129,7 +131,7 @@
                 '<span class="badge ' + sourceStatusClass(s.status, s.backup_type) + '">' + escapeHTML(backupTypeLabel(s.backup_type)) + '</span>' +
                 '</div>' +
                 '<div class="restores-agent-meta">' +
-                '<span>' + formatNumber(s.snapshot_count) + ' snapshots</span>' +
+                '<span>' + escapeHTML(t('{n} snapshots', { n: formatNumber(s.snapshot_count) })) + '</span>' +
                 '</div>' +
                 '</li>'
             );
@@ -158,7 +160,7 @@
 
         var source = sourcesData.find(function (s) { return s.id === name; });
         var title = document.getElementById('restores-snapshots-title');
-        if (title) title.textContent = 'Snapshots — ' + (source ? source.label : name);
+        if (title) title.textContent = t('Snapshots — {source}', { source: source ? source.label : name });
 
         var params = new URLSearchParams(window.location.search);
         params.set('agent', name);
@@ -176,7 +178,7 @@
 
         empty.hidden = true;
         tableWrap.hidden = true;
-        tbody.innerHTML = '<tr><td colspan="8">Loading snapshots...</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="8">' + escapeHTML(t('Loading snapshots...')) + '</td></tr>';
         tableWrap.hidden = false;
 
         var url = '/api/agents/' + encodeURIComponent(agentName) + '/snapshots?limit=100';
@@ -189,8 +191,8 @@
             .catch(function () {
                 tableWrap.hidden = true;
                 empty.hidden = false;
-                empty.querySelector('h3').textContent = 'Failed to load snapshots';
-                empty.querySelector('p').textContent = 'Could not fetch snapshots for this source. Try again later.';
+                empty.querySelector('h3').textContent = t('Failed to load snapshots');
+                empty.querySelector('p').textContent = t('Could not fetch snapshots for this source. Try again later.');
             });
     }
 
@@ -205,10 +207,10 @@
         if (!snaps.length) {
             tableWrap.hidden = true;
             empty.hidden = false;
-            empty.querySelector('h3').textContent = 'No snapshots found';
+            empty.querySelector('h3').textContent = t('No snapshots found');
             empty.querySelector('p').textContent = repoFilter
-                ? 'No snapshots in the selected repository for this filter.'
-                : 'No recoverable snapshots match the current filters.';
+                ? t('No snapshots in the selected repository for this filter.')
+                : t('No recoverable snapshots match the current filters.');
             if (repoWrap) repoWrap.hidden = true;
             return;
         }
@@ -219,7 +221,7 @@
         if (repoWrap && agentRepos.length > 1) {
             repoWrap.hidden = false;
             var current = repoSelect.value;
-            repoSelect.innerHTML = '<option value="">All repositories</option>' +
+            repoSelect.innerHTML = '<option value="">' + escapeHTML(t('All repositories')) + '</option>' +
                 agentRepos.map(function (r) {
                     return '<option value="' + escapeHTML(r) + '">' + escapeHTML(r) + '</option>';
                 }).join('');
@@ -239,11 +241,11 @@
                 '<td><span class="badge badge-muted">' + escapeHTML(s.repo_name || '') + '</span></td>' +
                 '<td><span title="' + escapeHTML(s.time) + '">' + escapeHTML(formatRelativeTime(s.time)) + '</span></td>' +
                 '<td><span class="badge badge-muted">' + escapeHTML(backupTypeLabel(bt)) + '</span></td>' +
-                '<td><span class="badge badge-' + escapeHTML(snapType) + '">' + escapeHTML(snapType) + '</span></td>' +
+                '<td><span class="badge badge-' + escapeHTML(snapType) + '">' + escapeHTML(t(snapType)) + '</span></td>' +
                 '<td>' + formatBytes(s.total_size || 0) + '</td>' +
                 '<td>' + formatNumber(s.total_files || 0) + '</td>' +
                 '<td class="restores-actions-cell">' +
-                '<a href="/snapshots/' + encodeURIComponent(s.id) + '?restore=1" class="btn btn-sm">Restore</a>' +
+                '<a href="/snapshots/' + encodeURIComponent(s.id) + '?restore=1" class="btn btn-sm">' + escapeHTML(t('Restore')) + '</a>' +
                 '</td>' +
                 '</tr>'
             );
@@ -288,18 +290,18 @@
                     return (
                         '<div class="restores-active-card">' +
                         '<div class="restores-active-top">' +
-                        '<strong>' + escapeHTML(s.agent_name || 'Restore') + '</strong>' +
-                        '<span class="badge badge-running">running</span>' +
+                        '<strong>' + escapeHTML(s.agent_name || t('Restore')) + '</strong>' +
+                        '<span class="badge badge-running">' + escapeHTML(t('running')) + '</span>' +
                         '</div>' +
                         '<div class="restores-active-meta">' +
-                        'Snapshot <code>' + escapeHTML(shortID(s.snapshot_id)) + '</code> — ' +
-                        formatNumber(s.files_restored) + '/' + formatNumber(s.files_total) + ' files' +
+                        escapeHTML(t('Snapshot')) + ' <code>' + escapeHTML(shortID(s.snapshot_id)) + '</code> — ' +
+                        escapeHTML(t('{restored}/{total} files', { restored: formatNumber(s.files_restored), total: formatNumber(s.files_total) })) +
                         '</div>' +
                         '<div class="progress-bar-container">' +
                         '<div class="progress-bar"><div class="progress-bar-fill" style="width:' + pct + '%"></div></div>' +
                         '<span class="progress-bar-label">' + pct + '%</span>' +
                         '</div>' +
-                        '<a href="/snapshots/' + encodeURIComponent(s.snapshot_id) + '?restore=1" class="restores-active-link">Continue restore</a>' +
+                        '<a href="/snapshots/' + encodeURIComponent(s.snapshot_id) + '?restore=1" class="restores-active-link">' + escapeHTML(t('Continue restore')) + '</a>' +
                         '</div>'
                     );
                 }).join('');

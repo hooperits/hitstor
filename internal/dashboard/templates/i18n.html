@@ -1,0 +1,23 @@
+{{define "i18n_head"}}<script>
+window.HITSTOR_LANG = "{{lang}}";
+window.HITSTOR_I18N = {{i18nJSON}};
+// window.t(msg, params) translates client-side text, falling back to the English msg.
+window.t = function (msg, params) {
+    var out = Object.prototype.hasOwnProperty.call(window.HITSTOR_I18N, msg) && window.HITSTOR_I18N[msg] ? window.HITSTOR_I18N[msg] : msg;
+    if (params) {
+        Object.keys(params).forEach(function (k) { out = out.split('{' + k + '}').join(String(params[k])); });
+    }
+    return out;
+};
+</script>{{end}}
+
+{{define "lang_selector"}}<form method="GET" action="/language" class="lang-selector">
+    <input type="hidden" name="next" value="/" class="lang-next">
+    <label class="visually-hidden" for="lang-select-{{.}}">{{t "Language"}}</label>
+    <select name="set" id="lang-select-{{.}}" onchange="this.form.querySelector('.lang-next').value = location.pathname + location.search; this.form.submit()">
+        {{$cur := lang}}{{range languages}}<option value="{{.Code}}"{{if eq .Code $cur}} selected{{end}}>{{.Name}}</option>{{end}}
+    </select>
+    <noscript><button type="submit">{{t "Apply"}}</button></noscript>
+</form>{{end}}
+
+{{define "page_title"}}{{if .TitleRaw}}{{.Title}}{{else}}{{tf .Title "id" .TitleID}}{{end}}{{end}}

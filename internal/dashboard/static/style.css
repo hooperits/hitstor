@@ -6004,3 +6004,43 @@ body.dr-drawer-open {
     content: 'Waiting for output…';
     color: var(--text-muted, #888);
 }
+
+/* Language selector (header bar and login page) */
+.lang-selector {
+    margin: 0;
+}
+
+.lang-selector select {
+    font: inherit;
+    font-size: 0.75rem;
+    padding: 0.2rem 0.4rem;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.header-bar .lang-selector select {
+    color: var(--brand-text);
+    background: rgba(244, 247, 251, 0.08);
+    border: 1px solid rgba(244, 247, 251, 0.25);
+}
+
+.header-bar .lang-selector option {
+    color: var(--text);
+    background: var(--bg-card);
+}
+
+.login-panel {
+    position: relative;
+}
+
+.login-lang {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+}
+
+.login-lang .lang-selector select {
+    color: var(--text);
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+}

@@ -1,0 +1,9 @@
+# backup_detail.html: job type label ({{t $v.JobTypeLabel}})
+Files
+# backup_detail.html: last restore-verify status ({{t $v.LastVerifyStatus}})
+skipped
+# backup_detail.html: live backup phases (t(phase), t(phaseLabel))
+pending
+uploading
+finalizing
+done

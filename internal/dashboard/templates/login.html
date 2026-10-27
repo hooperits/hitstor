@@ -1,11 +1,12 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{lang}}">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>HitStor — Login</title>
+    <title>HitStor — {{t "Login"}}</title>
     <link rel="icon" type="image/png" href="/static/favicon.png">
     <link rel="stylesheet" href="/static/style.css">
+    {{template "i18n_head"}}
 </head>
 <body class="login-page">
     <div class="login-shell">
@@ -15,31 +16,32 @@
                 <h1 class="brand-wordmark login-brand-wordmark">
                     <span class="wm-hit">hit</span><span class="wm-stor">stor</span>
                 </h1>
-                <p class="login-brand-lead">Encrypted, deduplicated backups for your infrastructure.</p>
+                <p class="login-brand-lead">{{t "Encrypted, deduplicated backups for your infrastructure."}}</p>
                 <ul class="login-brand-points">
-                    <li>Agent-based file &amp; database protection</li>
-                    <li>Live progress &amp; restore from the dashboard</li>
-                    <li>Client-side encryption before data leaves the host</li>
+                    <li>{{t "Agent-based file protection for Windows and Linux"}}</li>
+                    <li>{{t "Live progress and restore from the dashboard"}}</li>
+                    <li>{{t "Client-side encryption before data leaves the host"}}</li>
                 </ul>
             </div>
         </section>
         <section class="login-panel">
+            <div class="login-lang">{{template "lang_selector" "login"}}</div>
             <div class="login-card">
                 <div class="login-card-header">
                     <img src="/static/icon.png" alt="" class="brand-icon brand-icon-md login-card-icon" width="48" height="48">
                     <div>
-                        <h2 class="login-card-title">Sign in</h2>
-                        <p class="login-card-subtitle">Enter your dashboard password to continue.</p>
+                        <h2 class="login-card-title">{{t "Sign in"}}</h2>
+                        <p class="login-card-subtitle">{{t "Enter your dashboard password to continue."}}</p>
                     </div>
                 </div>
-                {{if .}}{{if .Error}}<div class="login-error" role="alert">{{.Error}}</div>{{end}}{{end}}
+                {{if .}}{{if .Error}}<div class="login-error" role="alert">{{t .Error}}</div>{{end}}{{end}}
                 <form method="POST" action="/login" class="login-form">
-                    <label class="login-label" for="login-password">Password</label>
+                    <label class="login-label" for="login-password">{{t "Password"}}</label>
                     <div class="password-wrap">
-                        <input type="password" name="password" id="login-password" placeholder="Dashboard password" autofocus required autocomplete="current-password">
-                        <button type="button" class="password-toggle" id="password-toggle" aria-label="Show password">Show</button>
+                        <input type="password" name="password" id="login-password" placeholder="{{t "Dashboard password"}}" autofocus required autocomplete="current-password">
+                        <button type="button" class="password-toggle" id="password-toggle" aria-label="{{t "Show password"}}">{{t "Show"}}</button>
                     </div>
-                    <button type="submit" class="login-submit">Sign In</button>
+                    <button type="submit" class="login-submit">{{t "Sign In"}}</button>
                 </form>
             </div>
         </section>

@@ -1,0 +1,13 @@
+# Settings TLS certificate source values (settings.js)
+custom
+repo
+self_signed
+unknown
+# Logs source and level values (logs.js)
+server
+system
+debug
+info
+warn
+warning
+error

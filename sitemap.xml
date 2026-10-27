@@ -1,0 +1,1123 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
+    <url>
+        <loc>https://hooperits.github.io/hitstor/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/"/>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/admin-guide/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/admin-guide/"/>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/admin-guide/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/admin-guide/agent-deployment/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/admin-guide/agent-deployment/"/>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/admin-guide/agent-deployment/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/admin-guide/agent-discovery/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/admin-guide/agent-discovery/"/>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/admin-guide/agent-discovery/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/admin-guide/agent-management/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/admin-guide/agent-management/"/>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/admin-guide/agent-management/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/admin-guide/backup-jobs/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/admin-guide/backup-jobs/"/>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/admin-guide/backup-jobs/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/admin-guide/dashboard/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/admin-guide/dashboard/"/>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/admin-guide/dashboard/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/admin-guide/monitoring/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/admin-guide/monitoring/"/>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/admin-guide/monitoring/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/admin-guide/roadmap/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/admin-guide/roadmap/"/>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/admin-guide/roadmap/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/admin-guide/scheduling/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/admin-guide/scheduling/"/>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/admin-guide/scheduling/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/admin-guide/security/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/admin-guide/security/"/>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/admin-guide/security/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/admin-guide/sentinel/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/admin-guide/sentinel/"/>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/admin-guide/sentinel/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/admin-guide/server-setup/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/admin-guide/server-setup/"/>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/admin-guide/server-setup/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/admin-guide/settings/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/admin-guide/settings/"/>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/admin-guide/settings/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/admin-guide/tls-certificates/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/admin-guide/tls-certificates/"/>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/admin-guide/tls-certificates/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/admin-guide/troubleshooting/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/admin-guide/troubleshooting/"/>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/admin-guide/troubleshooting/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/design/branding/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/design/branding/"/>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/design/branding/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/dev-guide/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/dev-guide/"/>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/dev-guide/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/dev-guide/benchmarks/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/dev-guide/benchmarks/"/>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/dev-guide/benchmarks/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/dev-guide/build-and-packaging/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/dev-guide/build-and-packaging/"/>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/dev-guide/build-and-packaging/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/dev-guide/codebase-overview/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/dev-guide/codebase-overview/"/>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/dev-guide/codebase-overview/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/dev-guide/dev-environment/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/dev-guide/dev-environment/"/>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/dev-guide/dev-environment/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/dev-guide/i18n-glossary-es/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/dev-guide/i18n-glossary-es/"/>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/dev-guide/i18n-glossary-es/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/dev-guide/release-process/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/dev-guide/release-process/"/>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/dev-guide/release-process/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/dev-guide/server-preparation/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/dev-guide/server-preparation/"/>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/dev-guide/server-preparation/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/dev-guide/testing/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/dev-guide/testing/"/>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/dev-guide/testing/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/dev-guide/translations/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/dev-guide/translations/"/>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/dev-guide/translations/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/installation/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/installation/"/>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/installation/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/installation/docker/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/installation/docker/"/>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/installation/docker/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/installation/linux-installer/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/installation/linux-installer/"/>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/installation/linux-installer/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/installation/linux-packages/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/installation/linux-packages/"/>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/installation/linux-packages/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/installation/linux-source/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/installation/linux-source/"/>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/installation/linux-source/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/installation/quickstart/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/installation/quickstart/"/>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/installation/quickstart/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/installation/upgrading/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/installation/upgrading/"/>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/installation/upgrading/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/installation/windows-agent/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/installation/windows-agent/"/>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/installation/windows-agent/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/installation/windows-server/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/installation/windows-server/"/>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/installation/windows-server/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/reference/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/reference/"/>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/reference/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/reference/api-reference/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/reference/api-reference/"/>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/reference/api-reference/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/reference/config-reference/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/reference/config-reference/"/>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/reference/config-reference/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/reference/dashboard-api/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/reference/dashboard-api/"/>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/reference/dashboard-api/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/reference/environment-variables/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/reference/environment-variables/"/>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/reference/environment-variables/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/reference/grpc-api/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/reference/grpc-api/"/>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/reference/grpc-api/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/reference/internals/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/reference/internals/"/>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/reference/internals/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/reference/plugin-development/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/reference/plugin-development/"/>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/reference/plugin-development/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/reference/agent-commands/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/reference/agent-commands/"/>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/reference/agent-commands/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/reference/agent-commands/backup/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/reference/agent-commands/backup/"/>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/reference/agent-commands/backup/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/reference/agent-commands/bmr/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/reference/agent-commands/bmr/"/>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/reference/agent-commands/bmr/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/reference/agent-commands/daemon/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/reference/agent-commands/daemon/"/>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/reference/agent-commands/daemon/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/reference/agent-commands/ping/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/reference/agent-commands/ping/"/>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/reference/agent-commands/ping/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/reference/agent-commands/recover/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/reference/agent-commands/recover/"/>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/reference/agent-commands/recover/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/reference/agent-commands/service/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/reference/agent-commands/service/"/>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/reference/agent-commands/service/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/reference/agent-commands/show-id/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/reference/agent-commands/show-id/"/>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/reference/agent-commands/show-id/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/reference/commands/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/reference/commands/"/>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/reference/commands/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/reference/commands/agents/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/reference/commands/agents/"/>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/reference/commands/agents/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/reference/commands/backup/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/reference/commands/backup/"/>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/reference/commands/backup/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/reference/commands/bmr/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/reference/commands/bmr/"/>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/reference/commands/bmr/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/reference/commands/check/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/reference/commands/check/"/>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/reference/commands/check/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/reference/commands/config/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/reference/commands/config/"/>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/reference/commands/config/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/reference/commands/diff/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/reference/commands/diff/"/>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/reference/commands/diff/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/reference/commands/du/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/reference/commands/du/"/>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/reference/commands/du/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/reference/commands/forget/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/reference/commands/forget/"/>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/reference/commands/forget/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/reference/commands/init/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/reference/commands/init/"/>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/reference/commands/init/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/reference/commands/jobs/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/reference/commands/jobs/"/>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/reference/commands/jobs/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/reference/commands/prune/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/reference/commands/prune/"/>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/reference/commands/prune/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/reference/commands/repo/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/reference/commands/repo/"/>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/reference/commands/repo/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/reference/commands/restore/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/reference/commands/restore/"/>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/reference/commands/restore/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/reference/commands/serve/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/reference/commands/serve/"/>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/reference/commands/serve/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/reference/commands/snapshots/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/reference/commands/snapshots/"/>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/reference/commands/snapshots/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/reference/commands/verify-restore/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/reference/commands/verify-restore/"/>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/reference/commands/verify-restore/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/reference/commands/version/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/reference/commands/version/"/>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/reference/commands/version/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/user-guide/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/user-guide/"/>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/user-guide/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/user-guide/backup/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/user-guide/backup/"/>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/user-guide/backup/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/user-guide/bare-metal-restore/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/user-guide/bare-metal-restore/"/>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/user-guide/bare-metal-restore/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/user-guide/configuration/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/user-guide/configuration/"/>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/user-guide/configuration/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/user-guide/disaster-recovery/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/user-guide/disaster-recovery/"/>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/user-guide/disaster-recovery/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/user-guide/getting-started/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/user-guide/getting-started/"/>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/user-guide/getting-started/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/user-guide/plugins/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/user-guide/plugins/"/>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/user-guide/plugins/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/user-guide/restore/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/user-guide/restore/"/>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/user-guide/restore/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/user-guide/retention/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/user-guide/retention/"/>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/user-guide/retention/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/user-guide/snapshots/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/user-guide/snapshots/"/>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/user-guide/snapshots/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/es/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/es/admin-guide/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/admin-guide/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/admin-guide/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/es/admin-guide/agent-deployment/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/admin-guide/agent-deployment/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/admin-guide/agent-deployment/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/es/admin-guide/agent-discovery/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/admin-guide/agent-discovery/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/admin-guide/agent-discovery/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/es/admin-guide/agent-management/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/admin-guide/agent-management/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/admin-guide/agent-management/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/es/admin-guide/backup-jobs/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/admin-guide/backup-jobs/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/admin-guide/backup-jobs/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/es/admin-guide/dashboard/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/admin-guide/dashboard/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/admin-guide/dashboard/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/es/admin-guide/monitoring/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/admin-guide/monitoring/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/admin-guide/monitoring/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/es/admin-guide/roadmap/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/admin-guide/roadmap/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/admin-guide/roadmap/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/es/admin-guide/scheduling/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/admin-guide/scheduling/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/admin-guide/scheduling/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/es/admin-guide/security/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/admin-guide/security/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/admin-guide/security/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/es/admin-guide/sentinel/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/admin-guide/sentinel/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/admin-guide/sentinel/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/es/admin-guide/server-setup/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/admin-guide/server-setup/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/admin-guide/server-setup/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/es/admin-guide/settings/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/admin-guide/settings/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/admin-guide/settings/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/es/admin-guide/tls-certificates/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/admin-guide/tls-certificates/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/admin-guide/tls-certificates/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/es/admin-guide/troubleshooting/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/admin-guide/troubleshooting/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/admin-guide/troubleshooting/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/es/design/branding/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/design/branding/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/design/branding/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/es/dev-guide/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/dev-guide/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/dev-guide/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/es/dev-guide/benchmarks/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/dev-guide/benchmarks/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/dev-guide/benchmarks/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/es/dev-guide/build-and-packaging/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/dev-guide/build-and-packaging/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/dev-guide/build-and-packaging/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/es/dev-guide/codebase-overview/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/dev-guide/codebase-overview/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/dev-guide/codebase-overview/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/es/dev-guide/dev-environment/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/dev-guide/dev-environment/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/dev-guide/dev-environment/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/es/dev-guide/i18n-glossary-es/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/dev-guide/i18n-glossary-es/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/dev-guide/i18n-glossary-es/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/es/dev-guide/release-process/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/dev-guide/release-process/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/dev-guide/release-process/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/es/dev-guide/server-preparation/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/dev-guide/server-preparation/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/dev-guide/server-preparation/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/es/dev-guide/testing/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/dev-guide/testing/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/dev-guide/testing/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/es/dev-guide/translations/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/dev-guide/translations/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/dev-guide/translations/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/es/installation/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/installation/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/installation/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/es/installation/docker/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/installation/docker/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/installation/docker/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/es/installation/linux-installer/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/installation/linux-installer/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/installation/linux-installer/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/es/installation/linux-packages/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/installation/linux-packages/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/installation/linux-packages/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/es/installation/linux-source/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/installation/linux-source/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/installation/linux-source/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/es/installation/quickstart/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/installation/quickstart/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/installation/quickstart/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/es/installation/upgrading/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/installation/upgrading/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/installation/upgrading/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/es/installation/windows-agent/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/installation/windows-agent/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/installation/windows-agent/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/es/installation/windows-server/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/installation/windows-server/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/installation/windows-server/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/es/reference/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/reference/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/reference/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/es/reference/api-reference/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/reference/api-reference/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/reference/api-reference/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/es/reference/config-reference/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/reference/config-reference/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/reference/config-reference/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/es/reference/dashboard-api/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/reference/dashboard-api/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/reference/dashboard-api/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/es/reference/environment-variables/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/reference/environment-variables/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/reference/environment-variables/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/es/reference/grpc-api/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/reference/grpc-api/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/reference/grpc-api/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/es/reference/internals/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/reference/internals/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/reference/internals/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/es/reference/plugin-development/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/reference/plugin-development/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/reference/plugin-development/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/es/reference/agent-commands/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/reference/agent-commands/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/reference/agent-commands/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/es/reference/agent-commands/backup/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/reference/agent-commands/backup/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/reference/agent-commands/backup/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/es/reference/agent-commands/bmr/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/reference/agent-commands/bmr/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/reference/agent-commands/bmr/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/es/reference/agent-commands/daemon/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/reference/agent-commands/daemon/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/reference/agent-commands/daemon/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/es/reference/agent-commands/ping/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/reference/agent-commands/ping/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/reference/agent-commands/ping/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/es/reference/agent-commands/recover/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/reference/agent-commands/recover/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/reference/agent-commands/recover/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/es/reference/agent-commands/service/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/reference/agent-commands/service/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/reference/agent-commands/service/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/es/reference/agent-commands/show-id/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/reference/agent-commands/show-id/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/reference/agent-commands/show-id/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/es/reference/commands/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/reference/commands/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/reference/commands/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/es/reference/commands/agents/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/reference/commands/agents/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/reference/commands/agents/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/es/reference/commands/backup/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/reference/commands/backup/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/reference/commands/backup/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/es/reference/commands/bmr/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/reference/commands/bmr/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/reference/commands/bmr/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/es/reference/commands/check/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/reference/commands/check/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/reference/commands/check/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/es/reference/commands/config/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/reference/commands/config/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/reference/commands/config/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/es/reference/commands/diff/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/reference/commands/diff/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/reference/commands/diff/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/es/reference/commands/du/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/reference/commands/du/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/reference/commands/du/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/es/reference/commands/forget/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/reference/commands/forget/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/reference/commands/forget/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/es/reference/commands/init/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/reference/commands/init/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/reference/commands/init/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/es/reference/commands/jobs/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/reference/commands/jobs/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/reference/commands/jobs/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/es/reference/commands/prune/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/reference/commands/prune/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/reference/commands/prune/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/es/reference/commands/repo/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/reference/commands/repo/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/reference/commands/repo/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/es/reference/commands/restore/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/reference/commands/restore/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/reference/commands/restore/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/es/reference/commands/serve/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/reference/commands/serve/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/reference/commands/serve/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/es/reference/commands/snapshots/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/reference/commands/snapshots/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/reference/commands/snapshots/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/es/reference/commands/verify-restore/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/reference/commands/verify-restore/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/reference/commands/verify-restore/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/es/reference/commands/version/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/reference/commands/version/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/reference/commands/version/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/es/user-guide/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/user-guide/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/user-guide/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/es/user-guide/backup/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/user-guide/backup/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/user-guide/backup/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/es/user-guide/bare-metal-restore/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/user-guide/bare-metal-restore/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/user-guide/bare-metal-restore/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/es/user-guide/configuration/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/user-guide/configuration/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/user-guide/configuration/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/es/user-guide/disaster-recovery/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/user-guide/disaster-recovery/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/user-guide/disaster-recovery/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/es/user-guide/getting-started/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/user-guide/getting-started/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/user-guide/getting-started/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/es/user-guide/plugins/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/user-guide/plugins/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/user-guide/plugins/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/es/user-guide/restore/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/user-guide/restore/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/user-guide/restore/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/es/user-guide/retention/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/user-guide/retention/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/user-guide/retention/"/>
+    </url>
+    <url>
+        <loc>https://hooperits.github.io/hitstor/es/user-guide/snapshots/</loc>
+        <lastmod>2026-10-27</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="es" href="https://hooperits.github.io/hitstor/es/user-guide/snapshots/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hooperits.github.io/hitstor/user-guide/snapshots/"/>
+    </url>
+</urlset>

@@ -18,8 +18,10 @@ cifra como cualquier otra instantánea (snapshot).
 - El agente de HitStor se ejecuta **en el mismo servidor que SQL Server**. VDI
   no funciona a través de la red.
 - El paquete del plugin `hitstor-plugin-mssql-<versión>-windows-amd64.hpk`.
-- Una cuenta que pueda respaldar y restaurar: `sysadmin`, o
-  `db_backupoperator` en cada base más `dbcreator` para restaurar.
+- Un inicio de sesión en el rol **`sysadmin`**. SQL Server lo exige para
+  cualquier `BACKUP` o `RESTORE` hacia un dispositivo virtual (de lo contrario
+  da el error 3265); roles más acotados como `db_backupoperator` no alcanzan
+  para VDI.
 - Para respaldos de log y restauración a un punto en el tiempo, bases en el
   modelo de recuperación **FULL** (o BULK_LOGGED). Las bases en SIMPLE solo
   admiten respaldos completos y diferenciales.
@@ -46,10 +48,11 @@ SQL Server para él.
 El servicio del agente se ejecuta como `LocalSystem`, que SQL Server ve como
 el inicio de sesión `NT AUTHORITY\SYSTEM`. Elija una opción:
 
-- **Integrada (predeterminada).** Otorgue a `NT AUTHORITY\SYSTEM` los roles
-  necesarios, o ejecute el servicio del agente con una cuenta de Windows
-  dedicada que los tenga.
-- **Inicio de sesión SQL.** Cree un inicio de sesión para HitStor y configure
+- **Integrada (predeterminada).** Agregue `NT AUTHORITY\SYSTEM` a `sysadmin`, o
+  ejecute el servicio del agente con una cuenta de Windows dedicada que lo
+  sea.
+- **Inicio de sesión SQL (recomendado).** Cree un inicio de sesión `sysadmin`
+  dedicado para HitStor y configure
   el plugin con `auth=sql` y `username=<inicio de sesión>`. Ponga la
   contraseña en el archivo de entorno del agente
   (`C:\ProgramData\HitStor\agent.env`):
@@ -59,7 +62,8 @@ el inicio de sesión `NT AUTHORITY\SYSTEM`. Elija una opción:
   ```
 
   El nombre de la variable se puede cambiar con `password_env`. Nunca se
-  aceptan contraseñas en la configuración de las tareas.
+  aceptan contraseñas en la configuración de las tareas. Asegúrese de que
+  `agent.env` solo lo puedan leer SYSTEM y Administradores.
 
 Configuración del plugin:
 

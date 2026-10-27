@@ -59,6 +59,9 @@ func serviceBackup(ctx context.Context) error {
 	if err := os.MkdirAll(agent.DefaultConfigDir, 0755); err != nil {
 		slog.Error("create config dir", "error", err)
 	}
+	if err := agent.SecureConfigDir(); err != nil {
+		slog.Warn("could not restrict config directory permissions", "dir", agent.DefaultConfigDir, "error", err)
+	}
 	token, err := agent.LoadToken(agent.DefaultTokenPath)
 	if err != nil {
 		slog.Info("no agent token found, generating new one")

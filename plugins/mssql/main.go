@@ -17,8 +17,8 @@
 //	encrypt                   connection encryption (default true)
 //	trust_server_certificate  default true (the connection is local)
 //
-// The account must be able to back up and restore (sysadmin, or
-// db_backupoperator plus dbcreator for restores) and VDI needs the agent to
+// The login must be in the sysadmin role: SQL Server requires it for BACKUP
+// and RESTORE to a virtual device (error 3265). VDI also needs the agent to
 // run on the SQL Server host.
 package main
 

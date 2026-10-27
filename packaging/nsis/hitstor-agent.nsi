@@ -270,6 +270,11 @@ Section "HitStor Agent" SecMain
     DetailPrint "Agent environment file written."
   ${EndIf}
 
+  ; Only SYSTEM and Administrators may read the agent's secrets (token, TLS
+  ; key, API key and plugin passwords in agent.env). SIDs, not names, so
+  ; localized Windows (e.g. "Administradores") works too.
+  nsExec::ExecToLog 'icacls "$ConfigDir" /inheritance:r /grant:r *S-1-5-18:(OI)(CI)F /grant:r *S-1-5-32-544:(OI)(CI)F /T /C /Q'
+
   ; Write agent-config.yaml if it doesn't exist (preserve on upgrade).
   IfFileExists "$ConfigDir\agent-config.yaml" +3
     FileOpen $0 "$ConfigDir\agent-config.yaml" w

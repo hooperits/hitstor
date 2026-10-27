@@ -18,8 +18,9 @@ snapshot.
 - The HitStor agent runs **on the SQL Server host**. VDI does not work across
   the network.
 - The plugin package `hitstor-plugin-mssql-<version>-windows-amd64.hpk`.
-- An account that can back up and restore: `sysadmin`, or `db_backupoperator`
-  on each database plus `dbcreator` for restores.
+- A login in the **`sysadmin`** role. SQL Server requires it for any `BACKUP`
+  or `RESTORE` to a virtual device (error 3265 otherwise); narrower roles such
+  as `db_backupoperator` are not enough for VDI.
 - For log backups and point-in-time restore, databases in the **FULL** (or
   BULK_LOGGED) recovery model. Databases in SIMPLE support full and
   differential backups only.
@@ -45,9 +46,10 @@ poll reports the plugin, the server can create SQL Server jobs for it.
 The agent service runs as `LocalSystem`, which SQL Server sees as the login
 `NT AUTHORITY\SYSTEM`. Choose one of:
 
-- **Integrated (default).** Grant `NT AUTHORITY\SYSTEM` the required roles, or
-  run the agent service under a dedicated Windows account that has them.
-- **SQL login.** Create a login for HitStor and set the plugin settings
+- **Integrated (default).** Add `NT AUTHORITY\SYSTEM` to `sysadmin`, or run
+  the agent service under a dedicated Windows account that is.
+- **SQL login (recommended).** Create a dedicated `sysadmin` login for
+  HitStor and set the plugin settings
   `auth=sql` and `username=<login>`. Put the password in the agent's
   environment file (`C:\ProgramData\HitStor\agent.env`):
 
@@ -56,7 +58,8 @@ The agent service runs as `LocalSystem`, which SQL Server sees as the login
   ```
 
   The variable name can be changed with `password_env`. Passwords are never
-  accepted in job settings.
+  accepted in job settings. Make sure `agent.env` is readable only by SYSTEM
+  and Administrators.
 
 Plugin settings:
 

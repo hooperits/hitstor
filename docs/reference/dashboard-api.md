@@ -49,7 +49,7 @@ Unless noted, endpoints require dashboard authentication when `serve_dashboard_p
 | Method | Path | Description |
 |--------|------|-------------|
 | `GET` | `/api/backups` | List backup jobs |
-| `POST` | `/api/backups` | Create job (`job_type` is always `files`) |
+| `POST` | `/api/backups` | Create job. `job_type` is `files` (with `paths`) or `workload` (with `plugin`, `selection`, optional `backup_kind` and `plugin_settings`; the agent must have reported the plugin) |
 | `GET` | `/api/backups/{id}` | Get job |
 | `PUT` | `/api/backups/{id}` | Update job |
 | `DELETE` | `/api/backups/{id}` | Delete job |

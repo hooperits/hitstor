@@ -51,7 +51,15 @@ func runDaemon(cmd *cobra.Command, args []string) error {
 	}
 
 	// Load credentials from agent.env (Windows doesn't have systemd EnvironmentFile).
+	// Workload plugins inherit this environment, which is where they read
+	// secrets such as database passwords from.
 	loadEnvFile(agent.DefaultEnvPath)
+
+	// Only the daemon runs plugin jobs: any in-use marker now is left over
+	// from a previous run that crashed.
+	if mgr, err := newPluginManager(); err == nil {
+		mgr.ClearInUse()
+	}
 
 	// Check listen port from environment variable if not set via flag.
 	if !cmd.Flags().Changed("listen-port") {
@@ -335,9 +343,13 @@ func runJobBackup(ctx context.Context, client *agent.Client, job agent.JobSchedu
 		slog.Info("consistent snapshot mode enabled for job", "job_id", job.JobID)
 	}
 
+	if job.JobType == "workload" {
+		runWorkloadJob(ctx, client, job)
+		return
+	}
+
 	// Prefer the shipped filesystem scanner plugin (hitstor-scanner-builtin).
 	// Falls back to in-process walker if the plugin cannot be loaded.
-	// Database/SaaS job types are out of product scope (filesystem only).
 	if job.JobType != "" && job.JobType != "files" {
 		slog.Error("unsupported job type for filesystem agent",
 			"job_id", job.JobID,
@@ -400,4 +412,48 @@ func runJobBackup(ctx context.Context, client *agent.Client, job agent.JobSchedu
 			"files_skipped", result.FilesSkipped,
 		)
 	}
+}
+
+// runWorkloadJob runs a backup job through an installed workload plugin.
+func runWorkloadJob(ctx context.Context, client *agent.Client, job agent.JobSchedule) {
+	log := slog.With("job_id", job.JobID, "job_name", job.Name, "plugin", job.Plugin)
+	log.Info("starting workload backup", "kind", job.BackupKind, "selection", job.Selection)
+
+	p, c, closeAll, err := openInstalledWorkload(job.Plugin, job.PluginSettings)
+	if err != nil {
+		log.Error("workload backup failed: cannot start plugin", "error", err)
+		return
+	}
+	defer closeAll()
+
+	b := &agent.WorkloadBackup{
+		Client:        client,
+		APIKey:        apiKeyFlag,
+		Hostname:      loadedConfig.AgentHostname,
+		JobID:         job.JobID,
+		Tags:          []string{fmt.Sprintf("job:%s", job.JobID)},
+		PluginID:      p.ID,
+		PluginVersion: p.Version,
+		Source:        c,
+		Request: hitstorplugin.BackupRequest{
+			Selection: job.Selection,
+			Kind:      job.BackupKind,
+		},
+	}
+	result, err := b.Run(ctx)
+	if err != nil {
+		if errors.Is(err, agent.ErrSessionCancelled) {
+			log.Warn("workload backup cancelled by server")
+			return
+		}
+		log.Error("workload backup failed", "error", err)
+		return
+	}
+	log.Info("workload backup complete",
+		"snapshot", result.SnapshotID,
+		"items_new", result.FilesNew,
+		"bytes_added", result.BytesAdded,
+		"bytes_processed", result.BytesProcessed,
+		"duration", result.Duration,
+	)
 }

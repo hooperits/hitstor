@@ -374,13 +374,60 @@ design is described in
 
 ### Service RPCs
 
-Workload protocol version 1 (`api/proto/hitstor/plugin/v1/workload.proto`)
-covers discovery; backup and restore RPCs arrive in later revisions.
+Defined in `api/proto/hitstor/plugin/v1/workload.proto`. Only `GetMetadata`
+is mandatory; the host treats an unimplemented RPC as an unsupported
+capability.
 
-| RPC | Purpose |
-|-----|---------|
-| `GetMetadata` | Return id, name, version, protocol version, description, and capabilities. The agent calls it at install time and rejects the package if the id or version differ from the manifest |
-| `Configure` | Receive plugin settings (same `ConfigureRequest` as other types) |
+| RPC | Go interface | Purpose |
+|-----|--------------|---------|
+| `GetMetadata` | `plugin.Workload` | Return id, name, version, protocol version, description, and capabilities. The agent calls it at install time and rejects the package if the id or version differ from the manifest |
+| `Configure` | `plugin.Configurable` | Receive the job's plugin settings |
+| `Browse` | `plugin.WorkloadBrowser` | List selectable objects under a path (for example instance → databases) |
+| `Backup` | `plugin.WorkloadBackuper` | Back up the selected objects, streaming one or more items |
+
+Restore RPCs (`PlanRestore`, `Restore`) are being added.
+
+### Items
+
+A backup produces **items**: named byte streams, such as one database backup
+file, each with optional JSON metadata. A plugin emits them through the
+`ItemSink` it receives:
+
+```go
+func (p *myPlugin) Backup(ctx context.Context, req plugin.BackupRequest, sink plugin.ItemSink) error {
+    for _, obj := range req.Selection {
+        w, err := sink.Item(obj + "/full-20260101T020000Z.bak")
+        if err != nil {
+            return err
+        }
+        if err := p.streamBackup(ctx, obj, w); err != nil { // write the bytes
+            return err
+        }
+        if err := w.Finish([]byte(`{"first_lsn":"..."}`)); err != nil { // metadata, known at the end
+            return err
+        }
+    }
+    return nil
+}
+```
+
+Item paths are relative and slash-separated. The agent stores each item as the
+file `<plugin id>/<item path>` in the snapshot, next to
+`<item path>.meta.json`, which holds the plugin's metadata plus the item's size,
+SHA-256, kind, and creation time. Items go through the same chunking,
+deduplication, compression, and encryption as files, and can always be
+restored as plain files.
+
+Settings arrive through `Configure` and are stored in the job on the server.
+**Never put secrets in settings**: read them from environment variables, which
+the plugin inherits from the agent service (`agent.env`).
+
+To try a plugin on a host without a server, install it and run:
+
+```bash
+hitstor-agent plugin browse example
+hitstor-agent plugin test-backup example --select demo/alpha --out /tmp/items
+```
 
 ### Writing a Workload Plugin
 

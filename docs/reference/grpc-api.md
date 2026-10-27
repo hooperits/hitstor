@@ -190,7 +190,7 @@ Returns the backup schedule configured for this agent.
 | `next_run_unix` | int64 | Legacy: next run from first job |
 | `jobs` | repeated `ScheduledJob` | All backup jobs for this agent |
 
-**`ScheduledJob` fields:** `job_id`, `name`, `paths`, `excludes`, `repo_name`, `enabled`, `interval_hours`, `next_run_unix`, `run_now`, `full_rescan_days`, `last_full_backup_unix`, `cron_expression`, `timezone`, `use_vss`.
+**`ScheduledJob` fields:** `job_id`, `name`, `paths`, `excludes`, `repo_name`, `enabled`, `interval_hours`, `next_run_unix`, `run_now`, `full_rescan_days`, `last_full_backup_unix`, `cron_expression`, `timezone`, `use_vss`, `job_type`, and for workload jobs `plugin`, `plugin_settings`, `selection`, `backup_kind`.
 
 ## Transport
 

@@ -1320,11 +1320,16 @@ type ScheduledJob struct {
 	Timezone string `protobuf:"bytes,13,opt,name=timezone,proto3" json:"timezone,omitempty"`
 	// Use Volume Shadow Copy Service for consistent snapshots (Windows only).
 	UseVss bool `protobuf:"varint,14,opt,name=use_vss,json=useVss,proto3" json:"use_vss,omitempty"`
-	// Job type: "files" (default). HitStor is filesystem-only; any other
-	// value is rejected by the server/agent.
-	JobType       string `protobuf:"bytes,15,opt,name=job_type,json=jobType,proto3" json:"job_type,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	// Job type: "files" (default) or "workload" (run by a workload plugin).
+	JobType string `protobuf:"bytes,15,opt,name=job_type,json=jobType,proto3" json:"job_type,omitempty"`
+	// Workload jobs only: plugin id, its Configure settings, the selected
+	// objects, and the plugin-defined backup kind.
+	Plugin         string            `protobuf:"bytes,19,opt,name=plugin,proto3" json:"plugin,omitempty"`
+	PluginSettings map[string]string `protobuf:"bytes,20,rep,name=plugin_settings,json=pluginSettings,proto3" json:"plugin_settings,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	Selection      []string          `protobuf:"bytes,21,rep,name=selection,proto3" json:"selection,omitempty"`
+	BackupKind     string            `protobuf:"bytes,22,opt,name=backup_kind,json=backupKind,proto3" json:"backup_kind,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *ScheduledJob) Reset() {
@@ -1462,6 +1467,34 @@ func (x *ScheduledJob) GetJobType() string {
 	return ""
 }
 
+func (x *ScheduledJob) GetPlugin() string {
+	if x != nil {
+		return x.Plugin
+	}
+	return ""
+}
+
+func (x *ScheduledJob) GetPluginSettings() map[string]string {
+	if x != nil {
+		return x.PluginSettings
+	}
+	return nil
+}
+
+func (x *ScheduledJob) GetSelection() []string {
+	if x != nil {
+		return x.Selection
+	}
+	return nil
+}
+
+func (x *ScheduledJob) GetBackupKind() string {
+	if x != nil {
+		return x.BackupKind
+	}
+	return ""
+}
+
 var File_internal_proto_hitstor_v1_backup_proto protoreflect.FileDescriptor
 
 const file_internal_proto_hitstor_v1_backup_proto_rawDesc = "" +
@@ -1578,7 +1611,7 @@ const file_internal_proto_hitstor_v1_backup_proto_rawDesc = "" +
 	"\aenabled\x18\x01 \x01(\bR\aenabled\x12%\n" +
 	"\x0einterval_hours\x18\x02 \x01(\x05R\rintervalHours\x12\"\n" +
 	"\rnext_run_unix\x18\x03 \x01(\x03R\vnextRunUnix\x12,\n" +
-	"\x04jobs\x18\x04 \x03(\v2\x18.hitstor.v1.ScheduledJobR\x04jobs\"\x97\x04\n" +
+	"\x04jobs\x18\x04 \x03(\v2\x18.hitstor.v1.ScheduledJobR\x04jobs\"\x88\x06\n" +
 	"\fScheduledJob\x12\x15\n" +
 	"\x06job_id\x18\x01 \x01(\tR\x05jobId\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x14\n" +
@@ -1595,7 +1628,15 @@ const file_internal_proto_hitstor_v1_backup_proto_rawDesc = "" +
 	"\x0fcron_expression\x18\f \x01(\tR\x0ecronExpression\x12\x1a\n" +
 	"\btimezone\x18\r \x01(\tR\btimezone\x12\x17\n" +
 	"\ause_vss\x18\x0e \x01(\bR\x06useVss\x12\x19\n" +
-	"\bjob_type\x18\x0f \x01(\tR\ajobTypeJ\x04\b\x10\x10\x11J\x04\b\x11\x10\x12J\x04\b\x12\x10\x13R\adb_typeR\x11db_connection_uriR\vdb_temp_dir2\xcf\x04\n" +
+	"\bjob_type\x18\x0f \x01(\tR\ajobType\x12\x16\n" +
+	"\x06plugin\x18\x13 \x01(\tR\x06plugin\x12U\n" +
+	"\x0fplugin_settings\x18\x14 \x03(\v2,.hitstor.v1.ScheduledJob.PluginSettingsEntryR\x0epluginSettings\x12\x1c\n" +
+	"\tselection\x18\x15 \x03(\tR\tselection\x12\x1f\n" +
+	"\vbackup_kind\x18\x16 \x01(\tR\n" +
+	"backupKind\x1aA\n" +
+	"\x13PluginSettingsEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01J\x04\b\x10\x10\x11J\x04\b\x11\x10\x12J\x04\b\x12\x10\x13R\adb_typeR\x11db_connection_uriR\vdb_temp_dir2\xcf\x04\n" +
 	"\rBackupService\x12Q\n" +
 	"\fBeginSession\x12\x1f.hitstor.v1.BeginSessionRequest\x1a .hitstor.v1.BeginSessionResponse\x12K\n" +
 	"\n" +
@@ -1618,7 +1659,7 @@ func file_internal_proto_hitstor_v1_backup_proto_rawDescGZIP() []byte {
 	return file_internal_proto_hitstor_v1_backup_proto_rawDescData
 }
 
-var file_internal_proto_hitstor_v1_backup_proto_msgTypes = make([]protoimpl.MessageInfo, 19)
+var file_internal_proto_hitstor_v1_backup_proto_msgTypes = make([]protoimpl.MessageInfo, 20)
 var file_internal_proto_hitstor_v1_backup_proto_goTypes = []any{
 	(*AnnounceForRecoveryRequest)(nil),  // 0: hitstor.v1.AnnounceForRecoveryRequest
 	(*AnnounceForRecoveryResponse)(nil), // 1: hitstor.v1.AnnounceForRecoveryResponse
@@ -1639,6 +1680,7 @@ var file_internal_proto_hitstor_v1_backup_proto_goTypes = []any{
 	(*GetScheduleResponse)(nil),         // 16: hitstor.v1.GetScheduleResponse
 	(*ScheduledJob)(nil),                // 17: hitstor.v1.ScheduledJob
 	nil,                                 // 18: hitstor.v1.FileNode.XattrsEntry
+	nil,                                 // 19: hitstor.v1.ScheduledJob.PluginSettingsEntry
 }
 var file_internal_proto_hitstor_v1_backup_proto_depIdxs = []int32{
 	3,  // 0: hitstor.v1.BeginSessionResponse.previous_files:type_name -> hitstor.v1.PreviousFileEntry
@@ -1646,25 +1688,26 @@ var file_internal_proto_hitstor_v1_backup_proto_depIdxs = []int32{
 	18, // 2: hitstor.v1.FileNode.xattrs:type_name -> hitstor.v1.FileNode.XattrsEntry
 	15, // 3: hitstor.v1.GetScheduleRequest.plugins:type_name -> hitstor.v1.AgentPlugin
 	17, // 4: hitstor.v1.GetScheduleResponse.jobs:type_name -> hitstor.v1.ScheduledJob
-	2,  // 5: hitstor.v1.BackupService.BeginSession:input_type -> hitstor.v1.BeginSessionRequest
-	5,  // 6: hitstor.v1.BackupService.CheckBlobs:input_type -> hitstor.v1.CheckBlobsRequest
-	7,  // 7: hitstor.v1.BackupService.UploadChunks:input_type -> hitstor.v1.UploadChunkMessage
-	9,  // 8: hitstor.v1.BackupService.FinalizeBackup:input_type -> hitstor.v1.FinalizeBackupRequest
-	12, // 9: hitstor.v1.BackupService.Ping:input_type -> hitstor.v1.PingRequest
-	14, // 10: hitstor.v1.BackupService.GetSchedule:input_type -> hitstor.v1.GetScheduleRequest
-	0,  // 11: hitstor.v1.BackupService.AnnounceForRecovery:input_type -> hitstor.v1.AnnounceForRecoveryRequest
-	4,  // 12: hitstor.v1.BackupService.BeginSession:output_type -> hitstor.v1.BeginSessionResponse
-	6,  // 13: hitstor.v1.BackupService.CheckBlobs:output_type -> hitstor.v1.CheckBlobsResponse
-	8,  // 14: hitstor.v1.BackupService.UploadChunks:output_type -> hitstor.v1.UploadChunksResponse
-	11, // 15: hitstor.v1.BackupService.FinalizeBackup:output_type -> hitstor.v1.FinalizeBackupResponse
-	13, // 16: hitstor.v1.BackupService.Ping:output_type -> hitstor.v1.PingResponse
-	16, // 17: hitstor.v1.BackupService.GetSchedule:output_type -> hitstor.v1.GetScheduleResponse
-	1,  // 18: hitstor.v1.BackupService.AnnounceForRecovery:output_type -> hitstor.v1.AnnounceForRecoveryResponse
-	12, // [12:19] is the sub-list for method output_type
-	5,  // [5:12] is the sub-list for method input_type
-	5,  // [5:5] is the sub-list for extension type_name
-	5,  // [5:5] is the sub-list for extension extendee
-	0,  // [0:5] is the sub-list for field type_name
+	19, // 5: hitstor.v1.ScheduledJob.plugin_settings:type_name -> hitstor.v1.ScheduledJob.PluginSettingsEntry
+	2,  // 6: hitstor.v1.BackupService.BeginSession:input_type -> hitstor.v1.BeginSessionRequest
+	5,  // 7: hitstor.v1.BackupService.CheckBlobs:input_type -> hitstor.v1.CheckBlobsRequest
+	7,  // 8: hitstor.v1.BackupService.UploadChunks:input_type -> hitstor.v1.UploadChunkMessage
+	9,  // 9: hitstor.v1.BackupService.FinalizeBackup:input_type -> hitstor.v1.FinalizeBackupRequest
+	12, // 10: hitstor.v1.BackupService.Ping:input_type -> hitstor.v1.PingRequest
+	14, // 11: hitstor.v1.BackupService.GetSchedule:input_type -> hitstor.v1.GetScheduleRequest
+	0,  // 12: hitstor.v1.BackupService.AnnounceForRecovery:input_type -> hitstor.v1.AnnounceForRecoveryRequest
+	4,  // 13: hitstor.v1.BackupService.BeginSession:output_type -> hitstor.v1.BeginSessionResponse
+	6,  // 14: hitstor.v1.BackupService.CheckBlobs:output_type -> hitstor.v1.CheckBlobsResponse
+	8,  // 15: hitstor.v1.BackupService.UploadChunks:output_type -> hitstor.v1.UploadChunksResponse
+	11, // 16: hitstor.v1.BackupService.FinalizeBackup:output_type -> hitstor.v1.FinalizeBackupResponse
+	13, // 17: hitstor.v1.BackupService.Ping:output_type -> hitstor.v1.PingResponse
+	16, // 18: hitstor.v1.BackupService.GetSchedule:output_type -> hitstor.v1.GetScheduleResponse
+	1,  // 19: hitstor.v1.BackupService.AnnounceForRecovery:output_type -> hitstor.v1.AnnounceForRecoveryResponse
+	13, // [13:20] is the sub-list for method output_type
+	6,  // [6:13] is the sub-list for method input_type
+	6,  // [6:6] is the sub-list for extension type_name
+	6,  // [6:6] is the sub-list for extension extendee
+	0,  // [0:6] is the sub-list for field type_name
 }
 
 func init() { file_internal_proto_hitstor_v1_backup_proto_init() }
@@ -1678,7 +1721,7 @@ func file_internal_proto_hitstor_v1_backup_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_internal_proto_hitstor_v1_backup_proto_rawDesc), len(file_internal_proto_hitstor_v1_backup_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   19,
+			NumMessages:   20,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

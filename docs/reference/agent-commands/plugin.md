@@ -10,6 +10,8 @@ hitstor-agent plugin upgrade <package.hpk> [--allow-downgrade]
 hitstor-agent plugin list
 hitstor-agent plugin info <id>
 hitstor-agent plugin remove <id>
+hitstor-agent plugin browse <id> [path]
+hitstor-agent plugin test-backup <id> --select <object> --out <dir>
 ```
 
 ## Description
@@ -43,7 +45,9 @@ so the server knows which workloads each agent can handle.
 | `upgrade <package.hpk>` | Replace an installed plugin with another version. Older versions are refused unless `--allow-downgrade` is given |
 | `list` | List installed plugins with version, status, and signature |
 | `info <id>` | Show details of one plugin, including its capabilities and binary path |
-| `remove <id>` | Uninstall a plugin. Snapshots it produced stay in the repository |
+| `remove <id>` | Uninstall a plugin. Snapshots it produced stay in the repository. Refused while a backup is using the plugin |
+| `browse <id> [path]` | List the objects the plugin can back up, under `path` (top level when omitted) |
+| `test-backup <id>` | Diagnostics: run a backup of `--select` objects and write the items and their metadata into the new directory `--out`. Nothing is sent to the server |
 
 ## Flags
 
@@ -51,6 +55,11 @@ so the server knows which workloads each agent can handle.
 |------|---------|-------------|
 | `--store` | `plugin_store_dir`, else the platform default | Plugin store directory |
 | `--allow-downgrade` | `false` | `upgrade` only: allow installing an older version |
+| `--setting key=value` | | `browse`, `test-backup`: plugin setting (repeatable) |
+| `--select` | | `test-backup`: object to back up (repeatable) |
+| `--kind` | `full` | `test-backup`: backup kind |
+| `--option key=value` | | `test-backup`: backup option (repeatable) |
+| `--out` | | `test-backup`: directory to create for the items |
 | `--json` | `false` | Print results as JSON |
 
 Without `--config`, the command reads the installed agent's configuration

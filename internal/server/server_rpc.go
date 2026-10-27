@@ -126,6 +126,12 @@ func (s *Server) BeginSession(ctx context.Context, req *pb.BeginSessionRequest) 
 			}
 		}
 
+		// Workload items are new streams every run (deduplication still
+		// applies to their chunks), so there is no parent to diff against.
+		if job != nil && IsWorkloadJobType(job.JobType) {
+			forceFull = true
+		}
+
 		if !forceFull {
 			prevSnap, prevID, found := findPreviousSnapshot(mr.Repo, jobID)
 			if found {
@@ -434,6 +440,10 @@ func (s *Server) GetSchedule(ctx context.Context, req *pb.GetScheduleRequest) (*
 			FullRescanDays: int32(j.FullRescanDays),
 			UseVss:         j.UseVSS,
 			JobType:        j.JobType,
+			Plugin:         j.Plugin,
+			PluginSettings: j.PluginSettings,
+			Selection:      j.Selection,
+			BackupKind:     j.BackupKind,
 		}
 		if j.LastFullBackup != nil {
 			sj.LastFullBackupUnix = j.LastFullBackup.Unix()

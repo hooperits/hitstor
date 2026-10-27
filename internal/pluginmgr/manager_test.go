@@ -325,3 +325,42 @@ func TestListEmptyStore(t *testing.T) {
 		t.Fatalf("err = %v", err)
 	}
 }
+
+func TestInUseBlocksRemoveAndUpgrade(t *testing.T) {
+	f := newFixture(t)
+	if _, err := f.install(f.pkg(pkgSpec{version: "1.0.0"}), InstallOptions{}); err != nil {
+		t.Fatal(err)
+	}
+	p, bin, release, err := f.mgr.Acquire("example")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if p.Version != "1.0.0" {
+		t.Fatalf("acquired %+v", p)
+	}
+	if data, err := os.ReadFile(bin); err != nil || string(data) != "example 1.0.0" {
+		t.Fatalf("binary %s: %q, %v", bin, data, err)
+	}
+	if err := f.mgr.Remove("example"); !errors.Is(err, ErrInUse) {
+		t.Fatalf("remove: err = %v", err)
+	}
+	if _, err := f.install(f.pkg(pkgSpec{version: "1.1.0"}), InstallOptions{Upgrade: true}); !errors.Is(err, ErrInUse) {
+		t.Fatalf("upgrade: err = %v", err)
+	}
+	release()
+	if _, err := f.install(f.pkg(pkgSpec{version: "1.1.0"}), InstallOptions{Upgrade: true}); err != nil {
+		t.Fatalf("upgrade after release: %v", err)
+	}
+
+	// Markers left by a crashed daemon are cleared at startup.
+	if _, _, _, err := f.mgr.Acquire("example"); err != nil {
+		t.Fatal(err)
+	}
+	f.mgr.ClearInUse()
+	if err := f.mgr.Remove("example"); err != nil {
+		t.Fatalf("remove after ClearInUse: %v", err)
+	}
+	if _, _, _, err := f.mgr.Acquire("example"); !errors.Is(err, ErrNotInstalled) {
+		t.Fatalf("acquire removed plugin: err = %v", err)
+	}
+}

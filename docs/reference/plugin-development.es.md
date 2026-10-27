@@ -374,14 +374,61 @@ paquetes `.hpk` firmados que el agente instala en su almacén de plugins con
 
 ### RPC del servicio { #workload-service-rpcs }
 
-La versión 1 del protocolo de carga de trabajo
-(`api/proto/hitstor/plugin/v1/workload.proto`) cubre el descubrimiento; los RPC
-de respaldo y restauración llegan en revisiones posteriores.
+Se definen en `api/proto/hitstor/plugin/v1/workload.proto`. Solo
+`GetMetadata` es obligatorio; el host trata un RPC no implementado como una
+capacidad no soportada.
 
-| RPC | Propósito |
-|-----|-----------|
-| `GetMetadata` | Devuelve id, nombre, versión, versión de protocolo, descripción y capacidades. El agente lo llama al instalar y rechaza el paquete si el id o la versión no coinciden con el manifiesto |
-| `Configure` | Recibe la configuración del plugin (el mismo `ConfigureRequest` que los demás tipos) |
+| RPC | Interfaz de Go | Propósito |
+|-----|----------------|-----------|
+| `GetMetadata` | `plugin.Workload` | Devuelve id, nombre, versión, versión de protocolo, descripción y capacidades. El agente lo llama al instalar y rechaza el paquete si el id o la versión no coinciden con el manifiesto |
+| `Configure` | `plugin.Configurable` | Recibe la configuración de plugin de la tarea |
+| `Browse` | `plugin.WorkloadBrowser` | Lista los objetos seleccionables bajo una ruta (por ejemplo instancia → bases de datos) |
+| `Backup` | `plugin.WorkloadBackuper` | Respalda los objetos seleccionados y envía por stream uno o más elementos |
+
+Los RPC de restauración (`PlanRestore`, `Restore`) se están agregando.
+
+### Elementos { #items }
+
+Un respaldo produce **elementos**: streams de bytes con nombre, como un
+archivo de respaldo de base de datos, cada uno con metadatos JSON opcionales.
+El plugin los emite mediante el `ItemSink` que recibe:
+
+```go
+func (p *myPlugin) Backup(ctx context.Context, req plugin.BackupRequest, sink plugin.ItemSink) error {
+    for _, obj := range req.Selection {
+        w, err := sink.Item(obj + "/full-20260101T020000Z.bak")
+        if err != nil {
+            return err
+        }
+        if err := p.streamBackup(ctx, obj, w); err != nil { // escribe los bytes
+            return err
+        }
+        if err := w.Finish([]byte(`{"first_lsn":"..."}`)); err != nil { // metadatos, conocidos al final
+            return err
+        }
+    }
+    return nil
+}
+```
+
+Las rutas de los elementos son relativas y separadas por `/`. El agente guarda
+cada elemento como el archivo `<id del plugin>/<ruta del elemento>` en la
+instantánea (snapshot), junto a `<ruta del elemento>.meta.json`, que contiene
+los metadatos del plugin más el tamaño, el SHA-256, el tipo y la fecha de
+creación del elemento. Los elementos pasan por la misma fragmentación,
+deduplicación, compresión y cifrado que los archivos, y siempre se pueden
+restaurar como archivos comunes.
+
+La configuración llega por `Configure` y se guarda en la tarea, en el
+servidor. **Nunca ponga secretos en la configuración**: léalos de variables de
+entorno, que el plugin hereda del servicio del agente (`agent.env`).
+
+Para probar un plugin en un equipo sin servidor, instálelo y ejecute:
+
+```bash
+hitstor-agent plugin browse example
+hitstor-agent plugin test-backup example --select demo/alpha --out /tmp/items
+```
 
 ### Escribir un plugin de carga de trabajo { #writing-a-workload-plugin }
 

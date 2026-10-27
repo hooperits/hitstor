@@ -46,7 +46,11 @@ var (
 	ErrSameVersion      = errors.New("pluginmgr: this version is already installed")
 	ErrDowngrade        = errors.New("pluginmgr: package is older than the installed version (use --allow-downgrade)")
 	ErrBusy             = errors.New("pluginmgr: another plugin operation is in progress")
+	ErrInUse            = errors.New("pluginmgr: plugin is in use by a running job")
 )
+
+// inUsePrefix names the marker files a running job holds in <id>/.
+const inUsePrefix = ".inuse-"
 
 // InstalledPlugin is one entry of installed-plugins.json.
 type InstalledPlugin struct {
@@ -184,6 +188,12 @@ func (m *Manager) Install(ctx context.Context, pkgPath string, opts InstallOptio
 		return nil, fmt.Errorf("%w: %s %s < %s", ErrDowngrade, man.ID, man.Version, prev.Version)
 	}
 
+	if prev != nil {
+		if err := m.checkNotInUse(man.ID); err != nil {
+			return nil, err
+		}
+	}
+
 	pluginDir := filepath.Join(m.opts.Dir, man.ID)
 	if err := os.MkdirAll(pluginDir, 0o755); err != nil {
 		return nil, fmt.Errorf("pluginmgr: %w", err)
@@ -264,6 +274,9 @@ func (m *Manager) Remove(id string) error {
 	if find(reg, id) == nil {
 		return fmt.Errorf("%w: %s", ErrNotInstalled, id)
 	}
+	if err := m.checkNotInUse(id); err != nil {
+		return err
+	}
 	kept := reg.Plugins[:0]
 	for _, p := range reg.Plugins {
 		if p.ID != id {
@@ -280,6 +293,40 @@ func (m *Manager) Remove(id string) error {
 		return fmt.Errorf("pluginmgr: remove files of %s: %w", id, err)
 	}
 	slog.Info("plugin removed", "plugin", id)
+	return nil
+}
+
+// Acquire marks an installed plugin as in use until release is called, so
+// it cannot be upgraded or removed under a running job. It returns the
+// plugin's entry and the absolute path of its binary.
+func (m *Manager) Acquire(id string) (p *InstalledPlugin, binary string, release func(), err error) {
+	p, err = m.Get(id)
+	if err != nil {
+		return nil, "", nil, err
+	}
+	marker := filepath.Join(m.opts.Dir, id, fmt.Sprintf("%s%d-%d", inUsePrefix, os.Getpid(), time.Now().UnixNano()))
+	if err := os.WriteFile(marker, nil, 0o600); err != nil {
+		return nil, "", nil, fmt.Errorf("pluginmgr: mark %s in use: %w", id, err)
+	}
+	binary = filepath.Join(m.versionDir(p.ID, p.Version), filepath.FromSlash(p.Entrypoint))
+	return p, binary, func() { os.Remove(marker) }, nil
+}
+
+// ClearInUse removes every in-use marker. The agent daemon is the only
+// process that runs plugin jobs, so it calls this at startup to clear
+// markers left by a crash.
+func (m *Manager) ClearInUse() {
+	matches, _ := filepath.Glob(filepath.Join(m.opts.Dir, "*", inUsePrefix+"*"))
+	for _, f := range matches {
+		os.Remove(f)
+	}
+}
+
+func (m *Manager) checkNotInUse(id string) error {
+	matches, _ := filepath.Glob(filepath.Join(m.opts.Dir, id, inUsePrefix+"*"))
+	if len(matches) > 0 {
+		return fmt.Errorf("%w: %s (if no backup is running, restart the agent service to clear stale markers)", ErrInUse, id)
+	}
 	return nil
 }
 

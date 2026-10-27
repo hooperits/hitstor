@@ -10,6 +10,8 @@ hitstor-agent plugin upgrade <paquete.hpk> [--allow-downgrade]
 hitstor-agent plugin list
 hitstor-agent plugin info <id>
 hitstor-agent plugin remove <id>
+hitstor-agent plugin browse <id> [ruta]
+hitstor-agent plugin test-backup <id> --select <objeto> --out <directorio>
 ```
 
 ## Descripción { #description }
@@ -46,7 +48,9 @@ agente.
 | `upgrade <paquete.hpk>` | Reemplaza un plugin instalado por otra versión. Las versiones anteriores se rechazan salvo que se indique `--allow-downgrade` |
 | `list` | Lista los plugins instalados con su versión, estado y firma |
 | `info <id>` | Muestra el detalle de un plugin, incluidas sus capacidades y la ruta de su binario |
-| `remove <id>` | Desinstala un plugin. Las instantáneas (snapshots) que creó permanecen en el repositorio |
+| `remove <id>` | Desinstala un plugin. Las instantáneas (snapshots) que creó permanecen en el repositorio. Se rechaza mientras un respaldo está usando el plugin |
+| `browse <id> [ruta]` | Lista los objetos que el plugin puede respaldar bajo `ruta` (el nivel superior si se omite) |
+| `test-backup <id>` | Diagnóstico: ejecuta un respaldo de los objetos de `--select` y escribe los elementos y sus metadatos en el directorio nuevo `--out`. No se envía nada al servidor |
 
 ## Flags { #flags }
 
@@ -54,6 +58,11 @@ agente.
 |------|----------------|-------------|
 | `--store` | `plugin_store_dir`, o el valor por defecto de la plataforma | Directorio del almacén de plugins |
 | `--allow-downgrade` | `false` | Solo `upgrade`: permite instalar una versión anterior |
+| `--setting clave=valor` | | `browse`, `test-backup`: configuración del plugin (repetible) |
+| `--select` | | `test-backup`: objeto a respaldar (repetible) |
+| `--kind` | `full` | `test-backup`: tipo de respaldo |
+| `--option clave=valor` | | `test-backup`: opción del respaldo (repetible) |
+| `--out` | | `test-backup`: directorio que se crea para los elementos |
 | `--json` | `false` | Imprime los resultados en JSON |
 
 Sin `--config`, el comando lee la configuración del agente instalado

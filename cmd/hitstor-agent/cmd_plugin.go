@@ -1,8 +1,10 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -12,6 +14,7 @@ import (
 
 	"github.com/hooperits/hitstor/internal/agent"
 	"github.com/hooperits/hitstor/internal/config"
+	hitstorplugin "github.com/hooperits/hitstor/internal/plugin"
 	"github.com/hooperits/hitstor/internal/pluginmgr"
 	"github.com/hooperits/hitstor/internal/pluginpkg"
 )
@@ -120,7 +123,143 @@ HitStor key, or one listed in plugin_trusted_keys.`,
 		},
 	}
 
-	cmd.AddCommand(install, upgrade, list, info, remove)
+	cmd.AddCommand(install, upgrade, list, info, remove, newPluginBrowseCmd(), newPluginTestBackupCmd())
+	return cmd
+}
+
+// openInstalledWorkload launches an installed plugin, marked in use, and
+// configures it. The returned close function releases everything.
+func openInstalledWorkload(id string, settings map[string]string) (*pluginmgr.InstalledPlugin, *hitstorplugin.WorkloadGRPCClient, func(), error) {
+	mgr, err := newPluginManager()
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	p, bin, release, err := mgr.Acquire(id)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	c, err := hitstorplugin.OpenWorkload(bin)
+	if err != nil {
+		release()
+		return nil, nil, nil, err
+	}
+	closeAll := func() {
+		c.Close()
+		release()
+	}
+	if len(settings) > 0 {
+		if err := c.Configure(context.Background(), settings); err != nil {
+			closeAll()
+			return nil, nil, nil, err
+		}
+	}
+	return p, c, closeAll, nil
+}
+
+func newPluginBrowseCmd() *cobra.Command {
+	var settings map[string]string
+	cmd := &cobra.Command{
+		Use:   "browse <id> [path]",
+		Short: "List the objects a plugin can back up",
+		Args:  cobra.RangeArgs(1, 2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			_, c, closeAll, err := openInstalledWorkload(args[0], settings)
+			if err != nil {
+				return err
+			}
+			defer closeAll()
+			p := ""
+			if len(args) == 2 {
+				p = args[1]
+			}
+			entries, err := c.Browse(cmd.Context(), p)
+			if err != nil {
+				return err
+			}
+			if jsonFlag {
+				return writePluginJSON(entries)
+			}
+			tw := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
+			fmt.Fprintln(tw, "PATH\tKIND\tSELECTABLE\tCHILDREN")
+			for _, e := range entries {
+				fmt.Fprintf(tw, "%s\t%s\t%t\t%t\n", e.Path, e.Kind, e.Selectable, e.HasChildren)
+			}
+			return tw.Flush()
+		},
+	}
+	cmd.Flags().StringToStringVar(&settings, "setting", nil, "plugin setting key=value (repeatable)")
+	return cmd
+}
+
+func newPluginTestBackupCmd() *cobra.Command {
+	var (
+		settings, options map[string]string
+		selection         []string
+		kind, outDir      string
+	)
+	cmd := &cobra.Command{
+		Use:   "test-backup <id>",
+		Short: "Run a plugin backup into a local directory (diagnostics; nothing is sent to the server)",
+		Long: `Run a plugin backup and write each item, with its metadata, under --out.
+
+Nothing is sent to the server and no snapshot is created. Use it to check a
+plugin's connection settings and output on this host.`,
+		Args: cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if err := os.Mkdir(outDir, 0o700); err != nil {
+				return fmt.Errorf("--out must be a new directory: %w", err)
+			}
+			_, c, closeAll, err := openInstalledWorkload(args[0], settings)
+			if err != nil {
+				return err
+			}
+			defer closeAll()
+
+			items, err := c.Backup(cmd.Context(), hitstorplugin.BackupRequest{Selection: selection, Kind: kind, Options: options},
+				func(itemPath string, data io.Reader) error {
+					dst := filepath.Join(outDir, filepath.FromSlash(itemPath))
+					if err := os.MkdirAll(filepath.Dir(dst), 0o700); err != nil {
+						return err
+					}
+					f, err := os.OpenFile(dst, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0o600)
+					if err != nil {
+						return err
+					}
+					if _, err := io.Copy(f, data); err != nil {
+						f.Close()
+						return err
+					}
+					return f.Close()
+				})
+			if err != nil {
+				return err
+			}
+			for _, it := range items {
+				if len(it.Metadata) > 0 {
+					dst := filepath.Join(outDir, filepath.FromSlash(it.Path)) + hitstorplugin.MetadataSuffix
+					if err := os.WriteFile(dst, it.Metadata, 0o600); err != nil {
+						return err
+					}
+				}
+			}
+			if jsonFlag {
+				return writePluginJSON(items)
+			}
+			for _, it := range items {
+				fmt.Printf("%s  %d bytes\n", it.Path, it.Size)
+			}
+			fmt.Printf("%d item(s) written to %s\n", len(items), outDir)
+			return nil
+		},
+	}
+	f := cmd.Flags()
+	f.StringSliceVar(&selection, "select", nil, "object path to back up (repeatable)")
+	f.StringVar(&kind, "kind", "full", "backup kind")
+	f.StringToStringVar(&settings, "setting", nil, "plugin setting key=value (repeatable)")
+	f.StringToStringVar(&options, "option", nil, "backup option key=value (repeatable)")
+	f.StringVar(&outDir, "out", "", "directory to create and write items into")
+	cmd.MarkFlagRequired("select")
+	cmd.MarkFlagRequired("out")
 	return cmd
 }
 

@@ -49,7 +49,7 @@ Salvo que se indique lo contrario, los endpoints requieren autenticación en el 
 | Método | Ruta | Descripción |
 |--------|------|-------------|
 | `GET` | `/api/backups` | Lista las tareas de respaldo |
-| `POST` | `/api/backups` | Crea una tarea (`job_type` siempre es `files`) |
+| `POST` | `/api/backups` | Crea una tarea. `job_type` es `files` (con `paths`) o `workload` (con `plugin`, `selection` y, opcionalmente, `backup_kind` y `plugin_settings`; el agente debe haber reportado el plugin) |
 | `GET` | `/api/backups/{id}` | Obtiene una tarea |
 | `PUT` | `/api/backups/{id}` | Actualiza una tarea |
 | `DELETE` | `/api/backups/{id}` | Elimina una tarea |

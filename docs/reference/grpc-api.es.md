@@ -190,7 +190,7 @@ Devuelve la programación de respaldos configurada para este agente.
 | `next_run_unix` | int64 | Heredado: próxima ejecución de la primera tarea |
 | `jobs` | repeated `ScheduledJob` | Todas las tareas de respaldo de este agente |
 
-**Campos de `ScheduledJob`:** `job_id`, `name`, `paths`, `excludes`, `repo_name`, `enabled`, `interval_hours`, `next_run_unix`, `run_now`, `full_rescan_days`, `last_full_backup_unix`, `cron_expression`, `timezone`, `use_vss`.
+**Campos de `ScheduledJob`:** `job_id`, `name`, `paths`, `excludes`, `repo_name`, `enabled`, `interval_hours`, `next_run_unix`, `run_now`, `full_rescan_days`, `last_full_backup_unix`, `cron_expression`, `timezone`, `use_vss`, `job_type` y, para las tareas de carga de trabajo, `plugin`, `plugin_settings`, `selection` y `backup_kind`.
 
 ## Transporte { #transport }
 

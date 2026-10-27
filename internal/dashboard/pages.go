@@ -136,7 +136,7 @@ func buildJobView(c *i18n.Catalog, j server.BackupJob, sess *server.SessionInfo,
 		ID:               j.ID,
 		Name:             j.Name,
 		JobType:          j.JobType,
-		JobTypeLabel:     "Files",
+		JobTypeLabel:     jobTypeLabel(j),
 		AgentName:        j.AgentName,
 		Paths:            j.Paths,
 		SourceLabel:      formatJobSource(c, j),
@@ -184,7 +184,21 @@ func buildJobView(c *i18n.Catalog, j server.BackupJob, sess *server.SessionInfo,
 	return v
 }
 
+// jobTypeLabel names what a job backs up: files, or the workload plugin.
+func jobTypeLabel(j server.BackupJob) string {
+	if server.IsWorkloadJobType(j.JobType) {
+		return "Plugin: " + j.Plugin
+	}
+	return "Files"
+}
+
 func formatJobSource(c *i18n.Catalog, job server.BackupJob) string {
+	if server.IsWorkloadJobType(job.JobType) && len(job.Selection) > 0 {
+		if len(job.Selection) > 1 {
+			return c.Tf("{path} +{n} more", "path", job.Selection[0], "n", len(job.Selection)-1)
+		}
+		return job.Selection[0]
+	}
 	if len(job.Paths) > 0 {
 		if len(job.Paths) > 1 {
 			return c.Tf("{path} +{n} more", "path", job.Paths[0], "n", len(job.Paths)-1)

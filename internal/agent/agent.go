@@ -337,8 +337,14 @@ func processFile(absPath string, idKey [32]byte, minSize, avgSize, maxSize uint,
 		return nil, 0, fmt.Errorf("open: %w", err)
 	}
 	defer f.Close()
+	return chunkReader(f, idKey, minSize, avgSize, maxSize, pending, mu)
+}
 
-	ch := chunker.New(f, minSize, avgSize, maxSize)
+// chunkReader chunks r, computes blob IDs, compresses data, and adds it to
+// pending. Returns the ordered content IDs and bytes read. Used for files and
+// for workload plugin item streams alike.
+func chunkReader(r io.Reader, idKey [32]byte, minSize, avgSize, maxSize uint, pending *pendingChunks, mu *sync.Mutex) ([][32]byte, uint64, error) {
+	ch := chunker.New(r, minSize, avgSize, maxSize)
 
 	var contentIDs [][32]byte
 	var bytesRead uint64
@@ -379,6 +385,12 @@ func processFile(absPath string, idKey [32]byte, minSize, avgSize, maxSize uint,
 // flushPending does CheckBlobs + UploadChunks for all accumulated pending chunks,
 // then clears the pending set.
 func (b *Backup) flushPending(ctx context.Context, sessionID string, pending *pendingChunks, mu *sync.Mutex) error {
+	return flushPendingChunks(ctx, b.Client, sessionID, pending, mu)
+}
+
+// flushPendingChunks does CheckBlobs + UploadChunks for all accumulated
+// pending chunks, then clears the pending set.
+func flushPendingChunks(ctx context.Context, client *Client, sessionID string, pending *pendingChunks, mu *sync.Mutex) error {
 	mu.Lock()
 	if len(pending.allIDs) == 0 {
 		mu.Unlock()
@@ -401,7 +413,7 @@ func (b *Backup) flushPending(ctx context.Context, sessionID string, pending *pe
 
 	// CheckBlobs to find which are needed.
 	slog.Info("checking blobs", "count", len(ids))
-	needed, err := b.Client.CheckBlobs(ctx, sessionID, ids)
+	needed, err := client.CheckBlobs(ctx, sessionID, ids)
 	if err != nil {
 		if isSessionNotFound(err) {
 			return ErrSessionCancelled
@@ -419,7 +431,7 @@ func (b *Backup) flushPending(ctx context.Context, sessionID string, pending *pe
 
 	if len(toUpload) > 0 {
 		slog.Info("uploading chunks", "needed", len(toUpload), "total", len(ids))
-		if _, err := b.Client.UploadChunks(ctx, sessionID, toUpload); err != nil {
+		if _, err := client.UploadChunks(ctx, sessionID, toUpload); err != nil {
 			if isSessionNotFound(err) {
 				return ErrSessionCancelled
 			}

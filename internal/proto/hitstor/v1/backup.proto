@@ -309,12 +309,19 @@ message ScheduledJob {
   // Use Volume Shadow Copy Service for consistent snapshots (Windows only).
   bool use_vss = 14;
 
-  // Job type: "files" (default). HitStor is filesystem-only; any other
-  // value is rejected by the server/agent.
+  // Job type: "files" (default) or "workload" (run by a workload plugin).
   string job_type = 15;
 
   // Fields 16-18 (db_type, db_connection_uri, db_temp_dir) supported a
-  // "database" job type that is no longer part of HitStor's scope.
+  // built-in "database" job type that was removed; database backup now
+  // happens through workload plugins.
   reserved 16, 17, 18;
   reserved "db_type", "db_connection_uri", "db_temp_dir";
+
+  // Workload jobs only: plugin id, its Configure settings, the selected
+  // objects, and the plugin-defined backup kind.
+  string plugin = 19;
+  map<string, string> plugin_settings = 20;
+  repeated string selection = 21;
+  string backup_kind = 22;
 }

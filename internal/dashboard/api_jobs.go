@@ -46,6 +46,12 @@ type backupJobJSON struct {
 	LastVerifyDetail  string   `json:"last_verify_detail,omitempty"`
 	LastVerifyFiles   int      `json:"last_verify_files,omitempty"`
 	LastVerifyBytes   uint64   `json:"last_verify_bytes,omitempty"`
+
+	// Workload jobs only.
+	Plugin         string            `json:"plugin,omitempty"`
+	PluginSettings map[string]string `json:"plugin_settings,omitempty"`
+	Selection      []string          `json:"selection,omitempty"`
+	BackupKind     string            `json:"backup_kind,omitempty"`
 }
 
 func jobToJSON(c *i18n.Catalog, j server.BackupJob) backupJobJSON {
@@ -102,6 +108,10 @@ func jobToJSON(c *i18n.Catalog, j server.BackupJob) backupJobJSON {
 		LastVerifyDetail:  j.LastVerifyDetail,
 		LastVerifyFiles:   j.LastVerifyFiles,
 		LastVerifyBytes:   j.LastVerifyBytes,
+		Plugin:            j.Plugin,
+		PluginSettings:    j.PluginSettings,
+		Selection:         j.Selection,
+		BackupKind:        j.BackupKind,
 	}
 	if j.LastVerifyAt != nil {
 		ts := j.LastVerifyAt.Format(time.RFC3339)
@@ -160,15 +170,31 @@ type createBackupJobRequest struct {
 	FullRescanDays  int      `json:"full_rescan_days"`
 	UseVSS          bool     `json:"use_vss"`
 	JobType         string   `json:"job_type"`
+
+	// Workload jobs only.
+	Plugin         string            `json:"plugin"`
+	PluginSettings map[string]string `json:"plugin_settings"`
+	Selection      []string          `json:"selection"`
+	BackupKind     string            `json:"backup_kind"`
 }
 
-// validateJobType rejects anything but filesystem jobs: HitStor backs up
-// filesystems only.
+// validateJobType accepts filesystem and workload plugin jobs.
 func validateJobType(jobType string) error {
-	if jobType != "" && jobType != "files" {
-		return fmt.Errorf("unsupported job type %q: HitStor supports filesystem backup jobs only", jobType)
+	if !server.IsSupportedJobType(jobType) {
+		return fmt.Errorf("unsupported job type %q (want %q or %q)", jobType, server.JobTypeFiles, server.JobTypeWorkload)
 	}
 	return nil
+}
+
+// agentHasPlugin reports whether the agent's last reported inventory
+// includes an active plugin with this id.
+func agentHasPlugin(a *server.AgentRecord, id string) bool {
+	for _, p := range a.Plugins {
+		if p.ID == id && p.Status == "active" {
+			return true
+		}
+	}
+	return false
 }
 
 func (d *Dashboard) handleAPICreateBackupJob(w http.ResponseWriter, r *http.Request) {
@@ -190,14 +216,20 @@ func (d *Dashboard) handleAPICreateBackupJob(w http.ResponseWriter, r *http.Requ
 		http.Error(w, "agent_name is required for backup jobs", http.StatusBadRequest)
 		return
 	}
-	if len(req.Paths) == 0 {
+	workload := server.IsWorkloadJobType(req.JobType)
+	if !workload && len(req.Paths) == 0 {
 		http.Error(w, "paths are required for filesystem backup jobs", http.StatusBadRequest)
 		return
 	}
 
 	// Validate agent exists.
-	if d.registry.GetAgent(req.AgentName) == nil {
+	agentRec := d.registry.GetAgent(req.AgentName)
+	if agentRec == nil {
 		http.Error(w, "agent not found", http.StatusBadRequest)
+		return
+	}
+	if workload && !agentHasPlugin(agentRec, req.Plugin) {
+		http.Error(w, fmt.Sprintf("agent %q has not reported plugin %q; install it on the agent with: hitstor-agent plugin install", req.AgentName, req.Plugin), http.StatusBadRequest)
 		return
 	}
 	// Validate repo exists.
@@ -239,7 +271,19 @@ func (d *Dashboard) handleAPICreateBackupJob(w http.ResponseWriter, r *http.Requ
 		Timezone:        req.Timezone,
 		UseVSS:          req.UseVSS,
 		CreatedAt:       time.Now(),
-		JobType:         "files",
+		JobType:         server.JobTypeFiles,
+	}
+	if workload {
+		job.JobType = server.JobTypeWorkload
+		job.Paths, job.Excludes, job.UseVSS = nil, nil, false
+		job.Plugin = req.Plugin
+		job.PluginSettings = req.PluginSettings
+		job.Selection = req.Selection
+		job.BackupKind = req.BackupKind
+	}
+	if err := server.ValidateJob(job); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
 	}
 
 	if err := d.registry.AddJob(job); err != nil {
@@ -314,8 +358,26 @@ func (d *Dashboard) handleAPIUpdateBackupJob(w http.ResponseWriter, r *http.Requ
 	updated.CronExpression = req.CronExpression
 	updated.Timezone = req.Timezone
 	updated.FullRescanDays = req.FullRescanDays
-	updated.UseVSS = req.UseVSS
-	updated.JobType = "files"
+	// The job type and plugin are fixed at creation; only the workload
+	// parameters can change.
+	if server.IsWorkloadJobType(existing.JobType) {
+		if req.PluginSettings != nil {
+			updated.PluginSettings = req.PluginSettings
+		}
+		if len(req.Selection) > 0 {
+			updated.Selection = req.Selection
+		}
+		if req.BackupKind != "" {
+			updated.BackupKind = req.BackupKind
+		}
+	} else {
+		updated.UseVSS = req.UseVSS
+		updated.JobType = server.JobTypeFiles
+	}
+	if err := server.ValidateJob(updated); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
 
 	if err := d.registry.UpdateJob(updated); err != nil {
 		http.Error(w, fmt.Sprintf("update job: %v", err), http.StatusInternalServerError)

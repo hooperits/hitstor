@@ -11,6 +11,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"regexp"
 	"strings"
 	"sync"
 	"time"
@@ -19,10 +20,46 @@ import (
 	"github.com/hooperits/hitstor/internal/crypto"
 )
 
+// Job types.
+const (
+	JobTypeFiles    = "files"
+	JobTypeWorkload = "workload"
+)
+
 // IsFilesystemJobType reports whether jobType is a supported filesystem job.
 // Empty job type is treated as files for backward compatibility.
 func IsFilesystemJobType(jobType string) bool {
-	return jobType == "" || jobType == "files"
+	return jobType == "" || jobType == JobTypeFiles
+}
+
+// IsWorkloadJobType reports whether jobType runs through a workload plugin.
+func IsWorkloadJobType(jobType string) bool {
+	return jobType == JobTypeWorkload
+}
+
+// IsSupportedJobType reports whether jobType can run on current agents.
+func IsSupportedJobType(jobType string) bool {
+	return IsFilesystemJobType(jobType) || IsWorkloadJobType(jobType)
+}
+
+var pluginIDPattern = regexp.MustCompile(`^[a-z0-9][a-z0-9-]{0,62}$`)
+
+// ValidateJob checks the fields that depend on the job type.
+func ValidateJob(job BackupJob) error {
+	switch {
+	case IsFilesystemJobType(job.JobType):
+		return nil
+	case IsWorkloadJobType(job.JobType):
+		if !pluginIDPattern.MatchString(job.Plugin) {
+			return fmt.Errorf("server: workload job needs a valid plugin id, got %q", job.Plugin)
+		}
+		if len(job.Selection) == 0 {
+			return fmt.Errorf("server: workload job needs at least one selected object")
+		}
+		return nil
+	default:
+		return fmt.Errorf("server: unsupported job type %q", job.JobType)
+	}
 }
 
 // SentinelAlert records a ransomware threat event.
@@ -119,8 +156,18 @@ type BackupJob struct {
 	LastVerifyFiles   int        `json:"last_verify_files,omitempty"`
 	LastVerifyBytes   uint64     `json:"last_verify_bytes,omitempty"`
 
-	// JobType is "files" (or empty) for every job; HitStor is filesystem-only.
+	// JobType is "files" (or empty) for filesystem jobs and "workload" for
+	// jobs run by a workload plugin.
 	JobType string `json:"job_type,omitempty"`
+
+	// Workload jobs only. Plugin is the plugin id; PluginSettings are passed
+	// to its Configure RPC (never secrets: plugins read those from the
+	// agent's environment); Selection lists the objects to back up and
+	// BackupKind the plugin-defined backup kind ("full", "log", ...).
+	Plugin         string            `json:"plugin,omitempty"`
+	PluginSettings map[string]string `json:"plugin_settings,omitempty"`
+	Selection      []string          `json:"selection,omitempty"`
+	BackupKind     string            `json:"backup_kind,omitempty"`
 }
 
 // registryData is the versioned envelope stored in agents.json.
@@ -219,12 +266,13 @@ func LoadAgentRegistry(encryptKey [32]byte, repoPath string) (*AgentRegistry, er
 }
 
 // orphanNonFilesystemJobs disables schedules for job types removed from product
-// scope (M365, database, cloud VM, Google Workspace). Records remain so
-// operators can inspect and delete them; they will not run.
+// scope (the legacy M365, database, cloud VM, and Google Workspace jobs).
+// Records remain so operators can inspect and delete them; they will not run.
+// Workload plugin jobs are supported and left alone.
 func (r *AgentRegistry) orphanNonFilesystemJobs() {
 	for i := range r.jobs {
 		j := &r.jobs[i]
-		if IsFilesystemJobType(j.JobType) {
+		if IsSupportedJobType(j.JobType) {
 			continue
 		}
 		if j.ScheduleEnabled || j.RunNow {
@@ -623,8 +671,8 @@ func (r *AgentRegistry) EncryptKey() ([32]byte, bool) {
 
 // AddJob registers a new backup job and persists to disk.
 func (r *AgentRegistry) AddJob(job BackupJob) error {
-	if !IsFilesystemJobType(job.JobType) {
-		return fmt.Errorf("server: unsupported job type %q: HitStor supports filesystem backup jobs only", job.JobType)
+	if err := ValidateJob(job); err != nil {
+		return err
 	}
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -643,8 +691,8 @@ func (r *AgentRegistry) AddJob(job BackupJob) error {
 
 // UpdateJob replaces a backup job by ID and persists.
 func (r *AgentRegistry) UpdateJob(job BackupJob) error {
-	if !IsFilesystemJobType(job.JobType) {
-		return fmt.Errorf("server: unsupported job type %q: HitStor supports filesystem backup jobs only", job.JobType)
+	if err := ValidateJob(job); err != nil {
+		return err
 	}
 	r.mu.Lock()
 	defer r.mu.Unlock()

@@ -6,8 +6,13 @@
 // hashicorp/go-plugin. A plugin never talks to the server: the agent owns
 // everything that touches the repository.
 //
-// Protocol version 1 defines discovery only. Backup and restore RPCs are added
-// in later revisions of this file without breaking version 1 plugins.
+// A backup produces items: named byte streams (for example one database
+// backup file) plus opaque metadata that only the plugin interprets. The
+// agent stores each item as a file in the snapshot, so deduplication,
+// encryption, retention, and verification work unchanged.
+//
+// RPCs added after the first release must be optional: the host treats
+// codes.Unimplemented as "capability not supported".
 
 syntax = "proto3";
 
@@ -27,6 +32,15 @@ service Workload {
   // Configure passes plugin-specific settings after launch.
   // Reuses ConfigureRequest/ConfigureResponse from storage.proto.
   rpc Configure(ConfigureRequest) returns (ConfigureResponse);
+
+  // Browse lists the selectable objects under a path, for example
+  // instance -> databases. An empty path lists the top level.
+  rpc Browse(BrowseRequest) returns (BrowseResponse);
+
+  // Backup backs up the selected objects and streams the resulting items.
+  // Each item is sent as ItemStart, any number of data messages, and ItemEnd.
+  // Returning a gRPC error fails the whole backup.
+  rpc Backup(BackupRequest) returns (stream BackupMessage);
 }
 
 message GetMetadataRequest {}
@@ -45,4 +59,56 @@ message WorkloadMetadata {
   string description = 5;
   // Capability identifiers, e.g. "backup.full", "restore.point_in_time".
   repeated string capabilities = 6;
+}
+
+message BrowseRequest {
+  // Object path to list; empty for the top level.
+  string path = 1;
+}
+
+message BrowseResponse {
+  repeated BrowseEntry entries = 1;
+}
+
+// BrowseEntry is one object in the selection tree.
+message BrowseEntry {
+  // Full object path, used in BackupRequest.selection and further Browse calls.
+  string path = 1;
+  // Display name.
+  string name = 2;
+  // Plugin-defined object kind, e.g. "instance" or "database".
+  string kind = 3;
+  // Whether the object can be selected for backup.
+  bool selectable = 4;
+  // Whether Browse on this path returns more entries.
+  bool has_children = 5;
+}
+
+message BackupRequest {
+  // Object paths to back up, as returned by Browse.
+  repeated string selection = 1;
+  // Backup kind, e.g. "full", "differential", "log". Plugin-defined.
+  string kind = 2;
+  // Per-run options. Connection settings come from Configure.
+  map<string, string> options = 3;
+}
+
+message BackupMessage {
+  oneof msg {
+    ItemStart start = 1;
+    // A slice of the current item's bytes (at most 1 MiB per message).
+    bytes data = 2;
+    ItemEnd end = 3;
+  }
+}
+
+message ItemStart {
+  // Relative, slash-separated item path, e.g. "MSSQLSERVER/db1/full-20260101T020000Z.bak".
+  string path = 1;
+}
+
+message ItemEnd {
+  // Plugin-defined metadata for the item, as a JSON value. Stored next to
+  // the item and handed back to the plugin when planning a restore.
+  bytes metadata = 1;
 }

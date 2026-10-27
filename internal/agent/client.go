@@ -239,6 +239,12 @@ type JobSchedule struct {
 	Timezone           string
 	UseVSS             bool
 	JobType            string
+
+	// Workload jobs only.
+	Plugin         string
+	PluginSettings map[string]string
+	Selection      []string
+	BackupKind     string
 }
 
 // ScheduleInfo holds the schedule returned by the server.
@@ -303,6 +309,10 @@ func (c *Client) getSchedule(ctx context.Context, req *pb.GetScheduleRequest) (*
 			Timezone:           j.Timezone,
 			UseVSS:             j.UseVss,
 			JobType:            j.JobType,
+			Plugin:             j.Plugin,
+			PluginSettings:     j.PluginSettings,
+			Selection:          j.Selection,
+			BackupKind:         j.BackupKind,
 		})
 	}
 

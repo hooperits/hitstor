@@ -10,6 +10,7 @@ Reference for all `hitstor-agent` CLI commands.
 | [ping](ping.md) | Test connectivity to the server |
 | [daemon](daemon.md) | Run as a long-lived daemon with management server and backup polling |
 | [show-id](show-id.md) | Display the agent token for dashboard registration |
+| [plugin](plugin.md) | Install and manage workload plugins |
 | [service](service.md) | Manage the Windows Service (Windows only) |
 
 ## Global Flags

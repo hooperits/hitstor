@@ -8,6 +8,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/hooperits/hitstor/internal/pluginmgr"
 	pb "github.com/hooperits/hitstor/internal/proto/hitstor/v1"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -250,11 +251,31 @@ type ScheduleInfo struct {
 
 // GetSchedule queries the server for this agent's backup schedule.
 func (c *Client) GetSchedule(ctx context.Context, apiKey string) (*ScheduleInfo, error) {
+	return c.getSchedule(ctx, &pb.GetScheduleRequest{ApiKey: apiKey})
+}
+
+// GetScheduleReportingPlugins queries the schedule and reports the agent's
+// installed plugins in the same call, keeping the server's inventory current.
+func (c *Client) GetScheduleReportingPlugins(ctx context.Context, apiKey string, plugins []pluginmgr.InstalledPlugin) (*ScheduleInfo, error) {
+	req := &pb.GetScheduleRequest{ApiKey: apiKey, PluginsReported: true}
+	for _, p := range plugins {
+		req.Plugins = append(req.Plugins, &pb.AgentPlugin{
+			Id:              p.ID,
+			Name:            p.Name,
+			Version:         p.Version,
+			Status:          p.Status,
+			ProtocolVersion: int32(p.ProtocolVersion),
+			Capabilities:    p.Capabilities,
+			Signer:          p.Signer,
+		})
+	}
+	return c.getSchedule(ctx, req)
+}
+
+func (c *Client) getSchedule(ctx context.Context, req *pb.GetScheduleRequest) (*ScheduleInfo, error) {
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
-	resp, err := c.backup.GetSchedule(ctx, &pb.GetScheduleRequest{
-		ApiKey: apiKey,
-	})
+	resp, err := c.backup.GetSchedule(ctx, req)
 	if err != nil {
 		return nil, fmt.Errorf("agent: get schedule: %w", err)
 	}

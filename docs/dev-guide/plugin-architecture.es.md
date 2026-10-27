@@ -1,9 +1,10 @@
 # Arquitectura de plugins de carga de trabajo
 
-> **Estado: diseño, sin implementar.** Esta página fija la arquitectura de los
-> plugins instalables de carga de trabajo antes de escribir código. El primer
-> plugin construido sobre ella respalda Microsoft SQL Server mediante la
-> Virtual Device Interface (VDI). Reemplaza la entrada "tipo de plugin
+> **Estado: fase 1 implementada** (formato de paquete, firma, gestor de
+> plugins del agente, `hitstor-agent plugin` y reporte de inventario); las
+> fases 2 a 4 están en diseño. El primer plugin construido sobre esta
+> arquitectura respalda Microsoft SQL Server mediante la Virtual Device
+> Interface (VDI). Reemplaza la entrada "tipo de plugin
 > recolector de cargas de trabajo" de la sección
 > [Eliminado definitivamente](../admin-guide/roadmap.md#permanently-removed-v200)
 > de la hoja de ruta.

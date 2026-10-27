@@ -74,6 +74,9 @@ Used by `hitstor-agent` to configure the remote backup agent.
 | `plugin_dir` | string | | Directory to search for plugin binaries (searched before `$PATH`) |
 | `hook_plugins` | list | | Hook plugin names to load for pre/post-backup lifecycle events |
 | `fs_scanner_plugin` | string | | Filesystem scanner plugin name (`builtin` or a custom `Scanner` plugin; only one active at a time) |
+| `plugin_store_dir` | string | `/var/lib/hitstor/plugins` (Linux), `C:\ProgramData\HitStor\plugins` (Windows) | Agent: directory where workload plugin packages are installed |
+| `plugin_trusted_keys` | list | | Agent: extra base64 ed25519 public keys trusted to sign plugin packages, in addition to the official HitStor key |
+| `plugin_allow_unsigned` | bool | `false` | Agent: accept unsigned plugin packages. Development only; packages signed by an untrusted key are still rejected |
 
 ### Integrations (`integrations`)
 

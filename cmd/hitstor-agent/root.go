@@ -71,6 +71,7 @@ func init() {
 	rootCmd.AddCommand(newDaemonCmd())
 	rootCmd.AddCommand(newShowIDCmd())
 	rootCmd.AddCommand(newRecoverCmd())
+	rootCmd.AddCommand(newPluginCmd())
 	// Recovery media can only be built on the host it protects, and the agent
 	// package is what protected hosts actually install.
 	rootCmd.AddCommand(bmrcli.New(bmrcli.Options{

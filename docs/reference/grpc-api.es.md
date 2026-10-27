@@ -178,6 +178,8 @@ Devuelve la programación de respaldos configurada para este agente.
 | Campo | Tipo | Descripción |
 |-------|------|-------------|
 | `api_key` | string | Clave de API hexadecimal de 64 caracteres |
+| `plugins` | repeated `AgentPlugin` | Plugins de carga de trabajo instalados en el agente (`id`, `name`, `version`, `status`, `protocol_version`, `capabilities`, `signer`) |
+| `plugins_reported` | bool | `true` cuando `plugins` es el inventario completo del agente. Si es `false` (agentes anteriores o un almacén de plugins ilegible), el servidor conserva el inventario que ya tenía |
 
 **Respuesta: `GetScheduleResponse`**
 

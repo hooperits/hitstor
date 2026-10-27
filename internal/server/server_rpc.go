@@ -399,6 +399,25 @@ func (s *Server) GetSchedule(ctx context.Context, req *pb.GetScheduleRequest) (*
 		return nil, status.Error(codes.NotFound, "agent not found")
 	}
 
+	if req.PluginsReported {
+		plugins := make([]AgentPlugin, 0, len(req.Plugins))
+		for _, p := range req.Plugins {
+			plugins = append(plugins, AgentPlugin{
+				ID:              p.Id,
+				Name:            p.Name,
+				Version:         p.Version,
+				Status:          p.Status,
+				ProtocolVersion: int(p.ProtocolVersion),
+				Capabilities:    p.Capabilities,
+				Signer:          p.Signer,
+			})
+		}
+		// Inventory is informational: never fail the schedule poll over it.
+		if err := s.registry.SetAgentPlugins(agentName, plugins); err != nil {
+			slog.Warn("record agent plugins", "agent", agentName, "error", err)
+		}
+	}
+
 	jobs := s.registry.ListJobsByAgent(agentName)
 	resp := &pb.GetScheduleResponse{}
 

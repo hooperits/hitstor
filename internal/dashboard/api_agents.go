@@ -9,6 +9,8 @@ import (
 
 	"log/slog"
 	"strings"
+
+	"github.com/hooperits/hitstor/internal/server"
 )
 
 type agentJSON struct {
@@ -20,6 +22,8 @@ type agentJSON struct {
 	ScheduleEnabled bool    `json:"schedule_enabled"`
 	ScheduleHours   int     `json:"schedule_hours"`
 	Suspended       bool    `json:"suspended"`
+	// Plugins is the workload plugin inventory the agent last reported.
+	Plugins []server.AgentPlugin `json:"plugins,omitempty"`
 }
 
 func (d *Dashboard) handleAPIAgents(w http.ResponseWriter, r *http.Request) {
@@ -86,6 +90,7 @@ func (d *Dashboard) handleAPIAgents(w http.ResponseWriter, r *http.Request) {
 			ScheduleEnabled: a.ScheduleEnabled,
 			ScheduleHours:   a.ScheduleHours,
 			Suspended:       a.Suspended,
+			Plugins:         a.Plugins,
 		})
 	}
 

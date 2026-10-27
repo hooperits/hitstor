@@ -65,3 +65,17 @@ func ServeFilesystemScanner(impl scanner.Scanner) {
 		},
 	})
 }
+
+// ServeWorkload starts the go-plugin gRPC server for a workload plugin.
+// Plugin binaries call this from main() with their Workload implementation.
+func ServeWorkload(impl Workload) {
+	goplugin.Serve(&goplugin.ServeConfig{
+		HandshakeConfig: HandshakeConfig,
+		Plugins: map[string]goplugin.Plugin{
+			WorkloadPluginName: &WorkloadPlugin{Impl: impl},
+		},
+		GRPCServer: func(opts []grpc.ServerOption) *grpc.Server {
+			return grpc.NewServer(opts...)
+		},
+	})
+}

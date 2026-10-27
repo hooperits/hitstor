@@ -194,9 +194,17 @@ func checkAndRunAll(ctx context.Context) {
 	}
 	defer client.Close()
 
-	// Query schedule.
+	// Query schedule, reporting installed plugins so the server's inventory
+	// stays current. If the store cannot be read, report nothing rather than
+	// an empty list, so the server keeps the last known inventory.
 	schedCtx, schedCancel := context.WithTimeout(ctx, 30*time.Second)
-	schedule, err := client.GetSchedule(schedCtx, apiKeyFlag)
+	var schedule *agent.ScheduleInfo
+	if plugins, perr := installedPlugins(); perr != nil {
+		slog.Warn("cannot read plugin store; not reporting plugins", "error", perr)
+		schedule, err = client.GetSchedule(schedCtx, apiKeyFlag)
+	} else {
+		schedule, err = client.GetScheduleReportingPlugins(schedCtx, apiKeyFlag, plugins)
+	}
 	schedCancel()
 	if err != nil {
 		slog.Error("failed to get schedule", "error", err)

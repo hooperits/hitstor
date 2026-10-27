@@ -1,8 +1,9 @@
 # Workload Plugin Architecture
 
-> **Status: design, not implemented.** This page fixes the architecture for
-> installable workload plugins before any code lands. The first plugin built on
-> it is Microsoft SQL Server backup through the Virtual Device Interface (VDI).
+> **Status: phase 1 implemented** (package format, signing, agent plugin
+> manager, `hitstor-agent plugin`, inventory reporting); phases 2–4 are in
+> design. The first plugin built on this architecture is Microsoft SQL Server
+> backup through the Virtual Device Interface (VDI).
 > It supersedes the "workload collector plugin type" entry under
 > [Permanently removed](../admin-guide/roadmap.md#permanently-removed-v200) in
 > the roadmap.

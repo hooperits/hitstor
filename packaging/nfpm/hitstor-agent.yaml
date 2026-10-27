@@ -50,6 +50,12 @@ contents:
     file_info:
       mode: 0700
 
+  # Installed plugin packages. Root-only: plugins run as the agent.
+  - dst: /var/lib/hitstor/plugins
+    type: dir
+    file_info:
+      mode: 0700
+
 scripts:
   postinstall: ../scripts/agent-postinstall.sh
   preremove: ../scripts/agent-preremove.sh

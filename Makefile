@@ -1,7 +1,7 @@
 .PHONY: build build-arm64 agent agent-arm64 agent-windows agent-windows-arm64 agent-all \
 	test test-integration bench bench-skip-restic lint clean \
 	proto proto-backup proto-agent proto-plugin \
-	plugin-memory notifier-log hook-log scanner-builtin plugins \
+	plugin-memory notifier-log hook-log scanner-builtin plugins pluginkit plugin-packages \
 	pkg-server-deb pkg-server-rpm pkg-agent-deb pkg-agent-rpm pkg-linux \
 	pkg-server-windows pkg-agent-windows pkg-windows \
 	installer-server installer-server-arm64 installer-agent installer-agent-arm64 installers \
@@ -86,7 +86,8 @@ proto-plugin:
 		hitstor/plugin/v1/storage.proto \
 		hitstor/plugin/v1/notifier.proto \
 		hitstor/plugin/v1/hook.proto \
-		hitstor/plugin/v1/scanner.proto
+		hitstor/plugin/v1/scanner.proto \
+		hitstor/plugin/v1/workload.proto
 
 # --- Plugin targets ---
 
@@ -102,8 +103,38 @@ hook-log:
 scanner-builtin:
 	CGO_ENABLED=0 go build -ldflags="$(LDFLAGS)" -o bin/hitstor-scanner-builtin ./cmd/hitstor-scanner-builtin/
 
-# Filesystem product focus: storage/notifier/hook/fs-scanner plugins only.
 plugins: plugin-memory notifier-log hook-log scanner-builtin
+
+# --- Workload plugin packages (.hpk) ---
+#
+# Each plugin in plugins/<id>/ becomes one signed package per platform in
+# $(DIST_DIR). The signing key comes from PLUGIN_KEY_FILE, or else from the
+# HITSTOR_PLUGIN_SIGNING_KEY environment variable (release pipeline).
+# PLUGIN_UNSIGNED=1 builds unsigned packages for local development.
+
+WORKLOAD_PLUGINS ?= example
+PLUGIN_PLATFORMS ?= linux/amd64 windows/amd64
+PLUGINKIT = bin/hitstor-pluginkit
+
+ifdef PLUGIN_KEY_FILE
+PLUGIN_SIGN_FLAGS = --key-file $(PLUGIN_KEY_FILE)
+else ifeq ($(PLUGIN_UNSIGNED),1)
+PLUGIN_SIGN_FLAGS = --unsigned
+endif
+
+pluginkit:
+	CGO_ENABLED=0 go build -ldflags="$(LDFLAGS)" -o $(PLUGINKIT) ./cmd/hitstor-pluginkit/
+
+plugin-packages: pluginkit
+	@mkdir -p $(DIST_DIR) bin/plugins
+	@set -e; for p in $(WORKLOAD_PLUGINS); do for plat in $(PLUGIN_PLATFORMS); do \
+		os=$${plat%/*}; arch=$${plat#*/}; ext=; \
+		if [ "$$os" = windows ]; then ext=.exe; fi; \
+		out=bin/plugins/hitstor-plugin-$$p-$$os-$$arch$$ext; \
+		CGO_ENABLED=0 GOOS=$$os GOARCH=$$arch go build -ldflags="$(LDFLAGS)" -o $$out ./plugins/$$p/; \
+		$(PLUGINKIT) pack --source plugins/$$p/plugin.yaml --binary $$out \
+			--os $$os --arch $$arch --out $(DIST_DIR) $(PLUGIN_SIGN_FLAGS); \
+	done; done
 
 # --- Linux packaging targets (requires nfpm) ---
 
@@ -189,7 +220,7 @@ docker-quickstart-down:
 # --- Release targets ---
 
 checksums:
-	cd $(DIST_DIR) && sha256sum * > SHA256SUMS
+	cd $(DIST_DIR) && rm -f SHA256SUMS && sha256sum * > SHA256SUMS
 
 release-linux: pkg-linux
 	@echo "Linux packages built in $(DIST_DIR)/"

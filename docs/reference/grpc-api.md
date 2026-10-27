@@ -178,6 +178,8 @@ Returns the backup schedule configured for this agent.
 | Field | Type | Description |
 |-------|------|-------------|
 | `api_key` | string | 64-character hex API key |
+| `plugins` | repeated `AgentPlugin` | Workload plugins installed on the agent (`id`, `name`, `version`, `status`, `protocol_version`, `capabilities`, `signer`) |
+| `plugins_reported` | bool | `true` when `plugins` is the agent's complete inventory. When `false` (older agents, or an unreadable plugin store) the server keeps the inventory it already had |
 
 **Response: `GetScheduleResponse`**
 

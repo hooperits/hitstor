@@ -1,6 +1,6 @@
 # Guía de desarrollo de plugins
 
-HitStor admite cuatro tipos de plugins mediante el framework [HashiCorp go-plugin](https://github.com/hashicorp/go-plugin). Los plugins se ejecutan como procesos separados y se comunican con HitStor por gRPC.
+HitStor admite cinco tipos de plugins mediante el framework [HashiCorp go-plugin](https://github.com/hashicorp/go-plugin). Los plugins se ejecutan como procesos separados y se comunican con HitStor por gRPC.
 
 ## Tipos de plugins { #plugin-types }
 
@@ -10,6 +10,7 @@ HitStor admite cuatro tipos de plugins mediante el framework [HashiCorp go-plugi
 | Notificador | `hitstor-notifier-<name>` | `alert_notifier_plugins` | `api/proto/hitstor/plugin/v1/notifier.proto` |
 | Hook | `hitstor-hook-<name>` | `hook_plugins` | `api/proto/hitstor/plugin/v1/hook.proto` |
 | Escáner de sistemas de archivos | `hitstor-scanner-<name>` | `fs_scanner_plugin` | `api/proto/hitstor/plugin/v1/scanner.proto` |
+| Carga de trabajo | Paquete `.hpk` con `bin/hitstor-plugin-<id>` | se instala con `hitstor-agent plugin install` | `api/proto/hitstor/plugin/v1/workload.proto` |
 
 ## Conceptos comunes { #common-concepts }
 
@@ -359,6 +360,90 @@ func main() {
 ```
 
 **Ejemplo:** consulte `cmd/hitstor-scanner-builtin/main.go` para ver un plugin de escáner que envuelve el recorrido de directorios integrado.
+
+---
+
+## Plugins de carga de trabajo { #workload-plugins }
+
+Los plugins de carga de trabajo le enseñan a un agente a respaldar una
+aplicación, por ejemplo un motor de base de datos. A diferencia de los demás
+tipos, no son binarios sueltos que se buscan en `$PATH`: se distribuyen como
+paquetes `.hpk` firmados que el agente instala en su almacén de plugins con
+[`hitstor-agent plugin`](agent-commands/plugin.md). El diseño se describe en
+[Arquitectura de plugins de carga de trabajo](../dev-guide/plugin-architecture.md).
+
+### RPC del servicio { #workload-service-rpcs }
+
+La versión 1 del protocolo de carga de trabajo
+(`api/proto/hitstor/plugin/v1/workload.proto`) cubre el descubrimiento; los RPC
+de respaldo y restauración llegan en revisiones posteriores.
+
+| RPC | Propósito |
+|-----|-----------|
+| `GetMetadata` | Devuelve id, nombre, versión, versión de protocolo, descripción y capacidades. El agente lo llama al instalar y rechaza el paquete si el id o la versión no coinciden con el manifiesto |
+| `Configure` | Recibe la configuración del plugin (el mismo `ConfigureRequest` que los demás tipos) |
+
+### Escribir un plugin de carga de trabajo { #writing-a-workload-plugin }
+
+Coloque el código en `plugins/<id>/` junto con un `plugin.yaml` de origen y
+embébalo, para que el binario siempre reporte la versión que declara su
+paquete:
+
+```yaml
+# plugins/example/plugin.yaml
+id: example
+name: Example workload plugin
+version: 0.1.0
+type: workload
+protocol_version: 1
+min_agent_version: 0.1.0
+publisher: hitstor
+description: Reference workload plugin.
+```
+
+```go
+//go:embed plugin.yaml
+var sourceManifest []byte
+
+func main() {
+    m, _ := pluginpkg.ParseSource(sourceManifest)
+    plugin.ServeWorkload(&myWorkload{manifest: m})
+}
+```
+
+Un manifiesto de origen omite `platforms` y `entrypoint`: el empaquetado los
+completa y genera un paquete por plataforma.
+
+### Empaquetado y firma { #packaging-and-signing }
+
+`hitstor-pluginkit` construye y firma los paquetes:
+
+```bash
+hitstor-pluginkit keygen --out mykey            # mykey.key (secreta) + mykey.pub
+hitstor-pluginkit pack --source plugins/example/plugin.yaml \
+    --binary bin/hitstor-plugin-example.exe --os windows --arch amd64 \
+    --key-file mykey.key --out dist
+hitstor-pluginkit verify dist/hitstor-plugin-example-0.1.0-windows-amd64.hpk \
+    --trusted-key "$(cat mykey.pub)"
+```
+
+`make plugin-packages PLUGIN_KEY_FILE=mykey.key` empaqueta cada plugin de
+`WORKLOAD_PLUGINS` para cada plataforma de `PLUGIN_PLATFORMS`.
+`PLUGIN_UNSIGNED=1` genera paquetes sin firma para pruebas locales; los agentes
+solo los aceptan con `plugin_allow_unsigned: true`.
+
+Un paquete es un zip con `plugin.yaml`, el binario bajo `bin/`, documentación
+opcional y un archivo `SIGNATURE`: una firma ed25519 sobre un resumen SHA-256
+de todas las demás entradas (nombre y hash del contenido, ordenados). Agregar,
+quitar o modificar cualquier archivo invalida la firma.
+
+Los paquetes oficiales se firman en el workflow de publicación con el secreto
+`HITSTOR_PLUGIN_SIGNING_KEY` del environment `release`, y su clave pública va
+incluida en el agente (`pluginpkg.OfficialKeys`). Para instalar sus propios
+plugins, agregue su clave pública a `plugin_trusted_keys` en los agentes.
+
+**Ejemplo:** consulte `plugins/example/` para ver un plugin de carga de trabajo
+mínimo.
 
 ---
 

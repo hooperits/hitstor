@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/hooperits/hitstor/internal/pluginmgr"
 	"github.com/hooperits/hitstor/internal/server"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -33,6 +34,29 @@ func TestGetScheduleDefault(t *testing.T) {
 	}
 	if schedule.NextRunUnix != 0 {
 		t.Errorf("next_run = %d, want 0", schedule.NextRunUnix)
+	}
+}
+
+func TestGetScheduleReportsPlugins(t *testing.T) {
+	client, _, registry, cleanup := testSetup(t)
+	defer cleanup()
+
+	apiKey, err := registry.AddAgent("plugin-agent")
+	if err != nil {
+		t.Fatal(err)
+	}
+	installed := []pluginmgr.InstalledPlugin{{
+		ID: "example", Name: "Example", Version: "0.1.0", Status: "active",
+		ProtocolVersion: 1, Capabilities: []string{"example.noop"}, Signer: "key",
+	}}
+	if _, err := client.GetScheduleReportingPlugins(context.Background(), apiKey, installed); err != nil {
+		t.Fatal(err)
+	}
+	got := registry.GetAgent("plugin-agent").Plugins
+	want := server.AgentPlugin{ID: "example", Name: "Example", Version: "0.1.0", Status: "active",
+		ProtocolVersion: 1, Capabilities: []string{"example.noop"}, Signer: "key"}
+	if len(got) != 1 || got[0].ID != want.ID || got[0].Version != want.Version || got[0].Signer != want.Signer {
+		t.Fatalf("server inventory = %+v, want [%+v]", got, want)
 	}
 }
 

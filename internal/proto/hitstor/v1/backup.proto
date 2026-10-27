@@ -245,6 +245,25 @@ message PingResponse {
 message GetScheduleRequest {
   // API key for authentication (32-byte hex string).
   string api_key = 1;
+
+  // Workload plugins installed on the agent. Only meaningful when
+  // plugins_reported is true: agents that predate plugins, or that could not
+  // read their plugin store, leave it false so the server keeps what it knew.
+  repeated AgentPlugin plugins = 2;
+  bool plugins_reported = 3;
+}
+
+// AgentPlugin describes one workload plugin installed on an agent.
+message AgentPlugin {
+  string id = 1;
+  string name = 2;
+  string version = 3;
+  // "active", "degraded", or "unregistered".
+  string status = 4;
+  int32 protocol_version = 5;
+  repeated string capabilities = 6;
+  // Base64 ed25519 public key that signed the package; empty when unsigned.
+  string signer = 7;
 }
 
 message GetScheduleResponse {

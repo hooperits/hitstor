@@ -1,6 +1,6 @@
 # Plugin Development Guide
 
-HitStor supports four plugin types via the [HashiCorp go-plugin](https://github.com/hashicorp/go-plugin) framework. Plugins run as separate processes and communicate with HitStor over gRPC.
+HitStor supports five plugin types via the [HashiCorp go-plugin](https://github.com/hashicorp/go-plugin) framework. Plugins run as separate processes and communicate with HitStor over gRPC.
 
 ## Plugin Types
 
@@ -10,6 +10,7 @@ HitStor supports four plugin types via the [HashiCorp go-plugin](https://github.
 | Notifier | `hitstor-notifier-<name>` | `alert_notifier_plugins` | `api/proto/hitstor/plugin/v1/notifier.proto` |
 | Hook | `hitstor-hook-<name>` | `hook_plugins` | `api/proto/hitstor/plugin/v1/hook.proto` |
 | Filesystem Scanner | `hitstor-scanner-<name>` | `fs_scanner_plugin` | `api/proto/hitstor/plugin/v1/scanner.proto` |
+| Workload | `.hpk` package with `bin/hitstor-plugin-<id>` | installed with `hitstor-agent plugin install` | `api/proto/hitstor/plugin/v1/workload.proto` |
 
 ## Common Concepts
 
@@ -359,6 +360,87 @@ func main() {
 ```
 
 **Example:** See `cmd/hitstor-scanner-builtin/main.go` for a scanner plugin that wraps the built-in walker.
+
+---
+
+## Workload Plugins
+
+Workload plugins teach an agent to back up an application, for example a
+database engine. Unlike the other types they are not loose binaries found on
+`$PATH`: they ship as signed `.hpk` packages that the agent installs into its
+plugin store with [`hitstor-agent plugin`](agent-commands/plugin.md). The
+design is described in
+[Workload Plugin Architecture](../dev-guide/plugin-architecture.md).
+
+### Service RPCs
+
+Workload protocol version 1 (`api/proto/hitstor/plugin/v1/workload.proto`)
+covers discovery; backup and restore RPCs arrive in later revisions.
+
+| RPC | Purpose |
+|-----|---------|
+| `GetMetadata` | Return id, name, version, protocol version, description, and capabilities. The agent calls it at install time and rejects the package if the id or version differ from the manifest |
+| `Configure` | Receive plugin settings (same `ConfigureRequest` as other types) |
+
+### Writing a Workload Plugin
+
+Put the source in `plugins/<id>/` with a source `plugin.yaml` and embed it, so
+the binary always reports the version its package declares:
+
+```yaml
+# plugins/example/plugin.yaml
+id: example
+name: Example workload plugin
+version: 0.1.0
+type: workload
+protocol_version: 1
+min_agent_version: 0.1.0
+publisher: hitstor
+description: Reference workload plugin.
+```
+
+```go
+//go:embed plugin.yaml
+var sourceManifest []byte
+
+func main() {
+    m, _ := pluginpkg.ParseSource(sourceManifest)
+    plugin.ServeWorkload(&myWorkload{manifest: m})
+}
+```
+
+A source manifest omits `platforms` and `entrypoint`: packaging fills them in,
+producing one package per platform.
+
+### Packaging and Signing
+
+`hitstor-pluginkit` builds and signs packages:
+
+```bash
+hitstor-pluginkit keygen --out mykey            # mykey.key (secret) + mykey.pub
+hitstor-pluginkit pack --source plugins/example/plugin.yaml \
+    --binary bin/hitstor-plugin-example.exe --os windows --arch amd64 \
+    --key-file mykey.key --out dist
+hitstor-pluginkit verify dist/hitstor-plugin-example-0.1.0-windows-amd64.hpk \
+    --trusted-key "$(cat mykey.pub)"
+```
+
+`make plugin-packages PLUGIN_KEY_FILE=mykey.key` packages every plugin listed
+in `WORKLOAD_PLUGINS` for every platform in `PLUGIN_PLATFORMS`.
+`PLUGIN_UNSIGNED=1` builds unsigned packages for local testing; agents accept
+them only with `plugin_allow_unsigned: true`.
+
+A package is a zip with `plugin.yaml`, the binary under `bin/`, optional
+documentation, and a `SIGNATURE` file: an ed25519 signature over a SHA-256
+digest of every other entry (name and content hash, sorted). Adding, removing,
+or changing any file invalidates the signature.
+
+Official packages are signed in the release workflow with the
+`HITSTOR_PLUGIN_SIGNING_KEY` secret of the `release` environment, and their
+public key is embedded in the agent (`pluginpkg.OfficialKeys`). To install your
+own plugins, add your public key to `plugin_trusted_keys` on the agents.
+
+**Example:** See `plugins/example/` for a minimal workload plugin.
 
 ---
 

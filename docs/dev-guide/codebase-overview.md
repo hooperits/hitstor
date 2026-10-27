@@ -23,6 +23,10 @@ cmd/                          # Binaries (entry points)
   hitstor-notifier-log/       # Example notifier plugin
   hitstor-hook-log/           # Example hook plugin
   hitstor-scanner-builtin/    # Built-in filesystem scanner plugin (ships with core agent)
+  hitstor-pluginkit/          # Builds, signs, and verifies workload plugin packages (.hpk)
+
+plugins/                      # Workload plugins, one directory each (packaged as .hpk)
+  example/                    # Reference workload plugin
 
 internal/                     # Core libraries (not importable externally)
   archiver/                   # Local backup pipeline
@@ -36,6 +40,8 @@ internal/                     # Core libraries (not importable externally)
   sentinel/                   # Ransomware telemetry + Gemini analysis
   config/                     # YAML config + multi-repo repositories[]
   plugin/                     # HashiCorp go-plugin manager
+  pluginpkg/                  # Plugin package format, signing, and trust
+  pluginmgr/                  # Agent plugin store: install, upgrade, remove
   ...                         # chunker, crypto, retention, metrics, etc.
 
 api/proto/hitstor/plugin/v1/  # Public plugin gRPC definitions

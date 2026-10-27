@@ -10,6 +10,7 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"sync"
 	"time"
@@ -63,12 +64,27 @@ type AgentRecord struct {
 	// restored OS comes back up.
 	RecoveryTokenEncrypted string `json:"recovery_token_encrypted,omitempty"`
 
+	// Plugins is the workload plugin inventory the agent last reported.
+	Plugins []AgentPlugin `json:"plugins,omitempty"`
+
 	// Deprecated: schedule/repo/backup fields moved to BackupJob.
 	// Kept for backward-compatible JSON parsing during migration.
 	LastBackup      *time.Time `json:"last_backup,omitempty"`
 	ScheduleEnabled bool       `json:"schedule_enabled,omitempty"`
 	ScheduleHours   int        `json:"schedule_hours,omitempty"`
 	RepoName        string     `json:"repo_name,omitempty"`
+}
+
+// AgentPlugin is one workload plugin installed on an agent, as reported by
+// the agent.
+type AgentPlugin struct {
+	ID              string   `json:"id"`
+	Name            string   `json:"name"`
+	Version         string   `json:"version"`
+	Status          string   `json:"status"`
+	ProtocolVersion int      `json:"protocol_version"`
+	Capabilities    []string `json:"capabilities,omitempty"`
+	Signer          string   `json:"signer,omitempty"`
 }
 
 // BackupJob defines a scheduled backup targeting one agent and one repository.
@@ -443,6 +459,27 @@ func (r *AgentRegistry) SetAgentFingerprint(name, fingerprint string) error {
 		}
 	}
 	return fmt.Errorf("server: agent %q not found", name)
+}
+
+// SetAgentPlugins records the plugin inventory an agent reported. Agents
+// report on every schedule poll, so the registry is only rewritten when the
+// inventory actually changed.
+func (r *AgentRegistry) SetAgentPlugins(name string, plugins []AgentPlugin) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	a := r.mutableAgentLocked(name)
+	if a == nil {
+		return fmt.Errorf("server: agent %q not found", name)
+	}
+	if len(plugins) == 0 {
+		plugins = nil
+	}
+	if reflect.DeepEqual(a.Plugins, plugins) {
+		return nil
+	}
+	a.Plugins = plugins
+	slog.Info("agent plugin inventory changed", "agent", name, "plugins", len(plugins))
+	return r.save()
 }
 
 // GetAgent returns the agent record for the given name, or nil if not found.

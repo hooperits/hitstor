@@ -11,6 +11,9 @@ permissions:
 jobs:
   release:
     runs-on: ubuntu-latest
+    # The plugin signing key is a secret of the "release" environment, which
+    # only accepts deployments from v* tags.
+    environment: release
     steps:
       - uses: actions/checkout@v4
 
@@ -30,6 +33,18 @@ jobs:
 
       - name: Build release assets
         run: make release-assets VERSION="${GITHUB_REF_NAME#v}"
+
+      # Only this step receives the signing key. Packages are then verified
+      # against the official keys embedded in the agent, so a wrong or
+      # missing secret fails the release instead of shipping packages that
+      # agents would reject.
+      - name: Build signed plugin packages
+        env:
+          HITSTOR_PLUGIN_SIGNING_KEY: ${{ secrets.HITSTOR_PLUGIN_SIGNING_KEY }}
+        run: |
+          make plugin-packages VERSION="${GITHUB_REF_NAME#v}"
+          for p in dist/*.hpk; do bin/hitstor-pluginkit verify "$p"; done
+          make checksums
 
       - name: Publish GitHub release
         env:

@@ -246,6 +246,24 @@ var Registry = []KeyDef{
 		Description: "Directory to search for plugin binaries",
 	},
 	{
+		Name:        "plugin_store_dir",
+		Type:        String,
+		Default:     "",
+		Description: "Directory where the agent installs plugin packages (default: platform data directory)",
+	},
+	{
+		Name:        "plugin_trusted_keys",
+		Type:        List,
+		Default:     "",
+		Description: "Extra trusted base64 ed25519 public keys for plugin packages (comma-separated)",
+	},
+	{
+		Name:        "plugin_allow_unsigned",
+		Type:        String,
+		Default:     "false",
+		Description: "Install unsigned plugin packages (true/false; development only)",
+	},
+	{
 		Name:        "update_check",
 		Type:        String,
 		Default:     "true",

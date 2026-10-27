@@ -1066,9 +1066,14 @@ func (x *PingResponse) GetRepoId() string {
 type GetScheduleRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// API key for authentication (32-byte hex string).
-	ApiKey        string `protobuf:"bytes,1,opt,name=api_key,json=apiKey,proto3" json:"api_key,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	ApiKey string `protobuf:"bytes,1,opt,name=api_key,json=apiKey,proto3" json:"api_key,omitempty"`
+	// Workload plugins installed on the agent. Only meaningful when
+	// plugins_reported is true: agents that predate plugins, or that could not
+	// read their plugin store, leave it false so the server keeps what it knew.
+	Plugins         []*AgentPlugin `protobuf:"bytes,2,rep,name=plugins,proto3" json:"plugins,omitempty"`
+	PluginsReported bool           `protobuf:"varint,3,opt,name=plugins_reported,json=pluginsReported,proto3" json:"plugins_reported,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *GetScheduleRequest) Reset() {
@@ -1108,6 +1113,115 @@ func (x *GetScheduleRequest) GetApiKey() string {
 	return ""
 }
 
+func (x *GetScheduleRequest) GetPlugins() []*AgentPlugin {
+	if x != nil {
+		return x.Plugins
+	}
+	return nil
+}
+
+func (x *GetScheduleRequest) GetPluginsReported() bool {
+	if x != nil {
+		return x.PluginsReported
+	}
+	return false
+}
+
+// AgentPlugin describes one workload plugin installed on an agent.
+type AgentPlugin struct {
+	state   protoimpl.MessageState `protogen:"open.v1"`
+	Id      string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Name    string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	Version string                 `protobuf:"bytes,3,opt,name=version,proto3" json:"version,omitempty"`
+	// "active", "degraded", or "unregistered".
+	Status          string   `protobuf:"bytes,4,opt,name=status,proto3" json:"status,omitempty"`
+	ProtocolVersion int32    `protobuf:"varint,5,opt,name=protocol_version,json=protocolVersion,proto3" json:"protocol_version,omitempty"`
+	Capabilities    []string `protobuf:"bytes,6,rep,name=capabilities,proto3" json:"capabilities,omitempty"`
+	// Base64 ed25519 public key that signed the package; empty when unsigned.
+	Signer        string `protobuf:"bytes,7,opt,name=signer,proto3" json:"signer,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AgentPlugin) Reset() {
+	*x = AgentPlugin{}
+	mi := &file_internal_proto_hitstor_v1_backup_proto_msgTypes[15]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AgentPlugin) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AgentPlugin) ProtoMessage() {}
+
+func (x *AgentPlugin) ProtoReflect() protoreflect.Message {
+	mi := &file_internal_proto_hitstor_v1_backup_proto_msgTypes[15]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AgentPlugin.ProtoReflect.Descriptor instead.
+func (*AgentPlugin) Descriptor() ([]byte, []int) {
+	return file_internal_proto_hitstor_v1_backup_proto_rawDescGZIP(), []int{15}
+}
+
+func (x *AgentPlugin) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *AgentPlugin) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *AgentPlugin) GetVersion() string {
+	if x != nil {
+		return x.Version
+	}
+	return ""
+}
+
+func (x *AgentPlugin) GetStatus() string {
+	if x != nil {
+		return x.Status
+	}
+	return ""
+}
+
+func (x *AgentPlugin) GetProtocolVersion() int32 {
+	if x != nil {
+		return x.ProtocolVersion
+	}
+	return 0
+}
+
+func (x *AgentPlugin) GetCapabilities() []string {
+	if x != nil {
+		return x.Capabilities
+	}
+	return nil
+}
+
+func (x *AgentPlugin) GetSigner() string {
+	if x != nil {
+		return x.Signer
+	}
+	return ""
+}
+
 type GetScheduleResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Deprecated: legacy single-schedule fields. Populated from the first
@@ -1123,7 +1237,7 @@ type GetScheduleResponse struct {
 
 func (x *GetScheduleResponse) Reset() {
 	*x = GetScheduleResponse{}
-	mi := &file_internal_proto_hitstor_v1_backup_proto_msgTypes[15]
+	mi := &file_internal_proto_hitstor_v1_backup_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1135,7 +1249,7 @@ func (x *GetScheduleResponse) String() string {
 func (*GetScheduleResponse) ProtoMessage() {}
 
 func (x *GetScheduleResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_internal_proto_hitstor_v1_backup_proto_msgTypes[15]
+	mi := &file_internal_proto_hitstor_v1_backup_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1148,7 +1262,7 @@ func (x *GetScheduleResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetScheduleResponse.ProtoReflect.Descriptor instead.
 func (*GetScheduleResponse) Descriptor() ([]byte, []int) {
-	return file_internal_proto_hitstor_v1_backup_proto_rawDescGZIP(), []int{15}
+	return file_internal_proto_hitstor_v1_backup_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *GetScheduleResponse) GetEnabled() bool {
@@ -1215,7 +1329,7 @@ type ScheduledJob struct {
 
 func (x *ScheduledJob) Reset() {
 	*x = ScheduledJob{}
-	mi := &file_internal_proto_hitstor_v1_backup_proto_msgTypes[16]
+	mi := &file_internal_proto_hitstor_v1_backup_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1227,7 +1341,7 @@ func (x *ScheduledJob) String() string {
 func (*ScheduledJob) ProtoMessage() {}
 
 func (x *ScheduledJob) ProtoReflect() protoreflect.Message {
-	mi := &file_internal_proto_hitstor_v1_backup_proto_msgTypes[16]
+	mi := &file_internal_proto_hitstor_v1_backup_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1240,7 +1354,7 @@ func (x *ScheduledJob) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ScheduledJob.ProtoReflect.Descriptor instead.
 func (*ScheduledJob) Descriptor() ([]byte, []int) {
-	return file_internal_proto_hitstor_v1_backup_proto_rawDescGZIP(), []int{16}
+	return file_internal_proto_hitstor_v1_backup_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *ScheduledJob) GetJobId() string {
@@ -1447,9 +1561,19 @@ const file_internal_proto_hitstor_v1_backup_proto_rawDesc = "" +
 	"\vPingRequest\"A\n" +
 	"\fPingResponse\x12\x18\n" +
 	"\aversion\x18\x01 \x01(\tR\aversion\x12\x17\n" +
-	"\arepo_id\x18\x02 \x01(\tR\x06repoId\"-\n" +
+	"\arepo_id\x18\x02 \x01(\tR\x06repoId\"\x8b\x01\n" +
 	"\x12GetScheduleRequest\x12\x17\n" +
-	"\aapi_key\x18\x01 \x01(\tR\x06apiKey\"\xa8\x01\n" +
+	"\aapi_key\x18\x01 \x01(\tR\x06apiKey\x121\n" +
+	"\aplugins\x18\x02 \x03(\v2\x17.hitstor.v1.AgentPluginR\aplugins\x12)\n" +
+	"\x10plugins_reported\x18\x03 \x01(\bR\x0fpluginsReported\"\xca\x01\n" +
+	"\vAgentPlugin\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\x12\x18\n" +
+	"\aversion\x18\x03 \x01(\tR\aversion\x12\x16\n" +
+	"\x06status\x18\x04 \x01(\tR\x06status\x12)\n" +
+	"\x10protocol_version\x18\x05 \x01(\x05R\x0fprotocolVersion\x12\"\n" +
+	"\fcapabilities\x18\x06 \x03(\tR\fcapabilities\x12\x16\n" +
+	"\x06signer\x18\a \x01(\tR\x06signer\"\xa8\x01\n" +
 	"\x13GetScheduleResponse\x12\x18\n" +
 	"\aenabled\x18\x01 \x01(\bR\aenabled\x12%\n" +
 	"\x0einterval_hours\x18\x02 \x01(\x05R\rintervalHours\x12\"\n" +
@@ -1494,7 +1618,7 @@ func file_internal_proto_hitstor_v1_backup_proto_rawDescGZIP() []byte {
 	return file_internal_proto_hitstor_v1_backup_proto_rawDescData
 }
 
-var file_internal_proto_hitstor_v1_backup_proto_msgTypes = make([]protoimpl.MessageInfo, 18)
+var file_internal_proto_hitstor_v1_backup_proto_msgTypes = make([]protoimpl.MessageInfo, 19)
 var file_internal_proto_hitstor_v1_backup_proto_goTypes = []any{
 	(*AnnounceForRecoveryRequest)(nil),  // 0: hitstor.v1.AnnounceForRecoveryRequest
 	(*AnnounceForRecoveryResponse)(nil), // 1: hitstor.v1.AnnounceForRecoveryResponse
@@ -1511,34 +1635,36 @@ var file_internal_proto_hitstor_v1_backup_proto_goTypes = []any{
 	(*PingRequest)(nil),                 // 12: hitstor.v1.PingRequest
 	(*PingResponse)(nil),                // 13: hitstor.v1.PingResponse
 	(*GetScheduleRequest)(nil),          // 14: hitstor.v1.GetScheduleRequest
-	(*GetScheduleResponse)(nil),         // 15: hitstor.v1.GetScheduleResponse
-	(*ScheduledJob)(nil),                // 16: hitstor.v1.ScheduledJob
-	nil,                                 // 17: hitstor.v1.FileNode.XattrsEntry
+	(*AgentPlugin)(nil),                 // 15: hitstor.v1.AgentPlugin
+	(*GetScheduleResponse)(nil),         // 16: hitstor.v1.GetScheduleResponse
+	(*ScheduledJob)(nil),                // 17: hitstor.v1.ScheduledJob
+	nil,                                 // 18: hitstor.v1.FileNode.XattrsEntry
 }
 var file_internal_proto_hitstor_v1_backup_proto_depIdxs = []int32{
 	3,  // 0: hitstor.v1.BeginSessionResponse.previous_files:type_name -> hitstor.v1.PreviousFileEntry
 	10, // 1: hitstor.v1.FinalizeBackupRequest.files:type_name -> hitstor.v1.FileNode
-	17, // 2: hitstor.v1.FileNode.xattrs:type_name -> hitstor.v1.FileNode.XattrsEntry
-	16, // 3: hitstor.v1.GetScheduleResponse.jobs:type_name -> hitstor.v1.ScheduledJob
-	2,  // 4: hitstor.v1.BackupService.BeginSession:input_type -> hitstor.v1.BeginSessionRequest
-	5,  // 5: hitstor.v1.BackupService.CheckBlobs:input_type -> hitstor.v1.CheckBlobsRequest
-	7,  // 6: hitstor.v1.BackupService.UploadChunks:input_type -> hitstor.v1.UploadChunkMessage
-	9,  // 7: hitstor.v1.BackupService.FinalizeBackup:input_type -> hitstor.v1.FinalizeBackupRequest
-	12, // 8: hitstor.v1.BackupService.Ping:input_type -> hitstor.v1.PingRequest
-	14, // 9: hitstor.v1.BackupService.GetSchedule:input_type -> hitstor.v1.GetScheduleRequest
-	0,  // 10: hitstor.v1.BackupService.AnnounceForRecovery:input_type -> hitstor.v1.AnnounceForRecoveryRequest
-	4,  // 11: hitstor.v1.BackupService.BeginSession:output_type -> hitstor.v1.BeginSessionResponse
-	6,  // 12: hitstor.v1.BackupService.CheckBlobs:output_type -> hitstor.v1.CheckBlobsResponse
-	8,  // 13: hitstor.v1.BackupService.UploadChunks:output_type -> hitstor.v1.UploadChunksResponse
-	11, // 14: hitstor.v1.BackupService.FinalizeBackup:output_type -> hitstor.v1.FinalizeBackupResponse
-	13, // 15: hitstor.v1.BackupService.Ping:output_type -> hitstor.v1.PingResponse
-	15, // 16: hitstor.v1.BackupService.GetSchedule:output_type -> hitstor.v1.GetScheduleResponse
-	1,  // 17: hitstor.v1.BackupService.AnnounceForRecovery:output_type -> hitstor.v1.AnnounceForRecoveryResponse
-	11, // [11:18] is the sub-list for method output_type
-	4,  // [4:11] is the sub-list for method input_type
-	4,  // [4:4] is the sub-list for extension type_name
-	4,  // [4:4] is the sub-list for extension extendee
-	0,  // [0:4] is the sub-list for field type_name
+	18, // 2: hitstor.v1.FileNode.xattrs:type_name -> hitstor.v1.FileNode.XattrsEntry
+	15, // 3: hitstor.v1.GetScheduleRequest.plugins:type_name -> hitstor.v1.AgentPlugin
+	17, // 4: hitstor.v1.GetScheduleResponse.jobs:type_name -> hitstor.v1.ScheduledJob
+	2,  // 5: hitstor.v1.BackupService.BeginSession:input_type -> hitstor.v1.BeginSessionRequest
+	5,  // 6: hitstor.v1.BackupService.CheckBlobs:input_type -> hitstor.v1.CheckBlobsRequest
+	7,  // 7: hitstor.v1.BackupService.UploadChunks:input_type -> hitstor.v1.UploadChunkMessage
+	9,  // 8: hitstor.v1.BackupService.FinalizeBackup:input_type -> hitstor.v1.FinalizeBackupRequest
+	12, // 9: hitstor.v1.BackupService.Ping:input_type -> hitstor.v1.PingRequest
+	14, // 10: hitstor.v1.BackupService.GetSchedule:input_type -> hitstor.v1.GetScheduleRequest
+	0,  // 11: hitstor.v1.BackupService.AnnounceForRecovery:input_type -> hitstor.v1.AnnounceForRecoveryRequest
+	4,  // 12: hitstor.v1.BackupService.BeginSession:output_type -> hitstor.v1.BeginSessionResponse
+	6,  // 13: hitstor.v1.BackupService.CheckBlobs:output_type -> hitstor.v1.CheckBlobsResponse
+	8,  // 14: hitstor.v1.BackupService.UploadChunks:output_type -> hitstor.v1.UploadChunksResponse
+	11, // 15: hitstor.v1.BackupService.FinalizeBackup:output_type -> hitstor.v1.FinalizeBackupResponse
+	13, // 16: hitstor.v1.BackupService.Ping:output_type -> hitstor.v1.PingResponse
+	16, // 17: hitstor.v1.BackupService.GetSchedule:output_type -> hitstor.v1.GetScheduleResponse
+	1,  // 18: hitstor.v1.BackupService.AnnounceForRecovery:output_type -> hitstor.v1.AnnounceForRecoveryResponse
+	12, // [12:19] is the sub-list for method output_type
+	5,  // [5:12] is the sub-list for method input_type
+	5,  // [5:5] is the sub-list for extension type_name
+	5,  // [5:5] is the sub-list for extension extendee
+	0,  // [0:5] is the sub-list for field type_name
 }
 
 func init() { file_internal_proto_hitstor_v1_backup_proto_init() }
@@ -1552,7 +1678,7 @@ func file_internal_proto_hitstor_v1_backup_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_internal_proto_hitstor_v1_backup_proto_rawDesc), len(file_internal_proto_hitstor_v1_backup_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   18,
+			NumMessages:   19,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

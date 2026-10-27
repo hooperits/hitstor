@@ -25,7 +25,7 @@ Unless noted, endpoints require dashboard authentication when `serve_dashboard_p
 
 | Method | Path | Description |
 |--------|------|-------------|
-| `GET` | `/api/agents` | List agents with status and schedule info |
+| `GET` | `/api/agents` | List agents with status, schedule info, and installed workload plugins (`plugins`) |
 | `POST` | `/api/agents` | Register agent (manual entry: `name`, `agent_addr`, optional `api_key`) |
 | `DELETE` | `/api/agents/{name}` | Remove agent |
 | `POST` | `/api/agents/{name}/schedule` | Set schedule (interval, cron, timezone, jobs) |

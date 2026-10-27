@@ -74,6 +74,9 @@ La usa `hitstor-agent` para configurar el agente de respaldo remoto.
 | `plugin_dir` | string | | Directorio donde se buscan los binarios de plugins (se busca antes que en `$PATH`) |
 | `hook_plugins` | list | | Nombres de los plugins de hook que se cargan para los eventos del ciclo de vida previos y posteriores al respaldo |
 | `fs_scanner_plugin` | string | | Nombre del plugin escáner del sistema de archivos (`builtin` o un plugin `Scanner` personalizado; solo uno activo a la vez) |
+| `plugin_store_dir` | string | `/var/lib/hitstor/plugins` (Linux), `C:\ProgramData\HitStor\plugins` (Windows) | Agente: directorio donde se instalan los paquetes de plugins de carga de trabajo |
+| `plugin_trusted_keys` | list | | Agente: claves públicas ed25519 en base64 adicionales autorizadas para firmar paquetes de plugins, además de la clave oficial de HitStor |
+| `plugin_allow_unsigned` | bool | `false` | Agente: acepta paquetes de plugins sin firma. Solo para desarrollo; los paquetes firmados con una clave no confiable se siguen rechazando |
 
 ### Integraciones (`integrations`) { #integrations-integrations }
 

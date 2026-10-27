@@ -103,6 +103,7 @@ nav:
       - recover: reference/agent-commands/recover.md
       - bmr: reference/agent-commands/bmr.md
       - show-id: reference/agent-commands/show-id.md
+      - plugin: reference/agent-commands/plugin.md
       - service: reference/agent-commands/service.md
     - Internals: reference/internals.md
     - Config Reference: reference/config-reference.md

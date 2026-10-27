@@ -25,7 +25,7 @@ Salvo que se indique lo contrario, los endpoints requieren autenticación en el 
 
 | Método | Ruta | Descripción |
 |--------|------|-------------|
-| `GET` | `/api/agents` | Lista los agentes con su estado e información de programación |
+| `GET` | `/api/agents` | Lista los agentes con su estado, información de programación y plugins de carga de trabajo instalados (`plugins`) |
 | `POST` | `/api/agents` | Registra un agente (entrada manual: `name`, `agent_addr`, `api_key` opcional) |
 | `DELETE` | `/api/agents/{name}` | Elimina un agente |
 | `POST` | `/api/agents/{name}/schedule` | Define la programación (intervalo, cron, zona horaria, tareas) |

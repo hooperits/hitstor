@@ -114,6 +114,7 @@ nav:
   - Dev Guide:
     - dev-guide/index.md
     - Codebase Overview: dev-guide/codebase-overview.md
+    - Plugin Architecture: dev-guide/plugin-architecture.md
     - Dev Environment: dev-guide/dev-environment.md
     - Build & Packaging: dev-guide/build-and-packaging.md
     - Server Preparation: dev-guide/server-preparation.md
@@ -202,6 +203,7 @@ plugins:
             Dev Guide: Guía de desarrollo
             Dev Environment: Entorno de desarrollo
             Codebase Overview: Visión general del código
+            Plugin Architecture: Arquitectura de plugins
             "Build & Packaging": "Compilación y empaquetado"
             Testing: Pruebas
             Benchmarks: Benchmarks

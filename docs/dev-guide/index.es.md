@@ -7,6 +7,7 @@ La Guía de desarrollo de HitStor es una referencia interna para compilar, empaq
 | Guía | Descripción |
 |------|-------------|
 | [Panorama del código fuente](codebase-overview.md) | Mapa de la arquitectura, binarios, paquetes y madurez de las funciones. |
+| [Arquitectura de plugins](plugin-architecture.md) | Diseño de los plugins instalables de carga de trabajo (primero SQL Server). |
 | [Entorno de desarrollo](dev-environment.md) | Instale todas las herramientas necesarias para compilar y empaquetar HitStor. |
 | [Compilación y empaquetado](build-and-packaging.md) | Compile los binarios y genere paquetes `.deb`, `.rpm`, de Windows y de Docker. |
 | [Preparación del servidor](server-preparation.md) | Prepare un servidor Ubuntu antes de instalar el paquete `.deb` de HitStor. |

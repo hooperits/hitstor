@@ -58,6 +58,8 @@ sudo systemctl enable --now hitstor-agent
 ## Notas { #notes }
 
 - En el primer inicio, el daemon genera un token de agente en `/etc/hitstor/agent-token` si no existe uno
+- El agente escribe su registro en `agent.log` dentro de la carpeta de registros (`/var/log/hitstor/` en Linux, `C:\ProgramData\HitStor\logs\` en Windows, también cuando se ejecuta como servicio de Windows); `log_file_path` lo cambia
+- Cuando una tarea falla, el agente informa el error al servidor: el dashboard muestra la tarea como fallida con el mensaje, y la tarea se reintenta en su siguiente horario programado (las de intervalo esperan al menos 15 minutos) en lugar de en cada consulta
 - El servidor de gestión usa TLS autofirmado (generado automáticamente)
 - Si no hay ninguna programación configurada, el daemon consulta cada 5 minutos y registra un mensaje
 - Alternativa al modo daemon: use temporizadores de systemd con `hitstor-agent backup` para una programación de estilo cron

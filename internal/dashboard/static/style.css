@@ -6058,3 +6058,5 @@ body.dr-drawer-open {
 .plugin-install-row, .plugin-upload-row { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; margin: 0.75rem 0; }
 .plugin-point { cursor: pointer; }
 .plugin-point:hover { background: var(--hover, rgba(127, 127, 127, 0.08)); }
+
+.job-last-error { margin-top: 0.25rem; max-width: 28rem; font-size: 0.8rem; color: var(--danger); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

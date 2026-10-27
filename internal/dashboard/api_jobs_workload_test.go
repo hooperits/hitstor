@@ -6,6 +6,7 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/hooperits/hitstor/internal/server"
 )
@@ -91,5 +92,32 @@ func TestAPICreateWorkloadJobValidation(t *testing.T) {
 				t.Fatalf("%d %s", rec.Code, rec.Body)
 			}
 		})
+	}
+}
+
+func TestFailedJobShowsError(t *testing.T) {
+	dash, _, cleanup := setupTestDashboardWithRepoManager(t)
+	defer cleanup()
+	if _, err := dash.registry.AddAgent("db-agent"); err != nil {
+		t.Fatal(err)
+	}
+	if err := dash.registry.AddJob(server.BackupJob{ID: "jf", Name: "db full", AgentName: "db-agent", RepoName: "default",
+		JobType: server.JobTypeWorkload, Plugin: "mssql", Selection: []string{"MSSQLSERVER/db"}, ScheduleEnabled: true, ScheduleHours: 24}); err != nil {
+		t.Fatal(err)
+	}
+	dash.registry.RecordJobFailure("jf", "login failed for user", time.Now())
+
+	rec := httptest.NewRecorder()
+	dash.Handler().ServeHTTP(rec, httptest.NewRequest("GET", "/api/backups/jf", nil))
+	var got backupJobJSON
+	json.NewDecoder(rec.Body).Decode(&got)
+	if got.Status != "failed" || got.LastError != "login failed for user" || got.LastErrorAt == nil {
+		t.Fatalf("job = status %q, error %q", got.Status, got.LastError)
+	}
+
+	page := httptest.NewRecorder()
+	dash.Handler().ServeHTTP(page, httptest.NewRequest("GET", "/backups", nil))
+	if body := page.Body.String(); !strings.Contains(body, "login failed for user") || !strings.Contains(body, "badge-critical") {
+		t.Fatal("backups page does not show the failure")
 	}
 }

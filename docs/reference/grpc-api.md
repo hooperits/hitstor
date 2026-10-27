@@ -18,6 +18,7 @@ HitStor uses gRPC over TLS for communication between components. There are two g
 | `FinalizeBackup` | Unary | Send file tree, create snapshot, end session |
 | `Ping` | Unary | Health check, returns server version |
 | `GetSchedule` | Unary | Query backup schedule for this agent |
+| `ReportJobFailure` | Unary | Report a job that failed on the agent: the server records the error (shown in the dashboard), clears a pending "run now", drops the abandoned session, and delays the next attempt |
 
 ## Authentication
 

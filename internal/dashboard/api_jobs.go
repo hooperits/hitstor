@@ -53,6 +53,9 @@ type backupJobJSON struct {
 	Selection      []string          `json:"selection,omitempty"`
 	BackupKind     string            `json:"backup_kind,omitempty"`
 	BackupOptions  map[string]string `json:"backup_options,omitempty"`
+
+	LastError   string  `json:"last_error,omitempty"`
+	LastErrorAt *string `json:"last_error_at,omitempty"`
 }
 
 func jobToJSON(c *i18n.Catalog, j server.BackupJob) backupJobJSON {
@@ -82,6 +85,9 @@ func jobToJSON(c *i18n.Catalog, j server.BackupJob) backupJobJSON {
 		} else {
 			status = "ok"
 		}
+	}
+	if !j.RunNow && server.JobFailedSinceLastBackup(j) {
+		status = "failed"
 	}
 
 	result := backupJobJSON{
@@ -118,6 +124,10 @@ func jobToJSON(c *i18n.Catalog, j server.BackupJob) backupJobJSON {
 	if j.LastVerifyAt != nil {
 		ts := j.LastVerifyAt.Format(time.RFC3339)
 		result.LastVerifyAt = &ts
+	}
+	if j.LastErrorAt != nil {
+		ts := j.LastErrorAt.Format(time.RFC3339)
+		result.LastError, result.LastErrorAt = j.LastError, &ts
 	}
 
 	// Compute cron description and next run time.

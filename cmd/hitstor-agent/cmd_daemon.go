@@ -391,6 +391,7 @@ func runJobBackup(ctx context.Context, client *agent.Client, job agent.JobSchedu
 			"job_name", job.Name,
 			"error", err,
 		)
+		reportJobFailure(ctx, client, job, err)
 		return
 	}
 
@@ -420,6 +421,7 @@ func runWorkloadJob(ctx context.Context, client *agent.Client, job agent.JobSche
 	p, c, closeAll, err := openInstalledWorkload(job.Plugin, job.PluginSettings)
 	if err != nil {
 		log.Error("workload backup failed: cannot start plugin", "error", err)
+		reportJobFailure(ctx, client, job, fmt.Errorf("start plugin %s: %w", job.Plugin, err))
 		return
 	}
 	defer closeAll()
@@ -446,6 +448,7 @@ func runWorkloadJob(ctx context.Context, client *agent.Client, job agent.JobSche
 			return
 		}
 		log.Error("workload backup failed", "error", err)
+		reportJobFailure(ctx, client, job, err)
 		return
 	}
 	log.Info("workload backup complete",
@@ -455,4 +458,13 @@ func runWorkloadJob(ctx context.Context, client *agent.Client, job agent.JobSche
 		"bytes_processed", result.BytesProcessed,
 		"duration", result.Duration,
 	)
+}
+
+// reportJobFailure tells the server a job failed, so the dashboard shows the
+// error and the job is not retried on every poll. Best effort: an old server
+// without the RPC simply keeps its previous behavior.
+func reportJobFailure(ctx context.Context, client *agent.Client, job agent.JobSchedule, jobErr error) {
+	if err := client.ReportJobFailure(ctx, apiKeyFlag, job.JobID, jobErr); err != nil {
+		slog.Warn("could not report job failure to server", "job_id", job.JobID, "error", err)
+	}
 }

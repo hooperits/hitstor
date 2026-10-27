@@ -469,7 +469,11 @@ func (s *Server) GetSchedule(ctx context.Context, req *pb.GetScheduleRequest) (*
 				}
 				slog.Debug("cron schedule evaluation", "job", j.ID, "expr", j.CronExpression, "timezone", loc)
 				var from time.Time
-				if j.LastBackup != nil {
+				if JobFailedSinceLastBackup(j) {
+					// A failed run waits for the next slot after it instead of
+					// being due again on every poll.
+					from = j.LastErrorAt.In(loc)
+				} else if j.LastBackup != nil {
 					from = j.LastBackup.In(loc)
 				} else {
 					// First-ever run: anchor 1 minute in the past so that if
@@ -489,6 +493,12 @@ func (s *Server) GetSchedule(ctx context.Context, req *pb.GetScheduleRequest) (*
 			// Legacy interval mode.
 			nextRun := j.LastBackup.Add(time.Duration(j.ScheduleHours) * time.Hour)
 			sj.NextRunUnix = nextRun.Unix()
+		}
+		// Interval jobs retry a failed run after a pause, not on every poll.
+		if j.CronExpression == "" && JobFailedSinceLastBackup(j) {
+			if retry := j.LastErrorAt.Add(failedJobRetryDelay).Unix(); sj.NextRunUnix < retry {
+				sj.NextRunUnix = retry
+			}
 		}
 
 		resp.Jobs = append(resp.Jobs, sj)
@@ -597,4 +607,29 @@ func pluginFieldsFromProto(fs []*pb.PluginField) []plugin.FieldSpec {
 			Default: f.Default, Choices: f.Choices, Required: f.Required})
 	}
 	return out
+}
+
+// failedJobRetryDelay is how long an interval job waits after a failed run.
+const failedJobRetryDelay = 15 * time.Minute
+
+// ReportJobFailure implements BackupService.ReportJobFailure.
+func (s *Server) ReportJobFailure(ctx context.Context, req *pb.ReportJobFailureRequest) (*pb.ReportJobFailureResponse, error) {
+	agentName, ok := s.registry.VerifyKey(req.ApiKey)
+	if !ok {
+		return nil, status.Error(codes.Unauthenticated, "invalid API key")
+	}
+	job := s.registry.GetJob(req.JobId)
+	if job == nil {
+		return nil, status.Errorf(codes.NotFound, "backup job %q not found", req.JobId)
+	}
+	if job.AgentName != agentName {
+		return nil, status.Error(codes.PermissionDenied, "job does not belong to this agent")
+	}
+	if err := s.registry.RecordJobFailure(req.JobId, req.Error, time.Now()); err != nil {
+		return nil, status.Errorf(codes.Internal, "record job failure: %v", err)
+	}
+	dropped := s.CancelSessionByJobID(req.JobId)
+	slog.Warn("backup job failed on agent", "agent", agentName, "job", job.Name, "job_id", req.JobId,
+		"session_dropped", dropped, "error", req.Error)
+	return &pb.ReportJobFailureResponse{}, nil
 }

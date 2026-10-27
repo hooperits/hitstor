@@ -34,6 +34,7 @@ const (
 	BackupService_Ping_FullMethodName                = "/hitstor.v1.BackupService/Ping"
 	BackupService_GetSchedule_FullMethodName         = "/hitstor.v1.BackupService/GetSchedule"
 	BackupService_AnnounceForRecovery_FullMethodName = "/hitstor.v1.BackupService/AnnounceForRecovery"
+	BackupService_ReportJobFailure_FullMethodName    = "/hitstor.v1.BackupService/ReportJobFailure"
 )
 
 // BackupServiceClient is the client API for BackupService service.
@@ -71,6 +72,11 @@ type BackupServiceClient interface {
 	// single-use recovery token and its current address. The server records
 	// both, then dials back over the existing restore-push path unchanged.
 	AnnounceForRecovery(ctx context.Context, in *AnnounceForRecoveryRequest, opts ...grpc.CallOption) (*AnnounceForRecoveryResponse, error)
+	// ReportJobFailure tells the server that a scheduled job failed on the
+	// agent before finishing (for example, a plugin could not reach its
+	// database). The server records the error on the job, clears a pending
+	// "run now", and drops the job's abandoned session.
+	ReportJobFailure(ctx context.Context, in *ReportJobFailureRequest, opts ...grpc.CallOption) (*ReportJobFailureResponse, error)
 }
 
 type backupServiceClient struct {
@@ -154,6 +160,16 @@ func (c *backupServiceClient) AnnounceForRecovery(ctx context.Context, in *Annou
 	return out, nil
 }
 
+func (c *backupServiceClient) ReportJobFailure(ctx context.Context, in *ReportJobFailureRequest, opts ...grpc.CallOption) (*ReportJobFailureResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ReportJobFailureResponse)
+	err := c.cc.Invoke(ctx, BackupService_ReportJobFailure_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // BackupServiceServer is the server API for BackupService service.
 // All implementations must embed UnimplementedBackupServiceServer
 // for forward compatibility.
@@ -189,6 +205,11 @@ type BackupServiceServer interface {
 	// single-use recovery token and its current address. The server records
 	// both, then dials back over the existing restore-push path unchanged.
 	AnnounceForRecovery(context.Context, *AnnounceForRecoveryRequest) (*AnnounceForRecoveryResponse, error)
+	// ReportJobFailure tells the server that a scheduled job failed on the
+	// agent before finishing (for example, a plugin could not reach its
+	// database). The server records the error on the job, clears a pending
+	// "run now", and drops the job's abandoned session.
+	ReportJobFailure(context.Context, *ReportJobFailureRequest) (*ReportJobFailureResponse, error)
 	mustEmbedUnimplementedBackupServiceServer()
 }
 
@@ -219,6 +240,9 @@ func (UnimplementedBackupServiceServer) GetSchedule(context.Context, *GetSchedul
 }
 func (UnimplementedBackupServiceServer) AnnounceForRecovery(context.Context, *AnnounceForRecoveryRequest) (*AnnounceForRecoveryResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method AnnounceForRecovery not implemented")
+}
+func (UnimplementedBackupServiceServer) ReportJobFailure(context.Context, *ReportJobFailureRequest) (*ReportJobFailureResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ReportJobFailure not implemented")
 }
 func (UnimplementedBackupServiceServer) mustEmbedUnimplementedBackupServiceServer() {}
 func (UnimplementedBackupServiceServer) testEmbeddedByValue()                       {}
@@ -356,6 +380,24 @@ func _BackupService_AnnounceForRecovery_Handler(srv interface{}, ctx context.Con
 	return interceptor(ctx, in, info, handler)
 }
 
+func _BackupService_ReportJobFailure_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ReportJobFailureRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(BackupServiceServer).ReportJobFailure(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: BackupService_ReportJobFailure_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(BackupServiceServer).ReportJobFailure(ctx, req.(*ReportJobFailureRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // BackupService_ServiceDesc is the grpc.ServiceDesc for BackupService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -386,6 +428,10 @@ var BackupService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "AnnounceForRecovery",
 			Handler:    _BackupService_AnnounceForRecovery_Handler,
+		},
+		{
+			MethodName: "ReportJobFailure",
+			Handler:    _BackupService_ReportJobFailure_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

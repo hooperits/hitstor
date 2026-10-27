@@ -174,6 +174,16 @@ type BackupJob struct {
 	BackupKind     string            `json:"backup_kind,omitempty"`
 	// BackupOptions are passed with each run (e.g. copy_only).
 	BackupOptions map[string]string `json:"backup_options,omitempty"`
+
+	// LastError and LastErrorAt record the most recent failed run reported
+	// by the agent; a successful backup clears them.
+	LastError   string     `json:"last_error,omitempty"`
+	LastErrorAt *time.Time `json:"last_error_at,omitempty"`
+}
+
+// JobFailedSinceLastBackup reports whether the job's latest run failed.
+func JobFailedSinceLastBackup(j BackupJob) bool {
+	return j.LastErrorAt != nil && (j.LastBackup == nil || j.LastErrorAt.After(*j.LastBackup))
 }
 
 // registryData is the versioned envelope stored in agents.json.
@@ -831,6 +841,7 @@ func (r *AgentRegistry) UpdateJobLastBackup(id string, t time.Time) error {
 			r.jobs[i].LastBackup = &t
 			r.jobs[i].RunNow = false        // Clear manual trigger after backup completes.
 			r.jobs[i].ForceFullScan = false // Clear force-full after backup completes.
+			r.jobs[i].LastError, r.jobs[i].LastErrorAt = "", nil
 			return r.save()
 		}
 	}
@@ -882,6 +893,25 @@ func (r *AgentRegistry) UpdateJobVerifyResult(id string, result JobVerifyResult)
 			r.jobs[i].LastVerifyDetail = result.Detail
 			r.jobs[i].LastVerifyFiles = result.Files
 			r.jobs[i].LastVerifyBytes = result.Bytes
+			return r.save()
+		}
+	}
+	return fmt.Errorf("server: job %q not found", id)
+}
+
+// RecordJobFailure stores a failed run reported by the agent and clears the
+// manual "Backup Now" flag, so a failing job is not retried on every poll.
+func (r *AgentRegistry) RecordJobFailure(id, msg string, t time.Time) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	for i := range r.jobs {
+		if r.jobs[i].ID == id {
+			if len(msg) > 2000 {
+				msg = msg[:2000]
+			}
+			r.jobs[i].LastError = msg
+			r.jobs[i].LastErrorAt = &t
+			r.jobs[i].RunNow = false
 			return r.save()
 		}
 	}

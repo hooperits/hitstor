@@ -32,7 +32,13 @@ func runAsService() bool {
 func serviceBackup(ctx context.Context) error {
 	// Load config (same as CLI PersistentPreRunE).
 	loadConfig()
+	// A service has no console: log job activity (info) to the log file,
+	// where operators and the dashboard's log viewer can read it.
+	if verboseCount == 0 {
+		verboseCount = 1
+	}
 	setupLogging()
+	initAgentLogStore(loadedConfig)
 
 	// Load credentials from agent.env (Windows doesn't have systemd EnvironmentFile).
 	// Workload plugins inherit this environment.

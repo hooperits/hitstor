@@ -18,6 +18,7 @@ HitStor usa gRPC sobre TLS para la comunicación entre componentes. Hay dos serv
 | `FinalizeBackup` | Unaria | Envía el árbol de archivos, crea la instantánea y cierra la sesión |
 | `Ping` | Unaria | Verificación de estado; devuelve la versión del servidor |
 | `GetSchedule` | Unaria | Consulta la programación de respaldos de este agente |
+| `ReportJobFailure` | Unaria | Informa una tarea que falló en el agente: el servidor guarda el error (visible en el dashboard), limpia un "respaldar ahora" pendiente, descarta la sesión abandonada y posterga el siguiente intento |
 
 ## Autenticación { #authentication }
 

@@ -49,7 +49,22 @@ service BackupService {
   // single-use recovery token and its current address. The server records
   // both, then dials back over the existing restore-push path unchanged.
   rpc AnnounceForRecovery(AnnounceForRecoveryRequest) returns (AnnounceForRecoveryResponse);
+
+  // ReportJobFailure tells the server that a scheduled job failed on the
+  // agent before finishing (for example, a plugin could not reach its
+  // database). The server records the error on the job, clears a pending
+  // "run now", and drops the job's abandoned session.
+  rpc ReportJobFailure(ReportJobFailureRequest) returns (ReportJobFailureResponse);
 }
+
+message ReportJobFailureRequest {
+  string api_key = 1;
+  string job_id = 2;
+  // Human-readable error, shown in the dashboard.
+  string error = 3;
+}
+
+message ReportJobFailureResponse {}
 
 // --- Bare-metal recovery announce ---
 

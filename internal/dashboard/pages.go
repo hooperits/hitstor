@@ -47,6 +47,8 @@ func (d *Dashboard) newPageData(title, subtitle, active string, content any) pag
 }
 
 type jobView struct {
+	// LastError is the agent's message for the latest failed run.
+	LastError        string
 	ID               string
 	Name             string
 	JobType          string
@@ -104,6 +106,10 @@ func buildJobView(c *i18n.Catalog, j server.BackupJob, sess *server.SessionInfo,
 			status = "ok"
 		}
 	}
+	var lastError string
+	if !j.RunNow && server.JobFailedSinceLastBackup(j) {
+		status, lastError = "failed", j.LastError
+	}
 
 	schedDisplay := c.Tf("every {n}h", "n", j.ScheduleHours)
 	var nextRun string
@@ -159,6 +165,7 @@ func buildJobView(c *i18n.Catalog, j server.BackupJob, sess *server.SessionInfo,
 		LastBackup:       j.LastBackup,
 		RunNow:           j.RunNow,
 		Status:           status,
+		LastError:        lastError,
 		CreatedAt:        j.CreatedAt,
 	}
 

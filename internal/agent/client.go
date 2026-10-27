@@ -371,3 +371,11 @@ func pluginFieldsToProto(fs []plugin.FieldSpec) []*pb.PluginField {
 	}
 	return out
 }
+
+// ReportJobFailure tells the server that a job failed on this agent.
+func (c *Client) ReportJobFailure(ctx context.Context, apiKey, jobID string, jobErr error) error {
+	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	defer cancel()
+	_, err := c.backup.ReportJobFailure(ctx, &pb.ReportJobFailureRequest{ApiKey: apiKey, JobId: jobID, Error: jobErr.Error()})
+	return err
+}

@@ -104,6 +104,8 @@ func Apply(snapshots []SnapshotInfo, policy Policy, filterHost string, filterPat
 	applyTimeBucket(inScope, keep, policy.KeepMonthly, bucketMonthly)
 	applyTimeBucket(inScope, keep, policy.KeepYearly, bucketYearly)
 
+	protectChains(inScope, keep)
+
 	// Build result.
 	var result Result
 
@@ -185,4 +187,44 @@ func bucketMonthly(t time.Time) string {
 
 func bucketYearly(t time.Time) string {
 	return t.Format("2006")
+}
+
+// protectChains keeps the backups that kept workload backups depend on.
+//
+// Workload snapshots carry "plugin:<id>" and "kind:<kind>" tags. A kept
+// snapshot of any kind other than full (a differential, a log) is only
+// restorable together with the earlier snapshots of the same host and
+// plugin back to a full one, so those are kept too. Without a full before
+// it, every earlier snapshot of the group is kept. inScope is sorted newest
+// first.
+func protectChains(inScope []SnapshotInfo, keep map[int]bool) {
+	groups := make(map[string][]int) // host|plugin -> indices, newest first
+	for i, s := range inScope {
+		if p := tagValue(s.Tags, "plugin:"); p != "" {
+			key := s.Hostname + "|" + p
+			groups[key] = append(groups[key], i)
+		}
+	}
+	for _, idx := range groups {
+		for pos, i := range idx {
+			if !keep[i] || tagValue(inScope[i].Tags, "kind:") == "full" {
+				continue
+			}
+			for _, older := range idx[pos+1:] {
+				keep[older] = true
+				if tagValue(inScope[older].Tags, "kind:") == "full" {
+					break
+				}
+			}
+		}
+	}
+}
+
+func tagValue(tags []string, prefix string) string {
+	for _, t := range tags {
+		if len(t) > len(prefix) && t[:len(prefix)] == prefix {
+			return t[len(prefix):]
+		}
+	}
+	return ""
 }

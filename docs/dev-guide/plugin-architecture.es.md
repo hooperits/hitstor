@@ -1,11 +1,8 @@
 # Arquitectura de plugins de carga de trabajo
 
-> **Estado: fases 1 y 2 implementadas** (formato de paquete, firma, gestor
-> de plugins del agente, inventario, exploración de objetos, respaldo en
-> instantáneas, tareas de carga de trabajo y restauración planificada a
-> través del agente). Siguen la retención de cadenas de respaldo
-> (`depends_on`), el plugin de SQL Server (fase 3) y la interfaz del
-> dashboard (fase 4). El primer plugin construido sobre esta
+> **Estado: fases 1 a 3 implementadas** (framework de plugins, respaldo y
+> restauración de cargas de trabajo, retención de cadenas de respaldo y el
+> plugin de SQL Server). Sigue la interfaz del dashboard (fase 4). El primer plugin construido sobre esta
 > arquitectura respalda Microsoft SQL Server mediante la Virtual Device
 > Interface (VDI). Reemplaza la entrada "tipo de plugin
 > recolector de cargas de trabajo" de la sección
@@ -187,9 +184,12 @@ LSN y las opciones de recuperación.
 
 Una política de retención no debe eliminar un elemento del que depende otro
 elemento que se conserva (por ejemplo, un respaldo completo que necesitan
-diferenciales o logs posteriores). Los plugins declaran esas dependencias en
-los metadatos de cada elemento con un campo genérico `depends_on`, y `forget`
-conserva la cadena completa.
+diferenciales o logs posteriores). El agente etiqueta las instantáneas de
+carga de trabajo con `plugin:<id>` y `kind:<tipo>`; cuando una política
+conserva una instantánea cuyo tipo no es `full`, `forget` también conserva las
+instantáneas anteriores del mismo host y plugin hasta el completo previo. La
+regla no necesita conocer nada de cada plugin y, ante la duda, conserva de
+más.
 
 ## Servidor y dashboard { #server-and-dashboard }
 

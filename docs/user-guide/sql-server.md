@@ -153,10 +153,10 @@ hitstor-agent plugin test-restore mssql --from C:\Temp\sales-backup `
 
 ## Limitations
 
-- Retention does not yet keep backup chains together: a policy that forgets a
-  full backup can strand the differentials and logs that depend on it. Keep
-  retention long enough to cover a full cycle (for example, more than one
-  week with weekly fulls).
+- [Retention](retention.md#workload-backup-chains) keeps each kept
+  differential or log together with the backups back to the previous full.
+  It treats every full as a chain start, so do not mix `copy_only` fulls into
+  a job plan that also takes differentials.
 - One database per VDI stream; databases in a job are backed up one after
   another.
 - Dashboard pages for SQL Server jobs and restores are not available yet; use

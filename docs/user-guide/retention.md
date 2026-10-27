@@ -57,6 +57,15 @@ For example, with `--keep-last 3 --keep-daily 7`:
 - A snapshot is kept if it is one of the 3 most recent, **or** if it is the latest snapshot for one of the last 7 calendar days.
 - A snapshot that satisfies both rules is still kept (the rules do not cancel each other out).
 
+## Workload Backup Chains
+
+Differential and log backups taken by workload plugins (for example
+[SQL Server](sql-server.md)) are only restorable together with the backups
+before them. When a policy keeps such a snapshot, HitStor also keeps the
+earlier snapshots of the same host and plugin back to the most recent full
+backup, even if the policy alone would forget them. Snapshots are recognized
+by their `plugin:<id>` and `kind:<kind>` tags.
+
 ## Host and Path Filtering
 
 By default, `forget` applies the retention policy across **all** snapshots in the repository, grouped by host and path. You can narrow the scope with filters:

@@ -1,10 +1,8 @@
 # Workload Plugin Architecture
 
-> **Status: phases 1 and 2 implemented** (package format, signing, agent
-> plugin manager, inventory, browse, backup into snapshots, workload jobs,
-> and planned restore through the agent). Retention of backup chains
-> (`depends_on`), the SQL Server plugin (phase 3), and the dashboard UI
-> (phase 4) are next. The first plugin built on this architecture is Microsoft SQL Server
+> **Status: phases 1–3 implemented** (plugin framework, workload backup and
+> restore, backup-chain retention, and the SQL Server plugin). The dashboard
+> UI (phase 4) is next. The first plugin built on this architecture is Microsoft SQL Server
 > backup through the Virtual Device Interface (VDI).
 > It supersedes the "workload collector plugin type" entry under
 > [Permanently removed](../admin-guide/roadmap.md#permanently-removed-v200) in
@@ -178,9 +176,12 @@ and recovery options.
 ### Retention
 
 A retention policy must not delete an item that a still-retained item depends
-on (for example, a full backup that later differentials or logs need). Plugins
-declare these dependencies in their item metadata through a generic
-`depends_on` field, and `forget` keeps the whole chain.
+on (for example, a full backup that later differentials or logs need). The
+agent tags workload snapshots with `plugin:<id>` and `kind:<kind>`; when a
+policy keeps a snapshot whose kind is not `full`, `forget` also keeps the
+earlier snapshots of the same host and plugin back to the previous full. The
+rule needs no plugin-specific knowledge and errs on the side of keeping
+more.
 
 ## Server and dashboard
 

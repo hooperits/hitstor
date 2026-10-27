@@ -158,10 +158,11 @@ hitstor-agent plugin test-restore mssql --from C:\Temp\sales-backup `
 
 ## Limitaciones { #limitations }
 
-- La retención todavía no mantiene unidas las cadenas de respaldo: una
-  política que olvide un respaldo completo puede dejar huérfanos los
-  diferenciales y logs que dependen de él. Mantenga una retención que cubra un
-  ciclo completo (por ejemplo, más de una semana con completos semanales).
+- La [retención](retention.md#workload-backup-chains) conserva cada
+  diferencial o log que se mantiene junto con los respaldos hasta el completo
+  anterior. Trata cada respaldo completo como inicio de cadena, así que no
+  mezcle completos `copy_only` en un plan de tareas que también toma
+  diferenciales.
 - Un stream VDI por base de datos; las bases de una tarea se respaldan una
   tras otra.
 - Las páginas del dashboard para tareas y restauraciones de SQL Server aún no

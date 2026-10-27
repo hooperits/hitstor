@@ -1,6 +1,9 @@
 package retention
 
 import (
+	"fmt"
+	"sort"
+	"strings"
 	"testing"
 	"time"
 
@@ -365,5 +368,55 @@ func TestApply_CombinedTagAndLast(t *testing.T) {
 	}
 	if len(result.Forget) != 1 {
 		t.Errorf("forget = %d, want 1", len(result.Forget))
+	}
+}
+
+func forgottenIDs(r Result) string {
+	var ids []string
+	for _, s := range r.Forget {
+		ids = append(ids, fmt.Sprintf("%d", s.ID[0]))
+	}
+	sort.Strings(ids)
+	return strings.Join(ids, ",")
+}
+
+func TestApply_ProtectsWorkloadChains(t *testing.T) {
+	base := time.Date(2026, 3, 1, 0, 0, 0, 0, time.UTC)
+	h := func(n int) time.Time { return base.Add(time.Duration(n) * time.Hour) }
+	wl := func(kind string) []string { return []string{"plugin:mssql", "kind:" + kind} }
+	snapshots := []SnapshotInfo{
+		snap(1, h(0), "sql01", nil, wl("full")),
+		snap(2, h(1), "sql01", nil, wl("log")),
+		snap(3, h(2), "sql01", nil, wl("differential")),
+		snap(4, h(3), "sql01", nil, wl("log")),
+		snap(5, h(4), "sql01", nil, wl("full")),
+		snap(6, h(5), "sql01", nil, wl("log")),
+		snap(7, h(6), "sql01", nil, wl("log")),
+		// Another host's chain is independent.
+		snap(8, h(0), "sql02", nil, wl("full")),
+		snap(9, h(1), "sql02", nil, wl("log")),
+		// Filesystem snapshots are untouched by chain rules.
+		snap(10, h(0), "sql01", []string{"/etc"}, nil),
+	}
+
+	// Keeping only the newest log keeps its chain back to full #5.
+	r, err := Apply(snapshots, Policy{KeepLast: 1}, "sql01", "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := forgottenIDs(r); got != "1,10,2,3,4" {
+		t.Fatalf("forgotten = %s, want 1,10,2,3,4", got)
+	}
+
+	// Keeping the differential (#3) keeps full #1 and the log between them.
+	r, _ = Apply(snapshots, Policy{KeepTags: []string{"kind:differential"}}, "sql01", "")
+	if got := forgottenIDs(r); got != "10,4,5,6,7" {
+		t.Fatalf("forgotten = %s, want 10,4,5,6,7", got)
+	}
+
+	// A log with no earlier full keeps everything older in its group.
+	r, _ = Apply(snapshots[8:9], Policy{KeepLast: 1}, "", "")
+	if len(r.Forget) != 0 {
+		t.Fatalf("forgot %v", r.Forget)
 	}
 }

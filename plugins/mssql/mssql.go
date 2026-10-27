@@ -155,7 +155,8 @@ func (p *mssqlPlugin) Backup(ctx context.Context, req hitstorplugin.BackupReques
 			return fmt.Errorf("database %q not found", dbName)
 		}
 
-		stamp := time.Now().UTC().Format("20060102T150405Z")
+		// Milliseconds: log backups can be seconds apart.
+		stamp := time.Now().UTC().Format("20060102T150405.000Z")
 		w, err := sink.Item(fmt.Sprintf("%s/%s/%s-%s.%s", cfg.Instance, dbName, kind, stamp, ext))
 		if err != nil {
 			return err

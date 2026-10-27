@@ -2,6 +2,7 @@ package agent
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
 	"io"
 	"log/slog"
@@ -35,6 +36,7 @@ type AgentServer struct {
 	configPath string // path to agent-config.yaml
 	version    string
 
+	tlsDir string
 	mu     sync.Mutex
 	server *grpc.Server
 
@@ -76,6 +78,10 @@ type AgentServerOptions struct {
 	EnvPath    string // path to agent.env
 	ConfigPath string // path to agent-config.yaml
 	Version    string // agent binary version
+	// TLSDir keeps the agent's TLS certificate (agent.crt, agent.key) so it
+	// survives restarts; the server pins its fingerprint. Empty generates
+	// an ephemeral certificate (rescue environments).
+	TLSDir string
 }
 
 // NewAgentServer creates a new agent-side gRPC server.
@@ -85,13 +91,20 @@ func NewAgentServer(opts AgentServerOptions) *AgentServer {
 		envPath:    opts.EnvPath,
 		configPath: opts.ConfigPath,
 		version:    opts.Version,
+		tlsDir:     opts.TLSDir,
 		WakeUpCh:   make(chan struct{}, 1),
 	}
 }
 
 // Start listens on the given port with self-signed TLS.
 func (s *AgentServer) Start(port int) error {
-	tlsCfg, _, _, err := tlsutil.GenerateSelfSigned("hitstor-agent")
+	var tlsCfg *tls.Config
+	var err error
+	if s.tlsDir != "" {
+		tlsCfg, err = tlsutil.LoadOrGenerateSelfSigned(filepath.Join(s.tlsDir, "agent.crt"), filepath.Join(s.tlsDir, "agent.key"), "hitstor-agent")
+	} else {
+		tlsCfg, _, _, err = tlsutil.GenerateSelfSigned("hitstor-agent")
+	}
 	if err != nil {
 		return fmt.Errorf("agent server: generate TLS: %w", err)
 	}

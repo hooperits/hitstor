@@ -67,6 +67,7 @@ func serviceBackup(ctx context.Context) error {
 		EnvPath:    agent.DefaultEnvPath,
 		ConfigPath: configFlag,
 		Version:    Version,
+		TLSDir:     agent.DefaultConfigDir,
 	})
 
 	// When the server registers us, start the backup loop.

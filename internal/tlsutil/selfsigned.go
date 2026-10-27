@@ -10,9 +10,11 @@ import (
 	"crypto/x509/pkix"
 	"encoding/pem"
 	"fmt"
+	"log/slog"
 	"math/big"
 	"net"
 	"os"
+	"path/filepath"
 	"time"
 )
 
@@ -75,4 +77,35 @@ func GenerateSelfSigned(commonName string) (*tls.Config, []byte, []byte, error) 
 
 	cfg := &tls.Config{Certificates: []tls.Certificate{tlsCert}}
 	return cfg, certPEM, keyPEM, nil
+}
+
+// LoadOrGenerateSelfSigned reuses the certificate and key at certPath and
+// keyPath, or generates a self-signed pair and saves it there. Peers pin the
+// certificate's fingerprint on first contact, so it must survive restarts:
+// a new certificate on every start would look like a man in the middle.
+// If the pair cannot be saved, the generated one is used in memory.
+func LoadOrGenerateSelfSigned(certPath, keyPath, commonName string) (*tls.Config, error) {
+	if cert, err := tls.LoadX509KeyPair(certPath, keyPath); err == nil {
+		return &tls.Config{Certificates: []tls.Certificate{cert}}, nil
+	} else if !os.IsNotExist(err) {
+		slog.Warn("tlsutil: stored certificate unusable, generating a new one", "cert", certPath, "error", err)
+	}
+	cfg, certPEM, keyPEM, err := GenerateSelfSigned(commonName)
+	if err != nil {
+		return nil, err
+	}
+	if err := os.MkdirAll(filepath.Dir(keyPath), 0o700); err != nil {
+		slog.Warn("tlsutil: certificate not saved", "error", err)
+		return cfg, nil
+	}
+	if err := os.WriteFile(keyPath, keyPEM, 0o600); err != nil {
+		slog.Warn("tlsutil: certificate not saved", "error", err)
+		return cfg, nil
+	}
+	if err := os.WriteFile(certPath, certPEM, 0o644); err != nil {
+		slog.Warn("tlsutil: certificate not saved", "error", err)
+		return cfg, nil
+	}
+	slog.Info("tlsutil: certificate generated", "cert", certPath)
+	return cfg, nil
 }

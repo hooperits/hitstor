@@ -399,6 +399,8 @@ Section "Uninstall"
   Delete "$ConfigDir\agent-config.yaml"
   Delete "$ConfigDir\agent-config.yaml.example"
   Delete "$ConfigDir\agent-token"
+  Delete "$ConfigDir\agent.crt"
+  Delete "$ConfigDir\agent.key"
   Delete "$ConfigDir\server-ca.crt"
   RMDir "$ConfigDir"
 

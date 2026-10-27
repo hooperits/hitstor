@@ -85,6 +85,7 @@ func runDaemon(cmd *cobra.Command, args []string) error {
 		EnvPath:    agent.DefaultEnvPath,
 		ConfigPath: configFlag,
 		Version:    Version,
+		TLSDir:     agent.DefaultConfigDir,
 	})
 
 	// When the server registers us, start the backup loop.

@@ -58,6 +58,6 @@ sudo systemctl enable --now hitstor-agent
 ## Notas { #notes }
 
 - En el primer inicio, el daemon genera un token de agente en `/etc/hitstor/agent-token` si no existe uno
-- El servidor de gestión usa TLS autofirmado (generado automáticamente)
+- El servidor de gestión usa un certificado TLS autofirmado, generado en el primer inicio y guardado en `/etc/hitstor/agent.crt` y `agent.key` (`C:\ProgramData\HitStor\` en Windows). El servidor fija su huella, de modo que el certificado debe conservarse entre reinicios; si se borra, el servidor rechaza el agente hasta que se registre de nuevo
 - Si no hay ninguna programación configurada, el daemon consulta cada 5 minutos y registra un mensaje
 - Alternativa al modo daemon: use temporizadores de systemd con `hitstor-agent backup` para una programación de estilo cron

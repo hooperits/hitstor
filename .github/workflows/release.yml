@@ -1,0 +1,41 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Install packaging tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y nsis python3-pil
+          go install github.com/goreleaser/nfpm/v2/cmd/nfpm@v2.44.0
+
+      - name: Test
+        run: go test ./...
+
+      - name: Build release assets
+        run: make release-assets VERSION="${GITHUB_REF_NAME#v}"
+
+      - name: Publish GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" dist/* \
+            --title "HitStor $GITHUB_REF_NAME" \
+            --generate-notes \
+            --verify-tag

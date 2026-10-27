@@ -6,7 +6,7 @@
 	pkg-server-windows pkg-agent-windows pkg-windows \
 	installer-server installer-server-arm64 installer-agent installer-agent-arm64 installers \
 	docker-build docker-save docker-quickstart-up docker-quickstart-down \
-	build-all checksums release release-linux release-docker \
+	build-all checksums release release-assets release-linux release-docker \
 	docs-serve docs-build docs-deploy
 
 BINARY=bin/hitstor
@@ -197,7 +197,14 @@ release-linux: pkg-linux
 release-docker: docker-save
 	@echo "Docker image saved to $(DIST_DIR)/"
 
-release: clean build-all pkg-linux docker-save checksums
+# Files attached to a GitHub release (.github/workflows/release.yml). The
+# Docker image is published separately by docker-publish.yml.
+release-assets: clean build-all pkg-linux pkg-windows installers installer-server-arm64 installer-agent-arm64 checksums
+	@echo ""
+	@echo "Release $(VERSION) assets:"
+	@ls -lh $(DIST_DIR)/
+
+release: clean build-all pkg-linux pkg-windows installers installer-server-arm64 installer-agent-arm64 docker-save checksums
 	@echo ""
 	@echo "Release $(VERSION) artifacts:"
 	@ls -lh $(DIST_DIR)/

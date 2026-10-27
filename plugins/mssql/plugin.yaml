@@ -1,0 +1,8 @@
+id: mssql
+name: Microsoft SQL Server
+version: 0.1.0
+type: workload
+protocol_version: 1
+min_agent_version: 0.1.0
+publisher: hitstor
+description: Backs up and restores SQL Server databases (full, differential, log, point in time) through the Virtual Device Interface, without staging files on disk.

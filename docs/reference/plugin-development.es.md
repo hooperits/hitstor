@@ -518,8 +518,8 @@ hitstor-pluginkit verify dist/hitstor-plugin-example-0.1.0-windows-amd64.hpk \
     --trusted-key "$(cat mykey.pub)"
 ```
 
-`make plugin-packages PLUGIN_KEY_FILE=mykey.key` empaqueta cada plugin de
-`WORKLOAD_PLUGINS` para cada plataforma de `PLUGIN_PLATFORMS`.
+`make plugin-packages PLUGIN_KEY_FILE=mykey.key` genera un paquete por cada par
+`id:os/arch` de `WORKLOAD_PLUGIN_TARGETS`.
 `PLUGIN_UNSIGNED=1` genera paquetes sin firma para pruebas locales; los agentes
 solo los aceptan con `plugin_allow_unsigned: true`.
 

@@ -107,13 +107,13 @@ plugins: plugin-memory notifier-log hook-log scanner-builtin
 
 # --- Workload plugin packages (.hpk) ---
 #
-# Each plugin in plugins/<id>/ becomes one signed package per platform in
-# $(DIST_DIR). The signing key comes from PLUGIN_KEY_FILE, or else from the
+# Each target in WORKLOAD_PLUGIN_TARGETS (plugins/<id>/ built for os/arch)
+# becomes one signed package in $(DIST_DIR). The signing key comes from PLUGIN_KEY_FILE, or else from the
 # HITSTOR_PLUGIN_SIGNING_KEY environment variable (release pipeline).
 # PLUGIN_UNSIGNED=1 builds unsigned packages for local development.
 
-WORKLOAD_PLUGINS ?= example
-PLUGIN_PLATFORMS ?= linux/amd64 windows/amd64
+# id:os/arch pairs: one package each. SQL Server VDI only exists on Windows.
+WORKLOAD_PLUGIN_TARGETS ?= example:linux/amd64 example:windows/amd64 mssql:windows/amd64
 PLUGINKIT = bin/hitstor-pluginkit
 
 ifdef PLUGIN_KEY_FILE
@@ -127,14 +127,14 @@ pluginkit:
 
 plugin-packages: pluginkit
 	@mkdir -p $(DIST_DIR) bin/plugins
-	@set -e; for p in $(WORKLOAD_PLUGINS); do for plat in $(PLUGIN_PLATFORMS); do \
-		os=$${plat%/*}; arch=$${plat#*/}; ext=; \
+	@set -e; for t in $(WORKLOAD_PLUGIN_TARGETS); do \
+		p=$${t%%:*}; plat=$${t#*:}; os=$${plat%/*}; arch=$${plat#*/}; ext=; \
 		if [ "$$os" = windows ]; then ext=.exe; fi; \
 		out=bin/plugins/hitstor-plugin-$$p-$$os-$$arch$$ext; \
 		CGO_ENABLED=0 GOOS=$$os GOARCH=$$arch go build -ldflags="$(LDFLAGS)" -o $$out ./plugins/$$p/; \
 		$(PLUGINKIT) pack --source plugins/$$p/plugin.yaml --binary $$out \
 			--os $$os --arch $$arch --out $(DIST_DIR) $(PLUGIN_SIGN_FLAGS); \
-	done; done
+	done
 
 # --- Linux packaging targets (requires nfpm) ---
 

@@ -13,6 +13,7 @@ La Guía del usuario de HitStor cubre todo lo que necesita saber para proteger s
 | [Retención](retention.md) | Defina políticas de retención, elimine instantáneas antiguas con `forget` y recupere espacio con `prune`. |
 | [Configuración](configuration.md) | Administre el archivo de configuración, las variables de entorno y el asistente interactivo de configuración. |
 | [Plugins](plugins.md) | Descubra, instale y configure plugins de backends de almacenamiento, notificadores, hooks y escáneres. |
+| [SQL Server](sql-server.md) | Respalde y restaure bases de datos de SQL Server con el plugin de carga de trabajo `mssql`. |
 
 ## Requisitos previos { #prerequisites }
 

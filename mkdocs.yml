@@ -58,6 +58,7 @@ nav:
     - Retention: user-guide/retention.md
     - Configuration: user-guide/configuration.md
     - Plugins: user-guide/plugins.md
+    - SQL Server: user-guide/sql-server.md
   - Administration:
     - admin-guide/index.md
     - Server Setup: admin-guide/server-setup.md
@@ -176,6 +177,7 @@ plugins:
             Disaster Recovery: Recuperación ante desastres
             Bare-Metal Restore: Restauración bare-metal
             Plugins: Plugins
+            SQL Server: SQL Server
             Administration: Administración
             Server Setup: Puesta en marcha del servidor
             TLS Certificates: Certificados TLS

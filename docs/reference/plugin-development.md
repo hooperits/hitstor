@@ -513,8 +513,8 @@ hitstor-pluginkit verify dist/hitstor-plugin-example-0.1.0-windows-amd64.hpk \
     --trusted-key "$(cat mykey.pub)"
 ```
 
-`make plugin-packages PLUGIN_KEY_FILE=mykey.key` packages every plugin listed
-in `WORKLOAD_PLUGINS` for every platform in `PLUGIN_PLATFORMS`.
+`make plugin-packages PLUGIN_KEY_FILE=mykey.key` builds one package for every
+`id:os/arch` pair in `WORKLOAD_PLUGIN_TARGETS`.
 `PLUGIN_UNSIGNED=1` builds unsigned packages for local testing; agents accept
 them only with `plugin_allow_unsigned: true`.
 

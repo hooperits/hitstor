@@ -59,15 +59,17 @@ Get-Service HitStor
 
 ## First Login
 
-With no repositories configured, the server starts in setup mode (dashboard only). Open `https://<server>:8421`.
+With no repositories configured, the server starts in setup mode (dashboard only) and serves it over plain HTTP. Open `http://<server>:8421`. HTTPS (self-signed by default) is enabled once a repository is configured and the service restarts.
 
-If `config.yaml` has no dashboard password, the server generates one on first start, saves its hash to `config.yaml`, and logs the plaintext once to `%ProgramData%\HitStor\logs\server.log`:
+There is no default dashboard password. If `config.yaml` has none, the server generates one on first start, saves its hash to `config.yaml`, and logs the plaintext once to `%ProgramData%\HitStor\logs\server.log`. Read it on the server from an elevated PowerShell:
 
 ```powershell
-Select-String -Path "$env:ProgramData\HitStor\logs\server.log" -Pattern "generated one"
+Select-String -Path "$env:ProgramData\HitStor\logs\server.log" -Pattern "generated one" |
+  Select-Object -Last 1 |
+  ForEach-Object { ($_.Line | ConvertFrom-Json).fields.password }
 ```
 
-Log in with it and change it under **Settings**. Then create a repository from the **Storage** page.
+Log in with it and change it under **Settings**. Then create a repository from the **Storage** page. To reset a lost password, see [Dashboard Password](quickstart.md#dashboard-password).
 
 ## Configuration
 

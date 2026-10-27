@@ -1,10 +1,11 @@
 # Quick Start
 
-Get HitStor running in about 15 minutes. This guide covers the three recommended paths for early adopters:
+Get HitStor running in about 15 minutes. This guide covers the four recommended paths for early adopters:
 
 1. **Docker** — fastest way to run the server (developers and homelab)
 2. **Linux VM installer** — production-style server on a single machine
-3. **Agent only** — connect laptops and servers to an existing HitStor server
+3. **Windows Server installer** — server as a Windows Service
+4. **Agent only** — connect laptops and servers to an existing HitStor server
 
 Agents are always native binaries installed on each machine you want to back up. The server can run in Docker or on a VM.
 
@@ -23,7 +24,7 @@ cd hitstor
 cp .env.example .env
 ```
 
-Edit `.env` and set a strong `HITSTOR_PASSWORD`. Optionally set `HITSTOR_DASHBOARD_PASSWORD` to protect the web UI.
+Edit `.env` and set a strong `HITSTOR_PASSWORD` (repository encryption) and `HITSTOR_DASHBOARD_PASSWORD` (web UI login). If you leave `HITSTOR_DASHBOARD_PASSWORD` empty, the server generates a new random dashboard password on every container start — see [Dashboard Password](#dashboard-password).
 
 ### 2. Start the server
 
@@ -35,7 +36,7 @@ On first start, the container automatically runs `hitstor init` and then `hitsto
 
 ### 3. Open the dashboard
 
-Navigate to [http://localhost:8421](http://localhost:8421).
+Navigate to [http://localhost:8421](http://localhost:8421) and log in with `HITSTOR_DASHBOARD_PASSWORD` (or the generated password, see [Dashboard Password](#dashboard-password)).
 
 | Port | Service |
 |------|---------|
@@ -44,7 +45,7 @@ Navigate to [http://localhost:8421](http://localhost:8421).
 
 ### 4. Install an agent
 
-On each machine to back up, install the agent binary. See [Path C](#path-c-agent-only) below.
+On each machine to back up, install the agent binary. See [Path D](#path-d-agent-only) below.
 
 ### Optional: S3 storage with MinIO
 
@@ -103,17 +104,47 @@ The interactive wizard initializes the repository, configures systemd, and start
 
 ### 2. Open the dashboard
 
-Default URL: `https://<server-ip>:8421` (self-signed TLS) or `http://<server-ip>:8421` depending on wizard settings.
+Default URL: `https://<server-ip>:8421` (self-signed TLS) or `http://<server-ip>:8421` depending on wizard settings. Log in with the dashboard password you entered in the wizard; if you left it empty, see [Dashboard Password](#dashboard-password).
 
 See [Linux Quick Install](linux-installer.md) for wizard details and [Server Setup](../admin-guide/server-setup.md) for production hardening.
 
 ### 3. Install agents
 
-Continue with [Path C](#path-c-agent-only).
+Continue with [Path D](#path-d-agent-only).
 
 ---
 
-## Path C: Agent Only
+## Path C: Windows Server Installer
+
+Use this to run the server on Windows Server 2016+ (or Windows 10 1809+) as a Windows Service.
+
+### 1. Run the installer
+
+Download `hitstor-X.Y.Z-windows-amd64-setup.exe` from [GitHub Releases](https://github.com/hooperits/hitstor/releases) and run it as Administrator, or install unattended from an elevated PowerShell:
+
+```powershell
+.\hitstor-X.Y.Z-windows-amd64-setup.exe /S
+```
+
+The installer copies `hitstor.exe` to `C:\Program Files\HitStor`, creates `C:\ProgramData\HitStor\config.yaml`, adds firewall rules for ports 8420 and 8421, and registers and starts the `HitStor` service. Running a newer installer the same way upgrades in place.
+
+### 2. Get the dashboard password
+
+The server generates a random dashboard password on first start. Read it on the server as described in [Dashboard Password](#dashboard-password).
+
+### 3. Open the dashboard
+
+Open `http://<server-ip>:8421`, log in, and change the password under **Settings**. Then create a repository from the **Storage** page. Until a repository exists the server runs in setup mode and serves the dashboard over plain HTTP; HTTPS (self-signed by default) is enabled after a repository is configured and the service restarts (`Restart-Service HitStor`).
+
+See [Windows Server](windows-server.md) for service management and firewall details.
+
+### 4. Install agents
+
+Continue with [Path D](#path-d-agent-only).
+
+---
+
+## Path D: Agent Only
 
 Install `hitstor-agent` on every machine whose data you want in the repository.
 
@@ -146,6 +177,70 @@ Download `hitstor-agent-X.Y.Z-windows-amd64.exe` from Releases and run the insta
 ### Verify connectivity
 
 From the agent host, the server gRPC port must be reachable (default **8420**). Agents poll the server for backup schedules; you can also trigger **Backup Now** from the dashboard.
+
+---
+
+## Dashboard Password
+
+HitStor has **no default dashboard password**. The password comes from:
+
+| Install path | Source |
+|--------------|--------|
+| Docker | `HITSTOR_DASHBOARD_PASSWORD` in `.env` |
+| Linux VM installer | The password entered in the wizard |
+| Windows installer | Generated on first start |
+
+When the config file has no dashboard password, `hitstor serve` generates a random one at startup, saves its hash to the config file, and writes the plaintext **once** to the server log, in an entry that contains `no dashboard password configured; generated one`. You do not need dashboard access to read it — read the log on the server.
+
+### Read the generated password
+
+**Windows** (PowerShell as Administrator; the log is readable only by Administrators and SYSTEM):
+
+```powershell
+Select-String -Path C:\ProgramData\HitStor\logs\server.log -Pattern 'generated one' |
+  Select-Object -Last 1 |
+  ForEach-Object { ($_.Line | ConvertFrom-Json).fields.password }
+```
+
+**Linux:**
+
+```bash
+sudo grep 'generated one' /var/log/hitstor/server.log | tail -1
+# or
+sudo journalctl -u hitstor-server | grep 'generated one' | tail -1
+```
+
+**Docker:**
+
+```bash
+docker compose -f docker-compose.quickstart.yml logs hitstor | grep 'generated one' | tail -1
+```
+
+Copy and paste the value rather than typing it — generated passwords mix characters that look alike (`l`/`I`, `O`/`0`).
+
+Log in and change the password under **Settings** right away. The log keeps the original entry, so after you change the password the logged value no longer works.
+
+### Reset a lost password
+
+Remove the stored password from the config file and restart the server; a new password is generated and logged as above.
+
+**Windows:**
+
+```powershell
+Stop-Service HitStor
+$cfg = 'C:\ProgramData\HitStor\config.yaml'
+(Get-Content $cfg) -notmatch '^serve_dashboard_password:' | Set-Content $cfg -Encoding ascii
+Start-Service HitStor
+```
+
+**Linux:**
+
+```bash
+sudo sed -i '/^serve_dashboard_password:/d' /etc/hitstor/config.yaml
+sudo systemctl restart hitstor-server
+```
+
+**Docker:** set a new `HITSTOR_DASHBOARD_PASSWORD` in `.env` and recreate the container (`docker compose -f docker-compose.quickstart.yml up -d --force-recreate`).
 
 ---
 

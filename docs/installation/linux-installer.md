@@ -21,7 +21,7 @@ sudo ./hitstor-server-X.Y.Z-linux-amd64.run
 The interactive wizard will prompt for:
 
 1. **Data directory** — where HitStor stores data (default: `/var/lib/hitstor`)
-2. **Dashboard password** — web UI login password (optional, empty = open access)
+2. **Dashboard password** — web UI login password (optional; if empty, the server generates one on first start — see [Dashboard Password](quickstart.md#dashboard-password))
 3. **gRPC port** — for agent connections (default: 8420)
 4. **Dashboard port** — for the web UI (default: 8421)
 

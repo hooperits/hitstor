@@ -367,7 +367,7 @@ func pluginFieldsToProto(fs []plugin.FieldSpec) []*pb.PluginField {
 	out := make([]*pb.PluginField, 0, len(fs))
 	for _, f := range fs {
 		out = append(out, &pb.PluginField{Key: f.Key, Scope: f.Scope, Type: f.Type, Label: f.Label, Help: f.Help,
-			Default: f.Default, Choices: f.Choices, Required: f.Required, ObjectKinds: f.ObjectKinds, ShowIf: f.ShowIf})
+			Default: f.Default, Choices: f.Choices, Required: f.Required, ObjectKinds: f.ObjectKinds, ShowIf: f.ShowIf, ChoicesFrom: f.ChoicesFrom})
 	}
 	return out
 }

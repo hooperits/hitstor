@@ -41,6 +41,23 @@ func (f *fakeDBPlugin) Browse(context.Context, string) ([]plugin.BrowseEntry, er
 	return []plugin.BrowseEntry{{Path: "demo/alpha", Name: "alpha", Selectable: true}}, nil
 }
 
+// PlanRestoreDetail is PlanRestore with a preview, as a real plugin reports
+// it through the agent.
+func (f *fakeDBPlugin) PlanRestoreDetail(ctx context.Context, req plugin.PlanRestoreRequest) (plugin.RestorePlan, error) {
+	refs, err := f.PlanRestore(ctx, req)
+	plan := plugin.RestorePlan{Refs: refs}
+	target := `D:\Data\alpha.mdf`
+	if t := req.Options["file:alpha"]; t != "" {
+		target = t
+	}
+	plan.Files = []plugin.RestoreFile{{Key: "alpha", Kind: "ROWS", Source: `C:\Data\alpha.mdf`, Target: target}}
+	plan.Summary = "restores " + req.Object + " (" + req.Language + ")"
+	if req.Options["new_name"] == "" {
+		plan.Warnings = []string{"alpha exists"}
+	}
+	return plan, err
+}
+
 // PlanRestore restores the newest full at or before the target.
 func (f *fakeDBPlugin) PlanRestore(_ context.Context, req plugin.PlanRestoreRequest) ([]string, error) {
 	f.plan = req
@@ -160,8 +177,51 @@ func TestWorkloadRestoreEndToEnd(t *testing.T) {
 		t.Fatalf("browse: %d %s", rec.Code, rec.Body)
 	}
 
-	// Point-in-time restore to between the two backups picks the older one.
+	// The catalog lists every backup of the agent's plugin, newest first,
+	// with the object it belongs to; a snapshot filter keeps one snapshot's.
+	var cat []catalogPoint
+	json.NewDecoder(do("GET", "/api/workload/catalog?agent=db-agent&plugin=example", "").Body).Decode(&cat)
+	if len(cat) != 2 || cat[0].Object != "demo/alpha" || cat[0].Item != "demo/alpha/full-2.dat" {
+		t.Fatalf("catalog = %+v", cat)
+	}
+	var one []catalogPoint
+	json.NewDecoder(do("GET", "/api/workload/catalog?agent=db-agent&plugin=example&snapshot="+cat[1].SnapshotID[:12], "").Body).Decode(&one)
+	if len(one) != 1 || one[0].Item != "demo/alpha/full-1.dat" {
+		t.Fatalf("snapshot catalog = %+v", one)
+	}
+
+	// A plugin snapshot's page offers the restore through the plugin.
+	page := do("GET", "/snapshots/"+cat[0].SnapshotID, "").Body.String()
+	if !strings.Contains(page, `id="workload-restore"`) || !strings.Contains(page, `sourceAgent: "db-agent"`) || !strings.Contains(page, `plugin: "example"`) {
+		t.Fatal("snapshot page has no plugin restore")
+	}
+
+	// The preview tells what a restore would do, in the dashboard's
+	// language, without restoring anything.
 	target := t0.Add(30 * time.Minute).Format(time.RFC3339)
+	req := httptest.NewRequest("POST", "/api/workload/restore-plan", strings.NewReader(`{"agent_name":"db-agent","plugin":"example","object":"demo/alpha",
+		"target":"`+target+`","options":{"file:alpha":"E:\\x.mdf"}}`))
+	req.AddCookie(&http.Cookie{Name: languageCookieName, Value: "es"})
+	prec := httptest.NewRecorder()
+	h.ServeHTTP(prec, req)
+	var plan struct {
+		Summary  string
+		Warnings []string
+		Files    []struct{ Key, Kind, Source, Target string }
+		Items    []workloadPoint
+	}
+	if err := json.NewDecoder(prec.Body).Decode(&plan); err != nil || prec.Code != http.StatusOK {
+		t.Fatalf("plan: %d %v", prec.Code, err)
+	}
+	if plan.Summary != "restores demo/alpha (es)" || len(plan.Warnings) != 1 || len(plan.Items) != 1 || plan.Items[0].Item != "demo/alpha/full-1.dat" ||
+		len(plan.Files) != 1 || plan.Files[0].Target != `E:\x.mdf` {
+		t.Fatalf("plan = %+v", plan)
+	}
+	if fake.restored != nil {
+		t.Fatal("the preview restored something")
+	}
+
+	// Point-in-time restore to between the two backups picks the older one.
 	rec = do("POST", "/api/workload/restores", `{"agent_name":"db-agent","plugin":"example","object":"demo/alpha",
 		"target":"`+target+`","options":{"new_name":"alpha_copy"}}`)
 	if rec.Code != http.StatusAccepted {

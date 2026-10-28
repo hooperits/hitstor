@@ -82,12 +82,44 @@ func TestBackupStatement(t *testing.T) {
 
 func TestMoveClauses(t *testing.T) {
 	files := []backupFile{
-		{Logical: "App", Type: "ROWS"}, {Logical: "App_log", Type: "LOG"}, {Logical: "App_idx", Type: "ROWS"},
+		{Logical: "App", Type: "ROWS", Physical: `C:\SQL\App.mdf`},
+		{Logical: "App_log", Type: "LOG", Physical: `C:\SQL\App_log.ldf`},
+		{Logical: "App_idx", Type: "ROWS", Physical: `C:\SQL\App_idx.ndf`},
 	}
-	got := strings.Join(moveClauses(files, "App_copy", `D:\Data`, `L:\Logs\`), "; ")
+	o := restoreOptions{Database: "App_copy", Relocate: true, DataPath: `D:\Data`, LogPath: `L:\Logs\`}
+	got := strings.Join(moveClauses(fileTargets(files, o)), "; ")
 	want := `MOVE N'App' TO N'D:\Data\App_copy.mdf'; MOVE N'App_log' TO N'L:\Logs\App_copy_log.ldf'; MOVE N'App_idx' TO N'D:\Data\App_copy_App_idx.ndf'`
 	if got != want {
 		t.Fatalf("\n got %s\nwant %s", got, want)
+	}
+
+	// A path set for one file wins; files left where they were need no MOVE.
+	o = restoreOptions{Database: "App", Files: map[string]string{"App_log": `E:\Logs\App_log.ldf`}}
+	if got := strings.Join(moveClauses(fileTargets(files, o)), "; "); got != `MOVE N'App_log' TO N'E:\Logs\App_log.ldf'` {
+		t.Fatalf("override: %s", got)
+	}
+}
+
+func TestParseRestoreOptions(t *testing.T) {
+	o, err := parseRestoreOptions(map[string]string{}, "MSSQLSERVER", "Sales")
+	if err != nil || o.Database != "Sales" || o.Instance != "MSSQLSERVER" || o.Relocate || !o.Recovery {
+		t.Fatalf("defaults = %+v, %v", o, err)
+	}
+	// Another name or another instance relocates by default.
+	if o, _ := parseRestoreOptions(map[string]string{"database": "Sales_copy"}, "MSSQLSERVER", "Sales"); !o.Relocate {
+		t.Fatal("rename does not relocate")
+	}
+	if o, _ := parseRestoreOptions(map[string]string{"instance": "SQL2022"}, "MSSQLSERVER", "Sales"); !o.Relocate || o.Instance != "SQL2022" {
+		t.Fatalf("other instance = %+v", o)
+	}
+	o, err = parseRestoreOptions(map[string]string{"file:Sales": `D:\Data\S.mdf`, "file:Sales_log": `\\nas\sql\S.ldf`}, "I", "Sales")
+	if err != nil || o.Files["Sales"] != `D:\Data\S.mdf` || o.Files["Sales_log"] != `\\nas\sql\S.ldf` {
+		t.Fatalf("files = %+v, %v", o.Files, err)
+	}
+	for _, bad := range []string{`relative\S.mdf`, `S.mdf`, `D:`} {
+		if _, err := parseRestoreOptions(map[string]string{"file:Sales": bad}, "I", "Sales"); err == nil {
+			t.Errorf("%q accepted", bad)
+		}
 	}
 }
 

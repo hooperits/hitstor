@@ -86,6 +86,8 @@ Unless noted, endpoints require dashboard authentication when `serve_dashboard_p
 | `GET` | `/api/agents/{name}/plugins/{plugin}/object-config?path=` | Settings saved on the agent for one object (`configured`, `values` without passwords, `secrets_set`) |
 | `PUT` | `/api/agents/{name}/plugins/{plugin}/object-config` | Test and save an object's settings on the agent (`path`, `values`; an empty password keeps the saved one), or remove them (`path`, `remove: true`). The server stores nothing |
 | `GET` | `/api/workload/points?agent=&plugin=&object=` | Items available to restore a workload object, oldest first |
+| `GET` | `/api/workload/catalog?agent=&plugin=&snapshot=` | Every item a plugin backed up on an agent, newest first, with its `object`; `snapshot` (an ID prefix) keeps one snapshot's |
+| `POST` | `/api/workload/restore-plan` | Preview a workload restore without running it (same body as `POST /api/workload/restores`): the items it applies, the files it writes (`key`, `kind`, `source`, `target`), `warnings`, and a `summary` |
 | `POST` | `/api/workload/restores` | Start a workload restore (`agent_name`, `plugin`, `object`; optional `source_agent` to restore another agent's backups, `target` time, `options`, `plugin_settings`) |
 | `GET` | `/api/workload/restores/{id}` | Workload restore status: plan, bytes sent, result |
 | `GET` | `/api/plugin-packages` | List uploaded plugin packages |

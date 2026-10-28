@@ -115,6 +115,9 @@ message FieldSpec {
   // Show the field only when another field has one of some values, as
   // "key=value1|value2", e.g. "auth=sql|windows".
   string show_if = 10;
+  // "browse": the choices are the top-level objects of the agent's
+  // selection tree (e.g. its database instances), listed at form time.
+  string choices_from = 11;
 }
 
 message BrowseRequest {
@@ -195,11 +198,34 @@ message PlanRestoreRequest {
   // Restore options, e.g. a new database name.
   map<string, string> options = 3;
   repeated RestoreCandidate candidates = 4;
+  // Language for the preview's warnings and summary, e.g. "es"; English
+  // when empty or unsupported.
+  string language = 5;
 }
 
 message PlanRestoreResponse {
   // Candidate refs to apply, in order.
   repeated string refs = 1;
+  // Where the restore writes, for the operator to review and change
+  // (through restore options "file:<key>"), e.g. a database's files.
+  repeated RestoreFile files = 2;
+  // Things the operator should know before restoring, e.g. that the
+  // target database exists and would need replace.
+  repeated string warnings = 3;
+  // One line describing the restore, e.g. "Sales as Sales_copy on MSSQLSERVER".
+  string summary = 4;
+}
+
+// RestoreFile is one file the restore writes.
+message RestoreFile {
+  // Key for the restore option "file:<key>" that changes target.
+  string key = 1;
+  // Plugin-defined kind, e.g. "ROWS" or "LOG".
+  string kind = 2;
+  // Where the file was when backed up.
+  string source = 3;
+  // Where the restore will write it.
+  string target = 4;
 }
 
 message RestoreMessage {

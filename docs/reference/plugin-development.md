@@ -484,6 +484,13 @@ func (p *myPlugin) Restore(ctx context.Context, req plugin.RestoreRequest, items
 Restore options (`req.Options`, for example a new database name) come from
 the operator; they are plugin-defined.
 
+A restorer that also implements `plugin.RestorePreviewer` describes a plan
+before it runs: the files it will write (`RestoreFile`: key, kind, source,
+and target path), warnings, and a one-line summary, in `req.Language` when it
+can. The dashboard shows them, and the operator changes a file's target with
+the option `file:<key>`. A restore field with `choices_from: "browse"` lists
+the target agent's top-level objects, such as its database instances.
+
 ### Trying a plugin without a server
 
 Install the plugin on a host and run:

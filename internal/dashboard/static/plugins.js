@@ -637,125 +637,324 @@
 
     // --- Restores: workload restore ---
 
-    function openRestoreDialog() {
-        var d = openDialog(t('Restore from a Plugin Backup'),
-            '<form class="plugin-restore-form">' +
-            '<div class="form-group"><label>' + esc(t('Restore on agent')) + '</label><select name="agent" required></select></div>' +
-            '<div class="form-group"><label>' + esc(t('Plugin')) + '</label><select name="plugin" required></select></div>' +
-            '<div class="form-group"><label>' + esc(t('Backups from agent')) + '</label><select name="source"></select></div>' +
-            '<div class="form-group"><label>' + esc(t('Object')) + '</label><input type="text" name="object" required>' +
-            '<div class="plugin-objects plugin-tree-box"></div></div>' +
-            '<div class="dialog-actions"><button type="button" class="btn btn-secondary plugin-points-btn">' + esc(t('Show restore points')) + '</button></div>' +
-            '<div class="plugin-points"></div>' +
-            '<div class="form-group"><label><input type="radio" name="when" value="latest" checked> ' + esc(t('Latest point')) + '</label> ' +
-            '<label><input type="radio" name="when" value="at"> ' + esc(t('Point in time')) + '</label> ' +
-            '<input type="datetime-local" name="at" step="1"></div>' +
-            '<fieldset class="plugin-fieldset"><legend>' + esc(t('Restore options')) + '</legend><div class="plugin-restore-opts"></div></fieldset>' +
+    var KIND_LABEL = { full: 'Full', differential: 'Differential', log: 'Log' };
+
+    function fmtTime(s) {
+        var d = new Date(s);
+        return isNaN(d) ? '' : d.toLocaleString(undefined, { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    }
+
+    // toLocalInput formats a time for a datetime-local input.
+    function toLocalInput(s) {
+        var d = new Date(s);
+        return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 19);
+    }
+
+    // workloadRestore renders the restore of a plugin backup, the way
+    // database tools do it: a tree of what was backed up (agent → instance →
+    // objects), the backup sets of the chosen object and the point to
+    // restore to, where and as what to restore, and a preview from the
+    // plugin of the files it will write and anything to watch out for.
+    // opts: plugin, sourceAgent, snapshot (only that snapshot's objects).
+    function workloadRestore(el, opts) {
+        var plugin = opts.plugin;
+        el.innerHTML =
+            '<div class="wr">' +
+            '<div class="wr-col wr-left">' +
+            '<div class="wr-card"><div class="wr-card-title">' + esc(t('Restore tree')) + '</div><div class="wr-tree plugin-tree-box"><p class="form-hint">' + esc(t('Loading...')) + '</p></div></div>' +
+            '<div class="wr-card wr-sets" hidden><div class="wr-card-title">' + esc(t('Backup sets')) + '</div>' +
+            '<div class="wr-when">' +
+            '<label><input type="radio" name="wr-when" value="set" checked> ' + esc(t('The selected backup')) + '</label>' +
+            '<label><input type="radio" name="wr-when" value="latest"> ' + esc(t('Latest point')) + '</label>' +
+            '<label><input type="radio" name="wr-when" value="at"> ' + esc(t('Point in time')) + '</label> ' +
+            '<input type="datetime-local" class="wr-at" step="1" disabled></div>' +
+            '<div class="table-wrap"><table class="wr-set-table"><thead><tr><th></th><th>' + esc(t('Kind')) + '</th><th>' + esc(t('Time')) + '</th><th>' +
+            esc(t('Size')) + '</th><th>' + esc(t('Snapshot')) + '</th></tr></thead><tbody></tbody></table></div></div>' +
+            '</div>' +
+            '<div class="wr-col wr-right" hidden>' +
+            '<div class="wr-card"><div class="wr-card-title">' + esc(t('Destination')) + '</div>' +
+            '<div class="form-group"><label>' + esc(t('Restore on agent')) + '</label><select class="wr-agent"></select></div>' +
+            '<div class="wr-fields"></div></div>' +
+            '<div class="wr-card"><div class="wr-card-title">' + esc(t('Files')) + '</div>' +
+            '<div class="table-wrap"><table class="wr-files"><thead><tr><th>' + esc(t('Logical name')) + '</th><th>' + esc(t('Kind')) + '</th><th>' +
+            esc(t('Original path')) + '</th><th>' + esc(t('Restore as')) + '</th></tr></thead><tbody></tbody></table></div>' +
+            '<button type="button" class="sched-link wr-reset-files" hidden>' + esc(t('Reset file paths')) + '</button></div>' +
+            '<div class="wr-card wr-preview"><div class="wr-card-title">' + esc(t('Summary')) + '</div><div class="wr-preview-body"><p class="form-hint">—</p></div></div>' +
             '<div class="plugin-error" style="display:none"></div>' +
             '<div class="plugin-progress"></div>' +
-            '<div class="dialog-actions"><button type="submit" class="btn">' + esc(t('Start Restore')) + '</button></div></form>');
-        var form = d.q('form');
-        var errEl = d.q('.plugin-error');
-        var agents = [];
-        var current = null;
-        var picked = function () { return []; };
+            '<div class="dialog-actions"><button type="button" class="btn wr-start" disabled>' + esc(t('Start Restore')) + '</button></div>' +
+            '</div></div>';
+        var q = function (s) { return el.querySelector(s); };
+        var errEl = q('.plugin-error');
+        var catalog = [], points = [], current = null, fields = [], agents = [], overrides = {}, pending = 0, timer = null, lastPlan = null;
 
-        function pluginChanged() {
-            var a = agents.filter(function (x) { return x.name === form.elements.agent.value; })[0];
-            current = a ? a.plugins.filter(function (p) { return p.id === form.elements.plugin.value; })[0] : null;
-            if (!current) return;
-            renderFields(d.q('.plugin-restore-opts'), fieldsFor(current.fields, 'restore'));
-            picked = objectPicker(d.q('.plugin-objects'), a.name, current.id, false, current.fields);
+        function restoreFields() { return fieldsFor(fields, 'restore'); }
+
+        function when() {
+            var w = el.querySelector('input[name="wr-when"]:checked').value;
+            if (w === 'latest') return null;
+            if (w === 'at') return q('.wr-at').value ? new Date(q('.wr-at').value).toISOString() : '';
+            var sel = el.querySelector('input[name="wr-set"]:checked');
+            return sel ? sel.getAttribute('data-time') : '';
         }
-        d.q('.plugin-objects').addEventListener('change', function () {
-            var v = picked();
-            if (v.length) form.elements.object.value = v[0];
-        });
-        form.elements.agent.addEventListener('change', function () {
-            var a = agents.filter(function (x) { return x.name === form.elements.agent.value; })[0];
-            form.elements.plugin.innerHTML = (a ? a.plugins : []).map(function (p) { return '<option value="' + esc(p.id) + '">' + esc(p.name || p.id) + '</option>'; }).join('');
-            pluginChanged();
-        });
-        form.elements.plugin.addEventListener('change', pluginChanged);
 
-        Promise.all([api('GET', '/api/agents')]).then(function (res) {
-            var all = res[0] || [];
-            agents = all.filter(function (a) { return a.plugins && a.plugins.length; });
-            if (!agents.length) {
-                showError(errEl, new Error(t('No agent has reported a plugin yet. Install one from the agent page.')));
+        function body() {
+            var options = collectFields(q('.wr-fields'), restoreFields());
+            Object.keys(overrides).forEach(function (k) { options['file:' + k] = overrides[k]; });
+            var b = { agent_name: q('.wr-agent').value, source_agent: opts.sourceAgent, plugin: plugin, object: current, options: options };
+            var w = when();
+            if (w) b.target = w;
+            return b;
+        }
+
+        function preview() {
+            clearTimeout(timer);
+            timer = setTimeout(runPreview, 350);
+        }
+
+        function runPreview() {
+            if (!current) return;
+            var w = when();
+            var box = q('.wr-preview-body');
+            if (w === '') {
+                box.innerHTML = '<p class="form-hint">' + esc(t('Choose the point in time.')) + '</p>';
+                q('.wr-start').disabled = true;
                 return;
             }
-            form.elements.agent.innerHTML = agents.map(function (a) { return '<option>' + esc(a.name) + '</option>'; }).join('');
-            form.elements.source.innerHTML = '<option value="">' + esc(t('Same agent')) + '</option>' +
-                all.map(function (a) { return '<option>' + esc(a.name) + '</option>'; }).join('');
-            form.elements.agent.dispatchEvent(new Event('change'));
-        }).catch(function (err) { showError(errEl, err); });
+            var mine = ++pending;
+            box.innerHTML = '<p class="form-hint">' + esc(t('Checking the restore...')) + '</p>';
+            q('.wr-start').disabled = true;
+            api('POST', '/api/workload/restore-plan', body()).then(function (plan) {
+                if (mine !== pending) return;
+                lastPlan = plan;
+                var html = '<p><strong>' + esc(plan.summary || '') + '</strong></p>';
+                (plan.warnings || []).forEach(function (wn) { html += '<p class="wr-warning">' + esc(wn) + '</p>'; });
+                html += '<ol class="wr-plan">' + (plan.items || []).map(function (it) {
+                    return '<li>' + esc(t(KIND_LABEL[it.kind] || it.kind || 'Full')) + ' · ' + esc(fmtTime(it.created_at)) + ' · ' + esc(formatBytes(it.size)) + '</li>';
+                }).join('') + '</ol>';
+                box.innerHTML = html;
+                renderFiles(plan.files || []);
+                q('.wr-start').disabled = false;
+            }).catch(function (err) {
+                if (mine !== pending) return;
+                lastPlan = null;
+                box.innerHTML = '<p class="plugin-error">' + esc(err.message) + '</p>';
+            });
+        }
 
-        d.q('.plugin-points-btn').addEventListener('click', function () {
-            var box = d.q('.plugin-points');
-            var src = form.elements.source.value || form.elements.agent.value;
-            box.innerHTML = '<p class="form-hint">' + esc(t('Loading...')) + '</p>';
-            api('GET', '/api/workload/points?agent=' + encodeURIComponent(src) + '&plugin=' + encodeURIComponent(form.elements.plugin.value) +
-                '&object=' + encodeURIComponent(form.elements.object.value.trim())).then(function (pts) {
-                if (!pts.length) {
-                    box.innerHTML = '<p class="form-hint">' + esc(t('No backups of this object were found.')) + '</p>';
-                    return;
-                }
-                box.innerHTML = '<div class="table-wrap"><table><thead><tr><th>' + esc(t('Time')) + '</th><th>' + esc(t('Kind')) + '</th><th>' +
-                    esc(t('Size')) + '</th><th>' + esc(t('Snapshot')) + '</th></tr></thead><tbody>' + pts.slice().reverse().map(function (p) {
-                    return '<tr class="plugin-point" data-time="' + esc(p.created_at) + '"><td>' + esc(new Date(p.created_at).toLocaleString()) + '</td><td>' +
-                        esc(t(p.kind || 'full')) + '</td><td>' + esc(formatBytes(p.size)) + '</td><td>' + esc(p.snapshot_id.slice(0, 8)) + '</td></tr>';
-                }).join('') + '</tbody></table></div><p class="form-hint">' + esc(t('Click a backup to restore to its time.')) + '</p>';
-                box.querySelectorAll('.plugin-point').forEach(function (row) {
-                    row.addEventListener('click', function () {
-                        var dt = new Date(row.getAttribute('data-time'));
-                        var local = new Date(dt.getTime() - dt.getTimezoneOffset() * 60000).toISOString().slice(0, 19);
-                        form.elements.at.value = local;
-                        form.querySelector('input[name="when"][value="at"]').checked = true;
-                    });
+        function renderFiles(files) {
+            var tb = q('.wr-files tbody');
+            if (!files.length) {
+                tb.innerHTML = '<tr><td colspan="4" class="form-hint">' + esc(t('The plugin reported no files.')) + '</td></tr>';
+                return;
+            }
+            var focused = document.activeElement && document.activeElement.getAttribute('data-file');
+            tb.innerHTML = files.map(function (f) {
+                return '<tr><td><code>' + esc(f.key) + '</code></td><td>' + esc(f.kind || '') + '</td><td class="wr-path">' + esc(f.source || '') + '</td>' +
+                    '<td><input type="text" class="wr-file-target' + (overrides[f.key] ? ' wr-edited' : '') + '" data-file="' + esc(f.key) + '" value="' + esc(f.target) + '" spellcheck="false"></td></tr>';
+            }).join('');
+            q('.wr-reset-files').hidden = !Object.keys(overrides).length;
+            if (focused) {
+                var again = tb.querySelector('[data-file="' + CSS.escape(focused) + '"]');
+                if (again) again.focus();
+            }
+        }
+
+        function selectObject(obj) {
+            current = obj;
+            overrides = {};
+            points = catalog.filter(function (p) { return p.object === obj; });
+            var tb = q('.wr-set-table tbody');
+            // Start from this snapshot's backup, else the newest.
+            var pick = 0;
+            points.forEach(function (p, i) { if (opts.snapshot && p.snapshot_id.indexOf(opts.snapshot) === 0 && pick === 0) pick = i; });
+            tb.innerHTML = points.map(function (p, i) {
+                return '<tr><td><input type="radio" name="wr-set" data-time="' + esc(p.created_at) + '"' + (i === pick ? ' checked' : '') + '></td><td>' +
+                    esc(t(KIND_LABEL[p.kind] || p.kind || 'Full')) + '</td><td>' + esc(fmtTime(p.created_at)) + '</td><td>' + esc(formatBytes(p.size)) + '</td><td><code>' +
+                    esc(p.snapshot_id.slice(0, 8)) + '</code></td></tr>';
+            }).join('');
+            q('.wr-sets').hidden = false;
+            q('.wr-right').hidden = false;
+            fillInstances();
+            var db = q('.wr-fields [data-key="database"]');
+            if (db) db.placeholder = obj.split('/').pop();
+            preview();
+        }
+
+        // tree draws agent → first path segment (an instance) → objects.
+        function tree(list) {
+            var byObject = {};
+            list.forEach(function (p) { if (!byObject[p.object]) byObject[p.object] = p; });
+            var groups = {};
+            Object.keys(byObject).sort().forEach(function (o) {
+                var g = o.indexOf('/') > 0 ? o.slice(0, o.indexOf('/')) : '';
+                (groups[g] = groups[g] || []).push(o);
+            });
+            var row = function (icon, label, extra) {
+                return '<div class="ptree-row"><span class="ptree-toggle-spacer"></span><span class="ptree-icon ptree-icon-' + icon + '">' + ICONS[icon] + '</span><span class="ptree-name">' + label + '</span>' + (extra || '') + '</div>';
+            };
+            var html = '<div class="ptree-node ptree-open">' + row('instance', esc(opts.sourceAgent), '<span class="ptree-detail">' + esc(t('Agent')) + '</span>') + '<div class="ptree-children">';
+            Object.keys(groups).forEach(function (g) {
+                html += '<div class="ptree-node ptree-open">' + (g ? row('instance', esc(g)) : '') + '<div class="' + (g ? 'ptree-children' : '') + '">';
+                groups[g].forEach(function (o) {
+                    var p = byObject[o];
+                    var id = 'wr-o-' + Math.random().toString(36).slice(2, 8);
+                    html += '<div class="ptree-node"><div class="ptree-row"><span class="ptree-toggle-spacer"></span><input class="ptree-check" type="radio" name="wr-object" id="' + id + '" value="' + esc(o) + '">' +
+                        '<span class="ptree-icon ptree-icon-database">' + ICONS.database + '</span><label class="ptree-name" for="' + id + '">' + esc(g ? o.slice(g.length + 1) : o) + '</label>' +
+                        '<span class="ptree-detail">' + esc(t(KIND_LABEL[p.kind] || p.kind || 'Full')) + ' · ' + esc(fmtTime(p.created_at)) + ' · ' + esc(formatBytes(p.size)) + '</span></div></div>';
                 });
-            }).catch(function (err) { box.innerHTML = '<p class="plugin-error">' + esc(err.message) + '</p>'; });
+                html += '</div></div>';
+            });
+            html += '</div></div>';
+            q('.wr-tree').innerHTML = html;
+            var radios = el.querySelectorAll('input[name="wr-object"]');
+            if (radios.length === 1) {
+                radios[0].checked = true;
+                selectObject(radios[0].value);
+            }
+        }
+
+        // fillInstances lists the target agent's top-level objects in the
+        // fields that take them as choices.
+        function fillInstances() {
+            restoreFields().filter(function (f) { return f.choices_from === 'browse'; }).forEach(function (f) {
+                var sel = q('.wr-fields [data-key="' + CSS.escape(f.key) + '"]');
+                if (!sel) return;
+                var origin = current ? current.split('/')[0] : '';
+                sel.innerHTML = '<option value="">' + esc(t('Original ({name})', { name: origin })) + '</option>';
+                api('GET', '/api/agents/' + encodeURIComponent(q('.wr-agent').value) + '/plugins/' + encodeURIComponent(plugin) + '/browse?path=').then(function (entries) {
+                    entries.forEach(function (e) {
+                        if (e.path === origin) return;
+                        var o = document.createElement('option');
+                        o.value = e.path;
+                        o.textContent = e.name + (e.detail ? ' — ' + e.detail : '');
+                        sel.appendChild(o);
+                    });
+                }).catch(function () { /* the original instance stays available */ });
+            });
+        }
+
+        function agentChanged() {
+            var a = agents.filter(function (x) { return x.name === q('.wr-agent').value; })[0];
+            var p = a ? a.plugins.filter(function (x) { return x.id === plugin; })[0] : null;
+            fields = p ? p.fields || [] : [];
+            renderFields(q('.wr-fields'), restoreFields());
+            if (current) {
+                var db = q('.wr-fields [data-key="database"]');
+                if (db) db.placeholder = current.split('/').pop();
+            }
+            fillInstances();
+            preview();
+        }
+
+        el.addEventListener('change', function (ev) {
+            var tg = ev.target;
+            if (tg.name === 'wr-object') selectObject(tg.value);
+            else if (tg.classList.contains('wr-agent')) { agentChanged(); return; }
+            else if (tg.name === 'wr-when') q('.wr-at').disabled = tg.value !== 'at';
+            else if (tg.name === 'wr-set') el.querySelector('input[name="wr-when"][value="set"]').checked = true;
+            if (tg.classList.contains('wr-file-target')) {
+                // A path typed by hand sticks; an emptied one goes back to the plugin's.
+                if (tg.value.trim()) overrides[tg.getAttribute('data-file')] = tg.value.trim();
+                else delete overrides[tg.getAttribute('data-file')];
+            }
+            if (tg.name !== 'wr-object') preview();
+        });
+        el.addEventListener('input', function (ev) {
+            if (ev.target.getAttribute('data-key') === 'database') {
+                // A new name renames the files too, unless set by hand.
+                preview();
+            }
+        });
+        q('.wr-reset-files').addEventListener('click', function () {
+            overrides = {};
+            preview();
         });
 
-        form.addEventListener('submit', function (ev) {
-            ev.preventDefault();
+        q('.wr-start').addEventListener('click', function () {
+            var b = body();
+            var name = (b.options.database || current.split('/').pop());
+            var warn = lastPlan && (lastPlan.warnings || []).length ? '\n\n' + lastPlan.warnings.join('\n') : '';
+            if (!confirm(t('Restore {object} as {name} on {agent}?', { object: current, name: name, agent: b.agent_name }) + warn)) return;
             showError(errEl, null);
-            var body = {
-                agent_name: form.elements.agent.value, source_agent: form.elements.source.value, plugin: current.id,
-                object: form.elements.object.value.trim(), options: collectFields(d.q('.plugin-restore-opts'), fieldsFor(current.fields, 'restore'))
-            };
-            if (form.querySelector('input[name="when"]:checked').value === 'at') {
-                if (!form.elements.at.value) {
-                    showError(errEl, new Error(t('Choose the point in time.')));
-                    return;
-                }
-                body.target = new Date(form.elements.at.value).toISOString();
-            }
-            var submit = form.querySelector('button[type="submit"]');
-            submit.disabled = true;
-            api('POST', '/api/workload/restores', body).then(function (sess) { poll(sess.id); })
-                .catch(function (err) { submit.disabled = false; showError(errEl, err); });
+            q('.wr-start').disabled = true;
+            api('POST', '/api/workload/restores', b).then(function (sess) { poll(sess.id); })
+                .catch(function (err) { q('.wr-start').disabled = false; showError(errEl, err); });
         });
 
         function poll(id) {
-            var box = d.q('.plugin-progress');
+            var box = q('.plugin-progress');
             api('GET', '/api/workload/restores/' + encodeURIComponent(id)).then(function (s) {
                 var pct = s.bytes_total ? Math.floor(100 * s.bytes_sent / s.bytes_total) : 0;
                 var html = '<p><span class="badge ' + (s.status === 'completed' ? 'badge-ok' : s.status === 'failed' ? 'badge-critical' : 'badge-running') + '">' +
                     esc(t(s.status)) + '</span> ' + (s.bytes_total ? esc(formatBytes(s.bytes_sent) + ' / ' + formatBytes(s.bytes_total) + ' (' + pct + '%)') : '') + '</p>';
-                if (s.plan && s.plan.length) html += '<p class="form-hint">' + esc(t('Plan')) + ': ' + s.plan.map(esc).join(' → ') + '</p>';
+                if (s.bytes_total) html += '<div class="wr-bar"><div style="width:' + pct + '%"></div></div>';
                 if (s.message) html += '<p>' + esc(s.message) + '</p>';
                 if (s.error) html += '<p class="plugin-error">' + esc(s.error) + '</p>';
                 box.innerHTML = html;
                 if (s.status !== 'completed' && s.status !== 'failed') setTimeout(function () { poll(id); }, 1500);
+                else q('.wr-start').disabled = false;
             }).catch(function (err) { showError(errEl, err); });
         }
+
+        var catURL = '/api/workload/catalog?agent=' + encodeURIComponent(opts.sourceAgent) + '&plugin=' + encodeURIComponent(plugin);
+        Promise.all([api('GET', catURL), agentsWithPlugins()]).then(function (res) {
+            catalog = res[0] || [];
+            agents = (res[1] || []).filter(function (a) { return a.plugins.some(function (p) { return p.id === plugin; }); });
+            if (!agents.length) {
+                showError(errEl, new Error(t('No agent has the {plugin} plugin installed.', { plugin: plugin })));
+                q('.wr-tree').innerHTML = '';
+                return;
+            }
+            q('.wr-agent').innerHTML = agents.map(function (a) {
+                return '<option' + (a.name === opts.sourceAgent ? ' selected' : '') + '>' + esc(a.name) + '</option>';
+            }).join('');
+            var shown = opts.snapshot ? catalog.filter(function (p) { return p.snapshot_id.indexOf(opts.snapshot) === 0; }) : catalog;
+            if (!shown.length) {
+                q('.wr-tree').innerHTML = '<p class="form-hint">' + esc(t('No backups of this object were found.')) + '</p>';
+                return;
+            }
+            agentChanged();
+            tree(shown);
+        }).catch(function (err) {
+            q('.wr-tree').innerHTML = '<p class="plugin-error">' + esc(err.message) + '</p>';
+        });
+    }
+
+    function openRestoreDialog() {
+        var d = openDialog(t('Restore from a Plugin Backup'),
+            '<div class="wr-pick"><div class="form-group"><label>' + esc(t('Backups from agent')) + '</label><select class="wr-src"></select></div>' +
+            '<div class="form-group"><label>' + esc(t('Plugin')) + '</label><select class="wr-plugin"></select></div></div>' +
+            '<div class="wr-host"></div>');
+        d.el.querySelector('.dialog-box').classList.add('dialog-xl');
+        var all = [];
+        function mountIt() {
+            var src = d.q('.wr-src').value, plugin = d.q('.wr-plugin').value;
+            if (src && plugin) workloadRestore(d.q('.wr-host'), { plugin: plugin, sourceAgent: src });
+        }
+        function srcChanged() {
+            var a = all.filter(function (x) { return x.name === d.q('.wr-src').value; })[0];
+            d.q('.wr-plugin').innerHTML = (a && a.plugins ? a.plugins : []).map(function (p) { return '<option value="' + esc(p.id) + '">' + esc(p.name || p.id) + '</option>'; }).join('');
+            mountIt();
+        }
+        d.q('.wr-src').addEventListener('change', srcChanged);
+        d.q('.wr-plugin').addEventListener('change', mountIt);
+        api('GET', '/api/agents').then(function (agents) {
+            all = (agents || []).filter(function (a) { return a.plugins && a.plugins.length; });
+            if (!all.length) {
+                d.q('.wr-host').innerHTML = '<p class="plugin-error">' + esc(t('No agent has reported a plugin yet. Install one from the agent page.')) + '</p>';
+                return;
+            }
+            d.q('.wr-src').innerHTML = all.map(function (a) { return '<option>' + esc(a.name) + '</option>'; }).join('');
+            srcChanged();
+        }).catch(function (err) { d.q('.wr-host').innerHTML = '<p class="plugin-error">' + esc(err.message) + '</p>'; });
     }
 
     window.HitStorPlugins = {
         agentPanel: agentPanel,
         packagesPanel: packagesPanel,
         openJobDialog: openJobDialog,
-        openRestoreDialog: openRestoreDialog
+        openRestoreDialog: openRestoreDialog,
+        workloadRestore: workloadRestore
     };
 })();

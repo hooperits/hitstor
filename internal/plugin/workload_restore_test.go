@@ -148,3 +148,39 @@ func TestWorkloadRestoreUnsupported(t *testing.T) {
 		t.Fatalf("restore err = %v", err)
 	}
 }
+
+// previewRestorer also describes its plans.
+type previewRestorer struct {
+	fakeRestorer
+	fail bool
+}
+
+func (p *previewRestorer) PreviewRestore(_ context.Context, req PlanRestoreRequest, refs []string) (RestorePreview, error) {
+	if p.fail {
+		return RestorePreview{}, errors.New("cannot reach the instance")
+	}
+	return RestorePreview{
+		Files:    []RestoreFile{{Key: "db", Kind: "ROWS", Source: `C:\db.mdf`, Target: `D:\db2.mdf`}},
+		Warnings: []string{"db2 exists"},
+		Summary:  req.Language + ": " + strings.Join(refs, "+"),
+	}, nil
+}
+
+func TestWorkloadPlanRestorePreview(t *testing.T) {
+	impl := &previewRestorer{fakeRestorer: fakeRestorer{plan: []string{"a"}}}
+	c := setupWorkloadBufconn(t, impl)
+	req := PlanRestoreRequest{Object: "inst/db", Language: "es", Candidates: []RestoreCandidate{{Ref: "a"}}}
+	plan, err := c.PlanRestoreDetail(context.Background(), req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if plan.Summary != "es: a" || len(plan.Warnings) != 1 || len(plan.Files) != 1 || plan.Files[0].Target != `D:\db2.mdf` || plan.Files[0].Kind != "ROWS" {
+		t.Fatalf("plan = %+v", plan)
+	}
+	// A preview that fails keeps the plan and reports why.
+	impl.fail = true
+	plan, err = c.PlanRestoreDetail(context.Background(), req)
+	if err != nil || len(plan.Refs) != 1 || len(plan.Warnings) != 1 || !strings.Contains(plan.Warnings[0], "cannot reach") {
+		t.Fatalf("plan = %+v, %v", plan, err)
+	}
+}

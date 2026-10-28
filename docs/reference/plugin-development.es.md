@@ -486,6 +486,14 @@ func (p *myPlugin) Restore(ctx context.Context, req plugin.RestoreRequest, items
 }
 ```
 
+Un restaurador que además implementa `plugin.RestorePreviewer` describe el
+plan antes de ejecutarlo: los archivos que escribirá (`RestoreFile`: clave,
+tipo, ruta de origen y de destino), advertencias y un resumen de una línea, en
+`req.Language` cuando puede. El dashboard los muestra y el operador cambia el
+destino de un archivo con la opción `file:<clave>`. Un campo de restauración
+con `choices_from: "browse"` lista los objetos de primer nivel del agente de
+destino, como sus instancias de base de datos.
+
 Las opciones de restauración (`req.Options`, por ejemplo un nombre nuevo para
 la base de datos) las indica el operador y las define cada plugin.
 

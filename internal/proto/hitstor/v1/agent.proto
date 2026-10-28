@@ -459,10 +459,21 @@ message PlanWorkloadRestoreRequest {
   int64 target_unix_nanos = 5;
   map<string, string> options = 6;
   repeated WorkloadCandidate candidates = 7;
+  string language = 8;
 }
 
 message PlanWorkloadRestoreResponse {
   repeated string refs = 1;
+  repeated WorkloadRestoreFile files = 2;
+  repeated string warnings = 3;
+  string summary = 4;
+}
+
+message WorkloadRestoreFile {
+  string key = 1;
+  string kind = 2;
+  string source = 3;
+  string target = 4;
 }
 
 message WorkloadRestoreMessage {

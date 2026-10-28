@@ -13,3 +13,7 @@ failed
 integrated
 windows
 sql
+# Backup kinds in the restore tree and backup sets (KIND_LABEL).
+Full
+Differential
+Log

@@ -141,15 +141,32 @@ consecutivos se dedupliquen; HitStor comprime los fragmentos de todos modos.
 
 ## Restaurar { #restore }
 
-En el dashboard, abra **Restauraciones → Restaurar desde un respaldo con
-plugin**: elija el agente, la base y el punto más reciente o un punto en el
-tiempo (haga clic en un respaldo de la lista para usar su fecha) y defina las
-opciones de restauración.
+Abra la instantánea de un respaldo de SQL Server (**Restauraciones**, o las
+instantáneas de la tarea) y elija **Restaurar con el plugin**, o abra
+**Restauraciones → Restaurar desde un respaldo con plugin**. La restauración
+funciona como la de SQL Server Management Studio:
+
+1. **Árbol de restauración.** El agente, sus instancias y las bases
+   respaldadas, cada una con su último respaldo. Elija la base.
+2. **Conjuntos de respaldo.** Todos los respaldos de esa base. Restaure al
+   respaldo seleccionado, al punto más reciente o a un punto en el tiempo.
+3. **Destino.** El agente y la instancia donde restaurar (por defecto la
+   original), y **Restaurar como**: con otro nombre, la base existente no se
+   toca.
+4. **Archivos.** Cada archivo de la base con su ruta original y dónde se
+   restaurará. Un nombre nuevo u otra instancia llevan los archivos a las
+   carpetas de datos y de log predeterminadas de la instancia, con el nombre de
+   la nueva base; escriba una ruta para poner un archivo en otro lugar.
+5. **Resumen.** Antes de ejecutar nada, el plugin comprueba la restauración en
+   la instancia de destino: los respaldos que aplicará y las advertencias, como
+   una base con ese nombre que ya existe (active **Reemplazar** para
+   sobrescribirla) o un archivo que ya usa otra base.
 
 El servidor reúne los respaldos de la base desde las instantáneas; el plugin
 elige el respaldo completo más reciente terminado antes del punto objetivo, el
 diferencial más reciente basado en él y la cadena continua de logs hasta el
-objetivo, que aplica con `STOPAT`.
+objetivo, que aplica con `STOPAT`. **Restaurar como archivos**, en la página de
+la instantánea, restaura en cambio los archivos `.bak`.
 
 Liste los respaldos disponibles:
 
@@ -172,11 +189,13 @@ restaurar en `agent_name` los respaldos de otro servidor.
 
 | Opción | Predeterminado | Descripción |
 |--------|----------------|-------------|
+| `instance` | Instancia original | Instancia donde se restaura |
 | `database` | Nombre original | Nombre con el que se restaura |
 | `replace` | `false` | Sobrescribe una base existente con ese nombre |
 | `recovery` | `true` | Deja la base en línea; `false` la deja en RESTORING para restauraciones manuales posteriores |
-| `relocate` | `true` al cambiar el nombre | Mueve los archivos a las carpetas de datos y log predeterminadas de la instancia, con el nombre de la nueva base |
+| `relocate` | `true` al cambiar el nombre o la instancia | Mueve los archivos a las carpetas de datos y log predeterminadas de la instancia, con el nombre de la nueva base |
 | `data_path`, `log_path` | Valores de la instancia | Carpetas para los archivos reubicados |
+| `file:<nombre lógico>` | | Ruta completa de un archivo, p. ej. `file:Sales_log` = `L:\Logs\Sales_copy_log.ldf` |
 
 Una restauración con el nombre original y sin `replace` falla si la base
 existe, de modo que nunca se sobrescribe una base por accidente.

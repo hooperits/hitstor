@@ -6120,3 +6120,31 @@ body.dr-drawer-open {
 .sched-next { display: block; color: var(--text-muted); font-size: 0.85em; margin-top: 0.15rem; }
 .sched-preview-error { color: var(--danger, #c0392b); }
 .sched-link { align-self: flex-start; background: none; border: 0; padding: 0; color: var(--primary); cursor: pointer; font-size: 0.85rem; text-decoration: underline; }
+
+/* Workload restore (plugins.js workloadRestore) */
+.dialog-box.dialog-xl { max-width: min(1200px, 96vw); width: 96vw; }
+.wr-pick { display: flex; gap: 1rem; flex-wrap: wrap; }
+.wr-pick .form-group { min-width: 14rem; }
+.wr { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 1rem; align-items: start; }
+.wr-col { display: flex; flex-direction: column; gap: 1rem; min-width: 0; }
+.wr-col[hidden], .wr-card[hidden] { display: none; }
+.wr-card { border: 1px solid var(--border); border-radius: 8px; padding: 0.8rem 1rem; background: var(--bg-card, transparent); }
+.wr-card-title { font-size: 0.78rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.6rem; }
+.wr-tree { max-height: 320px; }
+.wr-when { display: flex; flex-wrap: wrap; gap: 0.4rem 1rem; align-items: center; margin-bottom: 0.6rem; }
+.wr-when label { display: flex; align-items: center; gap: 0.35rem; margin: 0; font-weight: normal; }
+.wr-when input[type="datetime-local"] { width: auto; }
+.wr-set-table td, .wr-set-table th, .wr-files td, .wr-files th { padding: 0.35rem 0.5rem; font-size: 0.88rem; }
+.wr-set-table tbody tr:has(input:checked) { background: var(--primary-soft, rgba(127, 127, 127, 0.1)); }
+.wr-path { font-family: var(--mono, monospace); font-size: 0.8rem; color: var(--text-muted); overflow-wrap: anywhere; }
+.wr-file-target { width: 100%; min-width: 14rem; font-family: var(--mono, monospace); font-size: 0.82rem; }
+.wr-file-target.wr-edited { border-color: var(--primary); }
+.wr-preview-body p { margin: 0.25rem 0; }
+.wr-warning { padding: 0.4rem 0.6rem; border-radius: 6px; background: rgba(230, 160, 0, 0.12); border-left: 3px solid #e0a000; }
+.wr-plan { margin: 0.4rem 0 0 1.2rem; padding: 0; font-size: 0.88rem; color: var(--text-muted); }
+.wr-bar { height: 6px; border-radius: 3px; background: var(--border); overflow: hidden; }
+.wr-bar > div { height: 100%; background: var(--primary); transition: width 0.4s; }
+#workload-restore-body { padding: 1rem 1.25rem 1.25rem; }
+@media (max-width: 900px) {
+    .wr { grid-template-columns: minmax(0, 1fr); }
+}

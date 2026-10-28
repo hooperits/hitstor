@@ -7,6 +7,7 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
+	"path"
 	"strings"
 	"time"
 
@@ -240,7 +241,7 @@ func (d *Dashboard) handleAPIStartWorkloadRestore(w http.ResponseWriter, r *http
 	sess := &WorkloadRestoreSession{
 		ID: newWorkloadRestoreID(), AgentName: req.AgentName, SourceAgent: req.SourceAgent,
 		Plugin: req.Plugin, Object: req.Object, Target: req.Target, Options: req.Options,
-		StartTime: time.Now(), status: "planning", settings: settings,
+		StartTime: time.Now(), status: "planning", settings: settings, language: d.language(r),
 	}
 	d.workloadRestores.Store(sess.ID, sess)
 	// The restore outlives the HTTP request.
@@ -258,4 +259,110 @@ func (d *Dashboard) handleAPIGetWorkloadRestore(w http.ResponseWriter, r *http.R
 		return
 	}
 	writeJSON(w, v.(*WorkloadRestoreSession).snapshot())
+}
+
+// catalogPoint is a restore point with the object it belongs to.
+type catalogPoint struct {
+	Object string `json:"object"`
+	workloadPoint
+}
+
+// handleAPIWorkloadCatalog handles GET /api/workload/catalog?agent=&plugin=&snapshot=:
+// every backup item a plugin produced on an agent, newest first, optionally
+// only those in one snapshot (an ID or prefix).
+func (d *Dashboard) handleAPIWorkloadCatalog(w http.ResponseWriter, r *http.Request) {
+	q := r.URL.Query()
+	agentName, pluginID := q.Get("agent"), q.Get("plugin")
+	if agentName == "" || pluginID == "" {
+		http.Error(w, "agent and plugin are required", http.StatusBadRequest)
+		return
+	}
+	points, err := d.workloadItems(agentName, pluginID, "", q.Get("snapshot"))
+	if err != nil {
+		http.Error(w, fmt.Sprintf("list backups: %v", err), http.StatusInternalServerError)
+		return
+	}
+	out := make([]catalogPoint, 0, len(points))
+	for i := len(points) - 1; i >= 0; i-- {
+		out = append(out, catalogPoint{Object: path.Dir(points[i].Item), workloadPoint: points[i]})
+	}
+	writeJSON(w, out)
+}
+
+// handleAPIWorkloadRestorePlan handles POST /api/workload/restore-plan: what
+// a restore with these parameters would apply and do, without running it.
+func (d *Dashboard) handleAPIWorkloadRestorePlan(w http.ResponseWriter, r *http.Request) {
+	var req startWorkloadRestoreRequest
+	if err := json.NewDecoder(io.LimitReader(r.Body, 1<<20)).Decode(&req); err != nil {
+		http.Error(w, "invalid JSON", http.StatusBadRequest)
+		return
+	}
+	if req.AgentName == "" || req.Plugin == "" || req.Object == "" {
+		http.Error(w, "agent_name, plugin, and object are required", http.StatusBadRequest)
+		return
+	}
+	if req.SourceAgent == "" {
+		req.SourceAgent = req.AgentName
+	}
+	agentRec := d.registry.GetAgent(req.AgentName)
+	if agentRec == nil {
+		http.Error(w, "agent not found", http.StatusNotFound)
+		return
+	}
+	if !agentHasPlugin(agentRec, req.Plugin) {
+		http.Error(w, fmt.Sprintf("agent %q has not reported plugin %q", req.AgentName, req.Plugin), http.StatusBadRequest)
+		return
+	}
+	points, err := d.workloadPoints(req.SourceAgent, req.Plugin, req.Object)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("list restore points: %v", err), http.StatusInternalServerError)
+		return
+	}
+	if len(points) == 0 {
+		http.Error(w, "no backups of this object were found", http.StatusNotFound)
+		return
+	}
+	token, err := d.registry.DecryptToken(req.AgentName)
+	if err != nil {
+		http.Error(w, "agent token unavailable", http.StatusInternalServerError)
+		return
+	}
+	client, err := d.dialManagedAgent(req.AgentName, agentRec.AgentAddr)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("dial agent: %v", err), http.StatusBadGateway)
+		return
+	}
+	defer client.Close()
+	settings := req.PluginSettings
+	if settings == nil {
+		settings = d.workloadSettings(req.AgentName, req.Plugin)
+	}
+	sess := &WorkloadRestoreSession{Plugin: req.Plugin, Object: req.Object, Target: req.Target, Options: req.Options,
+		settings: settings, language: d.language(r)}
+	ctx, cancel := context.WithTimeout(r.Context(), 60*time.Second)
+	defer cancel()
+	plan, planned, err := d.planWorkloadRestore(ctx, client, token, sess, points)
+	if err != nil {
+		http.Error(w, agentErrorMessage(err), http.StatusBadRequest)
+		return
+	}
+	type file struct {
+		Key    string `json:"key"`
+		Kind   string `json:"kind,omitempty"`
+		Source string `json:"source,omitempty"`
+		Target string `json:"target"`
+	}
+	out := struct {
+		Summary  string          `json:"summary"`
+		Warnings []string        `json:"warnings"`
+		Files    []file          `json:"files"`
+		Items    []workloadPoint `json:"items"`
+	}{Summary: plan.Summary, Warnings: plan.Warnings, Items: planned, Files: []file{}}
+	if out.Warnings == nil {
+		out.Warnings = []string{}
+	}
+	for _, f := range plan.Files {
+		out.Files = append(out.Files, file{f.Key, f.Kind, f.Source, f.Target})
+	}
+	writeJSON(w, out)
 }

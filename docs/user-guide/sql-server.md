@@ -134,14 +134,32 @@ deduplicate; HitStor compresses the chunks anyway.
 
 ## Restore
 
-In the dashboard, open **Restores → Restore from a Plugin Backup**: choose the
-agent, the database, and either the latest point or a point in time (click a
-backup in the list to use its time), then set the restore options.
+Open the snapshot of a SQL Server backup (**Restores**, or the job's
+snapshots) and choose **Restore with the plugin**, or open **Restores →
+Restore from a Plugin Backup**. The restore works like SQL Server Management
+Studio's:
+
+1. **Restore tree.** The agent, its instances, and the databases backed up,
+   each with its latest backup. Choose the database.
+2. **Backup sets.** Every backup of that database. Restore to the selected
+   backup, the latest point, or a point in time.
+3. **Destination.** The agent and the instance to restore on (by default the
+   original), and **Restore as**: a new name keeps the existing database
+   untouched.
+4. **Files.** Each database file with its original path and where it will be
+   restored. A new name or another instance moves the files to the instance's
+   default data and log folders, named after the new database; type a path to
+   put a file elsewhere.
+5. **Summary.** Before anything runs, the plugin checks the restore on the
+   target instance: the backups it will apply and warnings, such as a database
+   with that name that already exists (turn on **Replace** to overwrite it) or
+   a file another database already uses.
 
 The server collects the database's backups from the snapshots; the plugin
 chooses the newest full backup finished by the target point, the newest
 differential based on it, and the unbroken chain of log backups up to the
-target, which it applies with `STOPAT`.
+target, which it applies with `STOPAT`. **Restore as files** on the snapshot
+page restores the `.bak` files themselves instead.
 
 List the available backups:
 
@@ -164,11 +182,13 @@ another server's backups onto `agent_name`.
 
 | Option | Default | Description |
 |--------|---------|-------------|
+| `instance` | Original instance | Instance to restore on |
 | `database` | Original name | Name to restore as |
 | `replace` | `false` | Overwrite an existing database with that name |
 | `recovery` | `true` | Bring the database online; `false` leaves it RESTORING for further manual restores |
-| `relocate` | `true` when renaming | Move the files to the instance's default data and log folders, named after the new database |
+| `relocate` | `true` when renaming or changing instance | Move the files to the instance's default data and log folders, named after the new database |
 | `data_path`, `log_path` | Instance defaults | Folders for relocated files |
+| `file:<logical name>` | | Full path for one file, e.g. `file:Sales_log` = `L:\Logs\Sales_copy_log.ldf` |
 
 A restore under the original name without `replace` fails if the database
 exists, so an existing database is never overwritten by accident.

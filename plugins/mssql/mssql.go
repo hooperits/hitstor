@@ -403,47 +403,18 @@ func (p *mssqlPlugin) PlanRestore(_ context.Context, req hitstorplugin.PlanResto
 
 // Restore options:
 //
+//	instance   instance to restore on (default: the backup's own)
 //	database   name to restore as (default: the original name)
 //	replace    overwrite an existing database (default false)
 //	recovery   bring the database online at the end (default true)
 //	data_path, log_path   where to put files when relocating (default: instance defaults)
-//	relocate   move files even when keeping the name (default: only when renaming)
+//	relocate   move files even when keeping the name and instance
+//	           (default: only when renaming or changing instance)
+//	file:<logical name>   where to put that file (full path)
 func (p *mssqlPlugin) Restore(ctx context.Context, req hitstorplugin.RestoreRequest, items hitstorplugin.RestoreItems) (string, error) {
-	instance, source, err := splitObject(req.Object)
+	db, cfg, source, o, err := p.restoreSetup(ctx, req.Object, req.Options)
 	if err != nil {
 		return "", err
-	}
-	if source == "" {
-		return "", fmt.Errorf("object %q must be <instance>/<database>", req.Object)
-	}
-	db, cfg, err := p.conn(ctx, instance)
-	if err != nil {
-		return "", err
-	}
-	o := restoreOptions{Database: req.Options["database"], DataPath: req.Options["data_path"], LogPath: req.Options["log_path"]}
-	if o.Database == "" {
-		o.Database = source
-	}
-	if o.Replace, err = boolOption(req.Options, "replace", false); err != nil {
-		return "", err
-	}
-	if o.Recovery, err = boolOption(req.Options, "recovery", true); err != nil {
-		return "", err
-	}
-	if o.Relocate, err = boolOption(req.Options, "relocate", !strings.EqualFold(o.Database, source)); err != nil {
-		return "", err
-	}
-	if o.Relocate && (o.DataPath == "" || o.LogPath == "") {
-		data, log, err := defaultPaths(ctx, db)
-		if err != nil {
-			return "", fmt.Errorf("read default file paths: %w", err)
-		}
-		if o.DataPath == "" {
-			o.DataPath = data
-		}
-		if o.LogPath == "" {
-			o.LogPath = log
-		}
 	}
 
 	var applied []string
@@ -463,8 +434,8 @@ func (p *mssqlPlugin) Restore(ctx context.Context, req hitstorplugin.RestoreRequ
 		}
 		first, last := i == 0, i == req.ItemCount-1
 		var moves []string
-		if first && o.Relocate {
-			moves = moveClauses(meta.Files, o.Database, o.DataPath, o.LogPath)
+		if first {
+			moves = moveClauses(fileTargets(meta.Files, o))
 		}
 		var stopAt time.Time
 		if last && meta.Type == typeLog && !req.Target.IsZero() && meta.Finish.After(req.Target) {
@@ -504,5 +475,5 @@ func (p *mssqlPlugin) Restore(ctx context.Context, req hitstorplugin.RestoreRequ
 	if !o.Recovery {
 		state = "left in RESTORING state"
 	}
-	return fmt.Sprintf("restored %s as %s to %s from %d backup(s); database %s", source, o.Database, point, len(applied), state), nil
+	return fmt.Sprintf("restored %s as %s on %s to %s from %d backup(s); database %s", source, o.Database, cfg.Instance, point, len(applied), state), nil
 }

@@ -80,17 +80,32 @@ func (s *AgentServer) PlanWorkloadRestore(ctx context.Context, req *pb.PlanWorkl
 		return nil, err
 	}
 	defer release()
-	pr := plugin.PlanRestoreRequest{Object: req.Object, Target: fromNanos(req.TargetUnixNanos), Options: req.Options}
+	pr := plugin.PlanRestoreRequest{Object: req.Object, Target: fromNanos(req.TargetUnixNanos), Options: req.Options, Language: req.Language}
 	for _, c := range req.Candidates {
 		pr.Candidates = append(pr.Candidates, plugin.RestoreCandidate{
 			Ref: c.Ref, Item: c.Item, Kind: c.Kind, CreatedAt: fromNanos(c.CreatedUnixNanos), Metadata: c.Metadata,
 		})
 	}
-	refs, err := p.PlanRestore(ctx, pr)
+	var plan plugin.RestorePlan
+	if d, ok := p.(restorePlanner); ok {
+		plan, err = d.PlanRestoreDetail(ctx, pr)
+	} else {
+		plan.Refs, err = p.PlanRestore(ctx, pr)
+	}
 	if err != nil {
 		return nil, status.Errorf(codes.FailedPrecondition, "agent: plan restore with %s: %v", req.Plugin, err)
 	}
-	return &pb.PlanWorkloadRestoreResponse{Refs: refs}, nil
+	resp := &pb.PlanWorkloadRestoreResponse{Refs: plan.Refs, Warnings: plan.Warnings, Summary: plan.Summary}
+	for _, f := range plan.Files {
+		resp.Files = append(resp.Files, &pb.WorkloadRestoreFile{Key: f.Key, Kind: f.Kind, Source: f.Source, Target: f.Target})
+	}
+	return resp, nil
+}
+
+// restorePlanner is implemented by plugins that return a plan with its
+// preview (*plugin.WorkloadGRPCClient does).
+type restorePlanner interface {
+	PlanRestoreDetail(ctx context.Context, req plugin.PlanRestoreRequest) (plugin.RestorePlan, error)
 }
 
 // RestoreWorkload implements AgentService.RestoreWorkload: items streamed by

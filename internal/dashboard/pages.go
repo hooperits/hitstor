@@ -619,10 +619,33 @@ func (d *Dashboard) handleSnapshotDetail(w http.ResponseWriter, r *http.Request)
 		}
 	}
 
+	// A plugin backup restores through its plugin, on the agent it came from.
+	var workloadPlugin, sourceAgent string
+	for _, tag := range found.Tags {
+		if id, ok := strings.CutPrefix(tag, "plugin:"); ok {
+			workloadPlugin = id
+		}
+		if id, ok := strings.CutPrefix(tag, "job:"); ok && sourceAgent == "" {
+			if j := d.registry.GetJob(id); j != nil {
+				sourceAgent = j.AgentName
+			}
+		}
+	}
+	if workloadPlugin != "" && sourceAgent == "" {
+		for _, a := range d.registry.ListAgents() {
+			if d.snapshotMatchesAgent(cachedSnapshotSummary{Hostname: found.Hostname, Tags: found.Tags}, a.Name) {
+				sourceAgent = a.Name
+				break
+			}
+		}
+	}
+
 	data := d.newPageData("Snapshot {id}", "Recover files from this backup point", "restores", map[string]any{
-		"Snapshot": found,
-		"Agents":   agentNames,
-		"RepoName": found.RepoName,
+		"Snapshot":       found,
+		"Agents":         agentNames,
+		"RepoName":       found.RepoName,
+		"WorkloadPlugin": workloadPlugin,
+		"SourceAgent":    sourceAgent,
 	})
 	data.TitleID = shortID(found.ID)
 	d.render(w, r, "snapshot_detail", data)

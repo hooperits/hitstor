@@ -295,6 +295,7 @@ message PluginField {
   bool required = 8;
   repeated string object_kinds = 9;
   string show_if = 10;
+  string choices_from = 11;
 }
 
 message GetScheduleResponse {

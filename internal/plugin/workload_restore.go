@@ -32,6 +32,36 @@ type PlanRestoreRequest struct {
 	Target     time.Time
 	Options    map[string]string
 	Candidates []RestoreCandidate
+	// Language for the preview, e.g. "es"; English when empty.
+	Language string
+}
+
+// RestoreFile is one file a restore writes, as the plugin plans it. The
+// operator can change Target with the restore option "file:<Key>".
+type RestoreFile struct {
+	Key    string `json:"key"`
+	Kind   string `json:"kind,omitempty"`
+	Source string `json:"source,omitempty"`
+	Target string `json:"target"`
+}
+
+// RestorePreview tells the operator what a planned restore will do.
+type RestorePreview struct {
+	Files    []RestoreFile
+	Warnings []string
+	Summary  string
+}
+
+// RestorePlan is a plan with its preview.
+type RestorePlan struct {
+	Refs []string
+	RestorePreview
+}
+
+// RestorePreviewer is implemented by restorers that can describe a planned
+// restore before it runs: where files go, and what to watch out for.
+type RestorePreviewer interface {
+	PreviewRestore(ctx context.Context, req PlanRestoreRequest, refs []string) (RestorePreview, error)
 }
 
 // RestoreRequest describes a restore whose items follow.
@@ -88,11 +118,24 @@ func (s *workloadGRPCServer) PlanRestore(ctx context.Context, req *pb.PlanRestor
 	for _, c := range req.Candidates {
 		cands = append(cands, RestoreCandidate{Ref: c.Ref, Item: c.Item, Kind: c.Kind, CreatedAt: fromUnixNanos(c.CreatedUnixNanos), Metadata: c.Metadata})
 	}
-	refs, err := r.PlanRestore(ctx, PlanRestoreRequest{Object: req.Object, Target: fromUnixNanos(req.TargetUnixNanos), Options: req.Options, Candidates: cands})
+	pr := PlanRestoreRequest{Object: req.Object, Target: fromUnixNanos(req.TargetUnixNanos), Options: req.Options, Candidates: cands, Language: req.Language}
+	refs, err := r.PlanRestore(ctx, pr)
 	if err != nil {
 		return nil, err
 	}
-	return &pb.PlanRestoreResponse{Refs: refs}, nil
+	resp := &pb.PlanRestoreResponse{Refs: refs}
+	if p, ok := s.impl.(RestorePreviewer); ok && len(refs) > 0 {
+		preview, err := p.PreviewRestore(ctx, pr, refs)
+		if err != nil {
+			// The plan stands; the restore itself will report the problem.
+			preview.Warnings = append(preview.Warnings, err.Error())
+		}
+		resp.Warnings, resp.Summary = preview.Warnings, preview.Summary
+		for _, f := range preview.Files {
+			resp.Files = append(resp.Files, &pb.RestoreFile{Key: f.Key, Kind: f.Kind, Source: f.Source, Target: f.Target})
+		}
+	}
+	return resp, nil
 }
 
 func (s *workloadGRPCServer) Restore(stream grpc.ClientStreamingServer[pb.RestoreMessage, pb.RestoreResult]) error {
@@ -196,7 +239,13 @@ func (r *restoreDataReader) Read(p []byte) (int, error) {
 // PlanRestore asks the plugin which candidates to apply. It checks that the
 // plan only references known candidates, each at most once.
 func (c *WorkloadGRPCClient) PlanRestore(ctx context.Context, req PlanRestoreRequest) ([]string, error) {
-	pr := &pb.PlanRestoreRequest{Object: req.Object, TargetUnixNanos: unixNanos(req.Target), Options: req.Options}
+	plan, err := c.PlanRestoreDetail(ctx, req)
+	return plan.Refs, err
+}
+
+// PlanRestoreDetail asks the plugin for a plan and its preview.
+func (c *WorkloadGRPCClient) PlanRestoreDetail(ctx context.Context, req PlanRestoreRequest) (RestorePlan, error) {
+	pr := &pb.PlanRestoreRequest{Object: req.Object, TargetUnixNanos: unixNanos(req.Target), Options: req.Options, Language: req.Language}
 	known := make(map[string]bool, len(req.Candidates))
 	for _, cand := range req.Candidates {
 		known[cand.Ref] = true
@@ -207,24 +256,29 @@ func (c *WorkloadGRPCClient) PlanRestore(ctx context.Context, req PlanRestoreReq
 	resp, err := c.client.PlanRestore(ctx, pr)
 	if err != nil {
 		if status.Code(err) == codes.Unimplemented {
-			return nil, ErrUnsupported
+			return RestorePlan{}, ErrUnsupported
 		}
-		return nil, fmt.Errorf("plugin: plan restore: %w", err)
+		return RestorePlan{}, fmt.Errorf("plugin: plan restore: %w", err)
 	}
 	if len(resp.Refs) == 0 {
-		return nil, errors.New("plugin: plan restore: nothing to restore")
+		return RestorePlan{}, errors.New("plugin: plan restore: nothing to restore")
 	}
 	seen := make(map[string]bool, len(resp.Refs))
 	for _, ref := range resp.Refs {
 		if !known[ref] {
-			return nil, fmt.Errorf("plugin: plan restore: unknown candidate %q", ref)
+			return RestorePlan{}, fmt.Errorf("plugin: plan restore: unknown candidate %q", ref)
 		}
 		if seen[ref] {
-			return nil, fmt.Errorf("plugin: plan restore: candidate %q planned twice", ref)
+			return RestorePlan{}, fmt.Errorf("plugin: plan restore: candidate %q planned twice", ref)
 		}
 		seen[ref] = true
 	}
-	return resp.Refs, nil
+	plan := RestorePlan{Refs: resp.Refs}
+	plan.Warnings, plan.Summary = resp.Warnings, resp.Summary
+	for _, f := range resp.Files {
+		plan.Files = append(plan.Files, RestoreFile{Key: f.Key, Kind: f.Kind, Source: f.Source, Target: f.Target})
+	}
+	return plan, nil
 }
 
 // Restore streams the items to the plugin and returns its summary.

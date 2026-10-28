@@ -1341,6 +1341,7 @@ type PluginField struct {
 	Required      bool                   `protobuf:"varint,8,opt,name=required,proto3" json:"required,omitempty"`
 	ObjectKinds   []string               `protobuf:"bytes,9,rep,name=object_kinds,json=objectKinds,proto3" json:"object_kinds,omitempty"`
 	ShowIf        string                 `protobuf:"bytes,10,opt,name=show_if,json=showIf,proto3" json:"show_if,omitempty"`
+	ChoicesFrom   string                 `protobuf:"bytes,11,opt,name=choices_from,json=choicesFrom,proto3" json:"choices_from,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1441,6 +1442,13 @@ func (x *PluginField) GetObjectKinds() []string {
 func (x *PluginField) GetShowIf() string {
 	if x != nil {
 		return x.ShowIf
+	}
+	return ""
+}
+
+func (x *PluginField) GetChoicesFrom() string {
+	if x != nil {
+		return x.ChoicesFrom
 	}
 	return ""
 }
@@ -1843,7 +1851,7 @@ const file_internal_proto_hitstor_v1_backup_proto_rawDesc = "" +
 	"\x10protocol_version\x18\x05 \x01(\x05R\x0fprotocolVersion\x12\"\n" +
 	"\fcapabilities\x18\x06 \x03(\tR\fcapabilities\x12\x16\n" +
 	"\x06signer\x18\a \x01(\tR\x06signer\x12/\n" +
-	"\x06fields\x18\b \x03(\v2\x17.hitstor.v1.PluginFieldR\x06fields\"\xb9\x03\n" +
+	"\x06fields\x18\b \x03(\v2\x17.hitstor.v1.PluginFieldR\x06fields\"\xdc\x03\n" +
 	"\vPluginField\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05scope\x18\x02 \x01(\tR\x05scope\x12\x12\n" +
@@ -1855,7 +1863,8 @@ const file_internal_proto_hitstor_v1_backup_proto_rawDesc = "" +
 	"\brequired\x18\b \x01(\bR\brequired\x12!\n" +
 	"\fobject_kinds\x18\t \x03(\tR\vobjectKinds\x12\x17\n" +
 	"\ashow_if\x18\n" +
-	" \x01(\tR\x06showIf\x1a8\n" +
+	" \x01(\tR\x06showIf\x12!\n" +
+	"\fchoices_from\x18\v \x01(\tR\vchoicesFrom\x1a8\n" +
 	"\n" +
 	"LabelEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +

@@ -51,6 +51,8 @@ type FieldSpec struct {
 	ObjectKinds []string `json:"object_kinds,omitempty"`
 	// ShowIf shows the field only when "key=value1|value2" holds.
 	ShowIf string `json:"show_if,omitempty"`
+	// ChoicesFrom "browse" lists the agent's top-level objects as choices.
+	ChoicesFrom string `json:"choices_from,omitempty"`
 }
 
 // FieldTypePassword marks a secret field. Its values are only accepted in
@@ -68,7 +70,7 @@ func fieldsToProto(fs []FieldSpec) []*pb.FieldSpec {
 	out := make([]*pb.FieldSpec, 0, len(fs))
 	for _, f := range fs {
 		out = append(out, &pb.FieldSpec{Key: f.Key, Scope: f.Scope, Type: f.Type, Label: f.Label, Help: f.Help,
-			Default: f.Default, Choices: f.Choices, Required: f.Required, ObjectKinds: f.ObjectKinds, ShowIf: f.ShowIf})
+			Default: f.Default, Choices: f.Choices, Required: f.Required, ObjectKinds: f.ObjectKinds, ShowIf: f.ShowIf, ChoicesFrom: f.ChoicesFrom})
 	}
 	return out
 }
@@ -77,7 +79,7 @@ func fieldsFromProto(fs []*pb.FieldSpec) []FieldSpec {
 	out := make([]FieldSpec, 0, len(fs))
 	for _, f := range fs {
 		out = append(out, FieldSpec{Key: f.Key, Scope: f.Scope, Type: f.Type, Label: f.Label, Help: f.Help,
-			Default: f.Default, Choices: f.Choices, Required: f.Required, ObjectKinds: f.ObjectKinds, ShowIf: f.ShowIf})
+			Default: f.Default, Choices: f.Choices, Required: f.Required, ObjectKinds: f.ObjectKinds, ShowIf: f.ShowIf, ChoicesFrom: f.ChoicesFrom})
 	}
 	return out
 }

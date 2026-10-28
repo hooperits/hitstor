@@ -13,6 +13,12 @@ func field(key, scope, typ, def, en, es, helpEN, helpES string, choices ...strin
 	return f
 }
 
+// browseChoices offers the agent's instances as the field's choices.
+func browseChoices(f hitstorplugin.FieldSpec) hitstorplugin.FieldSpec {
+	f.ChoicesFrom = "browse"
+	return f
+}
+
 // instanceField makes f an instance setting, shown when showIf holds.
 func instanceField(f hitstorplugin.FieldSpec, showIf string) hitstorplugin.FieldSpec {
 	f.ObjectKinds = []string{"instance"}
@@ -42,6 +48,8 @@ var fields = []hitstorplugin.FieldSpec{
 		"Smaller transfers, but compressed backups do not deduplicate.",
 		"Transferencias más chicas, pero los respaldos comprimidos no se deduplican."),
 
+	browseChoices(field("instance", hitstorplugin.FieldScopeRestore, "choice", "", "Target instance", "Instancia de destino",
+		"Empty restores on the instance the backup came from.", "Vacío restaura en la instancia de la que vino el respaldo.")),
 	field("database", hitstorplugin.FieldScopeRestore, "string", "", "Restore as", "Restaurar como",
 		"Database name; empty keeps the original name.", "Nombre de la base; vacío conserva el nombre original."),
 	field("replace", hitstorplugin.FieldScopeRestore, "bool", "false", "Overwrite existing database", "Sobrescribir la base existente", "", ""),

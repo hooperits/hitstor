@@ -11,6 +11,8 @@ import (
 	"time"
 
 	_ "github.com/microsoft/go-mssqldb" // registers "sqlserver"; Windows integrated auth (SSPI) built in
+
+	hitstorplugin "github.com/hooperits/hitstor/internal/plugin"
 )
 
 // defaultInstance is SQL Server's name for the unnamed instance.
@@ -306,39 +308,60 @@ func defaultPaths(ctx context.Context, db *sql.DB) (data, log string, err error)
 
 // restoreOptions controls how items are restored.
 type restoreOptions struct {
+	Instance string // instance to restore on; empty: the backup's own
 	Database string // target database name
 	Replace  bool   // overwrite an existing database
 	Recovery bool   // bring the database online after the last item
 	DataPath string // where to put data files when relocating
 	LogPath  string // where to put log files when relocating
-	Relocate bool   // MOVE files (always when restoring under another name)
+	Relocate bool   // MOVE files (by default when renaming or changing instance)
+	// Files sets the target of single files, by logical name (restore
+	// options "file:<logical name>").
+	Files map[string]string
 }
 
-// moveClauses relocates every file of the backup next to the default paths,
-// named after the target database so a copy never collides with the
-// original's files.
-func moveClauses(files []backupFile, target, dataPath, logPath string) []string {
-	var out []string
+// fileTargets works out where each file of the backup goes. Relocated
+// files go to the data and log paths, named after the target database so a
+// copy never collides with the original; others stay where they were. A
+// target set for a file by name wins.
+func fileTargets(files []backupFile, o restoreOptions) []hitstorplugin.RestoreFile {
+	out := make([]hitstorplugin.RestoreFile, 0, len(files))
 	rows, logs := 0, 0
 	for _, f := range files {
-		var dst string
-		switch f.Type {
-		case "LOG":
-			name := target + "_log"
-			if logs > 0 {
-				name += "_" + f.Logical
+		dst := f.Physical
+		if o.Relocate {
+			switch f.Type {
+			case "LOG":
+				name := o.Database + "_log"
+				if logs > 0 {
+					name += "_" + f.Logical
+				}
+				dst = joinWin(o.LogPath, name+".ldf")
+				logs++
+			default:
+				name, ext := o.Database, ".mdf"
+				if rows > 0 {
+					name, ext = o.Database+"_"+f.Logical, ".ndf"
+				}
+				dst = joinWin(o.DataPath, name+ext)
+				rows++
 			}
-			dst = joinWin(logPath, name+".ldf")
-			logs++
-		default:
-			name, ext := target, ".mdf"
-			if rows > 0 {
-				name, ext = target+"_"+f.Logical, ".ndf"
-			}
-			dst = joinWin(dataPath, name+ext)
-			rows++
 		}
-		out = append(out, fmt.Sprintf("MOVE %s TO %s", quoteString(f.Logical), quoteString(dst)))
+		if t := o.Files[f.Logical]; t != "" {
+			dst = t
+		}
+		out = append(out, hitstorplugin.RestoreFile{Key: f.Logical, Kind: f.Type, Source: f.Physical, Target: dst})
+	}
+	return out
+}
+
+// moveClauses moves every file whose target is not where it was.
+func moveClauses(targets []hitstorplugin.RestoreFile) []string {
+	var out []string
+	for _, t := range targets {
+		if !strings.EqualFold(t.Target, t.Source) {
+			out = append(out, fmt.Sprintf("MOVE %s TO %s", quoteString(t.Key), quoteString(t.Target)))
+		}
 	}
 	return out
 }

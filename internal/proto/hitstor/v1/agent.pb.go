@@ -2774,6 +2774,7 @@ type PlanWorkloadRestoreRequest struct {
 	TargetUnixNanos int64                `protobuf:"varint,5,opt,name=target_unix_nanos,json=targetUnixNanos,proto3" json:"target_unix_nanos,omitempty"`
 	Options         map[string]string    `protobuf:"bytes,6,rep,name=options,proto3" json:"options,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	Candidates      []*WorkloadCandidate `protobuf:"bytes,7,rep,name=candidates,proto3" json:"candidates,omitempty"`
+	Language        string               `protobuf:"bytes,8,opt,name=language,proto3" json:"language,omitempty"`
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
 }
@@ -2857,9 +2858,19 @@ func (x *PlanWorkloadRestoreRequest) GetCandidates() []*WorkloadCandidate {
 	return nil
 }
 
+func (x *PlanWorkloadRestoreRequest) GetLanguage() string {
+	if x != nil {
+		return x.Language
+	}
+	return ""
+}
+
 type PlanWorkloadRestoreResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Refs          []string               `protobuf:"bytes,1,rep,name=refs,proto3" json:"refs,omitempty"`
+	Files         []*WorkloadRestoreFile `protobuf:"bytes,2,rep,name=files,proto3" json:"files,omitempty"`
+	Warnings      []string               `protobuf:"bytes,3,rep,name=warnings,proto3" json:"warnings,omitempty"`
+	Summary       string                 `protobuf:"bytes,4,opt,name=summary,proto3" json:"summary,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -2901,6 +2912,95 @@ func (x *PlanWorkloadRestoreResponse) GetRefs() []string {
 	return nil
 }
 
+func (x *PlanWorkloadRestoreResponse) GetFiles() []*WorkloadRestoreFile {
+	if x != nil {
+		return x.Files
+	}
+	return nil
+}
+
+func (x *PlanWorkloadRestoreResponse) GetWarnings() []string {
+	if x != nil {
+		return x.Warnings
+	}
+	return nil
+}
+
+func (x *PlanWorkloadRestoreResponse) GetSummary() string {
+	if x != nil {
+		return x.Summary
+	}
+	return ""
+}
+
+type WorkloadRestoreFile struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Key           string                 `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
+	Kind          string                 `protobuf:"bytes,2,opt,name=kind,proto3" json:"kind,omitempty"`
+	Source        string                 `protobuf:"bytes,3,opt,name=source,proto3" json:"source,omitempty"`
+	Target        string                 `protobuf:"bytes,4,opt,name=target,proto3" json:"target,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *WorkloadRestoreFile) Reset() {
+	*x = WorkloadRestoreFile{}
+	mi := &file_internal_proto_hitstor_v1_agent_proto_msgTypes[40]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *WorkloadRestoreFile) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*WorkloadRestoreFile) ProtoMessage() {}
+
+func (x *WorkloadRestoreFile) ProtoReflect() protoreflect.Message {
+	mi := &file_internal_proto_hitstor_v1_agent_proto_msgTypes[40]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use WorkloadRestoreFile.ProtoReflect.Descriptor instead.
+func (*WorkloadRestoreFile) Descriptor() ([]byte, []int) {
+	return file_internal_proto_hitstor_v1_agent_proto_rawDescGZIP(), []int{40}
+}
+
+func (x *WorkloadRestoreFile) GetKey() string {
+	if x != nil {
+		return x.Key
+	}
+	return ""
+}
+
+func (x *WorkloadRestoreFile) GetKind() string {
+	if x != nil {
+		return x.Kind
+	}
+	return ""
+}
+
+func (x *WorkloadRestoreFile) GetSource() string {
+	if x != nil {
+		return x.Source
+	}
+	return ""
+}
+
+func (x *WorkloadRestoreFile) GetTarget() string {
+	if x != nil {
+		return x.Target
+	}
+	return ""
+}
+
 type WorkloadRestoreMessage struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Types that are valid to be assigned to Payload:
@@ -2916,7 +3016,7 @@ type WorkloadRestoreMessage struct {
 
 func (x *WorkloadRestoreMessage) Reset() {
 	*x = WorkloadRestoreMessage{}
-	mi := &file_internal_proto_hitstor_v1_agent_proto_msgTypes[40]
+	mi := &file_internal_proto_hitstor_v1_agent_proto_msgTypes[41]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2928,7 +3028,7 @@ func (x *WorkloadRestoreMessage) String() string {
 func (*WorkloadRestoreMessage) ProtoMessage() {}
 
 func (x *WorkloadRestoreMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_internal_proto_hitstor_v1_agent_proto_msgTypes[40]
+	mi := &file_internal_proto_hitstor_v1_agent_proto_msgTypes[41]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2941,7 +3041,7 @@ func (x *WorkloadRestoreMessage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use WorkloadRestoreMessage.ProtoReflect.Descriptor instead.
 func (*WorkloadRestoreMessage) Descriptor() ([]byte, []int) {
-	return file_internal_proto_hitstor_v1_agent_proto_rawDescGZIP(), []int{40}
+	return file_internal_proto_hitstor_v1_agent_proto_rawDescGZIP(), []int{41}
 }
 
 func (x *WorkloadRestoreMessage) GetPayload() isWorkloadRestoreMessage_Payload {
@@ -3030,7 +3130,7 @@ type WorkloadRestoreBegin struct {
 
 func (x *WorkloadRestoreBegin) Reset() {
 	*x = WorkloadRestoreBegin{}
-	mi := &file_internal_proto_hitstor_v1_agent_proto_msgTypes[41]
+	mi := &file_internal_proto_hitstor_v1_agent_proto_msgTypes[42]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3042,7 +3142,7 @@ func (x *WorkloadRestoreBegin) String() string {
 func (*WorkloadRestoreBegin) ProtoMessage() {}
 
 func (x *WorkloadRestoreBegin) ProtoReflect() protoreflect.Message {
-	mi := &file_internal_proto_hitstor_v1_agent_proto_msgTypes[41]
+	mi := &file_internal_proto_hitstor_v1_agent_proto_msgTypes[42]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3055,7 +3155,7 @@ func (x *WorkloadRestoreBegin) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use WorkloadRestoreBegin.ProtoReflect.Descriptor instead.
 func (*WorkloadRestoreBegin) Descriptor() ([]byte, []int) {
-	return file_internal_proto_hitstor_v1_agent_proto_rawDescGZIP(), []int{41}
+	return file_internal_proto_hitstor_v1_agent_proto_rawDescGZIP(), []int{42}
 }
 
 func (x *WorkloadRestoreBegin) GetToken() string {
@@ -3121,7 +3221,7 @@ type WorkloadItemStart struct {
 
 func (x *WorkloadItemStart) Reset() {
 	*x = WorkloadItemStart{}
-	mi := &file_internal_proto_hitstor_v1_agent_proto_msgTypes[42]
+	mi := &file_internal_proto_hitstor_v1_agent_proto_msgTypes[43]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3133,7 +3233,7 @@ func (x *WorkloadItemStart) String() string {
 func (*WorkloadItemStart) ProtoMessage() {}
 
 func (x *WorkloadItemStart) ProtoReflect() protoreflect.Message {
-	mi := &file_internal_proto_hitstor_v1_agent_proto_msgTypes[42]
+	mi := &file_internal_proto_hitstor_v1_agent_proto_msgTypes[43]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3146,7 +3246,7 @@ func (x *WorkloadItemStart) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use WorkloadItemStart.ProtoReflect.Descriptor instead.
 func (*WorkloadItemStart) Descriptor() ([]byte, []int) {
-	return file_internal_proto_hitstor_v1_agent_proto_rawDescGZIP(), []int{42}
+	return file_internal_proto_hitstor_v1_agent_proto_rawDescGZIP(), []int{43}
 }
 
 func (x *WorkloadItemStart) GetRef() string {
@@ -3192,7 +3292,7 @@ type WorkloadItemEnd struct {
 
 func (x *WorkloadItemEnd) Reset() {
 	*x = WorkloadItemEnd{}
-	mi := &file_internal_proto_hitstor_v1_agent_proto_msgTypes[43]
+	mi := &file_internal_proto_hitstor_v1_agent_proto_msgTypes[44]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3204,7 +3304,7 @@ func (x *WorkloadItemEnd) String() string {
 func (*WorkloadItemEnd) ProtoMessage() {}
 
 func (x *WorkloadItemEnd) ProtoReflect() protoreflect.Message {
-	mi := &file_internal_proto_hitstor_v1_agent_proto_msgTypes[43]
+	mi := &file_internal_proto_hitstor_v1_agent_proto_msgTypes[44]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3217,7 +3317,7 @@ func (x *WorkloadItemEnd) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use WorkloadItemEnd.ProtoReflect.Descriptor instead.
 func (*WorkloadItemEnd) Descriptor() ([]byte, []int) {
-	return file_internal_proto_hitstor_v1_agent_proto_rawDescGZIP(), []int{43}
+	return file_internal_proto_hitstor_v1_agent_proto_rawDescGZIP(), []int{44}
 }
 
 type WorkloadRestoreResponse struct {
@@ -3229,7 +3329,7 @@ type WorkloadRestoreResponse struct {
 
 func (x *WorkloadRestoreResponse) Reset() {
 	*x = WorkloadRestoreResponse{}
-	mi := &file_internal_proto_hitstor_v1_agent_proto_msgTypes[44]
+	mi := &file_internal_proto_hitstor_v1_agent_proto_msgTypes[45]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3241,7 +3341,7 @@ func (x *WorkloadRestoreResponse) String() string {
 func (*WorkloadRestoreResponse) ProtoMessage() {}
 
 func (x *WorkloadRestoreResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_internal_proto_hitstor_v1_agent_proto_msgTypes[44]
+	mi := &file_internal_proto_hitstor_v1_agent_proto_msgTypes[45]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3254,7 +3354,7 @@ func (x *WorkloadRestoreResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use WorkloadRestoreResponse.ProtoReflect.Descriptor instead.
 func (*WorkloadRestoreResponse) Descriptor() ([]byte, []int) {
-	return file_internal_proto_hitstor_v1_agent_proto_rawDescGZIP(), []int{44}
+	return file_internal_proto_hitstor_v1_agent_proto_rawDescGZIP(), []int{45}
 }
 
 func (x *WorkloadRestoreResponse) GetMessage() string {
@@ -3277,7 +3377,7 @@ type InstallPluginMessage struct {
 
 func (x *InstallPluginMessage) Reset() {
 	*x = InstallPluginMessage{}
-	mi := &file_internal_proto_hitstor_v1_agent_proto_msgTypes[45]
+	mi := &file_internal_proto_hitstor_v1_agent_proto_msgTypes[46]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3289,7 +3389,7 @@ func (x *InstallPluginMessage) String() string {
 func (*InstallPluginMessage) ProtoMessage() {}
 
 func (x *InstallPluginMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_internal_proto_hitstor_v1_agent_proto_msgTypes[45]
+	mi := &file_internal_proto_hitstor_v1_agent_proto_msgTypes[46]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3302,7 +3402,7 @@ func (x *InstallPluginMessage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use InstallPluginMessage.ProtoReflect.Descriptor instead.
 func (*InstallPluginMessage) Descriptor() ([]byte, []int) {
-	return file_internal_proto_hitstor_v1_agent_proto_rawDescGZIP(), []int{45}
+	return file_internal_proto_hitstor_v1_agent_proto_rawDescGZIP(), []int{46}
 }
 
 func (x *InstallPluginMessage) GetPayload() isInstallPluginMessage_Payload {
@@ -3363,7 +3463,7 @@ type InstallPluginBegin struct {
 
 func (x *InstallPluginBegin) Reset() {
 	*x = InstallPluginBegin{}
-	mi := &file_internal_proto_hitstor_v1_agent_proto_msgTypes[46]
+	mi := &file_internal_proto_hitstor_v1_agent_proto_msgTypes[47]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3375,7 +3475,7 @@ func (x *InstallPluginBegin) String() string {
 func (*InstallPluginBegin) ProtoMessage() {}
 
 func (x *InstallPluginBegin) ProtoReflect() protoreflect.Message {
-	mi := &file_internal_proto_hitstor_v1_agent_proto_msgTypes[46]
+	mi := &file_internal_proto_hitstor_v1_agent_proto_msgTypes[47]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3388,7 +3488,7 @@ func (x *InstallPluginBegin) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use InstallPluginBegin.ProtoReflect.Descriptor instead.
 func (*InstallPluginBegin) Descriptor() ([]byte, []int) {
-	return file_internal_proto_hitstor_v1_agent_proto_rawDescGZIP(), []int{46}
+	return file_internal_proto_hitstor_v1_agent_proto_rawDescGZIP(), []int{47}
 }
 
 func (x *InstallPluginBegin) GetToken() string {
@@ -3439,7 +3539,7 @@ type InstallPluginResponse struct {
 
 func (x *InstallPluginResponse) Reset() {
 	*x = InstallPluginResponse{}
-	mi := &file_internal_proto_hitstor_v1_agent_proto_msgTypes[47]
+	mi := &file_internal_proto_hitstor_v1_agent_proto_msgTypes[48]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3451,7 +3551,7 @@ func (x *InstallPluginResponse) String() string {
 func (*InstallPluginResponse) ProtoMessage() {}
 
 func (x *InstallPluginResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_internal_proto_hitstor_v1_agent_proto_msgTypes[47]
+	mi := &file_internal_proto_hitstor_v1_agent_proto_msgTypes[48]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3464,7 +3564,7 @@ func (x *InstallPluginResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use InstallPluginResponse.ProtoReflect.Descriptor instead.
 func (*InstallPluginResponse) Descriptor() ([]byte, []int) {
-	return file_internal_proto_hitstor_v1_agent_proto_rawDescGZIP(), []int{47}
+	return file_internal_proto_hitstor_v1_agent_proto_rawDescGZIP(), []int{48}
 }
 
 func (x *InstallPluginResponse) GetId() string {
@@ -3512,7 +3612,7 @@ type RemovePluginRequest struct {
 
 func (x *RemovePluginRequest) Reset() {
 	*x = RemovePluginRequest{}
-	mi := &file_internal_proto_hitstor_v1_agent_proto_msgTypes[48]
+	mi := &file_internal_proto_hitstor_v1_agent_proto_msgTypes[49]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3524,7 +3624,7 @@ func (x *RemovePluginRequest) String() string {
 func (*RemovePluginRequest) ProtoMessage() {}
 
 func (x *RemovePluginRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_internal_proto_hitstor_v1_agent_proto_msgTypes[48]
+	mi := &file_internal_proto_hitstor_v1_agent_proto_msgTypes[49]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3537,7 +3637,7 @@ func (x *RemovePluginRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RemovePluginRequest.ProtoReflect.Descriptor instead.
 func (*RemovePluginRequest) Descriptor() ([]byte, []int) {
-	return file_internal_proto_hitstor_v1_agent_proto_rawDescGZIP(), []int{48}
+	return file_internal_proto_hitstor_v1_agent_proto_rawDescGZIP(), []int{49}
 }
 
 func (x *RemovePluginRequest) GetToken() string {
@@ -3562,7 +3662,7 @@ type RemovePluginResponse struct {
 
 func (x *RemovePluginResponse) Reset() {
 	*x = RemovePluginResponse{}
-	mi := &file_internal_proto_hitstor_v1_agent_proto_msgTypes[49]
+	mi := &file_internal_proto_hitstor_v1_agent_proto_msgTypes[50]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3574,7 +3674,7 @@ func (x *RemovePluginResponse) String() string {
 func (*RemovePluginResponse) ProtoMessage() {}
 
 func (x *RemovePluginResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_internal_proto_hitstor_v1_agent_proto_msgTypes[49]
+	mi := &file_internal_proto_hitstor_v1_agent_proto_msgTypes[50]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3587,7 +3687,7 @@ func (x *RemovePluginResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RemovePluginResponse.ProtoReflect.Descriptor instead.
 func (*RemovePluginResponse) Descriptor() ([]byte, []int) {
-	return file_internal_proto_hitstor_v1_agent_proto_rawDescGZIP(), []int{49}
+	return file_internal_proto_hitstor_v1_agent_proto_rawDescGZIP(), []int{50}
 }
 
 var File_internal_proto_hitstor_v1_agent_proto protoreflect.FileDescriptor
@@ -3824,7 +3924,7 @@ const file_internal_proto_hitstor_v1_agent_proto_rawDesc = "" +
 	"\x04item\x18\x02 \x01(\tR\x04item\x12\x12\n" +
 	"\x04kind\x18\x03 \x01(\tR\x04kind\x12,\n" +
 	"\x12created_unix_nanos\x18\x04 \x01(\x03R\x10createdUnixNanos\x12\x1a\n" +
-	"\bmetadata\x18\x05 \x01(\fR\bmetadata\"\xe7\x03\n" +
+	"\bmetadata\x18\x05 \x01(\fR\bmetadata\"\x83\x04\n" +
 	"\x1aPlanWorkloadRestoreRequest\x12\x14\n" +
 	"\x05token\x18\x01 \x01(\tR\x05token\x12\x16\n" +
 	"\x06plugin\x18\x02 \x01(\tR\x06plugin\x12P\n" +
@@ -3834,15 +3934,24 @@ const file_internal_proto_hitstor_v1_agent_proto_rawDesc = "" +
 	"\aoptions\x18\x06 \x03(\v23.hitstor.v1.PlanWorkloadRestoreRequest.OptionsEntryR\aoptions\x12=\n" +
 	"\n" +
 	"candidates\x18\a \x03(\v2\x1d.hitstor.v1.WorkloadCandidateR\n" +
-	"candidates\x1a;\n" +
+	"candidates\x12\x1a\n" +
+	"\blanguage\x18\b \x01(\tR\blanguage\x1a;\n" +
 	"\rSettingsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\x1a:\n" +
 	"\fOptionsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"1\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\x9e\x01\n" +
 	"\x1bPlanWorkloadRestoreResponse\x12\x12\n" +
-	"\x04refs\x18\x01 \x03(\tR\x04refs\"\xdb\x01\n" +
+	"\x04refs\x18\x01 \x03(\tR\x04refs\x125\n" +
+	"\x05files\x18\x02 \x03(\v2\x1f.hitstor.v1.WorkloadRestoreFileR\x05files\x12\x1a\n" +
+	"\bwarnings\x18\x03 \x03(\tR\bwarnings\x12\x18\n" +
+	"\asummary\x18\x04 \x01(\tR\asummary\"k\n" +
+	"\x13WorkloadRestoreFile\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x12\n" +
+	"\x04kind\x18\x02 \x01(\tR\x04kind\x12\x16\n" +
+	"\x06source\x18\x03 \x01(\tR\x06source\x12\x16\n" +
+	"\x06target\x18\x04 \x01(\tR\x06target\"\xdb\x01\n" +
 	"\x16WorkloadRestoreMessage\x128\n" +
 	"\x05begin\x18\x01 \x01(\v2 .hitstor.v1.WorkloadRestoreBeginH\x00R\x05begin\x125\n" +
 	"\x05start\x18\x02 \x01(\v2\x1d.hitstor.v1.WorkloadItemStartH\x00R\x05start\x12\x14\n" +
@@ -3924,7 +4033,7 @@ func file_internal_proto_hitstor_v1_agent_proto_rawDescGZIP() []byte {
 	return file_internal_proto_hitstor_v1_agent_proto_rawDescData
 }
 
-var file_internal_proto_hitstor_v1_agent_proto_msgTypes = make([]protoimpl.MessageInfo, 59)
+var file_internal_proto_hitstor_v1_agent_proto_msgTypes = make([]protoimpl.MessageInfo, 60)
 var file_internal_proto_hitstor_v1_agent_proto_goTypes = []any{
 	(*CheckRecoveryMediaRequest)(nil),       // 0: hitstor.v1.CheckRecoveryMediaRequest
 	(*ToolStatus)(nil),                      // 1: hitstor.v1.ToolStatus
@@ -3966,25 +4075,26 @@ var file_internal_proto_hitstor_v1_agent_proto_goTypes = []any{
 	(*WorkloadCandidate)(nil),               // 37: hitstor.v1.WorkloadCandidate
 	(*PlanWorkloadRestoreRequest)(nil),      // 38: hitstor.v1.PlanWorkloadRestoreRequest
 	(*PlanWorkloadRestoreResponse)(nil),     // 39: hitstor.v1.PlanWorkloadRestoreResponse
-	(*WorkloadRestoreMessage)(nil),          // 40: hitstor.v1.WorkloadRestoreMessage
-	(*WorkloadRestoreBegin)(nil),            // 41: hitstor.v1.WorkloadRestoreBegin
-	(*WorkloadItemStart)(nil),               // 42: hitstor.v1.WorkloadItemStart
-	(*WorkloadItemEnd)(nil),                 // 43: hitstor.v1.WorkloadItemEnd
-	(*WorkloadRestoreResponse)(nil),         // 44: hitstor.v1.WorkloadRestoreResponse
-	(*InstallPluginMessage)(nil),            // 45: hitstor.v1.InstallPluginMessage
-	(*InstallPluginBegin)(nil),              // 46: hitstor.v1.InstallPluginBegin
-	(*InstallPluginResponse)(nil),           // 47: hitstor.v1.InstallPluginResponse
-	(*RemovePluginRequest)(nil),             // 48: hitstor.v1.RemovePluginRequest
-	(*RemovePluginResponse)(nil),            // 49: hitstor.v1.RemovePluginResponse
-	nil,                                     // 50: hitstor.v1.LogEntry.FieldsEntry
-	nil,                                     // 51: hitstor.v1.BrowseWorkloadRequest.SettingsEntry
-	nil,                                     // 52: hitstor.v1.GetWorkloadObjectConfigResponse.ValuesEntry
-	nil,                                     // 53: hitstor.v1.SetWorkloadObjectConfigRequest.ValuesEntry
-	nil,                                     // 54: hitstor.v1.SetWorkloadObjectConfigRequest.SettingsEntry
-	nil,                                     // 55: hitstor.v1.PlanWorkloadRestoreRequest.SettingsEntry
-	nil,                                     // 56: hitstor.v1.PlanWorkloadRestoreRequest.OptionsEntry
-	nil,                                     // 57: hitstor.v1.WorkloadRestoreBegin.SettingsEntry
-	nil,                                     // 58: hitstor.v1.WorkloadRestoreBegin.OptionsEntry
+	(*WorkloadRestoreFile)(nil),             // 40: hitstor.v1.WorkloadRestoreFile
+	(*WorkloadRestoreMessage)(nil),          // 41: hitstor.v1.WorkloadRestoreMessage
+	(*WorkloadRestoreBegin)(nil),            // 42: hitstor.v1.WorkloadRestoreBegin
+	(*WorkloadItemStart)(nil),               // 43: hitstor.v1.WorkloadItemStart
+	(*WorkloadItemEnd)(nil),                 // 44: hitstor.v1.WorkloadItemEnd
+	(*WorkloadRestoreResponse)(nil),         // 45: hitstor.v1.WorkloadRestoreResponse
+	(*InstallPluginMessage)(nil),            // 46: hitstor.v1.InstallPluginMessage
+	(*InstallPluginBegin)(nil),              // 47: hitstor.v1.InstallPluginBegin
+	(*InstallPluginResponse)(nil),           // 48: hitstor.v1.InstallPluginResponse
+	(*RemovePluginRequest)(nil),             // 49: hitstor.v1.RemovePluginRequest
+	(*RemovePluginResponse)(nil),            // 50: hitstor.v1.RemovePluginResponse
+	nil,                                     // 51: hitstor.v1.LogEntry.FieldsEntry
+	nil,                                     // 52: hitstor.v1.BrowseWorkloadRequest.SettingsEntry
+	nil,                                     // 53: hitstor.v1.GetWorkloadObjectConfigResponse.ValuesEntry
+	nil,                                     // 54: hitstor.v1.SetWorkloadObjectConfigRequest.ValuesEntry
+	nil,                                     // 55: hitstor.v1.SetWorkloadObjectConfigRequest.SettingsEntry
+	nil,                                     // 56: hitstor.v1.PlanWorkloadRestoreRequest.SettingsEntry
+	nil,                                     // 57: hitstor.v1.PlanWorkloadRestoreRequest.OptionsEntry
+	nil,                                     // 58: hitstor.v1.WorkloadRestoreBegin.SettingsEntry
+	nil,                                     // 59: hitstor.v1.WorkloadRestoreBegin.OptionsEntry
 }
 var file_internal_proto_hitstor_v1_agent_proto_depIdxs = []int32{
 	1,  // 0: hitstor.v1.CheckRecoveryMediaResponse.tools:type_name -> hitstor.v1.ToolStatus
@@ -3997,60 +4107,61 @@ var file_internal_proto_hitstor_v1_agent_proto_depIdxs = []int32{
 	12, // 7: hitstor.v1.RestoreDataRequest.end:type_name -> hitstor.v1.RestoreEnd
 	18, // 8: hitstor.v1.ListDirectoryResponse.entries:type_name -> hitstor.v1.DirEntry
 	27, // 9: hitstor.v1.FetchLogsResponse.entries:type_name -> hitstor.v1.LogEntry
-	50, // 10: hitstor.v1.LogEntry.fields:type_name -> hitstor.v1.LogEntry.FieldsEntry
-	51, // 11: hitstor.v1.BrowseWorkloadRequest.settings:type_name -> hitstor.v1.BrowseWorkloadRequest.SettingsEntry
+	51, // 10: hitstor.v1.LogEntry.fields:type_name -> hitstor.v1.LogEntry.FieldsEntry
+	52, // 11: hitstor.v1.BrowseWorkloadRequest.settings:type_name -> hitstor.v1.BrowseWorkloadRequest.SettingsEntry
 	32, // 12: hitstor.v1.BrowseWorkloadResponse.entries:type_name -> hitstor.v1.WorkloadObject
-	52, // 13: hitstor.v1.GetWorkloadObjectConfigResponse.values:type_name -> hitstor.v1.GetWorkloadObjectConfigResponse.ValuesEntry
-	53, // 14: hitstor.v1.SetWorkloadObjectConfigRequest.values:type_name -> hitstor.v1.SetWorkloadObjectConfigRequest.ValuesEntry
-	54, // 15: hitstor.v1.SetWorkloadObjectConfigRequest.settings:type_name -> hitstor.v1.SetWorkloadObjectConfigRequest.SettingsEntry
-	55, // 16: hitstor.v1.PlanWorkloadRestoreRequest.settings:type_name -> hitstor.v1.PlanWorkloadRestoreRequest.SettingsEntry
-	56, // 17: hitstor.v1.PlanWorkloadRestoreRequest.options:type_name -> hitstor.v1.PlanWorkloadRestoreRequest.OptionsEntry
+	53, // 13: hitstor.v1.GetWorkloadObjectConfigResponse.values:type_name -> hitstor.v1.GetWorkloadObjectConfigResponse.ValuesEntry
+	54, // 14: hitstor.v1.SetWorkloadObjectConfigRequest.values:type_name -> hitstor.v1.SetWorkloadObjectConfigRequest.ValuesEntry
+	55, // 15: hitstor.v1.SetWorkloadObjectConfigRequest.settings:type_name -> hitstor.v1.SetWorkloadObjectConfigRequest.SettingsEntry
+	56, // 16: hitstor.v1.PlanWorkloadRestoreRequest.settings:type_name -> hitstor.v1.PlanWorkloadRestoreRequest.SettingsEntry
+	57, // 17: hitstor.v1.PlanWorkloadRestoreRequest.options:type_name -> hitstor.v1.PlanWorkloadRestoreRequest.OptionsEntry
 	37, // 18: hitstor.v1.PlanWorkloadRestoreRequest.candidates:type_name -> hitstor.v1.WorkloadCandidate
-	41, // 19: hitstor.v1.WorkloadRestoreMessage.begin:type_name -> hitstor.v1.WorkloadRestoreBegin
-	42, // 20: hitstor.v1.WorkloadRestoreMessage.start:type_name -> hitstor.v1.WorkloadItemStart
-	43, // 21: hitstor.v1.WorkloadRestoreMessage.end:type_name -> hitstor.v1.WorkloadItemEnd
-	57, // 22: hitstor.v1.WorkloadRestoreBegin.settings:type_name -> hitstor.v1.WorkloadRestoreBegin.SettingsEntry
-	58, // 23: hitstor.v1.WorkloadRestoreBegin.options:type_name -> hitstor.v1.WorkloadRestoreBegin.OptionsEntry
-	46, // 24: hitstor.v1.InstallPluginMessage.begin:type_name -> hitstor.v1.InstallPluginBegin
-	14, // 25: hitstor.v1.AgentService.Register:input_type -> hitstor.v1.RegisterRequest
-	16, // 26: hitstor.v1.AgentService.ListDirectory:input_type -> hitstor.v1.ListDirectoryRequest
-	19, // 27: hitstor.v1.AgentService.Configure:input_type -> hitstor.v1.ConfigureRequest
-	21, // 28: hitstor.v1.AgentService.AgentInfo:input_type -> hitstor.v1.AgentInfoRequest
-	6,  // 29: hitstor.v1.AgentService.RestoreData:input_type -> hitstor.v1.RestoreDataRequest
-	23, // 30: hitstor.v1.AgentService.WakeUp:input_type -> hitstor.v1.WakeUpRequest
-	25, // 31: hitstor.v1.AgentService.FetchLogs:input_type -> hitstor.v1.FetchLogsRequest
-	28, // 32: hitstor.v1.AgentService.DiscoverDatabases:input_type -> hitstor.v1.DiscoverDatabasesRequest
-	0,  // 33: hitstor.v1.AgentService.CheckRecoveryMedia:input_type -> hitstor.v1.CheckRecoveryMediaRequest
-	3,  // 34: hitstor.v1.AgentService.BuildRecoveryMedia:input_type -> hitstor.v1.BuildRecoveryMediaRequest
-	30, // 35: hitstor.v1.AgentService.BrowseWorkload:input_type -> hitstor.v1.BrowseWorkloadRequest
-	33, // 36: hitstor.v1.AgentService.GetWorkloadObjectConfig:input_type -> hitstor.v1.GetWorkloadObjectConfigRequest
-	35, // 37: hitstor.v1.AgentService.SetWorkloadObjectConfig:input_type -> hitstor.v1.SetWorkloadObjectConfigRequest
-	38, // 38: hitstor.v1.AgentService.PlanWorkloadRestore:input_type -> hitstor.v1.PlanWorkloadRestoreRequest
-	40, // 39: hitstor.v1.AgentService.RestoreWorkload:input_type -> hitstor.v1.WorkloadRestoreMessage
-	45, // 40: hitstor.v1.AgentService.InstallPlugin:input_type -> hitstor.v1.InstallPluginMessage
-	48, // 41: hitstor.v1.AgentService.RemovePlugin:input_type -> hitstor.v1.RemovePluginRequest
-	15, // 42: hitstor.v1.AgentService.Register:output_type -> hitstor.v1.RegisterResponse
-	17, // 43: hitstor.v1.AgentService.ListDirectory:output_type -> hitstor.v1.ListDirectoryResponse
-	20, // 44: hitstor.v1.AgentService.Configure:output_type -> hitstor.v1.ConfigureResponse
-	22, // 45: hitstor.v1.AgentService.AgentInfo:output_type -> hitstor.v1.AgentInfoResponse
-	13, // 46: hitstor.v1.AgentService.RestoreData:output_type -> hitstor.v1.RestoreDataResponse
-	24, // 47: hitstor.v1.AgentService.WakeUp:output_type -> hitstor.v1.WakeUpResponse
-	26, // 48: hitstor.v1.AgentService.FetchLogs:output_type -> hitstor.v1.FetchLogsResponse
-	29, // 49: hitstor.v1.AgentService.DiscoverDatabases:output_type -> hitstor.v1.DiscoverDatabasesResponse
-	2,  // 50: hitstor.v1.AgentService.CheckRecoveryMedia:output_type -> hitstor.v1.CheckRecoveryMediaResponse
-	4,  // 51: hitstor.v1.AgentService.BuildRecoveryMedia:output_type -> hitstor.v1.MediaChunk
-	31, // 52: hitstor.v1.AgentService.BrowseWorkload:output_type -> hitstor.v1.BrowseWorkloadResponse
-	34, // 53: hitstor.v1.AgentService.GetWorkloadObjectConfig:output_type -> hitstor.v1.GetWorkloadObjectConfigResponse
-	36, // 54: hitstor.v1.AgentService.SetWorkloadObjectConfig:output_type -> hitstor.v1.SetWorkloadObjectConfigResponse
-	39, // 55: hitstor.v1.AgentService.PlanWorkloadRestore:output_type -> hitstor.v1.PlanWorkloadRestoreResponse
-	44, // 56: hitstor.v1.AgentService.RestoreWorkload:output_type -> hitstor.v1.WorkloadRestoreResponse
-	47, // 57: hitstor.v1.AgentService.InstallPlugin:output_type -> hitstor.v1.InstallPluginResponse
-	49, // 58: hitstor.v1.AgentService.RemovePlugin:output_type -> hitstor.v1.RemovePluginResponse
-	42, // [42:59] is the sub-list for method output_type
-	25, // [25:42] is the sub-list for method input_type
-	25, // [25:25] is the sub-list for extension type_name
-	25, // [25:25] is the sub-list for extension extendee
-	0,  // [0:25] is the sub-list for field type_name
+	40, // 19: hitstor.v1.PlanWorkloadRestoreResponse.files:type_name -> hitstor.v1.WorkloadRestoreFile
+	42, // 20: hitstor.v1.WorkloadRestoreMessage.begin:type_name -> hitstor.v1.WorkloadRestoreBegin
+	43, // 21: hitstor.v1.WorkloadRestoreMessage.start:type_name -> hitstor.v1.WorkloadItemStart
+	44, // 22: hitstor.v1.WorkloadRestoreMessage.end:type_name -> hitstor.v1.WorkloadItemEnd
+	58, // 23: hitstor.v1.WorkloadRestoreBegin.settings:type_name -> hitstor.v1.WorkloadRestoreBegin.SettingsEntry
+	59, // 24: hitstor.v1.WorkloadRestoreBegin.options:type_name -> hitstor.v1.WorkloadRestoreBegin.OptionsEntry
+	47, // 25: hitstor.v1.InstallPluginMessage.begin:type_name -> hitstor.v1.InstallPluginBegin
+	14, // 26: hitstor.v1.AgentService.Register:input_type -> hitstor.v1.RegisterRequest
+	16, // 27: hitstor.v1.AgentService.ListDirectory:input_type -> hitstor.v1.ListDirectoryRequest
+	19, // 28: hitstor.v1.AgentService.Configure:input_type -> hitstor.v1.ConfigureRequest
+	21, // 29: hitstor.v1.AgentService.AgentInfo:input_type -> hitstor.v1.AgentInfoRequest
+	6,  // 30: hitstor.v1.AgentService.RestoreData:input_type -> hitstor.v1.RestoreDataRequest
+	23, // 31: hitstor.v1.AgentService.WakeUp:input_type -> hitstor.v1.WakeUpRequest
+	25, // 32: hitstor.v1.AgentService.FetchLogs:input_type -> hitstor.v1.FetchLogsRequest
+	28, // 33: hitstor.v1.AgentService.DiscoverDatabases:input_type -> hitstor.v1.DiscoverDatabasesRequest
+	0,  // 34: hitstor.v1.AgentService.CheckRecoveryMedia:input_type -> hitstor.v1.CheckRecoveryMediaRequest
+	3,  // 35: hitstor.v1.AgentService.BuildRecoveryMedia:input_type -> hitstor.v1.BuildRecoveryMediaRequest
+	30, // 36: hitstor.v1.AgentService.BrowseWorkload:input_type -> hitstor.v1.BrowseWorkloadRequest
+	33, // 37: hitstor.v1.AgentService.GetWorkloadObjectConfig:input_type -> hitstor.v1.GetWorkloadObjectConfigRequest
+	35, // 38: hitstor.v1.AgentService.SetWorkloadObjectConfig:input_type -> hitstor.v1.SetWorkloadObjectConfigRequest
+	38, // 39: hitstor.v1.AgentService.PlanWorkloadRestore:input_type -> hitstor.v1.PlanWorkloadRestoreRequest
+	41, // 40: hitstor.v1.AgentService.RestoreWorkload:input_type -> hitstor.v1.WorkloadRestoreMessage
+	46, // 41: hitstor.v1.AgentService.InstallPlugin:input_type -> hitstor.v1.InstallPluginMessage
+	49, // 42: hitstor.v1.AgentService.RemovePlugin:input_type -> hitstor.v1.RemovePluginRequest
+	15, // 43: hitstor.v1.AgentService.Register:output_type -> hitstor.v1.RegisterResponse
+	17, // 44: hitstor.v1.AgentService.ListDirectory:output_type -> hitstor.v1.ListDirectoryResponse
+	20, // 45: hitstor.v1.AgentService.Configure:output_type -> hitstor.v1.ConfigureResponse
+	22, // 46: hitstor.v1.AgentService.AgentInfo:output_type -> hitstor.v1.AgentInfoResponse
+	13, // 47: hitstor.v1.AgentService.RestoreData:output_type -> hitstor.v1.RestoreDataResponse
+	24, // 48: hitstor.v1.AgentService.WakeUp:output_type -> hitstor.v1.WakeUpResponse
+	26, // 49: hitstor.v1.AgentService.FetchLogs:output_type -> hitstor.v1.FetchLogsResponse
+	29, // 50: hitstor.v1.AgentService.DiscoverDatabases:output_type -> hitstor.v1.DiscoverDatabasesResponse
+	2,  // 51: hitstor.v1.AgentService.CheckRecoveryMedia:output_type -> hitstor.v1.CheckRecoveryMediaResponse
+	4,  // 52: hitstor.v1.AgentService.BuildRecoveryMedia:output_type -> hitstor.v1.MediaChunk
+	31, // 53: hitstor.v1.AgentService.BrowseWorkload:output_type -> hitstor.v1.BrowseWorkloadResponse
+	34, // 54: hitstor.v1.AgentService.GetWorkloadObjectConfig:output_type -> hitstor.v1.GetWorkloadObjectConfigResponse
+	36, // 55: hitstor.v1.AgentService.SetWorkloadObjectConfig:output_type -> hitstor.v1.SetWorkloadObjectConfigResponse
+	39, // 56: hitstor.v1.AgentService.PlanWorkloadRestore:output_type -> hitstor.v1.PlanWorkloadRestoreResponse
+	45, // 57: hitstor.v1.AgentService.RestoreWorkload:output_type -> hitstor.v1.WorkloadRestoreResponse
+	48, // 58: hitstor.v1.AgentService.InstallPlugin:output_type -> hitstor.v1.InstallPluginResponse
+	50, // 59: hitstor.v1.AgentService.RemovePlugin:output_type -> hitstor.v1.RemovePluginResponse
+	43, // [43:60] is the sub-list for method output_type
+	26, // [26:43] is the sub-list for method input_type
+	26, // [26:26] is the sub-list for extension type_name
+	26, // [26:26] is the sub-list for extension extendee
+	0,  // [0:26] is the sub-list for field type_name
 }
 
 func init() { file_internal_proto_hitstor_v1_agent_proto_init() }
@@ -4071,13 +4182,13 @@ func file_internal_proto_hitstor_v1_agent_proto_init() {
 		(*RestoreDataRequest_Symlink)(nil),
 		(*RestoreDataRequest_End)(nil),
 	}
-	file_internal_proto_hitstor_v1_agent_proto_msgTypes[40].OneofWrappers = []any{
+	file_internal_proto_hitstor_v1_agent_proto_msgTypes[41].OneofWrappers = []any{
 		(*WorkloadRestoreMessage_Begin)(nil),
 		(*WorkloadRestoreMessage_Start)(nil),
 		(*WorkloadRestoreMessage_Data)(nil),
 		(*WorkloadRestoreMessage_End)(nil),
 	}
-	file_internal_proto_hitstor_v1_agent_proto_msgTypes[45].OneofWrappers = []any{
+	file_internal_proto_hitstor_v1_agent_proto_msgTypes[46].OneofWrappers = []any{
 		(*InstallPluginMessage_Begin)(nil),
 		(*InstallPluginMessage_Data)(nil),
 	}
@@ -4087,7 +4198,7 @@ func file_internal_proto_hitstor_v1_agent_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_internal_proto_hitstor_v1_agent_proto_rawDesc), len(file_internal_proto_hitstor_v1_agent_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   59,
+			NumMessages:   60,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

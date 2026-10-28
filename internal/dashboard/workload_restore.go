@@ -148,6 +148,12 @@ func (d *Dashboard) workloadSnapshotMatches(snap *repository.Snapshot, sourceAge
 // workloadPoints returns, oldest first, every item that the plugin produced
 // for object on sourceAgent, across all repositories.
 func (d *Dashboard) workloadPoints(sourceAgent, pluginID, object string) ([]workloadPoint, error) {
+	return d.workloadItems(sourceAgent, pluginID, object, "")
+}
+
+// workloadItems is workloadPoints for every object when object is empty,
+// and for one snapshot (an ID prefix) when snapshot is set.
+func (d *Dashboard) workloadItems(sourceAgent, pluginID, object, snapshot string) ([]workloadPoint, error) {
 	jobIDs := make(map[string]bool)
 	for _, j := range d.registry.ListJobsByAgent(sourceAgent) {
 		jobIDs[j.ID] = true
@@ -169,6 +175,9 @@ func (d *Dashboard) workloadPoints(sourceAgent, pluginID, object string) ([]work
 			return nil, err
 		}
 		for _, id := range ids {
+			if snapshot != "" && !strings.HasPrefix(id.String(), snapshot) {
+				continue
+			}
 			snap, err := repo.LoadSnapshot(id)
 			if err != nil || !slices.Contains(snap.Tags, "plugin:"+pluginID) || !d.workloadSnapshotMatches(snap, sourceAgent, jobIDs) {
 				continue
@@ -177,7 +186,7 @@ func (d *Dashboard) workloadPoints(sourceAgent, pluginID, object string) ([]work
 			if err != nil {
 				continue
 			}
-			dir := findTreeDir(repo, root, pluginID+"/"+object)
+			dir := findTreeDir(repo, root, strings.TrimSuffix(pluginID+"/"+object, "/"))
 			if dir == nil {
 				continue
 			}
@@ -227,6 +236,7 @@ type WorkloadRestoreSession struct {
 	bytesSent atomic.Int64
 	bytesTot  int64
 	settings  map[string]string
+	language  string // for the plugin's preview messages
 }
 
 type workloadRestoreJSON struct {
@@ -305,31 +315,13 @@ func (d *Dashboard) runWorkloadRestore(ctx context.Context, sess *WorkloadRestor
 	if sess.Target != nil {
 		target = sess.Target.UnixNano()
 	}
-	byRef := make(map[string]workloadPoint, len(points))
-	planReq := &pb.PlanWorkloadRestoreRequest{
-		Token: token, Plugin: sess.Plugin, Settings: sess.settings, Object: sess.Object,
-		TargetUnixNanos: target, Options: sess.Options,
-	}
-	for _, p := range points {
-		byRef[p.Ref] = p
-		planReq.Candidates = append(planReq.Candidates, &pb.WorkloadCandidate{
-			Ref: p.Ref, Item: p.Item, Kind: p.Kind, CreatedUnixNanos: p.CreatedAt.UnixNano(), Metadata: p.Metadata,
-		})
-	}
-	plan, err := client.PlanWorkloadRestore(ctx, planReq)
+	_, planned, err := d.planWorkloadRestore(ctx, client, token, sess, points)
 	if err != nil {
-		sess.fail(fmt.Errorf("plan restore: %w", err))
+		sess.fail(err)
 		return
 	}
-	var planned []workloadPoint
 	var total int64
-	for _, ref := range plan.Refs {
-		p, ok := byRef[ref]
-		if !ok {
-			sess.fail(fmt.Errorf("plan references unknown item %q", ref))
-			return
-		}
-		planned = append(planned, p)
+	for _, p := range planned {
 		total += p.Size
 	}
 	sess.mu.Lock()
@@ -405,4 +397,37 @@ func (d *Dashboard) sendWorkloadItems(stream pb.AgentService_RestoreWorkloadClie
 		}
 	}
 	return nil
+}
+
+// planWorkloadRestore asks the agent which of points restore sess's object,
+// and what the restore will do. It returns the planned points in order.
+func (d *Dashboard) planWorkloadRestore(ctx context.Context, client *server.AgentClient, token string, sess *WorkloadRestoreSession, points []workloadPoint) (*pb.PlanWorkloadRestoreResponse, []workloadPoint, error) {
+	var target int64
+	if sess.Target != nil {
+		target = sess.Target.UnixNano()
+	}
+	byRef := make(map[string]workloadPoint, len(points))
+	planReq := &pb.PlanWorkloadRestoreRequest{
+		Token: token, Plugin: sess.Plugin, Settings: sess.settings, Object: sess.Object,
+		TargetUnixNanos: target, Options: sess.Options, Language: sess.language,
+	}
+	for _, p := range points {
+		byRef[p.Ref] = p
+		planReq.Candidates = append(planReq.Candidates, &pb.WorkloadCandidate{
+			Ref: p.Ref, Item: p.Item, Kind: p.Kind, CreatedUnixNanos: p.CreatedAt.UnixNano(), Metadata: p.Metadata,
+		})
+	}
+	plan, err := client.PlanWorkloadRestore(ctx, planReq)
+	if err != nil {
+		return nil, nil, fmt.Errorf("plan restore: %w", err)
+	}
+	planned := make([]workloadPoint, 0, len(plan.Refs))
+	for _, ref := range plan.Refs {
+		p, ok := byRef[ref]
+		if !ok {
+			return nil, nil, fmt.Errorf("plan references unknown item %q", ref)
+		}
+		planned = append(planned, p)
+	}
+	return plan, planned, nil
 }

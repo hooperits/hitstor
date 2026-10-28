@@ -153,7 +153,13 @@ func (p *mssqlPlugin) Backup(ctx context.Context, req hitstorplugin.BackupReques
 			return fmt.Errorf("%s: read files: %w", obj, err)
 		}
 		if len(files) == 0 {
-			return fmt.Errorf("database %q not found", dbName)
+			// Without VIEW ANY DEFINITION or access to the database, the
+			// login cannot see it either; name the login to make that clear.
+			var login string
+			if err := db.QueryRowContext(ctx, `SELECT SUSER_SNAME()`).Scan(&login); err != nil {
+				login = "?"
+			}
+			return fmt.Errorf("database %q not found or not visible to login %q (check auth/username and the login's permissions)", dbName, login)
 		}
 
 		// Milliseconds: log backups can be seconds apart.

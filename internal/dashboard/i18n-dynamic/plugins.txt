@@ -9,3 +9,7 @@ planning
 restoring
 completed
 failed
+# Choice values of plugin fields (rendered with t()).
+integrated
+windows
+sql

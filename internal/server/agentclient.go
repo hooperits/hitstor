@@ -249,6 +249,18 @@ func (c *AgentClient) BrowseWorkload(ctx context.Context, req *pb.BrowseWorkload
 	return c.agent.BrowseWorkload(ctx, req)
 }
 
+// GetWorkloadObjectConfig reads the settings saved on the agent for one
+// plugin object, without secrets.
+func (c *AgentClient) GetWorkloadObjectConfig(ctx context.Context, req *pb.GetWorkloadObjectConfigRequest) (*pb.GetWorkloadObjectConfigResponse, error) {
+	return c.agent.GetWorkloadObjectConfig(ctx, req)
+}
+
+// SetWorkloadObjectConfig tests and saves the settings of one plugin object
+// on the agent.
+func (c *AgentClient) SetWorkloadObjectConfig(ctx context.Context, req *pb.SetWorkloadObjectConfigRequest) (*pb.SetWorkloadObjectConfigResponse, error) {
+	return c.agent.SetWorkloadObjectConfig(ctx, req)
+}
+
 // PlanWorkloadRestore asks a workload plugin on the agent which candidate
 // items to restore, in order.
 func (c *AgentClient) PlanWorkloadRestore(ctx context.Context, req *pb.PlanWorkloadRestoreRequest) (*pb.PlanWorkloadRestoreResponse, error) {

@@ -20,9 +20,10 @@ const defaultInstance = "MSSQLSERVER"
 type config struct {
 	Server      string // host the agent connects to; default localhost
 	Instance    string // instance name; default MSSQLSERVER
-	Auth        string // "integrated" (default) or "sql"
-	Username    string
-	PasswordEnv string // environment variable holding the SQL login password
+	Auth        string // "integrated" (default), "windows", or "sql"
+	Username    string // SQL login, or DOMAIN\user with auth=windows
+	Password    string // from the instance settings saved on the agent
+	PasswordEnv string // environment variable holding the password otherwise
 	Encrypt     string // go-mssqldb encrypt value: "true" (default), "false", "disable", "strict"
 	TrustCert   bool   // trust the server certificate (default true for localhost)
 }
@@ -57,7 +58,7 @@ func parseConfig(s map[string]string) (config, error) {
 			}
 			c.TrustCert = b
 		case "password":
-			return c, fmt.Errorf("never put the password in settings: set it in the agent environment and name the variable with password_env")
+			return c, fmt.Errorf("never put the password in job settings: save it with the instance's settings on the agent (Configure in the dashboard, or hitstor-agent plugin configure)")
 		default:
 			return c, fmt.Errorf("unknown setting %q", k)
 		}
@@ -65,16 +66,61 @@ func parseConfig(s map[string]string) (config, error) {
 	if c.Instance == "" {
 		c.Instance = defaultInstance
 	}
+	return c, c.checkAuth()
+}
+
+func (c config) checkAuth() error {
 	switch c.Auth {
 	case "integrated":
 	case "sql":
 		if c.Username == "" {
-			return c, fmt.Errorf("auth=sql needs username")
+			return fmt.Errorf("auth=sql needs username")
+		}
+	case "windows":
+		if !strings.Contains(c.Username, `\`) {
+			return fmt.Errorf(`auth=windows needs username as DOMAIN\user (.\user for a local account)`)
 		}
 	default:
-		return c, fmt.Errorf("auth must be integrated or sql, got %q", c.Auth)
+		return fmt.Errorf("auth must be integrated, windows, or sql, got %q", c.Auth)
+	}
+	return nil
+}
+
+// forInstance returns the settings for one instance: the job settings with
+// the instance's own settings (object settings saved on the agent) on top.
+func (c config) forInstance(instance string, saved map[string]string) (config, error) {
+	c.Instance = instance
+	if saved == nil {
+		return c, nil
+	}
+	c.Auth, c.Username, c.Password = "integrated", "", ""
+	for k, v := range saved {
+		switch k {
+		case "auth":
+			c.Auth = v
+		case "username":
+			c.Username = v
+		case "password":
+			c.Password = v
+		default:
+			return c, fmt.Errorf("instance %s: unknown setting %q", instance, k)
+		}
+	}
+	if c.Auth == "" {
+		c.Auth = "integrated"
+	}
+	if err := c.checkAuth(); err != nil {
+		return c, fmt.Errorf("instance %s: %w", instance, err)
 	}
 	return c, nil
+}
+
+// loginName describes who the plugin connects as, for error messages.
+func (c config) loginName() string {
+	if c.Auth == "integrated" {
+		return "the agent's Windows account"
+	}
+	return c.Username
 }
 
 // vdiInstance is the instance name VDI expects: empty for the default one.
@@ -95,11 +141,16 @@ func (c config) dsn() (string, error) {
 	q.Set("app name", "HitStor")
 	q.Set("encrypt", c.Encrypt)
 	q.Set("TrustServerCertificate", strconv.FormatBool(c.TrustCert))
-	if c.Auth == "sql" {
-		pw, ok := os.LookupEnv(c.PasswordEnv)
-		if !ok {
-			return "", fmt.Errorf("auth=sql: environment variable %s is not set (add it to the agent's agent.env)", c.PasswordEnv)
+	if c.Auth == "sql" || c.Auth == "windows" {
+		pw := c.Password
+		if pw == "" {
+			var ok bool
+			if pw, ok = os.LookupEnv(c.PasswordEnv); !ok {
+				return "", fmt.Errorf("instance %s: auth=%s needs a password: configure the instance", c.Instance, c.Auth)
+			}
 		}
+		// A DOMAIN\user name makes the driver use Windows authentication
+		// (SSPI) with these credentials instead of a SQL login.
 		u.User = url.UserPassword(c.Username, pw)
 	}
 	u.RawQuery = q.Encode()
@@ -131,10 +182,19 @@ type dbInfo struct {
 	Name          string
 	RecoveryModel string
 	State         string
+	Size          int64 // bytes of all files; 0 when unknown
 }
 
+// systemDatabases are backed up like the others but listed last.
+var systemDatabases = map[string]bool{"master": true, "model": true, "msdb": true}
+
 func listDatabases(ctx context.Context, db *sql.DB) ([]dbInfo, error) {
-	rows, err := db.QueryContext(ctx, `SELECT name, recovery_model_desc, state_desc FROM sys.databases WHERE name <> 'tempdb' ORDER BY name`)
+	rows, err := db.QueryContext(ctx, `
+SELECT d.name, d.recovery_model_desc, d.state_desc,
+       (SELECT SUM(CAST(f.size AS bigint)) * 8192 FROM sys.master_files f WHERE f.database_id = d.database_id)
+FROM sys.databases d
+WHERE d.name <> 'tempdb'
+ORDER BY d.name`)
 	if err != nil {
 		return nil, err
 	}
@@ -142,9 +202,11 @@ func listDatabases(ctx context.Context, db *sql.DB) ([]dbInfo, error) {
 	var out []dbInfo
 	for rows.Next() {
 		var d dbInfo
-		if err := rows.Scan(&d.Name, &d.RecoveryModel, &d.State); err != nil {
+		var size sql.NullInt64
+		if err := rows.Scan(&d.Name, &d.RecoveryModel, &d.State, &size); err != nil {
 			return nil, err
 		}
+		d.Size = size.Int64
 		out = append(out, d)
 	}
 	return out, rows.Err()

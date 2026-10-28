@@ -53,9 +53,10 @@ type WorkloadClient interface {
 	// package to confirm the binary matches its manifest, and again whenever it
 	// needs the plugin's capabilities.
 	GetMetadata(ctx context.Context, in *GetMetadataRequest, opts ...grpc.CallOption) (*WorkloadMetadata, error)
-	// Configure passes plugin-specific settings after launch.
-	// Reuses ConfigureRequest/ConfigureResponse from storage.proto.
-	Configure(ctx context.Context, in *ConfigureRequest, opts ...grpc.CallOption) (*ConfigureResponse, error)
+	// Configure passes the job's settings and the per-object settings saved
+	// on the agent (for example the credentials of each database instance)
+	// after launch.
+	Configure(ctx context.Context, in *WorkloadConfigureRequest, opts ...grpc.CallOption) (*ConfigureResponse, error)
 	// Browse lists the selectable objects under a path, for example
 	// instance -> databases. An empty path lists the top level.
 	Browse(ctx context.Context, in *BrowseRequest, opts ...grpc.CallOption) (*BrowseResponse, error)
@@ -91,7 +92,7 @@ func (c *workloadClient) GetMetadata(ctx context.Context, in *GetMetadataRequest
 	return out, nil
 }
 
-func (c *workloadClient) Configure(ctx context.Context, in *ConfigureRequest, opts ...grpc.CallOption) (*ConfigureResponse, error) {
+func (c *workloadClient) Configure(ctx context.Context, in *WorkloadConfigureRequest, opts ...grpc.CallOption) (*ConfigureResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ConfigureResponse)
 	err := c.cc.Invoke(ctx, Workload_Configure_FullMethodName, in, out, cOpts...)
@@ -163,9 +164,10 @@ type WorkloadServer interface {
 	// package to confirm the binary matches its manifest, and again whenever it
 	// needs the plugin's capabilities.
 	GetMetadata(context.Context, *GetMetadataRequest) (*WorkloadMetadata, error)
-	// Configure passes plugin-specific settings after launch.
-	// Reuses ConfigureRequest/ConfigureResponse from storage.proto.
-	Configure(context.Context, *ConfigureRequest) (*ConfigureResponse, error)
+	// Configure passes the job's settings and the per-object settings saved
+	// on the agent (for example the credentials of each database instance)
+	// after launch.
+	Configure(context.Context, *WorkloadConfigureRequest) (*ConfigureResponse, error)
 	// Browse lists the selectable objects under a path, for example
 	// instance -> databases. An empty path lists the top level.
 	Browse(context.Context, *BrowseRequest) (*BrowseResponse, error)
@@ -194,7 +196,7 @@ type UnimplementedWorkloadServer struct{}
 func (UnimplementedWorkloadServer) GetMetadata(context.Context, *GetMetadataRequest) (*WorkloadMetadata, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetMetadata not implemented")
 }
-func (UnimplementedWorkloadServer) Configure(context.Context, *ConfigureRequest) (*ConfigureResponse, error) {
+func (UnimplementedWorkloadServer) Configure(context.Context, *WorkloadConfigureRequest) (*ConfigureResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method Configure not implemented")
 }
 func (UnimplementedWorkloadServer) Browse(context.Context, *BrowseRequest) (*BrowseResponse, error) {
@@ -249,7 +251,7 @@ func _Workload_GetMetadata_Handler(srv interface{}, ctx context.Context, dec fun
 }
 
 func _Workload_Configure_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ConfigureRequest)
+	in := new(WorkloadConfigureRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -261,7 +263,7 @@ func _Workload_Configure_Handler(srv interface{}, ctx context.Context, dec func(
 		FullMethod: Workload_Configure_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(WorkloadServer).Configure(ctx, req.(*ConfigureRequest))
+		return srv.(WorkloadServer).Configure(ctx, req.(*WorkloadConfigureRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }

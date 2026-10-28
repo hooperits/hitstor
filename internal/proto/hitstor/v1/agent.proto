@@ -63,6 +63,14 @@ service AgentService {
   // up, for the dashboard's object picker.
   rpc BrowseWorkload(BrowseWorkloadRequest) returns (BrowseWorkloadResponse);
 
+  // GetWorkloadObjectConfig returns the settings saved on the agent for one
+  // plugin object (for example a database instance), without secrets.
+  rpc GetWorkloadObjectConfig(GetWorkloadObjectConfigRequest) returns (GetWorkloadObjectConfigResponse);
+
+  // SetWorkloadObjectConfig tests and saves the settings of one plugin
+  // object. Secrets stay on the agent, encrypted at rest.
+  rpc SetWorkloadObjectConfig(SetWorkloadObjectConfigRequest) returns (SetWorkloadObjectConfigResponse);
+
   // PlanWorkloadRestore asks an installed workload plugin which of the
   // candidate items (found by the server in snapshots) to restore, in order.
   rpc PlanWorkloadRestore(PlanWorkloadRestoreRequest) returns (PlanWorkloadRestoreResponse);
@@ -395,6 +403,43 @@ message WorkloadObject {
   string kind = 3;
   bool selectable = 4;
   bool has_children = 5;
+  string detail = 6;
+  string status = 7;
+  // Whether the plugin declares object settings for this object's kind.
+  bool configurable = 8;
+  // Whether settings are saved on the agent for this object.
+  bool configured = 9;
+}
+
+message GetWorkloadObjectConfigRequest {
+  string token = 1;
+  string plugin = 2;
+  string path = 3;
+}
+
+message GetWorkloadObjectConfigResponse {
+  bool configured = 1;
+  // Saved values, without password fields.
+  map<string, string> values = 2;
+  // Password fields that have a saved value.
+  repeated string secrets_set = 3;
+}
+
+message SetWorkloadObjectConfigRequest {
+  string token = 1;
+  string plugin = 2;
+  string path = 3;
+  // New values. An empty password value keeps the saved one.
+  map<string, string> values = 4;
+  // Remove the object's settings instead of saving values.
+  bool remove = 5;
+  // Job-level settings to test the connection with.
+  map<string, string> settings = 6;
+}
+
+message SetWorkloadObjectConfigResponse {
+  // Result of the connection test, e.g. "12 objects".
+  string message = 1;
 }
 
 message WorkloadCandidate {

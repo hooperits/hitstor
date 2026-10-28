@@ -2,18 +2,27 @@
 // through the Virtual Device Interface (VDI): backup data streams straight
 // from SQL Server into HitStor's pipeline, with no staging files on disk.
 //
-// Objects are "<instance>/<database>". Backup kinds: full, differential,
-// log. Backup options: copy_only, compression. Restore chooses the full,
-// differential, and log backups for a point in time from their LSNs.
+// Objects are "<instance>" (every database that supports the backup kind,
+// resolved at each run) and "<instance>/<database>". Backup kinds: full,
+// differential, log. Backup options: copy_only, compression. Restore
+// chooses the full, differential, and log backups for a point in time from
+// their LSNs.
 //
-// Settings (Configure):
+// Each instance's credentials are object settings saved on the agent
+// (Configure on the instance in the dashboard, or hitstor-agent plugin
+// configure), never in jobs:
 //
-//	instance                  instance name (default MSSQLSERVER)
+//	auth      integrated (default: the agent's Windows account), windows, or sql
+//	username  SQL login, or DOMAIN\user with auth=windows
+//	password  stored encrypted on the agent
+//
+// Job settings (Configure), for the command line and older jobs:
+//
+//	instance                  instance listed when none is discovered (default MSSQLSERVER)
 //	server                    host to connect to (default localhost)
-//	auth                      integrated (default: the agent's Windows account) or sql
-//	username                  SQL login, with auth=sql
-//	password_env              environment variable with the SQL login password
-//	                          (default HITSTOR_MSSQL_PASSWORD; set it in agent.env)
+//	auth, username            defaults for instances without saved settings
+//	password_env              environment variable with the password for those
+//	                          (default HITSTOR_MSSQL_PASSWORD)
 //	encrypt                   connection encryption (default true)
 //	trust_server_certificate  default true (the connection is local)
 //

@@ -29,9 +29,10 @@ service Workload {
   // needs the plugin's capabilities.
   rpc GetMetadata(GetMetadataRequest) returns (WorkloadMetadata);
 
-  // Configure passes plugin-specific settings after launch.
-  // Reuses ConfigureRequest/ConfigureResponse from storage.proto.
-  rpc Configure(ConfigureRequest) returns (ConfigureResponse);
+  // Configure passes the job's settings and the per-object settings saved
+  // on the agent (for example the credentials of each database instance)
+  // after launch.
+  rpc Configure(WorkloadConfigureRequest) returns (ConfigureResponse);
 
   // Browse lists the selectable objects under a path, for example
   // instance -> databases. An empty path lists the top level.
@@ -54,6 +55,20 @@ service Workload {
 }
 
 message GetMetadataRequest {}
+
+message WorkloadConfigureRequest {
+  // Job-level settings (fields of scope "settings").
+  map<string, string> settings = 1;
+  // Per-object settings (fields of scope "object") saved on the agent, one
+  // entry per configured object. Values of "password" fields are included.
+  repeated ObjectSettings objects = 2;
+}
+
+message ObjectSettings {
+  // Object path, as returned by Browse.
+  string path = 1;
+  map<string, string> values = 2;
+}
 
 // WorkloadMetadata identifies a plugin and what it can do.
 message WorkloadMetadata {
@@ -78,10 +93,13 @@ message WorkloadMetadata {
 message FieldSpec {
   // Key in the settings or options map.
   string key = 1;
-  // "settings" (Configure, stored in the job), "backup" (BackupRequest
-  // options), or "restore" (restore options).
+  // "settings" (Configure, stored in the job), "object" (Configure, saved
+  // on the agent per browse object, e.g. an instance's credentials),
+  // "backup" (BackupRequest options), or "restore" (restore options).
   string scope = 2;
-  // "string", "bool", "number", or "choice".
+  // "string", "bool", "number", "choice", or "password". Password values
+  // are only accepted in scope "object": they stay on the agent, encrypted,
+  // and are never sent back to the dashboard.
   string type = 3;
   // Display label and help text by language code ("en" is required).
   map<string, string> label = 4;
@@ -91,6 +109,12 @@ message FieldSpec {
   // Allowed values for type "choice".
   repeated string choices = 7;
   bool required = 8;
+  // For scope "object": the browse kinds the field applies to, e.g.
+  // "instance". Objects of these kinds get a Configure action.
+  repeated string object_kinds = 9;
+  // Show the field only when another field has one of some values, as
+  // "key=value1|value2", e.g. "auth=sql|windows".
+  string show_if = 10;
 }
 
 message BrowseRequest {
@@ -114,6 +138,10 @@ message BrowseEntry {
   bool selectable = 4;
   // Whether Browse on this path returns more entries.
   bool has_children = 5;
+  // Short facts shown next to the name, e.g. "FULL · 1.3 GiB".
+  string detail = 6;
+  // Set when the object needs attention, e.g. "OFFLINE".
+  string status = 7;
 }
 
 message BackupRequest {

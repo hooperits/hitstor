@@ -362,6 +362,8 @@ func (d *Dashboard) Handler() http.Handler {
 	mux.Handle("POST /api/agents/{name}/configure", d.protect(http.HandlerFunc(d.handleAPIAgentConfigure)))
 	mux.Handle("GET /api/agents/{name}/info", d.protect(http.HandlerFunc(d.handleAPIAgentInfo)))
 	mux.Handle("GET /api/agents/{name}/plugins/{plugin}/browse", d.protect(http.HandlerFunc(d.handleAPIWorkloadBrowse)))
+	mux.Handle("GET /api/agents/{name}/plugins/{plugin}/object-config", d.protect(http.HandlerFunc(d.handleAPIGetObjectConfig)))
+	mux.Handle("PUT /api/agents/{name}/plugins/{plugin}/object-config", d.protect(http.HandlerFunc(d.handleAPISetObjectConfig)))
 	mux.Handle("GET /api/workload/points", d.protect(http.HandlerFunc(d.handleAPIWorkloadPoints)))
 	mux.Handle("GET /api/plugin-packages", d.protect(http.HandlerFunc(d.handleAPIPluginPackages)))
 	mux.Handle("POST /api/plugin-packages", d.protect(http.HandlerFunc(d.handleAPIUploadPluginPackage)))

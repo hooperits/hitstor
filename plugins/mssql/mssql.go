@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -17,13 +18,30 @@ import (
 )
 
 // mssqlPlugin backs up and restores SQL Server databases through VDI.
-// Objects are "<instance>/<database>".
+// Objects are "<instance>" (every database of the instance, resolved at
+// backup time) and "<instance>/<database>".
 type mssqlPlugin struct {
 	manifest *pluginpkg.Manifest
 
 	mu  sync.Mutex
-	cfg config
-	db  *sql.DB
+	cfg config // job settings; cfg.Instance is listed when none is discovered
+	// instances holds the settings saved on the agent for each instance
+	// (credentials), by upper-case instance name.
+	instances map[string]instanceSettings
+	dbs       map[string]*sql.DB // open connections by upper-case instance
+}
+
+type instanceSettings struct {
+	name   string // as saved
+	values map[string]string
+}
+
+// instanceInfo describes an installed instance.
+type instanceInfo struct {
+	Name    string
+	Release string // e.g. "SQL Server 2022"
+	Edition string
+	Version string
 }
 
 func (p *mssqlPlugin) Metadata(context.Context) (hitstorplugin.WorkloadMetadata, error) {
@@ -48,64 +66,230 @@ func (p *mssqlPlugin) Configure(settings map[string]string) error {
 	}
 	p.mu.Lock()
 	defer p.mu.Unlock()
-	if p.db != nil {
-		p.db.Close()
-		p.db = nil
-	}
+	p.closeAll()
 	p.cfg = cfg
 	return nil
 }
 
-func (p *mssqlPlugin) conn(ctx context.Context) (*sql.DB, config, error) {
+// ConfigureObjects receives the instance settings saved on the agent.
+func (p *mssqlPlugin) ConfigureObjects(objects map[string]map[string]string) error {
+	instances := make(map[string]instanceSettings, len(objects))
+	for path, values := range objects {
+		if strings.Contains(path, "/") {
+			return fmt.Errorf("object settings for %q: only instances take settings", path)
+		}
+		if _, err := p.cfg.forInstance(path, values); err != nil {
+			return err
+		}
+		instances[strings.ToUpper(path)] = instanceSettings{name: path, values: values}
+	}
 	p.mu.Lock()
 	defer p.mu.Unlock()
-	if p.db == nil {
-		db, err := openDB(p.cfg)
-		if err != nil {
-			return nil, p.cfg, err
-		}
-		if err := db.PingContext(ctx); err != nil {
-			db.Close()
-			return nil, p.cfg, fmt.Errorf("connect to SQL Server %s (%s): %w", p.cfg.Server, p.cfg.Instance, err)
-		}
-		p.db = db
-	}
-	return p.db, p.cfg, nil
+	p.closeAll()
+	p.instances = instances
+	return nil
 }
 
-// splitObject parses "<instance>/<database>" for the configured instance.
-func splitObject(obj string, cfg config) (string, error) {
-	inst, dbName, ok := strings.Cut(obj, "/")
-	if !ok || dbName == "" {
-		return "", fmt.Errorf("object %q must be <instance>/<database>", obj)
+func (p *mssqlPlugin) closeAll() {
+	for _, db := range p.dbs {
+		db.Close()
 	}
-	if !strings.EqualFold(inst, cfg.Instance) {
-		return "", fmt.Errorf("object %q is on instance %q, but this agent is configured for %q", obj, inst, cfg.Instance)
+	p.dbs = nil
+}
+
+// conn returns the connection to an instance, opened with its settings.
+func (p *mssqlPlugin) conn(ctx context.Context, instance string) (*sql.DB, config, error) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	key := strings.ToUpper(instance)
+	cfg, err := p.cfg.forInstance(instance, p.instances[key].values)
+	if err != nil {
+		return nil, cfg, err
 	}
-	return dbName, nil
+	if db := p.dbs[key]; db != nil {
+		return db, cfg, nil
+	}
+	db, err := openDB(cfg)
+	if err != nil {
+		return nil, cfg, err
+	}
+	if err := db.PingContext(ctx); err != nil {
+		db.Close()
+		return nil, cfg, fmt.Errorf("connect to SQL Server instance %s as %s: %w", instance, cfg.loginName(), err)
+	}
+	if p.dbs == nil {
+		p.dbs = map[string]*sql.DB{}
+	}
+	p.dbs[key] = db
+	return db, cfg, nil
+}
+
+// splitObject parses "<instance>" or "<instance>/<database>".
+func splitObject(obj string) (instance, database string, err error) {
+	instance, database, _ = strings.Cut(obj, "/")
+	if instance == "" || strings.Contains(database, "/") {
+		return "", "", fmt.Errorf("object %q must be <instance> or <instance>/<database>", obj)
+	}
+	return instance, database, nil
+}
+
+// instanceList returns the instances to show: those installed on this host,
+// plus any with saved settings, or the configured one when none is found.
+func (p *mssqlPlugin) instanceList() []instanceInfo {
+	found := localInstances()
+	seen := map[string]bool{}
+	for _, i := range found {
+		seen[strings.ToUpper(i.Name)] = true
+	}
+	p.mu.Lock()
+	for key, s := range p.instances {
+		if !seen[key] {
+			found = append(found, instanceInfo{Name: s.name})
+			seen[key] = true
+		}
+	}
+	if len(found) == 0 {
+		found = append(found, instanceInfo{Name: p.cfg.Instance})
+	}
+	p.mu.Unlock()
+	sort.Slice(found, func(i, j int) bool {
+		// The default instance first, then by name.
+		di, dj := strings.EqualFold(found[i].Name, defaultInstance), strings.EqualFold(found[j].Name, defaultInstance)
+		if di != dj {
+			return di
+		}
+		return strings.ToUpper(found[i].Name) < strings.ToUpper(found[j].Name)
+	})
+	return found
 }
 
 func (p *mssqlPlugin) Browse(ctx context.Context, path string) ([]hitstorplugin.BrowseEntry, error) {
-	db, cfg, err := p.conn(ctx)
+	if path == "" {
+		var out []hitstorplugin.BrowseEntry
+		for _, i := range p.instanceList() {
+			out = append(out, hitstorplugin.BrowseEntry{
+				Path: i.Name, Name: i.Name, Kind: "instance", Selectable: true, HasChildren: true,
+				Detail: joinDetail(i.Release, strings.TrimSuffix(i.Edition, " Edition"), i.Version),
+			})
+		}
+		return out, nil
+	}
+	instance, database, err := splitObject(path)
 	if err != nil {
 		return nil, err
 	}
-	if path == "" {
-		return []hitstorplugin.BrowseEntry{{Path: cfg.Instance, Name: cfg.Instance, Kind: "instance", HasChildren: true}}, nil
+	if database != "" {
+		return nil, nil
 	}
-	if !strings.EqualFold(path, cfg.Instance) {
-		return nil, fmt.Errorf("unknown instance %q", path)
+	db, _, err := p.conn(ctx, instance)
+	if err != nil {
+		return nil, err
 	}
 	dbs, err := listDatabases(ctx, db)
 	if err != nil {
 		return nil, err
 	}
+	// User databases first, then the system ones.
+	sort.SliceStable(dbs, func(i, j int) bool { return !systemDatabases[dbs[i].Name] && systemDatabases[dbs[j].Name] })
 	out := make([]hitstorplugin.BrowseEntry, 0, len(dbs))
 	for _, d := range dbs {
-		out = append(out, hitstorplugin.BrowseEntry{
-			Path: cfg.Instance + "/" + d.Name, Name: d.Name, Kind: "database",
+		kind := "database"
+		if systemDatabases[d.Name] {
+			kind = "system_database"
+		}
+		e := hitstorplugin.BrowseEntry{
+			Path: instance + "/" + d.Name, Name: d.Name, Kind: kind,
 			Selectable: d.State == "ONLINE",
-		})
+			Detail:     joinDetail(d.RecoveryModel, formatSize(d.Size)),
+		}
+		if d.State != "ONLINE" {
+			e.Status = d.State
+		}
+		out = append(out, e)
+	}
+	return out, nil
+}
+
+func joinDetail(parts ...string) string {
+	var kept []string
+	for _, s := range parts {
+		if s != "" {
+			kept = append(kept, s)
+		}
+	}
+	return strings.Join(kept, " · ")
+}
+
+func formatSize(b int64) string {
+	switch {
+	case b <= 0:
+		return ""
+	case b >= 1<<30:
+		return fmt.Sprintf("%.1f GiB", float64(b)/(1<<30))
+	case b >= 1<<20:
+		return fmt.Sprintf("%.0f MiB", float64(b)/(1<<20))
+	}
+	return fmt.Sprintf("%.0f KiB", float64(b)/(1<<10))
+}
+
+// backupTarget is one database to back up.
+type backupTarget struct {
+	instance, database string
+}
+
+// resolveSelection expands instances into their databases and drops
+// duplicates. An instance stands for every online database that supports
+// the backup kind: differentials skip master, and log backups skip
+// databases in the SIMPLE recovery model. Databases selected one by one are
+// kept as they are, so an unsupported kind fails loudly.
+func (p *mssqlPlugin) resolveSelection(ctx context.Context, selection []string, kind string) ([]backupTarget, error) {
+	var out []backupTarget
+	seen := map[string]bool{}
+	add := func(t backupTarget) {
+		key := strings.ToUpper(t.instance + "/" + t.database)
+		if !seen[key] {
+			seen[key] = true
+			out = append(out, t)
+		}
+	}
+	for _, obj := range selection {
+		instance, database, err := splitObject(obj)
+		if err != nil {
+			return nil, err
+		}
+		if database != "" {
+			add(backupTarget{instance, database})
+			continue
+		}
+		db, _, err := p.conn(ctx, instance)
+		if err != nil {
+			return nil, err
+		}
+		dbs, err := listDatabases(ctx, db)
+		if err != nil {
+			return nil, fmt.Errorf("%s: list databases: %w", instance, err)
+		}
+		n := 0
+		for _, d := range dbs {
+			skip := ""
+			switch {
+			case d.State != "ONLINE":
+				skip = "database is " + d.State
+			case kind == "differential" && d.Name == "master":
+				skip = "master takes only full backups"
+			case kind == "log" && d.RecoveryModel == "SIMPLE":
+				skip = "SIMPLE recovery model has no log backups"
+			}
+			if skip != "" {
+				slog.Info("database skipped", "instance", instance, "database", d.Name, "kind", kind, "reason", skip)
+				continue
+			}
+			add(backupTarget{instance, d.Name})
+			n++
+		}
+		if n == 0 {
+			return nil, fmt.Errorf("instance %s has no databases that take %s backups", instance, kind)
+		}
 	}
 	return out, nil
 }
@@ -123,10 +307,6 @@ func boolOption(opts map[string]string, key string, def bool) (bool, error) {
 }
 
 func (p *mssqlPlugin) Backup(ctx context.Context, req hitstorplugin.BackupRequest, sink hitstorplugin.ItemSink) error {
-	db, cfg, err := p.conn(ctx)
-	if err != nil {
-		return err
-	}
 	kind := req.Kind
 	if kind == "" {
 		kind = "full"
@@ -136,6 +316,7 @@ func (p *mssqlPlugin) Backup(ctx context.Context, req hitstorplugin.BackupReques
 		return fmt.Errorf("unknown backup kind %q (full, differential, log)", kind)
 	}
 	var o backupOptions
+	var err error
 	if o.CopyOnly, err = boolOption(req.Options, "copy_only", false); err != nil {
 		return err
 	}
@@ -143,8 +324,13 @@ func (p *mssqlPlugin) Backup(ctx context.Context, req hitstorplugin.BackupReques
 		return err
 	}
 
-	for _, obj := range req.Selection {
-		dbName, err := splitObject(obj, cfg)
+	targets, err := p.resolveSelection(ctx, req.Selection, kind)
+	if err != nil {
+		return err
+	}
+	for _, t := range targets {
+		obj, dbName := t.instance+"/"+t.database, t.database
+		db, cfg, err := p.conn(ctx, t.instance)
 		if err != nil {
 			return err
 		}
@@ -220,11 +406,14 @@ func (p *mssqlPlugin) PlanRestore(_ context.Context, req hitstorplugin.PlanResto
 //	data_path, log_path   where to put files when relocating (default: instance defaults)
 //	relocate   move files even when keeping the name (default: only when renaming)
 func (p *mssqlPlugin) Restore(ctx context.Context, req hitstorplugin.RestoreRequest, items hitstorplugin.RestoreItems) (string, error) {
-	db, cfg, err := p.conn(ctx)
+	instance, source, err := splitObject(req.Object)
 	if err != nil {
 		return "", err
 	}
-	source, err := splitObject(req.Object, cfg)
+	if source == "" {
+		return "", fmt.Errorf("object %q must be <instance>/<database>", req.Object)
+	}
+	db, cfg, err := p.conn(ctx, instance)
 	if err != nil {
 		return "", err
 	}

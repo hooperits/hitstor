@@ -1339,6 +1339,8 @@ type PluginField struct {
 	Default       string                 `protobuf:"bytes,6,opt,name=default,proto3" json:"default,omitempty"`
 	Choices       []string               `protobuf:"bytes,7,rep,name=choices,proto3" json:"choices,omitempty"`
 	Required      bool                   `protobuf:"varint,8,opt,name=required,proto3" json:"required,omitempty"`
+	ObjectKinds   []string               `protobuf:"bytes,9,rep,name=object_kinds,json=objectKinds,proto3" json:"object_kinds,omitempty"`
+	ShowIf        string                 `protobuf:"bytes,10,opt,name=show_if,json=showIf,proto3" json:"show_if,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1427,6 +1429,20 @@ func (x *PluginField) GetRequired() bool {
 		return x.Required
 	}
 	return false
+}
+
+func (x *PluginField) GetObjectKinds() []string {
+	if x != nil {
+		return x.ObjectKinds
+	}
+	return nil
+}
+
+func (x *PluginField) GetShowIf() string {
+	if x != nil {
+		return x.ShowIf
+	}
+	return ""
 }
 
 type GetScheduleResponse struct {
@@ -1827,7 +1843,7 @@ const file_internal_proto_hitstor_v1_backup_proto_rawDesc = "" +
 	"\x10protocol_version\x18\x05 \x01(\x05R\x0fprotocolVersion\x12\"\n" +
 	"\fcapabilities\x18\x06 \x03(\tR\fcapabilities\x12\x16\n" +
 	"\x06signer\x18\a \x01(\tR\x06signer\x12/\n" +
-	"\x06fields\x18\b \x03(\v2\x17.hitstor.v1.PluginFieldR\x06fields\"\xfd\x02\n" +
+	"\x06fields\x18\b \x03(\v2\x17.hitstor.v1.PluginFieldR\x06fields\"\xb9\x03\n" +
 	"\vPluginField\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05scope\x18\x02 \x01(\tR\x05scope\x12\x12\n" +
@@ -1836,7 +1852,10 @@ const file_internal_proto_hitstor_v1_backup_proto_rawDesc = "" +
 	"\x04help\x18\x05 \x03(\v2!.hitstor.v1.PluginField.HelpEntryR\x04help\x12\x18\n" +
 	"\adefault\x18\x06 \x01(\tR\adefault\x12\x18\n" +
 	"\achoices\x18\a \x03(\tR\achoices\x12\x1a\n" +
-	"\brequired\x18\b \x01(\bR\brequired\x1a8\n" +
+	"\brequired\x18\b \x01(\bR\brequired\x12!\n" +
+	"\fobject_kinds\x18\t \x03(\tR\vobjectKinds\x12\x17\n" +
+	"\ashow_if\x18\n" +
+	" \x01(\tR\x06showIf\x1a8\n" +
 	"\n" +
 	"LabelEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +

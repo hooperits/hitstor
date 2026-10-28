@@ -217,7 +217,7 @@ más.
 | Ruta de datos | VDI (`sqlvdi.dll`, `IClientVirtualDeviceSet2`) mediante COM en Go puro, sin cgo, más T-SQL con `go-mssqldb` |
 | Tipos de respaldo | Completo (opcionalmente `COPY_ONLY`), diferencial y log de transacciones |
 | Restauración | Cadena completa con `NORECOVERY`/`RECOVERY`, punto en el tiempo (`STOPAT`) y restauración con otro nombre usando `MOVE` |
-| Autenticación | Integrada de Windows (la cuenta de servicio del agente necesita `sysadmin`) o un inicio de sesión SQL cuya contraseña viene del archivo de entorno del agente, nunca de `config.yaml` |
+| Autenticación | Por instancia, desde el árbol de objetos y guardada cifrada en el agente: la cuenta del servicio del agente, una cuenta de Windows o un inicio de sesión SQL (todas necesitan `sysadmin`). Nunca en las tareas ni en `config.yaml` |
 | Metadatos | LSN (`first`, `last`, `checkpoint`, `database_backup_lsn`), horas del respaldo y modelo de recuperación, leídos de `msdb.dbo.backupset` |
 
 ## Fases de entrega { #delivery-phases }

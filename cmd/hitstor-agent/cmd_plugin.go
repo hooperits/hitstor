@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
@@ -127,7 +128,7 @@ HitStor key, or one listed in plugin_trusted_keys.`,
 		},
 	}
 
-	cmd.AddCommand(install, upgrade, list, info, remove, newPluginBrowseCmd(), newPluginTestBackupCmd(), newPluginTestRestoreCmd())
+	cmd.AddCommand(install, upgrade, list, info, remove, newPluginBrowseCmd(), newPluginConfigureCmd(), newPluginTestBackupCmd(), newPluginTestRestoreCmd())
 	return cmd
 }
 
@@ -151,11 +152,13 @@ func openInstalledWorkload(id string, settings map[string]string) (*pluginmgr.In
 		c.Close()
 		release()
 	}
-	if len(settings) > 0 {
-		if err := c.Configure(context.Background(), settings); err != nil {
-			closeAll()
-			return nil, nil, nil, err
-		}
+	objects, err := mgr.ObjectConfigs(id)
+	if err == nil {
+		err = c.Configure(context.Background(), settings, objects)
+	}
+	if err != nil {
+		closeAll()
+		return nil, nil, nil, err
 	}
 	return p, c, closeAll, nil
 }
@@ -184,14 +187,143 @@ func newPluginBrowseCmd() *cobra.Command {
 				return writePluginJSON(entries)
 			}
 			tw := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
-			fmt.Fprintln(tw, "PATH\tKIND\tSELECTABLE\tCHILDREN")
+			fmt.Fprintln(tw, "PATH\tKIND\tSELECTABLE\tCHILDREN\tDETAIL")
 			for _, e := range entries {
-				fmt.Fprintf(tw, "%s\t%s\t%t\t%t\n", e.Path, e.Kind, e.Selectable, e.HasChildren)
+				detail := e.Detail
+				if e.Status != "" {
+					detail = strings.TrimSpace(e.Status + " " + detail)
+				}
+				fmt.Fprintf(tw, "%s\t%s\t%t\t%t\t%s\n", e.Path, e.Kind, e.Selectable, e.HasChildren, detail)
 			}
 			return tw.Flush()
 		},
 	}
 	cmd.Flags().StringToStringVar(&settings, "setting", nil, "plugin setting key=value (repeatable)")
+	return cmd
+}
+
+func newPluginConfigureCmd() *cobra.Command {
+	var (
+		set     map[string]string
+		secrets []string
+		remove  bool
+	)
+	cmd := &cobra.Command{
+		Use:   "configure <id> <object>",
+		Short: "Save the settings of a plugin object, such as an instance's credentials",
+		Long: `Save the settings of a plugin object, such as the credentials of a SQL
+Server instance. The settings stay on this agent, encrypted at rest; jobs and
+the server never hold them.
+
+Secret values (--secret) are read from standard input, one line each, so they
+stay out of the command line and shell history.
+
+Without --set, --secret, or --remove, shows the saved settings (secrets
+masked).`,
+		Example: `  hitstor-agent plugin configure mssql MSSQLSERVER --set auth=sql --set username=hitstor --secret password
+  hitstor-agent plugin configure mssql MSSQLSERVER
+  hitstor-agent plugin configure mssql MSSQLSERVER --remove`,
+		Args: cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			id, object := args[0], args[1]
+			mgr, err := newPluginManager()
+			if err != nil {
+				return err
+			}
+			p, err := mgr.Get(id)
+			if err != nil {
+				return err
+			}
+			fields := map[string]hitstorplugin.FieldSpec{}
+			for _, f := range p.Fields {
+				if f.Scope == hitstorplugin.FieldScopeObject {
+					fields[f.Key] = f
+				}
+			}
+			all, err := mgr.ObjectConfigs(id)
+			if err != nil {
+				return err
+			}
+			previous, had := all[object]
+
+			if remove {
+				if err := mgr.SetObjectConfig(id, object, nil); err != nil {
+					return err
+				}
+				fmt.Printf("Removed the settings of %s.\n", object)
+				return nil
+			}
+			if len(set) == 0 && len(secrets) == 0 {
+				if !had {
+					fmt.Printf("%s has no saved settings.\n", object)
+					return nil
+				}
+				for k, v := range previous {
+					if fields[k].Type == hitstorplugin.FieldTypePassword {
+						v = "********"
+					}
+					fmt.Printf("%s=%s\n", k, v)
+				}
+				return nil
+			}
+
+			values := map[string]string{}
+			for k, v := range previous {
+				values[k] = v
+			}
+			for k, v := range set {
+				if _, ok := fields[k]; !ok {
+					return fmt.Errorf("plugin %s has no object setting %q", id, k)
+				}
+				if fields[k].Type == hitstorplugin.FieldTypePassword {
+					return fmt.Errorf("%s is a secret: pass it with --secret %s", k, k)
+				}
+				if v == "" {
+					delete(values, k)
+				} else {
+					values[k] = v
+				}
+			}
+			in := bufio.NewReader(os.Stdin)
+			for _, k := range secrets {
+				if fields[k].Type != hitstorplugin.FieldTypePassword {
+					return fmt.Errorf("plugin %s has no secret setting %q", id, k)
+				}
+				fmt.Fprintf(os.Stderr, "%s: ", k)
+				line, err := in.ReadString('\n')
+				if err != nil && line == "" {
+					return fmt.Errorf("read %s from standard input: %w", k, err)
+				}
+				values[k] = strings.TrimRight(line, "\r\n")
+			}
+			if err := mgr.SetObjectConfig(id, object, values); err != nil {
+				return err
+			}
+
+			// Test the new settings; put the old ones back if they fail.
+			_, c, closeAll, err := openInstalledWorkload(id, nil)
+			if err == nil {
+				var entries []hitstorplugin.BrowseEntry
+				entries, err = c.Browse(cmd.Context(), object)
+				closeAll()
+				if err == nil {
+					fmt.Printf("Saved the settings of %s (%d objects found).\n", object, len(entries))
+					return nil
+				}
+			}
+			var restore map[string]string
+			if had {
+				restore = previous
+			}
+			if rerr := mgr.SetObjectConfig(id, object, restore); rerr != nil {
+				return fmt.Errorf("test failed (%v) and the previous settings could not be restored: %w", err, rerr)
+			}
+			return fmt.Errorf("test failed, settings not saved: %w", err)
+		},
+	}
+	cmd.Flags().StringToStringVar(&set, "set", nil, "setting key=value (repeatable; an empty value clears it)")
+	cmd.Flags().StringSliceVar(&secrets, "secret", nil, "secret setting to read from standard input (repeatable)")
+	cmd.Flags().BoolVar(&remove, "remove", false, "remove the object's settings")
 	return cmd
 }
 
@@ -512,6 +644,7 @@ func enablePlugins(agentSrv *agent.AgentServer) {
 	}
 	if mgr, err := newPluginManager(); err == nil {
 		agentSrv.Plugins = mgr
+		agentSrv.PluginObjects = mgr
 	} else {
 		slog.Warn("plugin manager unavailable; remote plugin installs disabled", "error", err)
 	}

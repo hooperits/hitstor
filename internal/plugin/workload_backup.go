@@ -30,6 +30,10 @@ type BrowseEntry struct {
 	Kind        string `json:"kind,omitempty"`
 	Selectable  bool   `json:"selectable"`
 	HasChildren bool   `json:"has_children"`
+	// Detail is a short line of facts shown next to the name.
+	Detail string `json:"detail,omitempty"`
+	// Status is set when the object needs attention, e.g. "OFFLINE".
+	Status string `json:"status,omitempty"`
 }
 
 // BackupRequest asks a plugin to back up the selected objects.
@@ -96,6 +100,7 @@ func (s *workloadGRPCServer) Browse(ctx context.Context, req *pb.BrowseRequest) 
 	for _, e := range entries {
 		resp.Entries = append(resp.Entries, &pb.BrowseEntry{
 			Path: e.Path, Name: e.Name, Kind: e.Kind, Selectable: e.Selectable, HasChildren: e.HasChildren,
+			Detail: e.Detail, Status: e.Status,
 		})
 	}
 	return resp, nil
@@ -187,7 +192,8 @@ func (c *WorkloadGRPCClient) Browse(ctx context.Context, p string) ([]BrowseEntr
 	}
 	out := make([]BrowseEntry, 0, len(resp.Entries))
 	for _, e := range resp.Entries {
-		out = append(out, BrowseEntry{Path: e.Path, Name: e.Name, Kind: e.Kind, Selectable: e.Selectable, HasChildren: e.HasChildren})
+		out = append(out, BrowseEntry{Path: e.Path, Name: e.Name, Kind: e.Kind, Selectable: e.Selectable, HasChildren: e.HasChildren,
+			Detail: e.Detail, Status: e.Status})
 	}
 	return out, nil
 }

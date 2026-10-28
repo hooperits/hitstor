@@ -364,3 +364,38 @@ func TestInUseBlocksRemoveAndUpgrade(t *testing.T) {
 		t.Fatalf("acquire removed plugin: err = %v", err)
 	}
 }
+
+func TestObjectConfigs(t *testing.T) {
+	f := newFixture(t)
+	m := f.mgr
+	if err := m.SetObjectConfig("example", "inst", map[string]string{"auth": "sql"}); !errors.Is(err, ErrNotInstalled) {
+		t.Fatalf("not installed: %v", err)
+	}
+	if _, err := f.install(f.pkg(pkgSpec{version: "1.0.0"}), InstallOptions{}); err != nil {
+		t.Fatal(err)
+	}
+	if err := m.SetObjectConfig("example", "inst", map[string]string{"password": "s3cret"}); err != nil {
+		t.Fatal(err)
+	}
+	got, err := m.ObjectConfigs("example")
+	if err != nil || got["inst"]["password"] != "s3cret" {
+		t.Fatalf("configs = %v, %v", got, err)
+	}
+	info, err := os.Stat(filepath.Join(m.Dir(), "example", objectsName))
+	if err != nil || info.Mode().Perm() != 0o600 {
+		t.Fatalf("file: %v, %v", info, err)
+	}
+	// Upgrades keep the settings.
+	if _, err := f.install(f.pkg(pkgSpec{version: "1.1.0"}), InstallOptions{Upgrade: true}); err != nil {
+		t.Fatal(err)
+	}
+	if got, _ := m.ObjectConfigs("example"); got["inst"]["password"] != "s3cret" {
+		t.Fatalf("after upgrade = %v", got)
+	}
+	if err := m.SetObjectConfig("example", "inst", nil); err != nil {
+		t.Fatal(err)
+	}
+	if got, _ := m.ObjectConfigs("example"); len(got) != 0 {
+		t.Fatalf("after delete = %v", got)
+	}
+}

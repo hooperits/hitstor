@@ -11,6 +11,7 @@ hitstor-agent plugin list
 hitstor-agent plugin info <id>
 hitstor-agent plugin remove <id>
 hitstor-agent plugin browse <id> [ruta]
+hitstor-agent plugin configure <id> <objeto> [--set clave=valor] [--secret clave] [--remove]
 hitstor-agent plugin test-backup <id> --select <objeto> --out <directorio>
 hitstor-agent plugin test-restore <id> --from <directorio> --object <objeto> [--at <fecha>]
 ```
@@ -53,6 +54,7 @@ exactamente las mismas verificaciones a los paquetes que envía el servidor.
 | `info <id>` | Muestra el detalle de un plugin, incluidas sus capacidades y la ruta de su binario |
 | `remove <id>` | Desinstala un plugin. Las instantáneas (snapshots) que creó permanecen en el repositorio. Se rechaza mientras un respaldo está usando el plugin |
 | `browse <id> [ruta]` | Lista los objetos que el plugin puede respaldar bajo `ruta` (el nivel superior si se omite) |
+| `configure <id> <objeto>` | Guarda la configuración de un objeto, como las credenciales de una instancia de base de datos, después de probarla. Sin `--set`, `--secret` ni `--remove`, muestra la configuración guardada con los secretos ocultos |
 | `test-backup <id>` | Diagnóstico: ejecuta un respaldo de los objetos de `--select` y escribe los elementos y sus manifiestos en el directorio nuevo `--out`. No se envía nada al servidor |
 | `test-restore <id>` | Diagnóstico: planifica y ejecuta la restauración de `--object` desde un directorio de `test-backup`, opcionalmente al punto en el tiempo `--at` (RFC 3339) |
 
@@ -63,6 +65,9 @@ exactamente las mismas verificaciones a los paquetes que envía el servidor.
 | `--store` | `plugin_store_dir`, o el valor por defecto de la plataforma | Directorio del almacén de plugins |
 | `--allow-downgrade` | `false` | Solo `upgrade`: permite instalar una versión anterior |
 | `--setting clave=valor` | | `browse`, `test-backup`, `test-restore`: configuración del plugin (repetible) |
+| `--set clave=valor` | | `configure`: configuración del objeto (repetible; un valor vacío la borra) |
+| `--secret clave` | | `configure`: configuración secreta, leída de la entrada estándar para que no quede en la línea de comandos (repetible) |
+| `--remove` | `false` | `configure`: quita la configuración del objeto |
 | `--select` | | `test-backup`: objeto a respaldar (repetible) |
 | `--kind` | `full` | `test-backup`: tipo de respaldo |
 | `--option clave=valor` | | `test-backup`: opción del respaldo; `test-restore`: opción de la restauración (repetible) |
@@ -86,6 +91,11 @@ SYSTEM y Administradores en Windows, porque los plugins se ejecutan con los
 privilegios del agente. Por eso instalar y desinstalar plugins requiere root o
 una consola con privilegios elevados.
 
+La configuración de objetos (`configure`, o **Configurar** en el árbol de
+objetos del dashboard) se guarda en `<almacén>/<id>/objects.dat`, cifrada con
+DPAPI en Windows y con modo `0600` en los demás sistemas. Se conserva al
+actualizar el plugin y se borra con `remove`.
+
 ## Ejemplos { #examples }
 
 ```bash
@@ -104,6 +114,13 @@ La columna `SIGNED` muestra `official` para los paquetes firmados con la clave
 de publicación de HitStor, `third-party` para los firmados con una clave de
 `plugin_trusted_keys` y `unsigned` cuando `plugin_allow_unsigned` está
 activado.
+
+Guarde las credenciales de una instancia de SQL Server; la contraseña se lee
+de la entrada estándar:
+
+```powershell
+hitstor-agent plugin configure mssql MSSQLSERVER --set auth=sql --set username=hitstor_backup --secret password
+```
 
 Para confiar en su propia clave de firma, por ejemplo para plugins internos:
 

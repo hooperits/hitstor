@@ -82,7 +82,9 @@ Salvo que se indique lo contrario, los endpoints requieren autenticación en el 
 | `POST` | `/api/snapshots/{id}/restore` | Inicia una restauración en un agente (`agent_name`, `target_path`, `includes` opcional) |
 | `GET` | `/api/restores` | Lista las sesiones de restauración |
 | `GET` | `/api/restore/{id}/events` | Progreso de la restauración vía SSE |
-| `GET` | `/api/agents/{name}/plugins/{plugin}/browse?path=` | Lista los objetos que un plugin de carga de trabajo del agente puede respaldar |
+| `GET` | `/api/agents/{name}/plugins/{plugin}/browse?path=` | Lista los objetos que un plugin de carga de trabajo del agente puede respaldar, con `detail`, `status` y si cada uno admite configuración (`configurable`) y la tiene guardada (`configured`) |
+| `GET` | `/api/agents/{name}/plugins/{plugin}/object-config?path=` | Configuración guardada en el agente para un objeto (`configured`, `values` sin contraseñas, `secrets_set`) |
+| `PUT` | `/api/agents/{name}/plugins/{plugin}/object-config` | Prueba y guarda en el agente la configuración de un objeto (`path`, `values`; una contraseña vacía conserva la guardada), o la quita (`path`, `remove: true`). El servidor no guarda nada |
 | `GET` | `/api/workload/points?agent=&plugin=&object=` | Elementos disponibles para restaurar un objeto de carga de trabajo, del más antiguo al más reciente |
 | `POST` | `/api/workload/restores` | Inicia una restauración de carga de trabajo (`agent_name`, `plugin`, `object`; opcionales: `source_agent` para restaurar respaldos de otro agente, `target` para el punto en el tiempo, `options` y `plugin_settings`) |
 | `GET` | `/api/workload/restores/{id}` | Estado de una restauración de carga de trabajo: plan, bytes enviados y resultado |

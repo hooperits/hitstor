@@ -205,7 +205,7 @@ more.
 | Data path | VDI (`sqlvdi.dll`, `IClientVirtualDeviceSet2`) through COM in pure Go, with no cgo, plus T-SQL through `go-mssqldb` |
 | Backup kinds | Full (optionally `COPY_ONLY`), differential, transaction log |
 | Restore | Full chain with `NORECOVERY`/`RECOVERY`, point in time (`STOPAT`), restore under a new name with `MOVE` |
-| Authentication | Windows integrated (the agent service account needs `sysadmin`) or a SQL login whose password comes from the agent environment file, never `config.yaml` |
+| Authentication | Per instance, set from the object tree and kept on the agent, encrypted: the agent service account, a Windows account, or a SQL login (all need `sysadmin`). Never in jobs or `config.yaml` |
 | Metadata | LSNs (`first`, `last`, `checkpoint`, `database_backup_lsn`), backup times, and recovery model, read from `msdb.dbo.backupset` |
 
 ## Delivery phases

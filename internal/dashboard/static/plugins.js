@@ -51,16 +51,27 @@
 
     // --- Declarative plugin fields ---
 
-    // renderFields draws the plugin's fields of one scope into container.
-    function renderFields(container, fields, scope, values) {
+    // fieldsFor returns the fields of one scope; for scope "object", only
+    // those that apply to objects of kind.
+    function fieldsFor(fields, scope, kind) {
+        return (fields || []).filter(function (f) {
+            if (f.scope !== scope) return false;
+            return scope !== 'object' || !f.object_kinds || !f.object_kinds.length || f.object_kinds.indexOf(kind) >= 0;
+        });
+    }
+
+    // renderFields draws fields into container. secretsSet lists password
+    // fields that already have a saved value.
+    function renderFields(container, list, values, secretsSet) {
         values = values || {};
-        var list = (fields || []).filter(function (f) { return f.scope === scope; });
+        secretsSet = secretsSet || [];
         container.innerHTML = '';
         list.forEach(function (f) {
-            var id = 'pf-' + scope + '-' + f.key;
+            var id = 'pf-' + f.scope + '-' + f.key + '-' + Math.random().toString(36).slice(2, 7);
             var val = values[f.key] !== undefined ? values[f.key] : (f.default || '');
             var group = document.createElement('div');
             group.className = 'form-group';
+            if (f.show_if) group.setAttribute('data-show-if', f.show_if);
             var help = localized(f.help);
             var label = esc(localized(f.label) || f.key) + (f.required ? ' *' : '');
             var input;
@@ -70,12 +81,17 @@
                 group.innerHTML = input;
             } else if (f.type === 'choice') {
                 input = '<select id="' + id + '" data-key="' + esc(f.key) + '">' + (f.choices || []).map(function (c) {
-                    return '<option value="' + esc(c) + '"' + (c === val ? ' selected' : '') + '>' + esc(c) + '</option>';
+                    return '<option value="' + esc(c) + '"' + (c === val ? ' selected' : '') + '>' + esc(t(c)) + '</option>';
                 }).join('') + '</select>';
+                group.innerHTML = '<label for="' + id + '">' + label + '</label>' + input;
+            } else if (f.type === 'password') {
+                var saved = secretsSet.indexOf(f.key) >= 0;
+                input = '<input type="password" id="' + id + '" data-key="' + esc(f.key) + '" data-type="password" autocomplete="new-password"' +
+                    (saved ? ' placeholder="' + esc(t('Saved — leave empty to keep it')) + '"' : '') + '>';
                 group.innerHTML = '<label for="' + id + '">' + label + '</label>' + input;
             } else {
                 input = '<input type="' + (f.type === 'number' ? 'number' : 'text') + '" id="' + id + '" data-key="' + esc(f.key) + '" value="' + esc(val) + '"' +
-                    (f.required ? ' required' : '') + '>';
+                    (f.required ? ' required' : '') + ' autocomplete="off">';
                 group.innerHTML = '<label for="' + id + '">' + label + '</label>' + input;
             }
             if (help) {
@@ -86,17 +102,37 @@
             }
             container.appendChild(group);
         });
-        if (!list.length) container.innerHTML = '';
+        applyShowIf(container);
+        if (!container.hasAttribute('data-show-if-bound')) {
+            container.setAttribute('data-show-if-bound', '');
+            container.addEventListener('change', function () { applyShowIf(container); });
+        }
     }
 
-    // collectFields reads the values back, keeping only non-default ones so
-    // plugins apply their own defaults.
-    function collectFields(container, fields, scope) {
+    // applyShowIf hides fields whose "key=v1|v2" condition does not hold.
+    function applyShowIf(container) {
+        container.querySelectorAll('[data-show-if]').forEach(function (group) {
+            var cond = group.getAttribute('data-show-if').split('=');
+            var ctl = container.querySelector('[data-key="' + CSS.escape(cond[0]) + '"]');
+            var v = ctl ? (ctl.getAttribute('data-type') === 'bool' ? String(ctl.checked) : ctl.value) : '';
+            group.hidden = (cond[1] || '').split('|').indexOf(v) < 0;
+        });
+    }
+
+    // collectFields reads the values back, skipping hidden fields and
+    // keeping only non-default ones so plugins apply their own defaults.
+    // An empty password is sent as "" (keep the saved one).
+    function collectFields(container, list) {
         var out = {};
-        (fields || []).filter(function (f) { return f.scope === scope; }).forEach(function (f) {
+        list.forEach(function (f) {
             var el = container.querySelector('[data-key="' + CSS.escape(f.key) + '"]');
-            if (!el) return;
-            var v = el.getAttribute('data-type') === 'bool' ? (el.checked ? 'true' : 'false') : el.value.trim();
+            if (!el || el.closest('[hidden]')) return;
+            var type = el.getAttribute('data-type');
+            if (type === 'password') {
+                out[f.key] = el.value;
+                return;
+            }
+            var v = type === 'bool' ? (el.checked ? 'true' : 'false') : el.value.trim();
             if (v !== '' && v !== (f.default || '')) out[f.key] = v;
         });
         return out;
@@ -131,64 +167,268 @@
         });
     }
 
+    var ICONS = {
+        instance: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="7" rx="1.5"/><rect x="3" y="13" width="18" height="7" rx="1.5"/><circle cx="7" cy="7.5" r="1"/><circle cx="7" cy="16.5" r="1"/></svg>',
+        database: '<svg viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="5.5" rx="7.5" ry="2.8"/><path d="M4.5 5.5v13c0 1.5 3.4 2.8 7.5 2.8s7.5-1.3 7.5-2.8v-13"/><path d="M4.5 12c0 1.5 3.4 2.8 7.5 2.8s7.5-1.3 7.5-2.8"/></svg>',
+        folder: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6.5A1.5 1.5 0 0 1 4.5 5H9l2 2h8.5A1.5 1.5 0 0 1 21 8.5v9a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 17.5z"/></svg>',
+        item: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4"/></svg>',
+        key: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="8" cy="15" r="4"/><path d="M11 12l9-9M16 7l3 3M14 9l2 2"/></svg>',
+        chevron: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>'
+    };
+
+    function iconFor(e) {
+        if (e.kind === 'instance' || e.kind === 'server') return ICONS.instance;
+        if (/database$/.test(e.kind || '')) return ICONS.database;
+        return e.has_children ? ICONS.folder : ICONS.item;
+    }
+
     // objectPicker renders a lazily expanding tree of the plugin's objects.
-    // multi: checkboxes; otherwise radio buttons.
-    function objectPicker(container, agent, plugin, multi) {
+    // multi: checkboxes, where checking a container selects it as a whole
+    // (everything in it, including objects added later); otherwise radio
+    // buttons on leaf objects only. fields are the plugin's fields, for the
+    // Configure action on objects that take settings.
+    function objectPicker(container, agent, plugin, multi, fields) {
         var name = 'obj-' + Math.random().toString(36).slice(2);
-        function load(ul, path, onLoaded) {
-            ul.innerHTML = '<li class="form-hint">' + esc(t('Loading...')) + '</li>';
-            api('GET', '/api/agents/' + encodeURIComponent(agent) + '/plugins/' + encodeURIComponent(plugin) +
-                '/browse?path=' + encodeURIComponent(path)).then(function (entries) {
-                ul.innerHTML = '';
-                if (!entries.length) ul.innerHTML = '<li class="form-hint">' + esc(t('No objects')) + '</li>';
-                entries.forEach(function (e) {
-                    var li = document.createElement('li');
-                    var html = '';
-                    if (e.has_children) html += '<button type="button" class="plugin-tree-toggle" aria-label="' + esc(t('Expand')) + '">+</button> ';
-                    if (e.selectable) {
-                        html += '<label><input type="' + (multi ? 'checkbox' : 'radio') + '" name="' + name + '" value="' + esc(e.path) + '"> ' + esc(e.name) + '</label>';
-                    } else {
-                        html += '<span>' + esc(e.name) + '</span>';
-                    }
-                    if (e.kind) html += ' <span class="form-hint">' + esc(e.kind) + '</span>';
-                    li.innerHTML = html;
-                    var toggle = li.querySelector('.plugin-tree-toggle');
-                    if (toggle) {
-                        var sub = document.createElement('ul');
-                        sub.className = 'plugin-tree';
-                        li.appendChild(sub);
-                        toggle.addEventListener('click', function () {
-                            if (toggle.textContent === '+') {
-                                toggle.textContent = '−';
-                                load(sub, e.path);
-                            } else {
-                                toggle.textContent = '+';
-                                sub.innerHTML = '';
-                            }
+        var base = '/api/agents/' + encodeURIComponent(agent) + '/plugins/' + encodeURIComponent(plugin);
+        container.innerHTML = '<div class="ptree-root" role="tree"></div>';
+        var rootEl = container.querySelector('.ptree-root');
+        var summary = document.createElement('div');
+        summary.className = 'ptree-summary form-hint';
+        container.parentNode.insertBefore(summary, container.nextSibling);
+        var old = container.parentNode.querySelectorAll('.ptree-summary');
+        for (var i = 0; i < old.length; i++) if (old[i] !== summary) old[i].remove();
+
+        function updateSummary() {
+            var n = selected().length;
+            summary.textContent = multi && n ? t('{n} selected', { n: n }) : '';
+        }
+
+        // syncParent shows a partly selected container as indeterminate.
+        function syncParent(node) {
+            var box = node.querySelector(':scope > .ptree-row > .ptree-check');
+            if (!box || box.checked) return;
+            var kids = node.querySelectorAll(':scope > .ptree-children > .ptree-node > .ptree-row > .ptree-check');
+            box.indeterminate = Array.prototype.some.call(kids, function (k) { return k.checked || k.indeterminate; });
+        }
+
+        // cascade marks a checked container's descendants as included.
+        function cascade(node) {
+            var box = node.querySelector(':scope > .ptree-row > .ptree-check');
+            var on = !!(box && box.checked);
+            node.querySelectorAll(':scope > .ptree-children .ptree-check').forEach(function (k) {
+                if (on) {
+                    k.checked = false;
+                    k.indeterminate = false;
+                }
+                k.disabled = on || k.hasAttribute('data-unselectable');
+                k.closest('.ptree-row').classList.toggle('ptree-included', on);
+            });
+            if (on) box.indeterminate = false;
+        }
+
+        function load(childrenEl, parentNode, entry) {
+            var path = entry ? entry.path : '';
+            childrenEl.innerHTML = '<div class="ptree-msg form-hint">' + esc(t('Loading...')) + '</div>';
+            return api('GET', base + '/browse?path=' + encodeURIComponent(path)).then(function (entries) {
+                childrenEl.innerHTML = '';
+                if (!entries.length) {
+                    childrenEl.innerHTML = '<div class="ptree-msg form-hint">' + esc(t('No objects')) + '</div>';
+                    return entries;
+                }
+                if (entries.length > 8) {
+                    var filter = document.createElement('input');
+                    filter.type = 'search';
+                    filter.className = 'ptree-filter';
+                    filter.placeholder = t('Filter...');
+                    filter.addEventListener('input', function () {
+                        var q = filter.value.trim().toLowerCase();
+                        childrenEl.querySelectorAll(':scope > .ptree-node').forEach(function (n) {
+                            n.hidden = q !== '' && n.getAttribute('data-name').toLowerCase().indexOf(q) < 0;
                         });
-                    }
-                    ul.appendChild(li);
-                });
-                if (onLoaded) onLoaded(entries);
+                    });
+                    childrenEl.appendChild(filter);
+                }
+                entries.forEach(function (e) { childrenEl.appendChild(node(e)); });
+                if (parentNode) cascade(parentNode);
+                return entries;
             }).catch(function (err) {
-                ul.innerHTML = '<li class="plugin-error">' + esc(err.message) + '</li>';
+                childrenEl.innerHTML = '';
+                var msg = document.createElement('div');
+                msg.className = 'ptree-msg plugin-error';
+                msg.textContent = err.message;
+                childrenEl.appendChild(msg);
+                if (entry && entry.configurable) {
+                    var fix = document.createElement('button');
+                    fix.type = 'button';
+                    fix.className = 'btn btn-secondary btn-sm ptree-fix';
+                    fix.textContent = t('Configure credentials');
+                    fix.addEventListener('click', function () { configure(entry, parentNode); });
+                    childrenEl.appendChild(fix);
+                }
+                return [];
             });
         }
-        var root = document.createElement('ul');
-        root.className = 'plugin-tree';
-        container.innerHTML = '';
-        container.appendChild(root);
+
+        function configure(entry, nodeEl) {
+            openObjectConfigDialog(agent, plugin, entry, fields || [], function (configured) {
+                entry.configured = configured;
+                var chip = nodeEl.querySelector(':scope > .ptree-row .ptree-config-state');
+                if (chip) {
+                    chip.className = 'ptree-config-state badge ' + (configured ? 'badge-ok' : 'badge-stale');
+                    chip.textContent = configured ? t('Credentials saved') : t('Agent account');
+                }
+                var kids = nodeEl.querySelector(':scope > .ptree-children');
+                if (!kids) return;
+                if (nodeEl.classList.contains('ptree-open')) {
+                    load(kids, nodeEl, entry);
+                } else {
+                    nodeEl.querySelector(':scope > .ptree-row > .ptree-toggle').click();
+                }
+            });
+        }
+
+        function node(e) {
+            var el = document.createElement('div');
+            el.className = 'ptree-node';
+            el.setAttribute('role', 'treeitem');
+            el.setAttribute('data-name', e.name || e.path);
+            var row = document.createElement('div');
+            row.className = 'ptree-row' + (e.status ? ' ptree-unavailable' : '');
+            var html = e.has_children
+                ? '<button type="button" class="ptree-toggle" aria-label="' + esc(t('Expand')) + '" aria-expanded="false">' + ICONS.chevron + '</button>'
+                : '<span class="ptree-toggle-spacer"></span>';
+            var pickable = multi ? e.selectable : (e.selectable && !e.has_children);
+            var id = name + '-' + Math.random().toString(36).slice(2, 8);
+            if (multi || pickable) {
+                html += '<input class="ptree-check" id="' + id + '" type="' + (multi ? 'checkbox' : 'radio') + '" name="' + name + '" value="' + esc(e.path) + '"' +
+                    (pickable ? '' : ' disabled data-unselectable') + '>';
+            } else {
+                html += '<span class="ptree-check-spacer"></span>';
+            }
+            html += '<span class="ptree-icon ptree-icon-' + esc((e.kind || 'item').replace(/[^a-z_]/gi, '')) + '">' + iconFor(e) + '</span>' +
+                '<label class="ptree-name" for="' + id + '">' + esc(e.name || e.path) + '</label>';
+            if (e.kind === 'system_database') html += '<span class="ptree-tag">' + esc(t('system')) + '</span>';
+            if (e.status) html += '<span class="badge badge-stale">' + esc(e.status) + '</span>';
+            html += '<span class="ptree-detail">' + esc(e.detail || '') + '</span>';
+            if (e.configurable) {
+                html += '<span class="ptree-config-state badge ' + (e.configured ? 'badge-ok' : 'badge-stale') + '">' +
+                    esc(e.configured ? t('Credentials saved') : t('Agent account')) + '</span>' +
+                    '<button type="button" class="ptree-configure btn btn-secondary btn-sm" title="' + esc(t('Configure credentials')) + '">' +
+                    ICONS.key + '<span>' + esc(t('Configure')) + '</span></button>';
+            }
+            row.innerHTML = html;
+            el.appendChild(row);
+
+            var check = row.querySelector('.ptree-check');
+            if (check) {
+                check.addEventListener('change', function () {
+                    if (multi) {
+                        cascade(el);
+                        var parent = el.parentElement && el.parentElement.closest('.ptree-node');
+                        if (parent) syncParent(parent);
+                    }
+                    updateSummary();
+                });
+            }
+            var cfg = row.querySelector('.ptree-configure');
+            if (cfg) cfg.addEventListener('click', function () { configure(e, el); });
+
+            if (e.has_children) {
+                var kids = document.createElement('div');
+                kids.className = 'ptree-children';
+                kids.setAttribute('role', 'group');
+                kids.hidden = true;
+                el.appendChild(kids);
+                var toggle = row.querySelector('.ptree-toggle');
+                var loaded = false;
+                toggle.addEventListener('click', function () {
+                    var open = !el.classList.contains('ptree-open');
+                    el.classList.toggle('ptree-open', open);
+                    toggle.setAttribute('aria-expanded', String(open));
+                    kids.hidden = !open;
+                    if (open && !loaded) {
+                        loaded = true;
+                        load(kids, el, e);
+                    }
+                });
+            }
+            return el;
+        }
+
+        function selected() {
+            return Array.prototype.map.call(container.querySelectorAll('input[name="' + name + '"]:checked:not(:disabled)'), function (i) { return i.value; });
+        }
+
         // A single top-level container (one SQL Server instance, say) opens
         // by itself, so its objects are one click away.
-        load(root, '', function (entries) {
+        load(rootEl, null, null).then(function (entries) {
             if (entries.length === 1 && entries[0].has_children) {
-                var toggle = root.querySelector('.plugin-tree-toggle');
+                var toggle = rootEl.querySelector('.ptree-toggle');
                 if (toggle) toggle.click();
             }
         });
-        return function selected() {
-            return Array.prototype.map.call(container.querySelectorAll('input[name="' + name + '"]:checked'), function (i) { return i.value; });
-        };
+        return selected;
+    }
+
+    // openObjectConfigDialog edits the settings an object keeps on the agent,
+    // such as a database instance's credentials. The agent tests them before
+    // saving; secrets never come back. onDone(configured) runs after a save
+    // or removal.
+    function openObjectConfigDialog(agent, plugin, entry, fields, onDone) {
+        var list = fieldsFor(fields, 'object', entry.kind);
+        var url = '/api/agents/' + encodeURIComponent(agent) + '/plugins/' + encodeURIComponent(plugin) + '/object-config';
+        var d = openDialog(t('Configure {name}', { name: entry.name || entry.path }),
+            '<form class="plugin-object-form">' +
+            '<p class="form-hint">' + esc(t('These settings stay on agent {agent}, encrypted. Jobs and the server never hold them.', { agent: agent })) + '</p>' +
+            '<div class="plugin-object-fields"><p class="form-hint">' + esc(t('Loading...')) + '</p></div>' +
+            '<div class="plugin-error" style="display:none"></div>' +
+            '<div class="plugin-ok" style="display:none"></div>' +
+            '<div class="dialog-actions">' +
+            '<button type="button" class="btn btn-secondary plugin-object-remove" hidden>' + esc(t('Use the agent account')) + '</button>' +
+            '<button type="submit" class="btn">' + esc(t('Test and save')) + '</button></div></form>');
+        d.el.classList.add('dialog-stacked');
+        var form = d.q('form');
+        var box = d.q('.plugin-object-fields');
+        var errEl = d.q('.plugin-error');
+        var okEl = d.q('.plugin-ok');
+        var submit = form.querySelector('button[type="submit"]');
+        var removeBtn = d.q('.plugin-object-remove');
+
+        api('GET', url + '?path=' + encodeURIComponent(entry.path)).then(function (cfg) {
+            renderFields(box, list, cfg.configured ? cfg.values : {}, cfg.secrets_set);
+            removeBtn.hidden = !cfg.configured;
+            var first = box.querySelector('select, input');
+            if (first) first.focus();
+        }).catch(function (err) { box.innerHTML = ''; showError(errEl, err); });
+
+        function busy(on, label) {
+            submit.disabled = on;
+            removeBtn.disabled = on;
+            submit.textContent = on ? label : t('Test and save');
+        }
+
+        form.addEventListener('submit', function (ev) {
+            ev.preventDefault();
+            showError(errEl, null);
+            okEl.style.display = 'none';
+            busy(true, t('Testing connection...'));
+            api('PUT', url, { path: entry.path, values: collectFields(box, list) }).then(function (res) {
+                busy(false);
+                okEl.textContent = t('Connection OK, settings saved.') + (res && res.message ? ' (' + res.message + ')' : '');
+                okEl.style.display = 'block';
+                onDone(true);
+                setTimeout(d.close, 900);
+            }).catch(function (err) { busy(false); showError(errEl, err); });
+        });
+
+        removeBtn.addEventListener('click', function () {
+            if (!confirm(t('Remove the saved credentials of {name}? The agent account will be used.', { name: entry.name || entry.path }))) return;
+            busy(true, t('Saving...'));
+            api('PUT', url, { path: entry.path, remove: true }).then(function () {
+                onDone(false);
+                d.close();
+            }).catch(function (err) { busy(false); showError(errEl, err); });
+        });
     }
 
     // --- Agent detail: installed plugins and remote install ---
@@ -311,7 +551,8 @@
             '<div class="form-group"><label>' + esc(t('Job Name')) + '</label><input type="text" name="name" required></div>' +
             '<div class="form-group"><label>' + esc(t('Agent')) + '</label><select name="agent" required></select></div>' +
             '<div class="form-group"><label>' + esc(t('Plugin')) + '</label><select name="plugin" required></select></div>' +
-            '<div class="form-group"><label>' + esc(t('Objects to back up')) + '</label><div class="plugin-objects plugin-tree-box"></div></div>' +
+            '<div class="form-group"><label>' + esc(t('Objects to back up')) + '</label><div class="plugin-objects plugin-tree-box"></div>' +
+            '<p class="form-hint">' + esc(t('Checking a container, such as an instance, backs up everything in it, including objects added later.')) + '</p></div>' +
             '<div class="form-group"><label>' + esc(t('Backup kind')) + '</label><select name="kind"></select></div>' +
             '<fieldset class="plugin-fieldset"><legend>' + esc(t('Connection settings')) + '</legend><div class="plugin-settings"></div></fieldset>' +
             '<fieldset class="plugin-fieldset"><legend>' + esc(t('Backup options')) + '</legend><div class="plugin-backup-opts"></div></fieldset>' +
@@ -333,9 +574,9 @@
             var kinds = (current.capabilities || []).filter(function (c) { return c.indexOf('backup.') === 0; }).map(function (c) { return c.slice(7); });
             if (!kinds.length) kinds = ['full'];
             form.elements.kind.innerHTML = kinds.map(function (k) { return '<option value="' + esc(k) + '">' + esc(t(k)) + '</option>'; }).join('');
-            renderFields(d.q('.plugin-settings'), current.fields, 'settings');
-            renderFields(d.q('.plugin-backup-opts'), current.fields, 'backup');
-            selected = objectPicker(d.q('.plugin-objects'), a.name, current.id, true);
+            renderFields(d.q('.plugin-settings'), fieldsFor(current.fields, 'settings'));
+            renderFields(d.q('.plugin-backup-opts'), fieldsFor(current.fields, 'backup'));
+            selected = objectPicker(d.q('.plugin-objects'), a.name, current.id, true, current.fields);
         }
         function agentChanged() {
             var a = agents.filter(function (x) { return x.name === form.elements.agent.value; })[0];
@@ -367,8 +608,8 @@
             var body = {
                 name: form.elements.name.value.trim(), agent_name: form.elements.agent.value, repo_name: form.elements.repo.value,
                 job_type: 'workload', plugin: current.id, selection: sel, backup_kind: form.elements.kind.value,
-                plugin_settings: collectFields(d.q('.plugin-settings'), current.fields, 'settings'),
-                backup_options: collectFields(d.q('.plugin-backup-opts'), current.fields, 'backup'),
+                plugin_settings: collectFields(d.q('.plugin-settings'), fieldsFor(current.fields, 'settings')),
+                backup_options: collectFields(d.q('.plugin-backup-opts'), fieldsFor(current.fields, 'backup')),
                 schedule_enabled: cron !== '', cron_expression: cron,
                 timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || ''
             };
@@ -408,8 +649,8 @@
             var a = agents.filter(function (x) { return x.name === form.elements.agent.value; })[0];
             current = a ? a.plugins.filter(function (p) { return p.id === form.elements.plugin.value; })[0] : null;
             if (!current) return;
-            renderFields(d.q('.plugin-restore-opts'), current.fields, 'restore');
-            picked = objectPicker(d.q('.plugin-objects'), a.name, current.id, false);
+            renderFields(d.q('.plugin-restore-opts'), fieldsFor(current.fields, 'restore'));
+            picked = objectPicker(d.q('.plugin-objects'), a.name, current.id, false, current.fields);
         }
         d.q('.plugin-objects').addEventListener('change', function () {
             var v = picked();
@@ -466,7 +707,7 @@
             showError(errEl, null);
             var body = {
                 agent_name: form.elements.agent.value, source_agent: form.elements.source.value, plugin: current.id,
-                object: form.elements.object.value.trim(), options: collectFields(d.q('.plugin-restore-opts'), current.fields, 'restore')
+                object: form.elements.object.value.trim(), options: collectFields(d.q('.plugin-restore-opts'), fieldsFor(current.fields, 'restore'))
             };
             if (form.querySelector('input[name="when"]:checked').value === 'at') {
                 if (!form.elements.at.value) {

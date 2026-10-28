@@ -63,6 +63,10 @@ type AgentServer struct {
 	// Plugins installs and removes plugins pushed by the server. Nil
 	// disables those RPCs.
 	Plugins PluginInstaller
+
+	// PluginObjects keeps per-object plugin settings, such as instance
+	// credentials. Nil disables those RPCs.
+	PluginObjects PluginObjectStore
 }
 
 // RestoreOutcome summarizes one completed RestoreData stream.

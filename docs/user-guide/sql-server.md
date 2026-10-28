@@ -11,7 +11,7 @@ snapshot.
 | Backup kinds | Full (optionally `COPY_ONLY`), differential, transaction log |
 | Restore | Latest point or a point in time; under the original or a new name |
 | Platforms | Windows (VDI is Windows-only); SQL Server 2016 or later |
-| Authentication | Windows integrated (default) or a SQL login |
+| Authentication | Per instance: the agent's account (default), a Windows account, or a SQL login |
 
 ## Requirements
 
@@ -43,41 +43,59 @@ poll reports the plugin, the server can create SQL Server jobs for it.
 
 ## Authentication
 
-The agent service runs as `LocalSystem`, which SQL Server sees as the login
-`NT AUTHORITY\SYSTEM`. Choose one of:
+Like other enterprise backup tools, HitStor keeps the credentials of each SQL
+Server instance **on the agent**, not in jobs: a job only names what to back
+up. The settings are tested before they are saved, stored encrypted (DPAPI)
+in the agent's plugin store, and the password is never shown again or sent to
+the server.
 
-- **Integrated (default).** Add `NT AUTHORITY\SYSTEM` to `sysadmin`, or run
-  the agent service under a dedicated Windows account that is.
-- **SQL login (recommended).** Create a dedicated `sysadmin` login for
-  HitStor and set the plugin settings
-  `auth=sql` and `username=<login>`. Put the password in the agent's
-  environment file (`C:\ProgramData\HitStor\agent.env`):
+In the dashboard, open the object tree (in **New Backup Job → Application
+(plugin)** or a plugin restore) and choose **Configure** next to the instance:
 
-  ```
-  HITSTOR_MSSQL_PASSWORD=<password>
-  ```
+| Setting | Description |
+|---------|-------------|
+| **Authentication** | `integrated`: the agent service account (`LocalSystem`, which SQL Server sees as `NT AUTHORITY\SYSTEM`). `windows`: a Windows account. `sql`: a SQL Server login |
+| **User name** | The SQL login, or `DOMAIN\user` for a Windows account (`.\user` for a local one) |
+| **Password** | Saved encrypted on the agent; leave it empty to keep the saved one |
 
-  The variable name can be changed with `password_env`. Passwords are never
-  accepted in job settings. Make sure `agent.env` is readable only by SYSTEM
-  and Administrators.
+The account must be in the **`sysadmin`** role (see [Requirements](#requirements)).
+**Test and save** connects to the instance and lists its databases; the
+settings are saved only if that works. **Use the agent account** removes
+them. An instance without saved settings uses the agent's account, so either
+add `NT AUTHORITY\SYSTEM` to `sysadmin` or configure the instance.
 
-Plugin settings:
+On the host, the same with the agent CLI (the password is read from standard
+input):
+
+```powershell
+hitstor-agent plugin configure mssql MSSQLSERVER --set auth=sql --set username=hitstor_backup --secret password
+```
+
+Other plugin settings, for the command line (`--setting`) and jobs created
+before instance settings existed:
 
 | Setting | Default | Description |
 |---------|---------|-------------|
-| `instance` | `MSSQLSERVER` | Instance name (`MSSQLSERVER` is the default instance) |
+| `instance` | `MSSQLSERVER` | Instance listed when none is found in the registry |
 | `server` | `localhost` | Host to connect to |
-| `auth` | `integrated` | `integrated` or `sql` |
-| `username` | | SQL login, with `auth=sql` |
-| `password_env` | `HITSTOR_MSSQL_PASSWORD` | Environment variable that holds the password |
+| `auth`, `username` | `integrated` | Credentials for instances without saved settings |
+| `password_env` | `HITSTOR_MSSQL_PASSWORD` | Environment variable (in `agent.env`) with the password for those |
 | `encrypt` | `true` | Connection encryption |
 | `trust_server_certificate` | `true` | Trust the instance's certificate (the connection is local) |
 
 ## Back up
 
+The object tree lists the SQL Server instances installed on the host (from the
+registry), with their release, edition, and version. Expanding an instance
+lists its databases with their recovery model and size; system databases come
+last, and databases that are not online are shown but cannot be selected.
+
 Objects are written `<instance>/<database>`, for example
-`MSSQLSERVER/Sales`. A job backs up one or more databases with one backup
-kind; schedule separate jobs per kind. A common plan:
+`MSSQLSERVER/Sales`, or just `<instance>` to back up **the whole instance**:
+every online database at each run, including databases created after the job.
+Differential backups of a whole instance skip `master`, and log backups skip
+databases in the SIMPLE recovery model. A job backs up its databases with one
+backup kind; schedule separate jobs per kind. A common plan:
 
 | Job | Kind | Schedule |
 |-----|------|----------|
@@ -86,8 +104,8 @@ kind; schedule separate jobs per kind. A common plan:
 | Log | `log` | Every 15 minutes |
 
 In the dashboard, choose **New Backup Job → Application (plugin)**, pick the
-agent and the `mssql` plugin, select the databases in the object tree, and set
-the backup kind, connection settings, options, and cron schedule.
+agent and the `mssql` plugin, check the instance or individual databases in the
+object tree, and set the backup kind, options, and cron schedule.
 
 The same job through the dashboard API:
 

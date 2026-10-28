@@ -16,11 +16,11 @@ func TestParseConfig(t *testing.T) {
 		t.Fatalf("named = %+v, %v", c, err)
 	}
 	for name, s := range map[string]map[string]string{
-		"password in settings": {"password": "x"},
-		"unknown key":          {"pasword_env": "X"},
-		"sql without user":     {"auth": "sql"},
-		"bad auth":             {"auth": "kerberos"},
-		"bad bool":             {"trust_server_certificate": "maybe"},
+		"password in job settings": {"password": "x"},
+		"unknown key":              {"pasword_env": "X"},
+		"sql without user":         {"auth": "sql"},
+		"bad auth":                 {"auth": "kerberos"},
+		"bad bool":                 {"trust_server_certificate": "maybe"},
 	} {
 		if _, err := parseConfig(s); err == nil {
 			t.Errorf("%s: accepted", name)

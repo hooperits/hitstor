@@ -25,21 +25,23 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	AgentService_Register_FullMethodName            = "/hitstor.v1.AgentService/Register"
-	AgentService_ListDirectory_FullMethodName       = "/hitstor.v1.AgentService/ListDirectory"
-	AgentService_Configure_FullMethodName           = "/hitstor.v1.AgentService/Configure"
-	AgentService_AgentInfo_FullMethodName           = "/hitstor.v1.AgentService/AgentInfo"
-	AgentService_RestoreData_FullMethodName         = "/hitstor.v1.AgentService/RestoreData"
-	AgentService_WakeUp_FullMethodName              = "/hitstor.v1.AgentService/WakeUp"
-	AgentService_FetchLogs_FullMethodName           = "/hitstor.v1.AgentService/FetchLogs"
-	AgentService_DiscoverDatabases_FullMethodName   = "/hitstor.v1.AgentService/DiscoverDatabases"
-	AgentService_CheckRecoveryMedia_FullMethodName  = "/hitstor.v1.AgentService/CheckRecoveryMedia"
-	AgentService_BuildRecoveryMedia_FullMethodName  = "/hitstor.v1.AgentService/BuildRecoveryMedia"
-	AgentService_BrowseWorkload_FullMethodName      = "/hitstor.v1.AgentService/BrowseWorkload"
-	AgentService_PlanWorkloadRestore_FullMethodName = "/hitstor.v1.AgentService/PlanWorkloadRestore"
-	AgentService_RestoreWorkload_FullMethodName     = "/hitstor.v1.AgentService/RestoreWorkload"
-	AgentService_InstallPlugin_FullMethodName       = "/hitstor.v1.AgentService/InstallPlugin"
-	AgentService_RemovePlugin_FullMethodName        = "/hitstor.v1.AgentService/RemovePlugin"
+	AgentService_Register_FullMethodName                = "/hitstor.v1.AgentService/Register"
+	AgentService_ListDirectory_FullMethodName           = "/hitstor.v1.AgentService/ListDirectory"
+	AgentService_Configure_FullMethodName               = "/hitstor.v1.AgentService/Configure"
+	AgentService_AgentInfo_FullMethodName               = "/hitstor.v1.AgentService/AgentInfo"
+	AgentService_RestoreData_FullMethodName             = "/hitstor.v1.AgentService/RestoreData"
+	AgentService_WakeUp_FullMethodName                  = "/hitstor.v1.AgentService/WakeUp"
+	AgentService_FetchLogs_FullMethodName               = "/hitstor.v1.AgentService/FetchLogs"
+	AgentService_DiscoverDatabases_FullMethodName       = "/hitstor.v1.AgentService/DiscoverDatabases"
+	AgentService_CheckRecoveryMedia_FullMethodName      = "/hitstor.v1.AgentService/CheckRecoveryMedia"
+	AgentService_BuildRecoveryMedia_FullMethodName      = "/hitstor.v1.AgentService/BuildRecoveryMedia"
+	AgentService_BrowseWorkload_FullMethodName          = "/hitstor.v1.AgentService/BrowseWorkload"
+	AgentService_GetWorkloadObjectConfig_FullMethodName = "/hitstor.v1.AgentService/GetWorkloadObjectConfig"
+	AgentService_SetWorkloadObjectConfig_FullMethodName = "/hitstor.v1.AgentService/SetWorkloadObjectConfig"
+	AgentService_PlanWorkloadRestore_FullMethodName     = "/hitstor.v1.AgentService/PlanWorkloadRestore"
+	AgentService_RestoreWorkload_FullMethodName         = "/hitstor.v1.AgentService/RestoreWorkload"
+	AgentService_InstallPlugin_FullMethodName           = "/hitstor.v1.AgentService/InstallPlugin"
+	AgentService_RemovePlugin_FullMethodName            = "/hitstor.v1.AgentService/RemovePlugin"
 )
 
 // AgentServiceClient is the client API for AgentService service.
@@ -88,6 +90,12 @@ type AgentServiceClient interface {
 	// BrowseWorkload lists the objects an installed workload plugin can back
 	// up, for the dashboard's object picker.
 	BrowseWorkload(ctx context.Context, in *BrowseWorkloadRequest, opts ...grpc.CallOption) (*BrowseWorkloadResponse, error)
+	// GetWorkloadObjectConfig returns the settings saved on the agent for one
+	// plugin object (for example a database instance), without secrets.
+	GetWorkloadObjectConfig(ctx context.Context, in *GetWorkloadObjectConfigRequest, opts ...grpc.CallOption) (*GetWorkloadObjectConfigResponse, error)
+	// SetWorkloadObjectConfig tests and saves the settings of one plugin
+	// object. Secrets stay on the agent, encrypted at rest.
+	SetWorkloadObjectConfig(ctx context.Context, in *SetWorkloadObjectConfigRequest, opts ...grpc.CallOption) (*SetWorkloadObjectConfigResponse, error)
 	// PlanWorkloadRestore asks an installed workload plugin which of the
 	// candidate items (found by the server in snapshots) to restore, in order.
 	PlanWorkloadRestore(ctx context.Context, in *PlanWorkloadRestoreRequest, opts ...grpc.CallOption) (*PlanWorkloadRestoreResponse, error)
@@ -231,6 +239,26 @@ func (c *agentServiceClient) BrowseWorkload(ctx context.Context, in *BrowseWorkl
 	return out, nil
 }
 
+func (c *agentServiceClient) GetWorkloadObjectConfig(ctx context.Context, in *GetWorkloadObjectConfigRequest, opts ...grpc.CallOption) (*GetWorkloadObjectConfigResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetWorkloadObjectConfigResponse)
+	err := c.cc.Invoke(ctx, AgentService_GetWorkloadObjectConfig_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *agentServiceClient) SetWorkloadObjectConfig(ctx context.Context, in *SetWorkloadObjectConfigRequest, opts ...grpc.CallOption) (*SetWorkloadObjectConfigResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SetWorkloadObjectConfigResponse)
+	err := c.cc.Invoke(ctx, AgentService_SetWorkloadObjectConfig_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *agentServiceClient) PlanWorkloadRestore(ctx context.Context, in *PlanWorkloadRestoreRequest, opts ...grpc.CallOption) (*PlanWorkloadRestoreResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(PlanWorkloadRestoreResponse)
@@ -323,6 +351,12 @@ type AgentServiceServer interface {
 	// BrowseWorkload lists the objects an installed workload plugin can back
 	// up, for the dashboard's object picker.
 	BrowseWorkload(context.Context, *BrowseWorkloadRequest) (*BrowseWorkloadResponse, error)
+	// GetWorkloadObjectConfig returns the settings saved on the agent for one
+	// plugin object (for example a database instance), without secrets.
+	GetWorkloadObjectConfig(context.Context, *GetWorkloadObjectConfigRequest) (*GetWorkloadObjectConfigResponse, error)
+	// SetWorkloadObjectConfig tests and saves the settings of one plugin
+	// object. Secrets stay on the agent, encrypted at rest.
+	SetWorkloadObjectConfig(context.Context, *SetWorkloadObjectConfigRequest) (*SetWorkloadObjectConfigResponse, error)
 	// PlanWorkloadRestore asks an installed workload plugin which of the
 	// candidate items (found by the server in snapshots) to restore, in order.
 	PlanWorkloadRestore(context.Context, *PlanWorkloadRestoreRequest) (*PlanWorkloadRestoreResponse, error)
@@ -376,6 +410,12 @@ func (UnimplementedAgentServiceServer) BuildRecoveryMedia(*BuildRecoveryMediaReq
 }
 func (UnimplementedAgentServiceServer) BrowseWorkload(context.Context, *BrowseWorkloadRequest) (*BrowseWorkloadResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method BrowseWorkload not implemented")
+}
+func (UnimplementedAgentServiceServer) GetWorkloadObjectConfig(context.Context, *GetWorkloadObjectConfigRequest) (*GetWorkloadObjectConfigResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetWorkloadObjectConfig not implemented")
+}
+func (UnimplementedAgentServiceServer) SetWorkloadObjectConfig(context.Context, *SetWorkloadObjectConfigRequest) (*SetWorkloadObjectConfigResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method SetWorkloadObjectConfig not implemented")
 }
 func (UnimplementedAgentServiceServer) PlanWorkloadRestore(context.Context, *PlanWorkloadRestoreRequest) (*PlanWorkloadRestoreResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method PlanWorkloadRestore not implemented")
@@ -590,6 +630,42 @@ func _AgentService_BrowseWorkload_Handler(srv interface{}, ctx context.Context, 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AgentService_GetWorkloadObjectConfig_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetWorkloadObjectConfigRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AgentServiceServer).GetWorkloadObjectConfig(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AgentService_GetWorkloadObjectConfig_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AgentServiceServer).GetWorkloadObjectConfig(ctx, req.(*GetWorkloadObjectConfigRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AgentService_SetWorkloadObjectConfig_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SetWorkloadObjectConfigRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AgentServiceServer).SetWorkloadObjectConfig(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AgentService_SetWorkloadObjectConfig_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AgentServiceServer).SetWorkloadObjectConfig(ctx, req.(*SetWorkloadObjectConfigRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _AgentService_PlanWorkloadRestore_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(PlanWorkloadRestoreRequest)
 	if err := dec(in); err != nil {
@@ -682,6 +758,14 @@ var AgentService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "BrowseWorkload",
 			Handler:    _AgentService_BrowseWorkload_Handler,
+		},
+		{
+			MethodName: "GetWorkloadObjectConfig",
+			Handler:    _AgentService_GetWorkloadObjectConfig_Handler,
+		},
+		{
+			MethodName: "SetWorkloadObjectConfig",
+			Handler:    _AgentService_SetWorkloadObjectConfig_Handler,
 		},
 		{
 			MethodName: "PlanWorkloadRestore",

@@ -381,7 +381,7 @@ capacidad no soportada.
 | RPC | Interfaz de Go | Propósito |
 |-----|----------------|-----------|
 | `GetMetadata` | `plugin.Workload` | Devuelve id, nombre, versión, versión de protocolo, descripción y capacidades. El agente lo llama al instalar y rechaza el paquete si el id o la versión no coinciden con el manifiesto |
-| `Configure` | `plugin.Configurable` | Recibe la configuración de plugin de la tarea |
+| `Configure` | `plugin.Configurable`, `plugin.ObjectConfigurable` | Recibe la configuración de la tarea y la configuración de objetos guardada en el agente |
 | `Browse` | `plugin.WorkloadBrowser` | Lista los objetos seleccionables bajo una ruta (por ejemplo instancia → bases de datos) |
 | `Backup` | `plugin.WorkloadBackuper` | Respalda los objetos seleccionados y envía por stream uno o más elementos |
 | `PlanRestore` | `plugin.WorkloadRestorer` | Elige qué elementos, y en qué orden, restauran un objeto a un punto en el tiempo |
@@ -419,9 +419,38 @@ creación del elemento. Los elementos pasan por la misma fragmentación,
 deduplicación, compresión y cifrado que los archivos, y siempre se pueden
 restaurar como archivos comunes.
 
-La configuración llega por `Configure` y se guarda en la tarea, en el
-servidor. **Nunca ponga secretos en la configuración**: léalos de variables de
-entorno, que el plugin hereda del servicio del agente (`agent.env`).
+### Formularios y configuración de objetos { #forms-and-object-settings }
+
+Un plugin declara sus formularios como `FieldSpec` en `GetMetadata`; el
+dashboard no sabe nada más de él. Cada campo tiene un ámbito:
+
+| Ámbito | Se define en | Llega al plugin como |
+|--------|--------------|----------------------|
+| `settings` | La tarea (guardada en el servidor) | `Configure(settings)` |
+| `object` | Un objeto del árbol de selección, como una instancia de base de datos (guardado en el agente) | `ConfigureObjects(objects)`, por ruta del objeto |
+| `backup` | La tarea | `BackupRequest.Options` |
+| `restore` | La restauración | `RestoreRequest.Options` |
+
+Los tipos de campo son `string`, `bool`, `number`, `choice` y `password`.
+Otros atributos:
+
+- `object_kinds`: en el ámbito `object`, los tipos de objeto del árbol que
+  usan el campo. Esos objetos tienen la acción **Configurar** en el árbol del
+  dashboard.
+- `show_if`: muestra el campo solo cuando otro campo tiene alguno de ciertos
+  valores, como `clave=valor1|valor2`.
+
+**Los secretos van en campos `password` de ámbito `object`**, nunca en la
+configuración de la tarea. El agente prueba la nueva configuración de un
+objeto explorándolo con ella, solo la guarda si funciona, la mantiene cifrada
+(DPAPI en Windows) y nunca devuelve los valores `password` al dashboard.
+Llegan al plugin por `ConfigureObjects` cada vez que se inicia.
+
+Las entradas de `Browse` pueden traer un `Detail` (una línea corta de datos,
+como `FULL · 1.3 GiB`) y un `Status` (cuando el objeto requiere atención, como
+`OFFLINE`). Un contenedor seleccionable es una selección válida: el plugin
+decide qué representa al momento del respaldo (por ejemplo, todas las bases de
+una instancia, incluidas las nuevas).
 
 ### Restauración { #restore }
 

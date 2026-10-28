@@ -13,19 +13,27 @@ func field(key, scope, typ, def, en, es, helpEN, helpES string, choices ...strin
 	return f
 }
 
+// instanceField makes f an instance setting, shown when showIf holds.
+func instanceField(f hitstorplugin.FieldSpec, showIf string) hitstorplugin.FieldSpec {
+	f.ObjectKinds = []string{"instance"}
+	f.ShowIf = showIf
+	return f
+}
+
 // fields are the forms the dashboard renders for this plugin.
 var fields = []hitstorplugin.FieldSpec{
-	field("instance", hitstorplugin.FieldScopeSettings, "string", defaultInstance, "Instance", "Instancia",
-		"MSSQLSERVER is the default instance.", "MSSQLSERVER es la instancia predeterminada."),
-	field("auth", hitstorplugin.FieldScopeSettings, "choice", "integrated", "Authentication", "Autenticación",
-		"integrated uses the agent service account; sql uses a SQL login.",
-		"integrated usa la cuenta del servicio del agente; sql usa un inicio de sesión SQL.",
-		"integrated", "sql"),
-	field("username", hitstorplugin.FieldScopeSettings, "string", "", "SQL login", "Inicio de sesión SQL",
-		"Only with authentication sql.", "Solo con autenticación sql."),
-	field("password_env", hitstorplugin.FieldScopeSettings, "string", "HITSTOR_MSSQL_PASSWORD", "Password variable", "Variable de la contraseña",
-		"Environment variable in the agent's agent.env that holds the password.",
-		"Variable de entorno del agent.env del agente que contiene la contraseña."),
+	// Each instance's credentials are set from the selection tree and stay
+	// on the agent; jobs only name what to back up.
+	instanceField(field("auth", hitstorplugin.FieldScopeObject, "choice", "integrated", "Authentication", "Autenticación",
+		"integrated: the agent service account (LocalSystem). windows: a Windows account. sql: a SQL Server login. The account must be in the sysadmin role.",
+		"integrated: la cuenta del servicio del agente (LocalSystem). windows: una cuenta de Windows. sql: un inicio de sesión de SQL Server. La cuenta debe tener el rol sysadmin.",
+		"integrated", "windows", "sql"), ""),
+	instanceField(field("username", hitstorplugin.FieldScopeObject, "string", "", "User name", "Usuario",
+		`SQL login, or DOMAIN\user for a Windows account (.\user if local).`,
+		`Inicio de sesión SQL, o DOMINIO\usuario para una cuenta de Windows (.\usuario si es local).`), "auth=windows|sql"),
+	instanceField(field("password", hitstorplugin.FieldScopeObject, hitstorplugin.FieldTypePassword, "", "Password", "Contraseña",
+		"Stored encrypted on the agent; never sent back.",
+		"Se guarda cifrada en el agente; nunca se vuelve a mostrar."), "auth=windows|sql"),
 
 	field("copy_only", hitstorplugin.FieldScopeBackup, "bool", "false", "Copy-only backup", "Respaldo de solo copia",
 		"Does not affect the database's backup chain (full and log only).",

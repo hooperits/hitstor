@@ -222,6 +222,8 @@ The AgentService runs on each agent (default port 8422) and handles server-to-ag
 | `RestoreData` | Client streaming | Stream restore data to agent |
 | `WakeUp` | Unary | Signal agent to check schedule immediately (dashboard "Backup Now") |
 | `BrowseWorkload` | Unary | List the objects an installed workload plugin can back up |
+| `GetWorkloadObjectConfig` | Unary | Read the settings saved on the agent for one plugin object, without passwords |
+| `SetWorkloadObjectConfig` | Unary | Test and save (or remove) the settings of one plugin object; secrets stay on the agent, encrypted |
 | `PlanWorkloadRestore` | Unary | Ask a workload plugin which candidate items to restore, in order |
 | `RestoreWorkload` | Client streaming | Stream planned items to the agent, which verifies each item's SHA-256 and pipes it into the plugin |
 | `InstallPlugin` | Client streaming | Stream a plugin package to the agent, which verifies and installs it with its own trust settings |

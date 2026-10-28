@@ -31,6 +31,7 @@ type WorkloadMetadata struct {
 // Field scopes.
 const (
 	FieldScopeSettings = "settings"
+	FieldScopeObject   = "object"
 	FieldScopeBackup   = "backup"
 	FieldScopeRestore  = "restore"
 )
@@ -40,19 +41,34 @@ const (
 type FieldSpec struct {
 	Key      string            `json:"key"`
 	Scope    string            `json:"scope"`
-	Type     string            `json:"type"` // string, bool, number, choice
+	Type     string            `json:"type"` // string, bool, number, choice, password
 	Label    map[string]string `json:"label"`
 	Help     map[string]string `json:"help,omitempty"`
 	Default  string            `json:"default,omitempty"`
 	Choices  []string          `json:"choices,omitempty"`
 	Required bool              `json:"required,omitempty"`
+	// ObjectKinds limits a field of scope "object" to these browse kinds.
+	ObjectKinds []string `json:"object_kinds,omitempty"`
+	// ShowIf shows the field only when "key=value1|value2" holds.
+	ShowIf string `json:"show_if,omitempty"`
+}
+
+// FieldTypePassword marks a secret field. Its values are only accepted in
+// scope "object", stay on the agent, and are never shown back.
+const FieldTypePassword = "password"
+
+// ObjectConfigurable is implemented by workload plugins that take
+// per-object settings (fields of scope "object"), keyed by object path.
+// The host calls ConfigureObjects after Configure, also with none.
+type ObjectConfigurable interface {
+	ConfigureObjects(objects map[string]map[string]string) error
 }
 
 func fieldsToProto(fs []FieldSpec) []*pb.FieldSpec {
 	out := make([]*pb.FieldSpec, 0, len(fs))
 	for _, f := range fs {
 		out = append(out, &pb.FieldSpec{Key: f.Key, Scope: f.Scope, Type: f.Type, Label: f.Label, Help: f.Help,
-			Default: f.Default, Choices: f.Choices, Required: f.Required})
+			Default: f.Default, Choices: f.Choices, Required: f.Required, ObjectKinds: f.ObjectKinds, ShowIf: f.ShowIf})
 	}
 	return out
 }
@@ -61,7 +77,7 @@ func fieldsFromProto(fs []*pb.FieldSpec) []FieldSpec {
 	out := make([]FieldSpec, 0, len(fs))
 	for _, f := range fs {
 		out = append(out, FieldSpec{Key: f.Key, Scope: f.Scope, Type: f.Type, Label: f.Label, Help: f.Help,
-			Default: f.Default, Choices: f.Choices, Required: f.Required})
+			Default: f.Default, Choices: f.Choices, Required: f.Required, ObjectKinds: f.ObjectKinds, ShowIf: f.ShowIf})
 	}
 	return out
 }
@@ -113,9 +129,18 @@ func (s *workloadGRPCServer) GetMetadata(ctx context.Context, _ *pb.GetMetadataR
 	}, nil
 }
 
-func (s *workloadGRPCServer) Configure(ctx context.Context, req *pb.ConfigureRequest) (*pb.ConfigureResponse, error) {
+func (s *workloadGRPCServer) Configure(ctx context.Context, req *pb.WorkloadConfigureRequest) (*pb.ConfigureResponse, error) {
 	if c, ok := s.impl.(Configurable); ok {
 		if err := c.Configure(req.Settings); err != nil {
+			return nil, err
+		}
+	}
+	if c, ok := s.impl.(ObjectConfigurable); ok {
+		objects := make(map[string]map[string]string, len(req.Objects))
+		for _, o := range req.Objects {
+			objects[o.Path] = o.Values
+		}
+		if err := c.ConfigureObjects(objects); err != nil {
 			return nil, err
 		}
 	}
@@ -147,9 +172,14 @@ func (c *WorkloadGRPCClient) Metadata(ctx context.Context) (WorkloadMetadata, er
 	}, nil
 }
 
-// Configure passes settings to the plugin.
-func (c *WorkloadGRPCClient) Configure(ctx context.Context, settings map[string]string) error {
-	if _, err := c.client.Configure(ctx, &pb.ConfigureRequest{Settings: settings}); err != nil {
+// Configure passes the job settings and the per-object settings to the
+// plugin.
+func (c *WorkloadGRPCClient) Configure(ctx context.Context, settings map[string]string, objects map[string]map[string]string) error {
+	req := &pb.WorkloadConfigureRequest{Settings: settings}
+	for path, values := range objects {
+		req.Objects = append(req.Objects, &pb.ObjectSettings{Path: path, Values: values})
+	}
+	if _, err := c.client.Configure(ctx, req); err != nil {
 		return fmt.Errorf("plugin: configure: %w", err)
 	}
 	return nil

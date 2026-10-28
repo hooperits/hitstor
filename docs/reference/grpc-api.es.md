@@ -222,6 +222,8 @@ AgentService se ejecuta en cada agente (puerto predeterminado 8422) y atiende la
 | `RestoreData` | Streaming del cliente | Envía en flujo los datos de restauración al agente |
 | `WakeUp` | Unaria | Indica al agente que revise su programación de inmediato ("Respaldar ahora" en el dashboard) |
 | `BrowseWorkload` | Unaria | Lista los objetos que un plugin de carga de trabajo instalado puede respaldar |
+| `GetWorkloadObjectConfig` | Unaria | Lee la configuración guardada en el agente para un objeto de plugin, sin contraseñas |
+| `SetWorkloadObjectConfig` | Unaria | Prueba y guarda (o quita) la configuración de un objeto de plugin; los secretos quedan cifrados en el agente |
 | `PlanWorkloadRestore` | Unaria | Pregunta a un plugin de carga de trabajo qué elementos candidatos restaurar y en qué orden |
 | `RestoreWorkload` | Streaming del cliente | Envía al agente los elementos planificados; el agente verifica el SHA-256 de cada uno y lo pasa al plugin |
 | `InstallPlugin` | Streaming del cliente | Envía un paquete de plugin al agente, que lo verifica y lo instala con su propia configuración de confianza |

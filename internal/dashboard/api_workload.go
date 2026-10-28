@@ -4,35 +4,60 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
+	"log/slog"
 	"net/http"
+	"strings"
 	"time"
 
+	"google.golang.org/grpc/status"
+
 	pb "github.com/hooperits/hitstor/internal/proto/hitstor/v1"
+	"github.com/hooperits/hitstor/internal/server"
 )
 
-// handleAPIWorkloadBrowse handles GET /api/agents/{name}/plugins/{plugin}/browse?path=.
-func (d *Dashboard) handleAPIWorkloadBrowse(w http.ResponseWriter, r *http.Request) {
+// workloadAgent resolves the agent and plugin named in the request path and
+// dials the agent. On failure it writes the response and returns nil.
+func (d *Dashboard) workloadAgent(w http.ResponseWriter, r *http.Request) (client *server.AgentClient, token string) {
 	name, pluginID := r.PathValue("name"), r.PathValue("plugin")
 	agentRec := d.registry.GetAgent(name)
 	if agentRec == nil {
 		http.Error(w, "agent not found", http.StatusNotFound)
-		return
+		return nil, ""
 	}
 	if !agentHasPlugin(agentRec, pluginID) {
 		http.Error(w, fmt.Sprintf("agent %q has not reported plugin %q", name, pluginID), http.StatusBadRequest)
-		return
+		return nil, ""
 	}
 	token, err := d.registry.DecryptToken(name)
 	if err != nil {
 		http.Error(w, "agent token unavailable", http.StatusInternalServerError)
-		return
+		return nil, ""
 	}
-	client, err := d.dialManagedAgent(name, agentRec.AgentAddr)
+	client, err = d.dialManagedAgent(name, agentRec.AgentAddr)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("dial agent: %v", err), http.StatusBadGateway)
+		return nil, ""
+	}
+	return client, token
+}
+
+// agentErrorMessage drops the gRPC framing from an agent error.
+func agentErrorMessage(err error) string {
+	if s, ok := status.FromError(err); ok {
+		return strings.TrimPrefix(s.Message(), "agent: ")
+	}
+	return err.Error()
+}
+
+// handleAPIWorkloadBrowse handles GET /api/agents/{name}/plugins/{plugin}/browse?path=.
+func (d *Dashboard) handleAPIWorkloadBrowse(w http.ResponseWriter, r *http.Request) {
+	client, token := d.workloadAgent(w, r)
+	if client == nil {
 		return
 	}
 	defer client.Close()
+	name, pluginID := r.PathValue("name"), r.PathValue("plugin")
 
 	ctx, cancel := context.WithTimeout(r.Context(), 60*time.Second)
 	defer cancel()
@@ -40,21 +65,102 @@ func (d *Dashboard) handleAPIWorkloadBrowse(w http.ResponseWriter, r *http.Reque
 		Token: token, Plugin: pluginID, Settings: d.workloadSettings(name, pluginID), Path: r.URL.Query().Get("path"),
 	})
 	if err != nil {
-		http.Error(w, fmt.Sprintf("browse: %v", err), http.StatusBadGateway)
+		http.Error(w, agentErrorMessage(err), http.StatusBadGateway)
 		return
 	}
 	type entry struct {
-		Path        string `json:"path"`
-		Name        string `json:"name"`
-		Kind        string `json:"kind,omitempty"`
-		Selectable  bool   `json:"selectable"`
-		HasChildren bool   `json:"has_children"`
+		Path         string `json:"path"`
+		Name         string `json:"name"`
+		Kind         string `json:"kind,omitempty"`
+		Selectable   bool   `json:"selectable"`
+		HasChildren  bool   `json:"has_children"`
+		Detail       string `json:"detail,omitempty"`
+		Status       string `json:"status,omitempty"`
+		Configurable bool   `json:"configurable,omitempty"`
+		Configured   bool   `json:"configured,omitempty"`
 	}
 	out := make([]entry, 0, len(resp.Entries))
 	for _, e := range resp.Entries {
-		out = append(out, entry{e.Path, e.Name, e.Kind, e.Selectable, e.HasChildren})
+		out = append(out, entry{e.Path, e.Name, e.Kind, e.Selectable, e.HasChildren, e.Detail, e.Status, e.Configurable, e.Configured})
 	}
 	writeJSON(w, out)
+}
+
+type objectConfigJSON struct {
+	Configured bool              `json:"configured"`
+	Values     map[string]string `json:"values"`
+	SecretsSet []string          `json:"secrets_set"`
+}
+
+// handleAPIGetObjectConfig handles
+// GET /api/agents/{name}/plugins/{plugin}/object-config?path=: the
+// settings saved on the agent for one object, without secrets.
+func (d *Dashboard) handleAPIGetObjectConfig(w http.ResponseWriter, r *http.Request) {
+	client, token := d.workloadAgent(w, r)
+	if client == nil {
+		return
+	}
+	defer client.Close()
+	ctx, cancel := context.WithTimeout(r.Context(), 30*time.Second)
+	defer cancel()
+	resp, err := client.GetWorkloadObjectConfig(ctx, &pb.GetWorkloadObjectConfigRequest{
+		Token: token, Plugin: r.PathValue("plugin"), Path: r.URL.Query().Get("path"),
+	})
+	if err != nil {
+		http.Error(w, agentErrorMessage(err), http.StatusBadGateway)
+		return
+	}
+	out := objectConfigJSON{Configured: resp.Configured, Values: resp.Values, SecretsSet: resp.SecretsSet}
+	if out.Values == nil {
+		out.Values = map[string]string{}
+	}
+	if out.SecretsSet == nil {
+		out.SecretsSet = []string{}
+	}
+	writeJSON(w, out)
+}
+
+type setObjectConfigRequest struct {
+	Path   string            `json:"path"`
+	Values map[string]string `json:"values"`
+	Remove bool              `json:"remove"`
+}
+
+// handleAPISetObjectConfig handles
+// PUT /api/agents/{name}/plugins/{plugin}/object-config: the agent tests
+// the settings and saves them, secrets encrypted. The server keeps nothing.
+func (d *Dashboard) handleAPISetObjectConfig(w http.ResponseWriter, r *http.Request) {
+	var req setObjectConfigRequest
+	if err := json.NewDecoder(io.LimitReader(r.Body, 64<<10)).Decode(&req); err != nil {
+		http.Error(w, "invalid JSON", http.StatusBadRequest)
+		return
+	}
+	if req.Path == "" {
+		http.Error(w, "path is required", http.StatusBadRequest)
+		return
+	}
+	client, token := d.workloadAgent(w, r)
+	if client == nil {
+		return
+	}
+	defer client.Close()
+	name, pluginID := r.PathValue("name"), r.PathValue("plugin")
+	ctx, cancel := context.WithTimeout(r.Context(), 90*time.Second)
+	defer cancel()
+	resp, err := client.SetWorkloadObjectConfig(ctx, &pb.SetWorkloadObjectConfigRequest{
+		Token: token, Plugin: pluginID, Path: req.Path, Values: req.Values, Remove: req.Remove,
+		Settings: d.workloadSettings(name, pluginID),
+	})
+	if err != nil {
+		http.Error(w, agentErrorMessage(err), http.StatusBadRequest)
+		return
+	}
+	action := "plugin object settings saved"
+	if req.Remove {
+		action = "plugin object settings removed"
+	}
+	slog.Info(action, "agent", name, "plugin", pluginID, "object", req.Path)
+	writeJSON(w, map[string]string{"message": resp.Message})
 }
 
 // handleAPIWorkloadPoints handles GET /api/workload/points?agent=&plugin=&object=:

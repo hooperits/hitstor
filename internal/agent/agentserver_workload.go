@@ -63,8 +63,10 @@ func (s *AgentServer) BrowseWorkload(ctx context.Context, req *pb.BrowseWorkload
 	}
 	resp := &pb.BrowseWorkloadResponse{}
 	for _, e := range entries {
-		resp.Entries = append(resp.Entries, &pb.WorkloadObject{Path: e.Path, Name: e.Name, Kind: e.Kind, Selectable: e.Selectable, HasChildren: e.HasChildren})
+		resp.Entries = append(resp.Entries, &pb.WorkloadObject{Path: e.Path, Name: e.Name, Kind: e.Kind, Selectable: e.Selectable, HasChildren: e.HasChildren,
+			Detail: e.Detail, Status: e.Status})
 	}
+	s.markConfigurable(req.Plugin, resp.Entries)
 	return resp, nil
 }
 

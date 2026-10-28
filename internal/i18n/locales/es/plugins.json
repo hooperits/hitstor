@@ -50,5 +50,21 @@
   "log": "log",
   "planning": "planificando",
   "degraded": "degradado",
-  "unregistered": "no registrado"
+  "unregistered": "no registrado",
+  "Agent account": "Cuenta del agente",
+  "Checking a container, such as an instance, backs up everything in it, including objects added later.": "Al marcar un contenedor, como una instancia, se respalda todo su contenido, incluidos los objetos que se agreguen después.",
+  "Configure credentials": "Configurar credenciales",
+  "Configure {name}": "Configurar {name}",
+  "Connection OK, settings saved.": "Conexión correcta, configuración guardada.",
+  "Credentials saved": "Credenciales guardadas",
+  "Filter...": "Filtrar...",
+  "integrated": "integrada",
+  "Remove the saved credentials of {name}? The agent account will be used.": "¿Quitar las credenciales guardadas de {name}? Se usará la cuenta del agente.",
+  "Saved — leave empty to keep it": "Guardada — déjela vacía para conservarla",
+  "sql": "inicio de sesión SQL",
+  "Test and save": "Probar y guardar",
+  "Testing connection...": "Probando la conexión...",
+  "These settings stay on agent {agent}, encrypted. Jobs and the server never hold them.": "Esta configuración se guarda cifrada en el agente {agent}. Ni las tareas ni el servidor la almacenan.",
+  "Use the agent account": "Usar la cuenta del agente",
+  "windows": "cuenta de Windows"
 }

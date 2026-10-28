@@ -6046,11 +6046,38 @@ body.dr-drawer-open {
 }
 
 /* Workload plugins (plugins.js) */
-.plugin-tree { list-style: none; margin: 0; padding-left: 1.1rem; }
-.plugin-tree-box { max-height: 240px; overflow: auto; border: 1px solid var(--border); border-radius: 6px; padding: 0.5rem; }
-.plugin-tree-box > .plugin-tree { padding-left: 0; }
-.plugin-tree li { padding: 0.15rem 0; }
-.plugin-tree-toggle { width: 1.4rem; height: 1.4rem; line-height: 1; padding: 0; border: 1px solid var(--border); border-radius: 4px; background: transparent; color: inherit; cursor: pointer; }
+.plugin-tree-box { max-height: 360px; overflow: auto; border: 1px solid var(--border); border-radius: 6px; padding: 0.35rem; background: var(--surface-alt, transparent); }
+.ptree-children { margin-left: 0.85rem; padding-left: 0.6rem; border-left: 1px dashed var(--border); }
+.ptree-row { display: flex; align-items: center; gap: 0.4rem; min-height: 2rem; padding: 0.15rem 0.35rem; border-radius: 4px; flex-wrap: wrap; }
+.ptree-row:hover { background: var(--primary-soft, rgba(127, 127, 127, 0.08)); }
+.ptree-row:has(> .ptree-check:checked) { background: var(--primary-soft, rgba(127, 127, 127, 0.12)); }
+.ptree-toggle, .ptree-toggle-spacer { flex: none; width: 1.25rem; height: 1.25rem; }
+.ptree-toggle { display: inline-flex; align-items: center; justify-content: center; padding: 0; border: 0; border-radius: 4px; background: transparent; color: var(--text-muted); cursor: pointer; }
+.ptree-toggle svg { width: 0.95rem; height: 0.95rem; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; transition: transform 0.15s; }
+.ptree-open > .ptree-row > .ptree-toggle svg { transform: rotate(90deg); }
+.ptree-check, .ptree-check-spacer { flex: none; width: 1rem; height: 1rem; margin: 0; }
+.ptree-icon { flex: none; display: inline-flex; color: var(--primary); }
+.ptree-icon svg { width: 1.1rem; height: 1.1rem; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.ptree-icon-system_database { color: var(--text-muted); }
+.ptree-name { margin: 0; font-weight: 500; cursor: pointer; overflow-wrap: anywhere; }
+.ptree-row:has(> .ptree-icon-instance) .ptree-name { font-weight: 600; }
+.ptree-detail { color: var(--text-muted); font-size: 0.85em; font-family: var(--mono, monospace); flex: 1 1 auto; min-width: 0; }
+.ptree-tag { font-size: 0.72em; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-muted); border: 1px solid var(--border); border-radius: 3px; padding: 0 0.3rem; }
+.ptree-config-state { font-size: 0.75em; }
+.ptree-configure { display: inline-flex; align-items: center; gap: 0.3rem; padding: 0.15rem 0.5rem; }
+.ptree-configure svg { width: 0.9rem; height: 0.9rem; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.ptree-included .ptree-name, .ptree-unavailable .ptree-name { color: var(--text-muted); }
+.ptree-included .ptree-name::after { content: " ✓"; color: var(--ok, #2e7d32); }
+.ptree-msg { padding: 0.3rem 0.4rem; }
+.ptree-fix { margin: 0 0 0.4rem 0.4rem; }
+.ptree-filter { width: calc(100% - 0.8rem); margin: 0.25rem 0.4rem; padding: 0.3rem 0.5rem; }
+.ptree-summary { min-height: 1.2em; margin-top: 0.3rem; }
+.dialog-overlay.dialog-stacked { z-index: 110; }
+.plugin-ok { color: var(--ok, #2e7d32); margin: 0.5rem 0; }
+.plugin-object-form .form-group[hidden] { display: none; }
+@media (max-width: 600px) {
+    .ptree-detail { flex-basis: 100%; padding-left: 3.6rem; }
+}
 .plugin-fieldset { border: 1px solid var(--border); border-radius: 6px; padding: 0.5rem 0.75rem; margin: 0 0 1rem; }
 .plugin-fieldset:has(> div:empty) { display: none; }
 .plugin-field-check { display: flex; gap: 0.5rem; align-items: center; font-weight: normal; }

@@ -381,7 +381,7 @@ capability.
 | RPC | Go interface | Purpose |
 |-----|--------------|---------|
 | `GetMetadata` | `plugin.Workload` | Return id, name, version, protocol version, description, and capabilities. The agent calls it at install time and rejects the package if the id or version differ from the manifest |
-| `Configure` | `plugin.Configurable` | Receive the job's plugin settings |
+| `Configure` | `plugin.Configurable`, `plugin.ObjectConfigurable` | Receive the job's settings and the object settings saved on the agent |
 | `Browse` | `plugin.WorkloadBrowser` | List selectable objects under a path (for example instance → databases) |
 | `Backup` | `plugin.WorkloadBackuper` | Back up the selected objects, streaming one or more items |
 | `PlanRestore` | `plugin.WorkloadRestorer` | Choose which items, in what order, restore an object to a point in time |
@@ -418,9 +418,37 @@ SHA-256, kind, and creation time. Items go through the same chunking,
 deduplication, compression, and encryption as files, and can always be
 restored as plain files.
 
-Settings arrive through `Configure` and are stored in the job on the server.
-**Never put secrets in settings**: read them from environment variables, which
-the plugin inherits from the agent service (`agent.env`).
+### Forms and object settings
+
+A plugin declares its forms as `FieldSpec`s in `GetMetadata`; the dashboard
+knows nothing else about it. Each field has a scope:
+
+| Scope | Set in | Reaches the plugin as |
+|-------|--------|-----------------------|
+| `settings` | The job (stored on the server) | `Configure(settings)` |
+| `object` | An object of the selection tree, such as a database instance (stored on the agent) | `ConfigureObjects(objects)`, keyed by object path |
+| `backup` | The job | `BackupRequest.Options` |
+| `restore` | The restore | `RestoreRequest.Options` |
+
+Field types are `string`, `bool`, `number`, `choice`, and `password`. Other
+attributes:
+
+- `object_kinds`: for scope `object`, the browse kinds that take the field.
+  Those objects get a **Configure** action in the dashboard's tree.
+- `show_if`: show the field only when another field has one of some values,
+  as `key=value1|value2`.
+
+**Secrets go in `password` fields of scope `object`**, never in job settings.
+The agent tests new object settings by browsing the object with them, saves
+them only if that works, keeps them encrypted at rest (DPAPI on Windows), and
+never returns `password` values to the dashboard. They reach the plugin
+through `ConfigureObjects` each time it is launched.
+
+`Browse` entries can carry a `Detail` (a short line of facts, such as
+`FULL · 1.3 GiB`) and a `Status` (set when the object needs attention, such
+as `OFFLINE`). A selectable container is a valid selection: the plugin
+decides what it stands for at backup time (for example every database of an
+instance, including new ones).
 
 ### Restore
 

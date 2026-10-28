@@ -11,7 +11,7 @@ cifra como cualquier otra instantánea (snapshot).
 | Tipos de respaldo | Completo (opcionalmente `COPY_ONLY`), diferencial y log de transacciones |
 | Restauración | Al punto más reciente o a un punto en el tiempo; con el nombre original o con otro |
 | Plataformas | Windows (VDI solo existe en Windows); SQL Server 2016 o posterior |
-| Autenticación | Integrada de Windows (predeterminada) o un inicio de sesión SQL |
+| Autenticación | Por instancia: la cuenta del agente (predeterminada), una cuenta de Windows o un inicio de sesión SQL |
 
 ## Requisitos { #requirements }
 
@@ -45,43 +45,62 @@ SQL Server para él.
 
 ## Autenticación { #authentication }
 
-El servicio del agente se ejecuta como `LocalSystem`, que SQL Server ve como
-el inicio de sesión `NT AUTHORITY\SYSTEM`. Elija una opción:
+Como otras herramientas de respaldo empresariales, HitStor guarda las
+credenciales de cada instancia de SQL Server **en el agente**, no en las
+tareas: una tarea solo indica qué respaldar. La configuración se prueba antes
+de guardarse, se almacena cifrada (DPAPI) en el almacén de plugins del agente,
+y la contraseña nunca se vuelve a mostrar ni se envía al servidor.
 
-- **Integrada (predeterminada).** Agregue `NT AUTHORITY\SYSTEM` a `sysadmin`, o
-  ejecute el servicio del agente con una cuenta de Windows dedicada que lo
-  sea.
-- **Inicio de sesión SQL (recomendado).** Cree un inicio de sesión `sysadmin`
-  dedicado para HitStor y configure
-  el plugin con `auth=sql` y `username=<inicio de sesión>`. Ponga la
-  contraseña en el archivo de entorno del agente
-  (`C:\ProgramData\HitStor\agent.env`):
+En el dashboard, abra el árbol de objetos (en **Nueva tarea de respaldo →
+Aplicación (plugin)** o en una restauración con plugin) y elija **Configurar**
+junto a la instancia:
 
-  ```
-  HITSTOR_MSSQL_PASSWORD=<contraseña>
-  ```
+| Campo | Descripción |
+|-------|-------------|
+| **Autenticación** | `integrated`: la cuenta del servicio del agente (`LocalSystem`, que SQL Server ve como `NT AUTHORITY\SYSTEM`). `windows`: una cuenta de Windows. `sql`: un inicio de sesión de SQL Server |
+| **Usuario** | El inicio de sesión SQL, o `DOMINIO\usuario` para una cuenta de Windows (`.\usuario` si es local) |
+| **Contraseña** | Se guarda cifrada en el agente; déjela vacía para conservar la guardada |
 
-  El nombre de la variable se puede cambiar con `password_env`. Nunca se
-  aceptan contraseñas en la configuración de las tareas. Asegúrese de que
-  `agent.env` solo lo puedan leer SYSTEM y Administradores.
+La cuenta debe tener el rol **`sysadmin`** (vea [Requisitos](#requirements)).
+**Probar y guardar** se conecta a la instancia y lista sus bases; la
+configuración solo se guarda si eso funciona. **Usar la cuenta del agente** la
+quita. Una instancia sin configuración guardada usa la cuenta del agente, así
+que agregue `NT AUTHORITY\SYSTEM` a `sysadmin` o configure la instancia.
 
-Configuración del plugin:
+En el servidor, lo mismo con la CLI del agente (la contraseña se lee de la
+entrada estándar):
+
+```powershell
+hitstor-agent plugin configure mssql MSSQLSERVER --set auth=sql --set username=hitstor_backup --secret password
+```
+
+Otras opciones del plugin, para la línea de comandos (`--setting`) y las tareas
+creadas antes de que existiera la configuración por instancia:
 
 | Clave | Predeterminado | Descripción |
 |-------|----------------|-------------|
-| `instance` | `MSSQLSERVER` | Nombre de la instancia (`MSSQLSERVER` es la instancia predeterminada) |
+| `instance` | `MSSQLSERVER` | Instancia que se lista cuando no se encuentra ninguna en el registro |
 | `server` | `localhost` | Equipo al que se conecta |
-| `auth` | `integrated` | `integrated` o `sql` |
-| `username` | | Inicio de sesión SQL, con `auth=sql` |
-| `password_env` | `HITSTOR_MSSQL_PASSWORD` | Variable de entorno que contiene la contraseña |
+| `auth`, `username` | `integrated` | Credenciales para las instancias sin configuración guardada |
+| `password_env` | `HITSTOR_MSSQL_PASSWORD` | Variable de entorno (en `agent.env`) con la contraseña para esas instancias |
 | `encrypt` | `true` | Cifrado de la conexión |
 | `trust_server_certificate` | `true` | Confía en el certificado de la instancia (la conexión es local) |
 
 ## Respaldar { #back-up }
 
+El árbol de objetos lista las instancias de SQL Server instaladas en el
+equipo (según el registro), con su versión del producto, edición y número de
+versión. Al expandir una instancia se listan sus bases con su modelo de
+recuperación y tamaño; las bases de sistema van al final, y las bases que no
+están en línea se muestran pero no se pueden seleccionar.
+
 Los objetos se escriben `<instancia>/<base de datos>`, por ejemplo
-`MSSQLSERVER/Sales`. Una tarea respalda una o más bases con un tipo de
-respaldo; programe tareas separadas por tipo. Un plan habitual:
+`MSSQLSERVER/Sales`, o solo `<instancia>` para respaldar **la instancia
+completa**: todas las bases en línea en cada ejecución, incluidas las que se
+creen después de la tarea. Los respaldos diferenciales de una instancia
+completa omiten `master`, y los de log omiten las bases en el modelo de
+recuperación SIMPLE. Una tarea respalda sus bases con un tipo de respaldo;
+programe tareas separadas por tipo. Un plan habitual:
 
 | Tarea | Tipo | Programación |
 |-------|------|--------------|
@@ -90,9 +109,9 @@ respaldo; programe tareas separadas por tipo. Un plan habitual:
 | Log | `log` | Cada 15 minutos |
 
 En el dashboard, elija **Nueva tarea de respaldo → Aplicación (plugin)**,
-seleccione el agente y el plugin `mssql`, marque las bases en el árbol de
-objetos y defina el tipo de respaldo, la configuración de conexión, las
-opciones y la programación cron.
+seleccione el agente y el plugin `mssql`, marque la instancia o bases individuales en el
+árbol de objetos y defina el tipo de respaldo, las opciones y la programación
+cron.
 
 La misma tarea con la API del dashboard:
 

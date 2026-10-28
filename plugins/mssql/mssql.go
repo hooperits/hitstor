@@ -240,7 +240,8 @@ type backupTarget struct {
 // resolveSelection expands instances into their databases and drops
 // duplicates. An instance stands for every online database that supports
 // the backup kind: differentials skip master, and log backups skip
-// databases in the SIMPLE recovery model. Databases selected one by one are
+// databases in the SIMPLE recovery model or whose log chain no full backup
+// has started yet. Databases selected one by one are
 // kept as they are, so an unsupported kind fails loudly.
 func (p *mssqlPlugin) resolveSelection(ctx context.Context, selection []string, kind string) ([]backupTarget, error) {
 	var out []backupTarget
@@ -279,6 +280,8 @@ func (p *mssqlPlugin) resolveSelection(ctx context.Context, selection []string, 
 				skip = "master takes only full backups"
 			case kind == "log" && d.RecoveryModel == "SIMPLE":
 				skip = "SIMPLE recovery model has no log backups"
+			case kind == "log" && !d.LogChain:
+				skip = "no full backup has started its log chain yet"
 			}
 			if skip != "" {
 				slog.Info("database skipped", "instance", instance, "database", d.Name, "kind", kind, "reason", skip)

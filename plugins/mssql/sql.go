@@ -183,6 +183,9 @@ type dbInfo struct {
 	RecoveryModel string
 	State         string
 	Size          int64 // bytes of all files; 0 when unknown
+	// LogChain is set when a full backup has started a log chain, so a
+	// log backup can be taken.
+	LogChain bool
 }
 
 // systemDatabases are backed up like the others but listed last.
@@ -191,8 +194,10 @@ var systemDatabases = map[string]bool{"master": true, "model": true, "msdb": tru
 func listDatabases(ctx context.Context, db *sql.DB) ([]dbInfo, error) {
 	rows, err := db.QueryContext(ctx, `
 SELECT d.name, d.recovery_model_desc, d.state_desc,
-       (SELECT SUM(CAST(f.size AS bigint)) * 8192 FROM sys.master_files f WHERE f.database_id = d.database_id)
+       (SELECT SUM(CAST(f.size AS bigint)) * 8192 FROM sys.master_files f WHERE f.database_id = d.database_id),
+       CAST(CASE WHEN r.last_log_backup_lsn IS NULL THEN 0 ELSE 1 END AS bit)
 FROM sys.databases d
+LEFT JOIN sys.database_recovery_status r ON r.database_id = d.database_id
 WHERE d.name <> 'tempdb'
 ORDER BY d.name`)
 	if err != nil {
@@ -203,7 +208,7 @@ ORDER BY d.name`)
 	for rows.Next() {
 		var d dbInfo
 		var size sql.NullInt64
-		if err := rows.Scan(&d.Name, &d.RecoveryModel, &d.State, &size); err != nil {
+		if err := rows.Scan(&d.Name, &d.RecoveryModel, &d.State, &size, &d.LogChain); err != nil {
 			return nil, err
 		}
 		d.Size = size.Int64

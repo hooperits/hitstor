@@ -99,7 +99,8 @@ Los objetos se escriben `<instancia>/<base de datos>`, por ejemplo
 completa**: todas las bases en línea en cada ejecución, incluidas las que se
 creen después de la tarea. Los respaldos diferenciales de una instancia
 completa omiten `master`, y los de log omiten las bases en el modelo de
-recuperación SIMPLE. Una tarea respalda sus bases con un tipo de respaldo;
+recuperación SIMPLE y las que aún no tienen un respaldo completo (que inicia
+su cadena de log). Una tarea respalda sus bases con un tipo de respaldo;
 programe tareas separadas por tipo. Un plan habitual:
 
 | Tarea | Tipo | Programación |

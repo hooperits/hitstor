@@ -94,7 +94,8 @@ Objects are written `<instance>/<database>`, for example
 `MSSQLSERVER/Sales`, or just `<instance>` to back up **the whole instance**:
 every online database at each run, including databases created after the job.
 Differential backups of a whole instance skip `master`, and log backups skip
-databases in the SIMPLE recovery model. A job backs up its databases with one
+databases in the SIMPLE recovery model and those without a full backup yet
+(which starts their log chain). A job backs up its databases with one
 backup kind; schedule separate jobs per kind. A common plan:
 
 | Job | Kind | Schedule |

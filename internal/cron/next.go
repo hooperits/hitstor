@@ -93,12 +93,16 @@ func (e Expression) Next(from time.Time) time.Time {
 func (e Expression) dayMatches(t time.Time) bool {
 	day := t.Day()
 	dow := int(t.Weekday()) // 0=Sunday
+	lastDay := time.Date(t.Year(), t.Month()+1, 0, 0, 0, 0, 0, t.Location()).Day()
 
-	domRestricted := !allBitsSet(e.Dom, 1, 31)
-	dowRestricted := !allBitsSet(e.Dow, 0, 6)
+	domRestricted := !allBitsSet(e.Dom, 1, 31) || e.LastDom
+	dowRestricted := !allBitsSet(e.Dow, 0, 6) || e.hasNthDow()
 
-	domMatch := e.Dom&(1<<uint(day)) != 0
-	dowMatch := e.Dow&(1<<uint(dow)) != 0
+	domMatch := e.Dom&(1<<uint(day)) != 0 || (e.LastDom && day == lastDay)
+	week := (day - 1) / 7 // 0 for days 1-7
+	nth := e.NthDow[dow]
+	dowMatch := e.Dow&(1<<uint(dow)) != 0 || nth&(1<<uint(week)) != 0 ||
+		(nth&(1<<lastWeekBit) != 0 && day+7 > lastDay)
 
 	if domRestricted && dowRestricted {
 		return domMatch || dowMatch
@@ -110,6 +114,15 @@ func (e Expression) dayMatches(t time.Time) bool {
 		return dowMatch
 	}
 	return true
+}
+
+func (e Expression) hasNthDow() bool {
+	for _, n := range e.NthDow {
+		if n != 0 {
+			return true
+		}
+	}
+	return false
 }
 
 // nextSetBit finds the next set bit > current in the bitset within [lo, hi].

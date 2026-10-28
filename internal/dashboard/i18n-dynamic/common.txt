@@ -13,7 +13,36 @@ Nov
 Dec
 # Sentences built by cron.Expression.DescribeWith.
 Every minute
-Every {n} minutes
-Day {day} of every month at {time}
-Every weekday at {time}
-Every day at {time}
+{days}, {times}
+{days} {times}
+Every day
+Every weekday
+Every {days}
+{from} to {to}
+Day {day} of every month
+Days {days} of every month
+Days {days} and the last day of every month
+The last day of every month
+The {nth} {days} of every month
+at {time}
+at {times}
+every {n} minutes
+every {n} minutes from {from} to {to}
+every hour at minute {m}
+every hour from {from} to {to}
+every {n} hours starting at {time}
+every {n} hours from {from} to {to}
+{a} and {b}
+Sunday
+Monday
+Tuesday
+Wednesday
+Thursday
+Friday
+Saturday
+first
+second
+third
+fourth
+fifth
+last

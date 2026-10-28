@@ -557,8 +557,7 @@
             '<fieldset class="plugin-fieldset"><legend>' + esc(t('Connection settings')) + '</legend><div class="plugin-settings"></div></fieldset>' +
             '<fieldset class="plugin-fieldset"><legend>' + esc(t('Backup options')) + '</legend><div class="plugin-backup-opts"></div></fieldset>' +
             '<div class="form-group"><label>' + esc(t('Repository')) + '</label><select name="repo" required></select></div>' +
-            '<div class="form-group"><label>' + esc(t('Schedule (cron expression)')) + '</label><input type="text" name="cron" placeholder="0 2 * * *">' +
-            '<p class="form-hint">' + esc(t('Leave empty to run only on demand.')) + '</p></div>' +
+            '<fieldset class="plugin-fieldset plugin-schedule-set"><legend>' + esc(t('Schedule')) + '</legend><div class="plugin-schedule"></div></fieldset>' +
             '<div class="plugin-error" style="display:none"></div>' +
             '<div class="dialog-actions"><button type="submit" class="btn">' + esc(t('Create Job')) + '</button></div></form>');
         var form = d.q('form');
@@ -566,6 +565,17 @@
         var agents = [];
         var current = null;
         var selected = function () { return []; };
+
+        // A usual plan per backup kind until the operator changes the
+        // schedule: weekly fulls, daily differentials, logs every 15 minutes.
+        var KIND_SCHEDULES = { full: '0 1 * * 0', differential: '0 1 * * 1,2,3,4,5,6', log: '*/15 * * * *' };
+        var scheduleBox = d.q('.plugin-schedule');
+        var scheduleTouched = false;
+        var schedule = HitStorSchedule.mount(scheduleBox, { defaultCron: KIND_SCHEDULES.full });
+        scheduleBox.addEventListener('change', function () { scheduleTouched = true; });
+        form.elements.kind.addEventListener('change', function () {
+            if (!scheduleTouched) schedule = HitStorSchedule.mount(scheduleBox, { defaultCron: KIND_SCHEDULES[form.elements.kind.value] || KIND_SCHEDULES.full });
+        });
 
         function pluginChanged() {
             var a = agents.filter(function (x) { return x.name === form.elements.agent.value; })[0];
@@ -604,14 +614,19 @@
                 showError(errEl, new Error(t('Select at least one object.')));
                 return;
             }
-            var cron = form.elements.cron.value.trim();
+            var when;
+            try {
+                when = schedule.value();
+            } catch (err) {
+                showError(errEl, err);
+                return;
+            }
             var body = {
                 name: form.elements.name.value.trim(), agent_name: form.elements.agent.value, repo_name: form.elements.repo.value,
                 job_type: 'workload', plugin: current.id, selection: sel, backup_kind: form.elements.kind.value,
                 plugin_settings: collectFields(d.q('.plugin-settings'), fieldsFor(current.fields, 'settings')),
                 backup_options: collectFields(d.q('.plugin-backup-opts'), fieldsFor(current.fields, 'backup')),
-                schedule_enabled: cron !== '', cron_expression: cron,
-                timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || ''
+                schedule_enabled: when.schedule_enabled, cron_expression: when.cron_expression, timezone: when.timezone
             };
             api('POST', '/api/backups', body).then(function () {
                 d.close();

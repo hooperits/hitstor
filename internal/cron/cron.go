@@ -1,7 +1,9 @@
 // Package cron provides a pure Go 5-field cron expression parser.
 // Supported syntax: minute hour day-of-month month day-of-week.
 // Each field supports wildcards (*), lists (1,3,5), ranges (1-5),
-// and steps (*/15, 1-5/2).
+// and steps (*/15, 1-5/2). As in Quartz, day-of-month also takes L (the
+// last day of the month), and day-of-week takes D#N (the Nth weekday D of
+// the month, N 1-5) and DL (the last weekday D of the month).
 package cron
 
 import (
@@ -17,8 +19,16 @@ type Expression struct {
 	Dom    uint64 // Bits 1-31.
 	Month  uint64 // Bits 1-12.
 	Dow    uint64 // Bits 0-6 (0=Sunday).
+	// LastDom is set by L in day-of-month: the last day of the month.
+	LastDom bool
+	// NthDow holds, per weekday (0=Sunday), the weeks of the month set by
+	// D#N (bit N-1) and DL (bit lastWeekBit).
+	NthDow [7]uint8
 	Raw    string
 }
+
+// lastWeekBit marks "the last such weekday of the month" in NthDow.
+const lastWeekBit = 5
 
 // fieldDef describes one cron field.
 type fieldDef struct {
@@ -47,8 +57,22 @@ func Parse(expr string) (Expression, error) {
 		return Expression{}, fmt.Errorf("cron: expected 5 fields, got %d", len(parts))
 	}
 
+	var e Expression
 	var bitsets [5]uint64
 	for i, part := range parts {
+		var special bool
+		switch i {
+		case 2:
+			part, special = e.takeLastDom(part)
+		case 4:
+			var err error
+			if part, special, err = e.takeNthDow(part); err != nil {
+				return Expression{}, err
+			}
+		}
+		if part == "" && special {
+			continue // only L, D#N, or DL items
+		}
 		bs, err := parseField(part, fields[i])
 		if err != nil {
 			return Expression{}, err
@@ -56,14 +80,53 @@ func Parse(expr string) (Expression, error) {
 		bitsets[i] = bs
 	}
 
-	return Expression{
-		Minute: bitsets[0],
-		Hour:   bitsets[1],
-		Dom:    bitsets[2],
-		Month:  bitsets[3],
-		Dow:    bitsets[4],
-		Raw:    expr,
-	}, nil
+	e.Minute, e.Hour, e.Dom, e.Month, e.Dow = bitsets[0], bitsets[1], bitsets[2], bitsets[3], bitsets[4]
+	e.Raw = expr
+	return e, nil
+}
+
+// takeLastDom removes L from a day-of-month field, recording it.
+func (e *Expression) takeLastDom(field string) (rest string, found bool) {
+	var kept []string
+	for _, item := range strings.Split(field, ",") {
+		if item == "L" {
+			e.LastDom = true
+			found = true
+			continue
+		}
+		kept = append(kept, item)
+	}
+	return strings.Join(kept, ","), found
+}
+
+// takeNthDow removes D#N and DL items from a day-of-week field, recording
+// them.
+func (e *Expression) takeNthDow(field string) (rest string, found bool, err error) {
+	var kept []string
+	for _, item := range strings.Split(field, ",") {
+		day, week, ok := strings.Cut(item, "#")
+		bit := -1
+		switch {
+		case ok:
+			n, err := strconv.Atoi(week)
+			if err != nil || n < 1 || n > 5 {
+				return "", false, fmt.Errorf("cron: day-of-week field: invalid week %q in %q (allowed 1-5)", week, item)
+			}
+			bit = n - 1
+		case len(item) > 1 && strings.HasSuffix(item, "L"):
+			day, bit = strings.TrimSuffix(item, "L"), lastWeekBit
+		default:
+			kept = append(kept, item)
+			continue
+		}
+		d, err := strconv.Atoi(day)
+		if err != nil || d < 0 || d > 6 {
+			return "", false, fmt.Errorf("cron: day-of-week field: invalid day %q in %q (allowed 0-6)", day, item)
+		}
+		e.NthDow[d] |= 1 << bit
+		found = true
+	}
+	return strings.Join(kept, ","), found, nil
 }
 
 // parseField parses a single cron field (e.g., "*/15", "1-5", "1,3,5").
@@ -132,66 +195,6 @@ func parseItem(s string, fd fieldDef) (uint64, error) {
 		bits |= 1 << uint(i)
 	}
 	return bits, nil
-}
-
-// Describe returns a human-readable English description of the cron expression.
-func (e Expression) Describe() string {
-	return e.DescribeWith(englishMessage, formatTime)
-}
-
-// englishMessage fills {name} placeholders without translating msg.
-func englishMessage(msg string, pairs ...any) string {
-	for i := 0; i+1 < len(pairs); i += 2 {
-		msg = strings.ReplaceAll(msg, "{"+fmt.Sprint(pairs[i])+"}", fmt.Sprint(pairs[i+1]))
-	}
-	return msg
-}
-
-// DescribeWith is Describe with the sentences translated by tr (English
-// messages with {placeholders}, e.g. "Every day at {time}") and times of day
-// formatted by clock.
-func (e Expression) DescribeWith(tr func(msg string, pairs ...any) string, clock func(hour, minute int) string) string {
-	// Every minute.
-	if e.allSet(e.Minute, 0, 59) && e.allSet(e.Hour, 0, 23) &&
-		e.allSet(e.Dom, 1, 31) && e.allSet(e.Month, 1, 12) && e.allSet(e.Dow, 0, 6) {
-		return tr("Every minute")
-	}
-
-	// Step pattern: */N in minute field, all other fields wildcard.
-	if e.allSet(e.Hour, 0, 23) && e.allSet(e.Dom, 1, 31) &&
-		e.allSet(e.Month, 1, 12) && e.allSet(e.Dow, 0, 6) {
-		if step := e.detectStep(e.Minute, 0, 59); step > 1 {
-			return tr("Every {n} minutes", "n", step)
-		}
-	}
-
-	// Specific time patterns.
-	minBit := e.singleBit(e.Minute, 0, 59)
-	hourBit := e.singleBit(e.Hour, 0, 23)
-
-	if minBit >= 0 && hourBit >= 0 {
-		timeStr := clock(hourBit, minBit)
-
-		// Specific day-of-month.
-		if !e.allSet(e.Dom, 1, 31) && e.allSet(e.Dow, 0, 6) && e.allSet(e.Month, 1, 12) {
-			domBit := e.singleBit(e.Dom, 1, 31)
-			if domBit >= 0 {
-				return tr("Day {day} of every month at {time}", "day", domBit, "time", timeStr)
-			}
-		}
-
-		// Weekday pattern (Mon-Fri).
-		if e.allSet(e.Dom, 1, 31) && e.allSet(e.Month, 1, 12) && e.Dow == weekdayBits() {
-			return tr("Every weekday at {time}", "time", timeStr)
-		}
-
-		// Every day.
-		if e.allSet(e.Dom, 1, 31) && e.allSet(e.Month, 1, 12) && e.allSet(e.Dow, 0, 6) {
-			return tr("Every day at {time}", "time", timeStr)
-		}
-	}
-
-	return e.Raw
 }
 
 // allSet checks if all bits from lo to hi are set.

@@ -257,4 +257,16 @@ func TestDateAndScheduleFormats(t *testing.T) {
 	if got := describeCron(es, expr); got != "Todos los días a las 02:30" {
 		t.Errorf("es describeCron = %q", got)
 	}
+	for raw, want := range map[string]string{
+		"0 2 * * 1,3,5":   "Cada lunes, miércoles y viernes a las 02:00",
+		"0 2 * * 0#1,0#3": "El primer y tercer domingo de cada mes a las 02:00",
+		"0 23 L * *":      "El último día de cada mes a las 23:00",
+		"*/15 8-18 * * *": "Cada 15 minutos de 08:00 a 18:45",
+		"*/30 * * * 1-5":  "De lunes a viernes, cada 30 minutos",
+	} {
+		e, _ := cron.Parse(raw)
+		if got := describeCron(es, e); got != want {
+			t.Errorf("es describeCron(%q) = %q, want %q", raw, got, want)
+		}
+	}
 }

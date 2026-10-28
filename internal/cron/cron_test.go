@@ -229,3 +229,75 @@ func TestDescribe(t *testing.T) {
 		})
 	}
 }
+
+func TestLastAndNthDays(t *testing.T) {
+	at := func(s string) time.Time {
+		v, err := time.Parse("2006-01-02 15:04", s)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return v
+	}
+	tests := []struct {
+		expr, from, want string
+	}{
+		// Last day of the month, across 30-, 31-day months and February.
+		{"0 23 L * *", "2026-04-10 00:00", "2026-04-30 23:00"},
+		{"0 23 L * *", "2026-04-30 23:00", "2026-05-31 23:00"},
+		{"0 23 L * *", "2028-02-01 00:00", "2028-02-29 23:00"},
+		{"0 1 15,L * *", "2026-04-16 00:00", "2026-04-30 01:00"},
+		// First Sunday (2026-11-01 is a Sunday), third Monday, last Friday.
+		{"0 2 * * 0#1", "2026-10-28 00:00", "2026-11-01 02:00"},
+		{"0 2 * * 1#3", "2026-11-01 00:00", "2026-11-16 02:00"},
+		{"0 2 * * 5L", "2026-10-01 00:00", "2026-10-30 02:00"},
+		{"0 2 * * 5L", "2026-10-30 02:00", "2026-11-27 02:00"},
+		{"30 4 * * 0#1,0#3", "2026-11-02 00:00", "2026-11-15 04:30"},
+		// The fifth Monday only exists in some months.
+		{"0 2 * * 1#5", "2026-10-01 00:00", "2026-11-30 02:00"},
+	}
+	for _, tt := range tests {
+		e, err := Parse(tt.expr)
+		if err != nil {
+			t.Fatalf("Parse(%q): %v", tt.expr, err)
+		}
+		if got := e.Next(at(tt.from)).Format("2006-01-02 15:04"); got != tt.want {
+			t.Errorf("Next(%q, %s) = %s, want %s", tt.expr, tt.from, got, tt.want)
+		}
+	}
+	for _, bad := range []string{"0 2 * * 1#6", "0 2 * * 7#1", "0 2 * * x#1", "0 2 * * 1#", "0 2 LL * *"} {
+		if _, err := Parse(bad); err == nil {
+			t.Errorf("Parse(%q) accepted", bad)
+		}
+	}
+}
+
+func TestDescribeSchedules(t *testing.T) {
+	tests := map[string]string{
+		"0 2 * * 1,3,5":   "Every Monday, Wednesday and Friday at 2:00 AM",
+		"0 2 * * 0":       "Every Sunday at 2:00 AM",
+		"0 23 L * *":      "The last day of every month at 11:00 PM",
+		"0 1 1,15 * *":    "Days 1 and 15 of every month at 1:00 AM",
+		"0 1 1,L * *":     "Days 1 and the last day of every month at 1:00 AM",
+		"0 2 * * 0#1":     "The first Sunday of every month at 2:00 AM",
+		"0 2 * * 0#1,0#3": "The first and third Sunday of every month at 2:00 AM",
+		"0 2 * * 5L":      "The last Friday of every month at 2:00 AM",
+		"*/15 8-18 * * *": "Every 15 minutes from 8:00 AM to 6:45 PM",
+		"*/30 * * * 1-5":  "Every weekday, every 30 minutes",
+		"0 */4 * * *":     "Every 4 hours starting at 12:00 AM",
+		"15 */6 * * *":    "Every 6 hours starting at 12:15 AM",
+		"0 * * * *":       "Every hour at minute 00",
+		"0 8-18/2 * * *":  "Every 2 hours from 8:00 AM to 6:00 PM",
+		"0 1,13 * * *":    "Every day at 1:00 AM and 1:00 PM",
+		"0 2 1 6 *":       "0 2 1 6 *",
+		"0 2 * * 0#1,1#2": "0 2 * * 0#1,1#2",
+	}
+	for expr, want := range tests {
+		e, err := Parse(expr)
+		if err != nil {
+			t.Fatalf("Parse(%q): %v", expr, err)
+		}
+		if got := e.Describe(); got != want {
+			t.Errorf("Describe(%q) = %q, want %q", expr, got, want)
+		}
+	}
+}

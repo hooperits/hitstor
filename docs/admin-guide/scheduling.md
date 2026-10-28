@@ -28,6 +28,26 @@ The simplest scheduling option. Set the number of hours between backups:
 - **Timezone**: Not applicable (relative to last backup time)
 - **Best for**: Simple setups where exact run times don't matter
 
+#### Plugin Jobs: Schedule Picker
+
+Plugin backup jobs (**New Backup Job → Application (plugin)**) set their
+schedule with a picker modeled on the schedule sets of enterprise backup
+tools, and store the result as a cron expression:
+
+| Option | Settings |
+|--------|----------|
+| **On demand only** | The job runs only with **Backup Now** |
+| **Repeating → Every day** | Start time |
+| **Repeating → Days of week** | Weekdays, and optionally weeks of the month (1st to 5th, Last); start time |
+| **Repeating → Days of month** | Days 1 to 31 and **Last day**; start time. Days a month does not have are skipped |
+| **Repeating → Every…** | Every 5 to 30 minutes, or every 1 to 12 hours at a given minute; optionally only between two hours and only Monday to Friday |
+
+Each schedule takes a time zone (the browser's by default). The picker shows
+the schedule in words and its next runs, and **Edit as cron expression**
+switches to the raw expression. Until you change the schedule, it follows the
+backup kind: fulls on Sundays at 1:00 AM, differentials Monday to Saturday at
+1:00 AM, and log backups every 15 minutes.
+
 #### Cron Expression Mode
 
 Standard 5-field cron syntax for precise, timezone-aware scheduling:
@@ -52,6 +72,9 @@ Standard 5-field cron syntax for precise, timezone-aware scheduling:
 | Range | `1-5` | 1 through 5 |
 | Step | `*/15` | Every 15 units |
 | Range with step | `0-30/10` | 0, 10, 20, 30 |
+| Last day of month | `L` (day of month) | The last day of each month |
+| Nth weekday | `0#1` (day of week) | The first Sunday of the month (`#1` to `#5`) |
+| Last weekday | `5L` (day of week) | The last Friday of the month |
 
 **Common examples**:
 
@@ -63,6 +86,8 @@ Standard 5-field cron syntax for precise, timezone-aware scheduling:
 | `0 */6 * * *` | Every 6 hours |
 | `0 22 1 * *` | 1st of each month at 10:00 PM |
 | `*/15 * * * *` | Every 15 minutes |
+| `0 23 L * *` | Last day of each month at 11:00 PM |
+| `0 2 * * 0#1` | First Sunday of each month at 2:00 AM |
 
 **Timezone handling**:
 

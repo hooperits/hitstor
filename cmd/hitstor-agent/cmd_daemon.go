@@ -440,6 +440,7 @@ func runWorkloadJob(ctx context.Context, client *agent.Client, job agent.JobSche
 			Kind:      job.BackupKind,
 			Options:   job.BackupOptions,
 		},
+		ServerRecordsResults: job.WorkloadResults,
 	}
 	result, err := b.Run(ctx)
 	if err != nil {

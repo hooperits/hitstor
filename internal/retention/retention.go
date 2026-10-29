@@ -192,16 +192,25 @@ func bucketYearly(t time.Time) string {
 // protectChains keeps the backups that kept workload backups depend on.
 //
 // Workload snapshots carry "plugin:<id>" and "kind:<kind>" tags, and newer
-// ones an "obj:<object>" tag per object they hold (a database, say). A kept
-// differential or log backup of an object restores only together with the
-// earlier backups of that object back to its base: a full that is not
-// copy-only ("copy-only" tag). So for each object of each kept snapshot that
-// is not such a full, the earlier snapshots of the same host and plugin
-// holding the object that its kind needs (see chainNeeds) are kept, back to
-// and including the object's base; without one, all of them. Snapshots without object tags may hold any
-// object of their group. Kept snapshots may hold other objects whose chains
-// must be kept in turn, so this runs until nothing changes. inScope is
-// sorted newest first.
+// ones an "obj:<object>" tag per object they hold (a database, say), or
+// "objects:none" when every object was left out. Snapshots without object
+// tags (older ones) may hold any object of their host and plugin.
+//
+// Two rules:
+//
+//   - A snapshot the policy keeps also keeps, for every object of its host
+//     and plugin, the newest snapshot holding that object at or before it:
+//     what restores the object as of that point. Without this, keeping only
+//     the newest log backups would forget the differentials of databases
+//     that take no log backups (SIMPLE recovery). Only the policy's own
+//     choices count, or every kept snapshot would keep an older one.
+//   - A kept differential or log backup of an object keeps the earlier
+//     backups of that object its kind needs (see chainNeeds), back to its
+//     base: a full that is not copy-only ("copy-only" tag). A kept full,
+//     copy-only or not, restores on its own. This rule runs until nothing
+//     changes, since kept backups may hold other objects.
+//
+// inScope is sorted newest first.
 func protectChains(inScope []SnapshotInfo, keep map[int]bool) {
 	groups := make(map[string][]int) // host|plugin -> indices, newest first
 	for i, s := range inScope {
@@ -210,25 +219,62 @@ func protectChains(inScope []SnapshotInfo, keep map[int]bool) {
 			groups[key] = append(groups[key], i)
 		}
 	}
+	mark := func(i int, changed *bool) {
+		if !keep[i] {
+			keep[i] = true
+			*changed = true
+		}
+	}
+	for _, idx := range groups {
+		var objects []string // tagged objects of the group
+		seen := map[string]bool{}
+		for _, i := range idx {
+			for _, o := range taggedObjects(inScope[i]) {
+				if !seen[o] {
+					seen[o] = true
+					objects = append(objects, o)
+				}
+			}
+		}
+		var heads []int // positions the policy kept
+		for pos, i := range idx {
+			if keep[i] {
+				heads = append(heads, pos)
+			}
+		}
+		var unused bool
+		for _, pos := range heads {
+			for _, obj := range objects {
+				for _, older := range idx[pos:] {
+					if hasTag(inScope[older].Tags, "obj:"+obj) {
+						mark(older, &unused)
+						break
+					}
+				}
+			}
+		}
+	}
 	for changed := true; changed; {
 		changed = false
 		for _, idx := range groups {
 			for pos, i := range idx {
-				if !keep[i] || isChainBase(inScope[i]) {
+				if !keep[i] {
 					continue
 				}
 				kind := tagValue(inScope[i].Tags, "kind:")
+				if kind == "full" {
+					continue
+				}
 				for _, obj := range objectsOf(inScope[i]) {
 					for _, older := range idx[pos+1:] {
 						o := inScope[older]
 						if !holdsObject(o, obj) || !chainNeeds(kind, o) {
 							continue
 						}
-						if !keep[older] {
-							keep[older] = true
-							changed = true
-						}
-						if isChainBase(o) {
+						mark(older, &changed)
+						// An older snapshot without object tags may not hold
+						// this object: go on to the object's own base.
+						if isChainBase(o) && (obj == "" || hasTag(o.Tags, "obj:"+obj)) {
 							break
 						}
 					}
@@ -258,28 +304,37 @@ func isChainBase(s SnapshotInfo) bool {
 	return tagValue(s.Tags, "kind:") == "full" && !hasTag(s.Tags, "copy-only")
 }
 
-// objectsOf returns the objects s holds, or "" for a snapshot that does not
-// say (it may hold any object of its group).
-func objectsOf(s SnapshotInfo) []string {
+// taggedObjects returns the objects s names in its tags.
+func taggedObjects(s SnapshotInfo) []string {
 	var objs []string
 	for _, t := range s.Tags {
 		if len(t) > 4 && t[:4] == "obj:" {
 			objs = append(objs, t[4:])
 		}
 	}
-	if len(objs) == 0 {
-		return []string{""}
-	}
 	return objs
 }
 
-// holdsObject reports whether s may hold obj ("" matches every snapshot).
-func holdsObject(s SnapshotInfo, obj string) bool {
-	if obj == "" {
-		return true
+// objectsOf returns the objects s holds: none for "objects:none", "" for a
+// snapshot that does not say (it may hold any object of its group).
+func objectsOf(s SnapshotInfo) []string {
+	if hasTag(s.Tags, "objects:none") {
+		return nil
 	}
+	if objs := taggedObjects(s); len(objs) > 0 {
+		return objs
+	}
+	return []string{""}
+}
+
+// holdsObject reports whether s may hold obj ("" matches every snapshot
+// that may hold objects).
+func holdsObject(s SnapshotInfo, obj string) bool {
 	objs := objectsOf(s)
-	return objs[0] == "" || hasTag(s.Tags, "obj:"+obj)
+	if len(objs) == 0 {
+		return false
+	}
+	return obj == "" || objs[0] == "" || hasTag(s.Tags, "obj:"+obj)
 }
 
 func hasTag(tags []string, tag string) bool {

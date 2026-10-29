@@ -178,6 +178,13 @@ func buildJobView(c *i18n.Catalog, j server.BackupJob, sess *server.SessionInfo,
 		CreatedAt:        j.CreatedAt,
 	}
 
+	if st, fr, failures, ok := legacyWorkloadOutcome(c, j); ok {
+		v.Status, v.FullRequired, v.Failures = st, fr, failures
+		v.Partial = st == "partial"
+		if v.Partial || len(fr)+len(failures) > 0 {
+			v.FailedKind = kindLabel(c, server.EffectivePlan(j)[0].Kind)
+		}
+	}
 	if plan := buildPlanView(c, j, now); plan != nil {
 		v.Plan = plan
 		v.Status = planStatus(j, plan, now)

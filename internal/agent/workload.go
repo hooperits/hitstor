@@ -13,12 +13,15 @@ import (
 	"os"
 	"path"
 	"sort"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/hooperits/hitstor/internal/plugin"
 	pb "github.com/hooperits/hitstor/internal/proto/hitstor/v1"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 // WorkloadSource runs a plugin backup. *plugin.WorkloadGRPCClient
@@ -49,6 +52,21 @@ func (e *WorkloadRunError) Error() string {
 
 func (e *WorkloadRunError) Unwrap() error { return e.Err }
 
+// abortWatch notes whether reading an item ended because the plugin
+// aborted it.
+type abortWatch struct {
+	r       io.Reader
+	aborted bool
+}
+
+func (a *abortWatch) Read(p []byte) (int, error) {
+	n, err := a.r.Read(p)
+	if errors.Is(err, plugin.ErrItemAborted) {
+		a.aborted = true
+	}
+	return n, err
+}
+
 func failedResults(rs []plugin.ObjectResult) int {
 	n := 0
 	for _, r := range rs {
@@ -78,6 +96,9 @@ type WorkloadBackup struct {
 	PluginVersion string
 	Source        WorkloadSource
 	Request       plugin.BackupRequest
+	// ServerRecordsResults is set when the server records per-object
+	// results (it says so in the schedule).
+	ServerRecordsResults bool
 
 	progressFn func(path string, size uint64, isNew bool)
 }
@@ -100,15 +121,17 @@ func (b *WorkloadBackup) Run(ctx context.Context) (*BackupResult, error) {
 		tags = append(tags, "kind:"+b.Request.Kind)
 	}
 	// A copy-only full is no base for later backups; retention must know.
-	if b.Request.Options["copy_only"] == "true" {
+	if copyOnly, _ := strconv.ParseBool(b.Request.Options["copy_only"]); copyOnly {
 		tags = append(tags, "copy-only")
 	}
 
-	// The plugin reports objects it skips or fails and keeps going; before a
-	// differential or log backup it checks the chain against what the
+	// With a server that records them, the plugin reports objects it skips
+	// or fails and keeps going; an older server would show such a run as a
+	// plain success, so the plugin fails it as before. Before a differential
+	// or log backup the plugin checks the chain against what the
 	// repositories hold.
 	req := b.Request
-	req.ObjectResults = true
+	req.ObjectResults = b.ServerRecordsResults
 	if req.Kind != "" && req.Kind != "full" && b.JobID != "" && b.Client != nil {
 		known, provided, err := b.Client.GetWorkloadKnown(ctx, b.APIKey, b.JobID)
 		if err != nil {
@@ -166,15 +189,33 @@ func (b *WorkloadBackup) Run(ctx context.Context) (*BackupResult, error) {
 		return n, nil
 	}
 
-	outcome, err := b.Source.Backup(ctx, req, func(itemPath string, data io.Reader) error {
+	// storeErr is a failure to chunk or upload, as opposed to the plugin's
+	// own: the chunks of finished items may be lost with it, so nothing is
+	// kept.
+	var storeErr error
+	handle := func(itemPath string, data io.Reader) error {
 		h := sha256.New()
-		if _, err := store(b.PluginID+"/"+itemPath, io.TeeReader(data, h)); err != nil {
+		aw := &abortWatch{r: data}
+		if _, err := store(b.PluginID+"/"+itemPath, io.TeeReader(aw, h)); err != nil {
+			if !aw.aborted {
+				storeErr = err
+			}
 			return fmt.Errorf("store item %s: %w", itemPath, err)
 		}
 		digests[itemPath] = hex.EncodeToString(h.Sum(nil))
 		return nil
-	})
+	}
+	outcome, err := b.Source.Backup(ctx, req, handle)
+	if err != nil && req.KnownProvided && len(outcome.Items) == 0 && status.Code(err) == codes.ResourceExhausted {
+		// A plugin that takes only small messages: let it check on its own.
+		slog.Warn("the plugin refused the list of known backups; retrying without it", "error", err)
+		req.Known, req.KnownProvided = nil, false
+		outcome, err = b.Source.Backup(ctx, req, handle)
+	}
 	items, results := outcome.Items, outcome.Results
+	if storeErr != nil {
+		return nil, &WorkloadRunError{Err: fmt.Errorf("store backup: %w", storeErr), Results: results}
+	}
 	if err != nil {
 		if errors.Is(err, ErrSessionCancelled) || len(items) == 0 {
 			return nil, &WorkloadRunError{Err: fmt.Errorf("plugin backup: %w", err), Results: results}

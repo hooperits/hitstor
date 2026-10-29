@@ -250,6 +250,8 @@ type JobSchedule struct {
 	Selection      []string
 	BackupKind     string
 	BackupOptions  map[string]string
+	// WorkloadResults says the server records per-object results.
+	WorkloadResults bool
 }
 
 // ScheduleInfo holds the schedule returned by the server.
@@ -320,6 +322,7 @@ func (c *Client) getSchedule(ctx context.Context, req *pb.GetScheduleRequest) (*
 			Selection:          j.Selection,
 			BackupKind:         j.BackupKind,
 			BackupOptions:      j.BackupOptions,
+			WorkloadResults:    j.WorkloadResults,
 		})
 	}
 

@@ -8,6 +8,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"io"
 	"os"
 	"path/filepath"
 	"slices"
@@ -31,13 +32,37 @@ type fakeItem struct {
 	path string
 	data []byte
 	meta string
+	// readErr makes reading the item fail; plugin.ErrItemAborted plays a
+	// plugin that aborts it.
+	readErr error
+}
+
+type failingReader struct {
+	data []byte
+	err  error
+}
+
+func (r *failingReader) Read(p []byte) (int, error) {
+	if len(r.data) > 0 {
+		n := copy(p, r.data)
+		r.data = r.data[n:]
+		return n, nil
+	}
+	return 0, r.err
 }
 
 func (f *fakeSource) Backup(_ context.Context, req plugin.BackupRequest, handle plugin.ItemHandler) (plugin.BackupOutcome, error) {
 	f.gotReq = req
 	out := plugin.BackupOutcome{Results: f.results}
 	for _, it := range f.items {
-		if err := handle(it.path, bytes.NewReader(it.data)); err != nil {
+		var r io.Reader = bytes.NewReader(it.data)
+		if it.readErr != nil {
+			r = &failingReader{data: it.data, err: it.readErr}
+		}
+		if err := handle(it.path, r); err != nil {
+			if errors.Is(it.readErr, plugin.ErrItemAborted) {
+				continue // the client skips an aborted item
+			}
 			return out, err
 		}
 		out.Items = append(out.Items, plugin.BackupItem{Path: it.path, Size: int64(len(it.data)), Metadata: json.RawMessage(it.meta)})
@@ -185,8 +210,8 @@ func TestWorkloadBackupKeepsFinishedItems(t *testing.T) {
 	src := &fakeSource{items: []fakeItem{{path: "inst/a/log-1.trn", data: []byte("log of a")}},
 		results: []plugin.ObjectResult{{Object: "inst/c", Status: plugin.ObjectExcluded, Reason: "simple-recovery"}},
 		err:     errors.New("inst/b: VDI timeout")}
-	b := &WorkloadBackup{Client: client, APIKey: apiKey, PluginID: "fakedb", Source: src,
-		Request: plugin.BackupRequest{Selection: []string{"inst"}, Kind: "log", Options: map[string]string{"copy_only": "true"}}}
+	b := &WorkloadBackup{Client: client, APIKey: apiKey, PluginID: "fakedb", Source: src, ServerRecordsResults: true,
+		Request: plugin.BackupRequest{Selection: []string{"inst"}, Kind: "log", Options: map[string]string{"copy_only": "1"}}}
 	res, err := b.Run(context.Background())
 	if err != nil || res.SnapshotID == "" {
 		t.Fatalf("partial run: %+v, %v", res, err)
@@ -226,7 +251,7 @@ func TestWorkloadPlanRunsEndToEnd(t *testing.T) {
 	}
 	run := func(kind string, src *fakeSource) error {
 		b := &WorkloadBackup{Client: client, APIKey: apiKey, JobID: "j1", Tags: []string{"job:j1"}, PluginID: "fakedb", Source: src,
-			Request: plugin.BackupRequest{Selection: []string{"inst"}, Kind: kind}}
+			ServerRecordsResults: true, Request: plugin.BackupRequest{Selection: []string{"inst"}, Kind: kind}}
 		_, err := b.Run(context.Background())
 		return err
 	}
@@ -273,5 +298,52 @@ func TestWorkloadPlanRunsEndToEnd(t *testing.T) {
 	}
 	if st := registry.GetJob("j1").KindRuns["log"]; st.LastErrorAt == nil || len(st.Objects) != 1 || st.Objects[0].Reason != "no-full" {
 		t.Fatalf("log run = %+v", st)
+	}
+}
+
+func TestWorkloadBackupStoreFailureKeepsNothing(t *testing.T) {
+	client, repo, registry, cleanup := testSetup(t)
+	defer cleanup()
+	apiKey, _ := registry.AddAgent("db-agent")
+
+	// a finished, b was aborted by the plugin (fine), c could not be read
+	// (the host's own failure: chunks of finished items may be lost too).
+	src := &fakeSource{items: []fakeItem{
+		{path: "inst/a/log.trn", data: []byte("a")},
+		{path: "inst/b/log.trn", data: []byte("b"), readErr: plugin.ErrItemAborted},
+		{path: "inst/c/log.trn", data: []byte("c"), readErr: errors.New("connection reset")},
+	}}
+	b := &WorkloadBackup{Client: client, APIKey: apiKey, PluginID: "fakedb", Source: src, ServerRecordsResults: true}
+	_, err := b.Run(context.Background())
+	var re *WorkloadRunError
+	if !errors.As(err, &re) || !strings.Contains(err.Error(), "store backup") {
+		t.Fatalf("err = %v", err)
+	}
+	if ids, _ := repo.ListSnapshots(); len(ids) != 0 {
+		t.Fatalf("a snapshot was kept: %v", ids)
+	}
+
+	// An aborted item alone is not a host failure: the others are kept.
+	src = &fakeSource{items: []fakeItem{
+		{path: "inst/a/log.trn", data: []byte("a")},
+		{path: "inst/b/log.trn", data: []byte("b"), readErr: plugin.ErrItemAborted},
+	}}
+	b = &WorkloadBackup{Client: client, APIKey: apiKey, PluginID: "fakedb", Source: src, ServerRecordsResults: true}
+	if _, err := b.Run(context.Background()); err != nil {
+		t.Fatalf("aborted item: %v", err)
+	}
+}
+
+func TestWorkloadBackupOlderServerGetsNoResults(t *testing.T) {
+	client, _, registry, cleanup := testSetup(t)
+	defer cleanup()
+	apiKey, _ := registry.AddAgent("db-agent")
+	src := &fakeSource{items: []fakeItem{{path: "inst/a/full.bak", data: []byte("a")}}}
+	b := &WorkloadBackup{Client: client, APIKey: apiKey, PluginID: "fakedb", Source: src}
+	if _, err := b.Run(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	if src.gotReq.ObjectResults {
+		t.Fatal("a server that cannot record per-object results must not get partial runs")
 	}
 }

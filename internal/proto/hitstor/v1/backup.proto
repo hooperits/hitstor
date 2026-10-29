@@ -395,4 +395,8 @@ message ScheduledJob {
   repeated string selection = 21;
   string backup_kind = 22;
   map<string, string> backup_options = 23;
+  // Set by servers that record per-object results of workload backups
+  // (FinalizeBackupRequest.object_results), so the agent may keep a run
+  // that backed up only some objects.
+  bool workload_results = 24;
 }

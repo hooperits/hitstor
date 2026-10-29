@@ -151,7 +151,7 @@
                         {{if .Running}}
                         {{if .Stale}}<span class="badge badge-stale">{{t "stalled"}}</span>{{else}}<span class="badge badge-running">{{t "running"}}</span>{{end}}
                         {{else}}
-                        <span class="badge {{if eq .Status "ok"}}badge-ok{{else if eq .Status "overdue"}}badge-stale{{else if eq .Status "failed"}}badge-critical{{else if eq .Status "pending"}}badge-pending{{else if eq .Status "disabled"}}badge-disabled{{else}}badge-never{{end}}"{{if .LastError}} title="{{.LastError}}"{{end}}>{{t .Status}}</span>
+                        <span class="badge {{if eq .Status "ok"}}badge-ok{{else if or (eq .Status "overdue") (eq .Status "partial")}}badge-stale{{else if eq .Status "failed"}}badge-critical{{else if eq .Status "pending"}}badge-pending{{else if eq .Status "disabled"}}badge-disabled{{else}}badge-never{{end}}"{{if .LastError}} title="{{.LastError}}"{{end}}>{{t .Status}}</span>
                         {{if .LastError}}<div class="job-last-error">{{.LastError}}</div>{{end}}
                         {{end}}
                     </td>

@@ -103,3 +103,48 @@ func TestCheckChainAgainstKnownBackups(t *testing.T) {
 		t.Error("a host without a list falls back to msdb")
 	}
 }
+
+func TestLogChainRestartsAfterAGap(t *testing.T) {
+	guid := "A4B9200C-BAB2-4325-BA6E-7DA5D026BB10"
+	known := func(object string, ms ...itemMeta) knownBackups {
+		var items []hitstorplugin.KnownItem
+		for _, m := range ms {
+			m.DatabaseGUID = guid
+			raw, _ := json.Marshal(m)
+			items = append(items, hitstorplugin.KnownItem{Item: object + "/x", Metadata: raw})
+		}
+		return newKnownBackups(hitstorplugin.BackupRequest{KnownProvided: true, Known: items})
+	}
+	ours := &historyEntry{Type: "L", Device: "HitStor_lost", User: "hitstor_backup"}
+	// The log ending at 500 was taken but never stored: a gap. A full does
+	// not move the chain's start (still 500), but the next log covers a
+	// full taken after it, so that full is what the gap asks for.
+	gap := chainState{DatabaseGUID: guid, LastLogLSN: "500", Chain: ours}
+	before := itemMeta{Type: typeFull, FirstLSN: "90", CheckpointLSN: "100", LastLSN: "110"}
+	after := itemMeta{Type: typeFull, FirstLSN: "590", CheckpointLSN: "600", LastLSN: "610"}
+	if got := checkChain("log", "I/db", gap, known("I/db", before)); got == nil || got.Reason != reasonNotHeld {
+		t.Fatalf("gap: got %v", got)
+	}
+	if got := checkChain("log", "I/db", gap, known("I/db", before, after)); got != nil {
+		t.Fatalf("full after the gap: got %v", got)
+	}
+	// A differential after the gap counts only when HitStor holds its base.
+	diff := itemMeta{Type: typeDifferential, DifferentialBaseLSN: "100", LastLSN: "650"}
+	if got := checkChain("log", "I/db", gap, known("I/db", before, diff)); got != nil {
+		t.Fatalf("differential on a held base: got %v", got)
+	}
+	if got := checkChain("log", "I/db", gap, known("I/db", diff)); got == nil {
+		t.Fatal("differential on a base HitStor does not hold")
+	}
+	// Held under another name (renamed database): retention keeps chains
+	// by name, so it does not count.
+	if got := checkChain("log", "I/db2", gap, known("I/db", before, after)); got == nil {
+		t.Fatal("backups of the old name")
+	}
+	// Without a list from the host, msdb's record of a later HitStor full
+	// does the same.
+	gap.Restart = &historyEntry{Type: "D", Device: "HitStor_full"}
+	if got := checkChain("log", "I/db", gap, nil); got != nil {
+		t.Fatalf("msdb restart: got %v", got)
+	}
+}

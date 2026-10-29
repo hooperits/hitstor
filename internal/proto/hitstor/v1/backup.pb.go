@@ -1801,8 +1801,12 @@ type ScheduledJob struct {
 	Selection      []string          `protobuf:"bytes,21,rep,name=selection,proto3" json:"selection,omitempty"`
 	BackupKind     string            `protobuf:"bytes,22,opt,name=backup_kind,json=backupKind,proto3" json:"backup_kind,omitempty"`
 	BackupOptions  map[string]string `protobuf:"bytes,23,rep,name=backup_options,json=backupOptions,proto3" json:"backup_options,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	// Set by servers that record per-object results of workload backups
+	// (FinalizeBackupRequest.object_results), so the agent may keep a run
+	// that backed up only some objects.
+	WorkloadResults bool `protobuf:"varint,24,opt,name=workload_results,json=workloadResults,proto3" json:"workload_results,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *ScheduledJob) Reset() {
@@ -1975,6 +1979,13 @@ func (x *ScheduledJob) GetBackupOptions() map[string]string {
 	return nil
 }
 
+func (x *ScheduledJob) GetWorkloadResults() bool {
+	if x != nil {
+		return x.WorkloadResults
+	}
+	return false
+}
+
 var File_internal_proto_hitstor_v1_backup_proto protoreflect.FileDescriptor
 
 const file_internal_proto_hitstor_v1_backup_proto_rawDesc = "" +
@@ -2132,7 +2143,7 @@ const file_internal_proto_hitstor_v1_backup_proto_rawDesc = "" +
 	"\aenabled\x18\x01 \x01(\bR\aenabled\x12%\n" +
 	"\x0einterval_hours\x18\x02 \x01(\x05R\rintervalHours\x12\"\n" +
 	"\rnext_run_unix\x18\x03 \x01(\x03R\vnextRunUnix\x12,\n" +
-	"\x04jobs\x18\x04 \x03(\v2\x18.hitstor.v1.ScheduledJobR\x04jobs\"\x9e\a\n" +
+	"\x04jobs\x18\x04 \x03(\v2\x18.hitstor.v1.ScheduledJobR\x04jobs\"\xc9\a\n" +
 	"\fScheduledJob\x12\x15\n" +
 	"\x06job_id\x18\x01 \x01(\tR\x05jobId\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x14\n" +
@@ -2155,7 +2166,8 @@ const file_internal_proto_hitstor_v1_backup_proto_rawDesc = "" +
 	"\tselection\x18\x15 \x03(\tR\tselection\x12\x1f\n" +
 	"\vbackup_kind\x18\x16 \x01(\tR\n" +
 	"backupKind\x12R\n" +
-	"\x0ebackup_options\x18\x17 \x03(\v2+.hitstor.v1.ScheduledJob.BackupOptionsEntryR\rbackupOptions\x1aA\n" +
+	"\x0ebackup_options\x18\x17 \x03(\v2+.hitstor.v1.ScheduledJob.BackupOptionsEntryR\rbackupOptions\x12)\n" +
+	"\x10workload_results\x18\x18 \x01(\bR\x0fworkloadResults\x1aA\n" +
 	"\x13PluginSettingsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\x1a@\n" +

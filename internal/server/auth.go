@@ -853,16 +853,17 @@ func (r *AgentRegistry) RecordKindBackup(id, kind string, t time.Time, outcomes 
 	for i := range r.jobs {
 		if r.jobs[i].ID == id {
 			j := &r.jobs[i]
-			if kind != "" && j.JobType == JobTypeWorkload {
+			if j.JobType == JobTypeWorkload {
+				kind = workloadKind(*j, kind)
 				// Keep the other kinds' history of a job made before plans.
 				j.KindRuns = kindRunsOf(*j)
 				run := KindRun{LastBackup: &t, Objects: outcomes, Partial: failedObjects(outcomes) > 0}
 				j.KindRuns[kind] = run
 				for _, e := range EffectivePlan(*j) {
 					if kindCovers(kind, e.Kind) {
-						st := j.KindRuns[e.Kind]
-						st.LastBackup = &t
-						j.KindRuns[e.Kind] = st
+						// The covered kind's slot is filled; what its own last
+						// run reported no longer stands.
+						j.KindRuns[e.Kind] = KindRun{LastBackup: &t}
 					}
 				}
 			}
@@ -874,6 +875,15 @@ func (r *AgentRegistry) RecordKindBackup(id, kind string, t time.Time, outcomes 
 		}
 	}
 	return fmt.Errorf("server: job %q not found", id)
+}
+
+// workloadKind is the kind a workload job's run took: kind, or for an
+// agent that does not tag kinds, the job's own (see EffectivePlan).
+func workloadKind(j BackupJob, kind string) string {
+	if kind != "" {
+		return kind
+	}
+	return EffectivePlan(j)[0].Kind
 }
 
 // kindRunsOf returns a copy of j's per-kind records, filled from the job's
@@ -959,7 +969,8 @@ func (r *AgentRegistry) RecordKindFailure(id, kind, msg string, t time.Time, out
 			if len(msg) > 2000 {
 				msg = msg[:2000]
 			}
-			if kind != "" && j.JobType == JobTypeWorkload {
+			if j.JobType == JobTypeWorkload {
+				kind = workloadKind(*j, kind)
 				j.KindRuns = kindRunsOf(*j)
 				st := j.KindRuns[kind]
 				st.LastError, st.LastErrorAt, st.Objects, st.Partial = msg, &t, outcomes, false

@@ -401,9 +401,12 @@ func (p *mssqlPlugin) Backup(ctx context.Context, req hitstorplugin.BackupReques
 	if targets, reports, err = p.checkChains(ctx, targets, kind, req); err != nil {
 		return err
 	}
-	for _, r := range append(excluded, reports...) {
-		if err := sink.Result(r); err != nil {
-			return err
+	// Older hosts get no results: exclusions are only logged, as before.
+	if req.ObjectResults {
+		for _, r := range append(excluded, reports...) {
+			if err := sink.Result(r); err != nil {
+				return err
+			}
 		}
 	}
 	for _, t := range targets {

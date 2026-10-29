@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"fmt"
 	"path"
 	"slices"
 	"sort"
@@ -15,10 +16,15 @@ import (
 	"github.com/hooperits/hitstor/internal/workloadcat"
 )
 
-// knownRecentPerObject caps the non-full items GetWorkloadKnown returns per
-// object: a chain check needs the backup that ends the chain, which is
-// recent. Fulls are all returned, since a differential's base may be old.
-const knownRecentPerObject = 50
+// knownPerKind caps the items of each kind GetWorkloadKnown returns per
+// object, newest first. A chain check needs a differential's base (the
+// newest full that is not copy-only), the backup that ends the log chain
+// (the newest log, or a full) and any full or differential after it.
+// Copy-only fulls count as fulls, hence the margin.
+var knownPerKind = map[string]int{"full": 30, "differential": 5, "log": 20}
+
+// knownOtherKinds caps items of kinds a plugin defines beyond those.
+const knownOtherKinds = 20
 
 // GetWorkloadKnown implements BackupService.GetWorkloadKnown: the items
 // the repositories hold for the job's selection, from the job's agent.
@@ -58,19 +64,26 @@ func (s *Server) knownWorkloadItems(job BackupJob) ([]workloadcat.Item, error) {
 	}
 	byObject := map[string][]workloadcat.Item{}
 	seen := map[string]bool{}
+	// A snapshot that cannot be read fails the call: a partial list would
+	// read as backups HitStor does not hold. The agent then falls back to the
+	// plugin's own check.
 	for _, mr := range s.repos.List() {
 		ids, err := mr.Repo.ListSnapshots()
 		if err != nil {
 			return nil, err
 		}
+		workloadcat.Default.Retain(mr.Repo, ids)
 		for _, id := range ids {
 			snap, err := mr.Repo.LoadSnapshot(id)
-			if err != nil || !slices.Contains(snap.Tags, "plugin:"+job.Plugin) || !slices.ContainsFunc(snap.Tags, func(t string) bool { return jobTags[t] }) {
+			if err != nil {
+				return nil, fmt.Errorf("load snapshot %s: %w", id.String()[:8], err)
+			}
+			if !slices.Contains(snap.Tags, "plugin:"+job.Plugin) || !slices.ContainsFunc(snap.Tags, func(t string) bool { return jobTags[t] }) {
 				continue
 			}
 			items, err := workloadcat.Default.SnapshotItems(mr.Repo, id, snap, job.Plugin)
 			if err != nil {
-				continue
+				return nil, fmt.Errorf("snapshot %s: %w", id.String()[:8], err)
 			}
 			for _, it := range items {
 				obj := it.Object()
@@ -86,15 +99,20 @@ func (s *Server) knownWorkloadItems(job BackupJob) ([]workloadcat.Item, error) {
 	var out []workloadcat.Item
 	for _, items := range byObject {
 		sort.Slice(items, func(i, j int) bool { return items[i].Manifest.CreatedAt.After(items[j].Manifest.CreatedAt) })
-		recent := 0
+		taken := map[string]int{}
 		for _, it := range items {
-			if it.Manifest.Kind != "full" {
-				if recent >= knownRecentPerObject {
-					continue
-				}
-				recent++
+			kind := it.Manifest.Kind
+			if kind == "" {
+				kind = "full" // jobs made before kinds took fulls
 			}
-			out = append(out, it)
+			limit, ok := knownPerKind[kind]
+			if !ok {
+				limit, kind = knownOtherKinds, "other"
+			}
+			if taken[kind] < limit {
+				taken[kind]++
+				out = append(out, it)
+			}
 		}
 	}
 	return out, nil
@@ -130,6 +148,11 @@ func workloadObjectTags(paths []string, files []*pb.FileNode) []string {
 			seen[obj] = true
 			tags = append(tags, "obj:"+obj)
 		}
+	}
+	if len(tags) == 0 {
+		// Every object was left out: say so, or retention would take the
+		// snapshot for an older one that may hold any object.
+		return []string{"objects:none"}
 	}
 	sort.Strings(tags)
 	return tags

@@ -66,6 +66,10 @@ func ServeFilesystemScanner(impl scanner.Scanner) {
 	})
 }
 
+// workloadMaxRecvMsgSize bounds what a workload plugin accepts in one
+// message from its host.
+const workloadMaxRecvMsgSize = 64 << 20
+
 // ServeWorkload starts the go-plugin gRPC server for a workload plugin.
 // Plugin binaries call this from main() with their Workload implementation.
 func ServeWorkload(impl Workload) {
@@ -75,7 +79,9 @@ func ServeWorkload(impl Workload) {
 			WorkloadPluginName: &WorkloadPlugin{Impl: impl},
 		},
 		GRPCServer: func(opts []grpc.ServerOption) *grpc.Server {
-			return grpc.NewServer(opts...)
+			// A backup request carries the host's list of known items, which
+			// for a large instance exceeds gRPC's default 4 MiB.
+			return grpc.NewServer(append(opts, grpc.MaxRecvMsgSize(workloadMaxRecvMsgSize))...)
 		},
 	})
 }

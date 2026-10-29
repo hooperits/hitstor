@@ -42,7 +42,7 @@
         </div>
     </div>
     <div class="backup-detail-stats">
-        <div class="detail-stat-tile detail-stat-tile--last detail-stat-tile--{{if eq $v.Status "never"}}never{{else if eq $v.Status "overdue"}}stale{{else if or (eq $v.Status "running") (eq $v.Status "pending")}}running{{else}}ok{{end}}">
+        <div class="detail-stat-tile detail-stat-tile--last detail-stat-tile--{{if eq $v.Status "never"}}never{{else if or (eq $v.Status "overdue") (eq $v.Status "partial") (eq $v.Status "failed")}}stale{{else if or (eq $v.Status "running") (eq $v.Status "pending")}}running{{else}}ok{{end}}">
             <div class="detail-stat-tile__top">
                 <span class="detail-stat-tile__label">{{t "Last Run"}}</span>
                 <span class="detail-stat-tile__icon" aria-hidden="true">

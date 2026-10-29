@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"path"
 	"strings"
 	"time"
 
@@ -41,8 +42,12 @@ const (
 	reasonError          = "error"           // the backup failed
 )
 
-// knownBackups are the backups HitStor holds, by database GUID.
+// knownBackups are the backups HitStor holds, by database GUID and object.
+// Retention keeps chains by object name, so a backup held under another
+// name (a renamed database) does not count.
 type knownBackups map[string][]itemMeta
+
+func knownKey(guid, object string) string { return strings.ToUpper(guid + "|" + object) }
 
 // newKnownBackups reads the host's list of items, or returns nil when the
 // host did not send one.
@@ -54,8 +59,8 @@ func newKnownBackups(req hitstorplugin.BackupRequest) knownBackups {
 	for _, it := range req.Known {
 		var m itemMeta
 		if json.Unmarshal(it.Metadata, &m) == nil && m.DatabaseGUID != "" {
-			guid := strings.ToUpper(m.DatabaseGUID)
-			k[guid] = append(k[guid], m)
+			key := knownKey(m.DatabaseGUID, path.Dir(it.Item))
+			k[key] = append(k[key], m)
 		}
 	}
 	return k
@@ -63,8 +68,8 @@ func newKnownBackups(req hitstorplugin.BackupRequest) knownBackups {
 
 // holdsBase reports whether HitStor holds the full a differential with this
 // base would build on.
-func (k knownBackups) holdsBase(guid, baseLSN string) bool {
-	for _, m := range k[strings.ToUpper(guid)] {
+func (k knownBackups) holdsBase(guid, object, baseLSN string) bool {
+	for _, m := range k[knownKey(guid, object)] {
 		if m.Type == typeFull && !m.CopyOnly && lsn(m.CheckpointLSN).Cmp(lsn(baseLSN)) == 0 {
 			return true
 		}
@@ -72,19 +77,26 @@ func (k knownBackups) holdsBase(guid, baseLSN string) bool {
 	return false
 }
 
-// holdsChainEnd reports whether HitStor holds the backup the next log backup
-// continues from: the log ending at lsnEnd, or the full that started the
-// chain there.
-func (k knownBackups) holdsChainEnd(guid, lsnEnd string) bool {
+// holdsChainEnd reports whether a log backup starting at lsnEnd will
+// restore from what HitStor holds: HitStor holds the log ending there or the
+// full that started the chain there, or a full or differential (on a held
+// base) taken after it, which the next log covers. The last case lets the
+// full that a gap asks for restore the chain, although a full does not move
+// the log chain's start.
+func (k knownBackups) holdsChainEnd(guid, object, lsnEnd string) bool {
 	end := lsn(lsnEnd)
-	for _, m := range k[strings.ToUpper(guid)] {
+	for _, m := range k[knownKey(guid, object)] {
 		switch m.Type {
 		case typeLog:
 			if lsn(m.LastLSN).Cmp(end) == 0 {
 				return true
 			}
 		case typeFull:
-			if !m.CopyOnly && (lsn(m.CheckpointLSN).Cmp(end) == 0 || lsn(m.FirstLSN).Cmp(end) == 0) {
+			if !m.CopyOnly && (lsn(m.CheckpointLSN).Cmp(end) == 0 || lsn(m.FirstLSN).Cmp(end) == 0 || lsn(m.LastLSN).Cmp(end) > 0) {
+				return true
+			}
+		case typeDifferential:
+			if lsn(m.LastLSN).Cmp(end) > 0 && k.holdsBase(guid, object, m.DifferentialBaseLSN) {
 				return true
 			}
 		}
@@ -127,6 +139,9 @@ type chainState struct {
 	// backup has started a log chain.
 	LastLogLSN string
 	Chain      *historyEntry // msdb's record of the backup that ends the chain so far
+	// Restart is msdb's record of a full or differential to a HitStor
+	// device taken after the chain's end, which the next log covers.
+	Restart *historyEntry
 }
 
 // chainIssue says why one database needs a full backup first.
@@ -168,7 +183,7 @@ func checkChain(kind, obj string, s chainState, known knownBackups) *chainIssue 
 		switch {
 		case s.DiffBaseLSN == "":
 			return issue(reasonNoFull, "")
-		case known != nil && known.holdsBase(s.DatabaseGUID, s.DiffBaseLSN):
+		case known != nil && known.holdsBase(s.DatabaseGUID, obj, s.DiffBaseLSN):
 			return nil
 		case known != nil:
 			return other(s.Base, s.DiffBaseLSN)
@@ -181,10 +196,12 @@ func checkChain(kind, obj string, s chainState, known knownBackups) *chainIssue 
 		switch {
 		case s.LastLogLSN == "":
 			return issue(reasonNoFull, "")
-		case known != nil && known.holdsChainEnd(s.DatabaseGUID, s.LastLogLSN):
+		case known != nil && known.holdsChainEnd(s.DatabaseGUID, obj, s.LastLogLSN):
 			return nil
 		case known != nil:
 			return other(s.Chain, s.LastLogLSN)
+		case s.Restart != nil:
+			return nil
 		case s.Chain == nil:
 			return issue(reasonUnknownBase, "no backup history for log chain LSN "+s.LastLogLSN)
 		case !s.Chain.hitstor() && s.Chain.Type == "L":
@@ -215,11 +232,12 @@ func readChainState(ctx context.Context, db *sql.DB, database string) (chainStat
 	// history. A full starts the log chain at its first or
 	// checkpoint LSN; a log backup ends it at its last LSN.
 	const q = `
-SELECT d.state_desc, d.recovery_model_desc, CONVERT(varchar(40), r.database_guid),
+SELECT d.state_desc, d.recovery_model_desc, ISNULL(CONVERT(varchar(40), r.database_guid), ''),
   ISNULL(CONVERT(varchar(40), f.differential_base_lsn), ''),
   ISNULL(CONVERT(varchar(40), r.last_log_backup_lsn), ''),
   b.physical_device_name, DATEADD(minute, DATEDIFF(minute, GETDATE(), GETUTCDATE()), b.backup_finish_date), b.user_name,
-  c.type, c.physical_device_name, DATEADD(minute, DATEDIFF(minute, GETDATE(), GETUTCDATE()), c.backup_finish_date), c.user_name
+  c.type, c.physical_device_name, DATEADD(minute, DATEDIFF(minute, GETDATE(), GETUTCDATE()), c.backup_finish_date), c.user_name,
+  g.type, g.physical_device_name, DATEADD(minute, DATEDIFF(minute, GETDATE(), GETUTCDATE()), g.backup_finish_date), g.user_name
 FROM sys.databases d
 JOIN sys.database_recovery_status r ON r.database_id = d.database_id
 JOIN sys.master_files f ON f.database_id = d.database_id AND f.file_id = 1
@@ -236,12 +254,18 @@ OUTER APPLY (
     (bs.type = 'L' AND bs.last_lsn = r.last_log_backup_lsn) OR
     (bs.type = 'D' AND (bs.checkpoint_lsn = r.last_log_backup_lsn OR bs.first_lsn = r.last_log_backup_lsn)))
   ORDER BY bs.backup_set_id DESC) c
+OUTER APPLY (
+  SELECT TOP (1) bs.type, mf.physical_device_name, bs.backup_finish_date, bs.user_name
+  FROM msdb.dbo.backupset bs JOIN msdb.dbo.backupmediafamily mf ON mf.media_set_id = bs.media_set_id
+  WHERE bs.database_name = d.name AND bs.database_guid = r.database_guid AND bs.is_copy_only = 0
+    AND bs.type IN ('D', 'I') AND bs.last_lsn > r.last_log_backup_lsn AND mf.physical_device_name LIKE 'HitStor[_]%'
+  ORDER BY bs.backup_set_id DESC) g
 WHERE d.name = @p1`
 	var s chainState
-	var bDev, bUser, cType, cDev, cUser sql.NullString
-	var bFinish, cFinish sql.NullTime
+	var bDev, bUser, cType, cDev, cUser, gType, gDev, gUser sql.NullString
+	var bFinish, cFinish, gFinish sql.NullTime
 	err := db.QueryRowContext(ctx, q, database).Scan(&s.State, &s.RecoveryModel, &s.DatabaseGUID, &s.DiffBaseLSN, &s.LastLogLSN,
-		&bDev, &bFinish, &bUser, &cType, &cDev, &cFinish, &cUser)
+		&bDev, &bFinish, &bUser, &cType, &cDev, &cFinish, &cUser, &gType, &gDev, &gFinish, &gUser)
 	if err != nil {
 		return s, fmt.Errorf("read backup chain of %s: %w", database, err)
 	}
@@ -250,6 +274,9 @@ WHERE d.name = @p1`
 	}
 	if cDev.Valid {
 		s.Chain = &historyEntry{Type: cType.String, Device: cDev.String, Finish: cFinish.Time.UTC(), User: cUser.String}
+	}
+	if gDev.Valid {
+		s.Restart = &historyEntry{Type: gType.String, Device: gDev.String, Finish: gFinish.Time.UTC(), User: gUser.String}
 	}
 	return s, nil
 }

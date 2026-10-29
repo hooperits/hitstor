@@ -1,14 +1,14 @@
 // Package workloadcat reads the workload items stored in snapshots. A
 // workload backup stores each item a plugin produced as the file
 // <plugin>/<item> in its snapshot, next to <item>.meta.json, the item's
-// manifest with the plugin's metadata. Snapshots never change, so the items
-// of each one are read once and cached.
+// manifest with the plugin's metadata. Snapshots never change, so the
+// manifests of each one are read once and cached; an item's data chunks are
+// looked up only when it is restored.
 package workloadcat
 
 import (
 	"encoding/json"
 	"fmt"
-	"log/slog"
 	"path"
 	"strings"
 	"sync"
@@ -24,8 +24,6 @@ import (
 type Item struct {
 	SnapshotID string
 	Manifest   plugin.ItemManifest
-	// Content lists the item's data chunks.
-	Content []fs.ID
 }
 
 // Object returns the object an item belongs to: its directory, e.g.
@@ -35,17 +33,19 @@ func (it Item) Object() string { return path.Dir(it.Manifest.Item) }
 // Catalog caches the items of each snapshot.
 type Catalog struct {
 	mu    sync.Mutex
-	items map[string][]Item // repository|snapshot|plugin -> items
+	items map[*repository.Repository]map[string][]Item // repo -> snapshot|plugin -> items
 }
 
 // Default is the catalog shared by the server and the dashboard.
 var Default = &Catalog{}
 
 // SnapshotItems returns the items pluginID stored in snapshot id of repo.
+// A snapshot that cannot be read completely is an error and is not cached,
+// so a passing read failure never hides items for good.
 func (c *Catalog) SnapshotItems(repo *repository.Repository, id repository.ID, snap *repository.Snapshot, pluginID string) ([]Item, error) {
-	key := fmt.Sprintf("%p|%s|%s", repo, id, pluginID)
+	key := id.String() + "|" + pluginID
 	c.mu.Lock()
-	cached, ok := c.items[key]
+	cached, ok := c.items[repo][key]
 	c.mu.Unlock()
 	if ok {
 		return cached, nil
@@ -54,17 +54,62 @@ func (c *Catalog) SnapshotItems(repo *repository.Repository, id repository.ID, s
 	if err != nil {
 		return nil, err
 	}
-	var out []Item
-	if dir := findDir(repo, root, pluginID); dir != nil {
-		collect(repo, id.String(), dir, &out)
+	out := []Item{}
+	dir, err := findDir(repo, root, pluginID)
+	if err != nil {
+		return nil, err
+	}
+	if dir != nil {
+		if err := collect(repo, id.String(), dir, &out); err != nil {
+			return nil, err
+		}
 	}
 	c.mu.Lock()
 	if c.items == nil {
-		c.items = make(map[string][]Item)
+		c.items = make(map[*repository.Repository]map[string][]Item)
 	}
-	c.items[key] = out
+	if c.items[repo] == nil {
+		c.items[repo] = make(map[string][]Item)
+	}
+	c.items[repo][key] = out
 	c.mu.Unlock()
 	return out, nil
+}
+
+// Retain drops the cached items of repo's snapshots that are not in ids,
+// such as snapshots retention has forgotten.
+func (c *Catalog) Retain(repo *repository.Repository, ids []repository.ID) {
+	live := make(map[string]bool, len(ids))
+	for _, id := range ids {
+		live[id.String()] = true
+	}
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	for key := range c.items[repo] {
+		if snap, _, _ := strings.Cut(key, "|"); !live[snap] {
+			delete(c.items[repo], key)
+		}
+	}
+}
+
+// ItemContent returns the data chunks of item in snapshot snap.
+func ItemContent(repo *repository.Repository, snap *repository.Snapshot, pluginID, item string) ([]fs.ID, error) {
+	root, err := loadTree(repo, backend.ID(snap.Tree))
+	if err != nil {
+		return nil, err
+	}
+	dir, err := findDir(repo, root, path.Dir(pluginID+"/"+item))
+	if err != nil {
+		return nil, err
+	}
+	if dir != nil {
+		for _, n := range dir.Nodes {
+			if n.Name == path.Base(item) && n.Type == fs.NodeTypeFile {
+				return n.Content, nil
+			}
+		}
+	}
+	return nil, fmt.Errorf("item %s not found in snapshot", item)
 }
 
 type tree struct {
@@ -90,26 +135,28 @@ func loadTree(repo *repository.Repository, id backend.ID) (*tree, error) {
 	return &t, nil
 }
 
-// findDir descends from root along slash-separated dir, returning nil when
-// any component is missing.
-func findDir(repo *repository.Repository, root *tree, dir string) *tree {
+// findDir descends from root along slash-separated dir. It returns nil, nil
+// when a component does not exist.
+func findDir(repo *repository.Repository, root *tree, dir string) (*tree, error) {
 	cur := root
 	for _, name := range strings.Split(dir, "/") {
 		var next *tree
 		for _, n := range cur.Nodes {
 			if n.Name == name && n.Type == fs.NodeTypeDir {
-				if t, err := loadTree(repo, backend.ID(n.Subtree)); err == nil {
-					next = t
+				t, err := loadTree(repo, backend.ID(n.Subtree))
+				if err != nil {
+					return nil, err
 				}
+				next = t
 				break
 			}
 		}
 		if next == nil {
-			return nil
+			return nil, nil
 		}
 		cur = next
 	}
-	return cur
+	return cur, nil
 }
 
 // ReadContent calls fn with each decompressed chunk of a file's content.
@@ -135,15 +182,19 @@ func ReadContent(repo *repository.Repository, content []fs.ID, fn func([]byte) e
 
 // collect walks t, a directory inside the plugin's snapshot directory, and
 // appends every item that has a manifest.
-func collect(repo *repository.Repository, snapHex string, t *tree, out *[]Item) {
+func collect(repo *repository.Repository, snapHex string, t *tree, out *[]Item) error {
 	files := make(map[string]fs.Node)
 	for _, n := range t.Nodes {
 		switch n.Type {
 		case fs.NodeTypeFile:
 			files[n.Name] = n
 		case fs.NodeTypeDir:
-			if sub, err := loadTree(repo, backend.ID(n.Subtree)); err == nil {
-				collect(repo, snapHex, sub, out)
+			sub, err := loadTree(repo, backend.ID(n.Subtree))
+			if err != nil {
+				return err
+			}
+			if err := collect(repo, snapHex, sub, out); err != nil {
+				return err
 			}
 		}
 	}
@@ -152,20 +203,19 @@ func collect(repo *repository.Repository, snapHex string, t *tree, out *[]Item) 
 		if !ok {
 			continue
 		}
-		item, ok := files[itemName]
-		if !ok {
+		if _, ok := files[itemName]; !ok {
 			continue
 		}
 		var raw []byte
 		if err := ReadContent(repo, n.Content, func(b []byte) error { raw = append(raw, b...); return nil }); err != nil {
-			slog.Warn("workload catalog: unreadable item manifest", "snapshot", snapHex, "item", name, "error", err)
-			continue
+			return fmt.Errorf("snapshot %s: manifest %s: %w", snapHex[:8], name, err)
 		}
 		var m plugin.ItemManifest
 		if err := json.Unmarshal(raw, &m); err != nil {
-			slog.Warn("workload catalog: invalid item manifest", "snapshot", snapHex, "item", name, "error", err)
+			// A manifest that is not JSON never will be: skip it for good.
 			continue
 		}
-		*out = append(*out, Item{SnapshotID: snapHex, Manifest: m, Content: item.Content})
+		*out = append(*out, Item{SnapshotID: snapHex, Manifest: m})
 	}
+	return nil
 }

@@ -442,20 +442,93 @@ func TestApply_ProtectsChainsPerObject(t *testing.T) {
 		snap(7, h(6), "sql01", nil, wl("log", "I/a", "I/b")),                // both
 	}
 
-	// Keeping only the newest log keeps both log chains: a's full #1 (not
-	// the copy-only #3, nor a's differential, which a log restore does not
-	// need), b's log #4 and full #2; c's full #6 goes.
+	// Keeping only the newest log keeps what restores each database as of
+	// it: both log chains (a's full #1, not the copy-only #3 nor a's
+	// differential, which a log restore does not need; b's log #4 and full
+	// #2) and c's newest backup, full #6.
 	r, err := Apply(snapshots, Policy{KeepLast: 1}, "sql01", "")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got := forgottenIDs(r); got != "3,5,6" {
-		t.Fatalf("forgotten = %s, want 3,5,6", got)
+	if got := forgottenIDs(r); got != "3,5" {
+		t.Fatalf("forgotten = %s, want 3,5", got)
 	}
 
-	// Keeping a's differential keeps a's full, not b's or the copy-only.
+	// Keeping a's differential keeps a's full and, for b, its state then
+	// (log #4 and its full #2); not the copy-only, nor anything newer.
 	r, _ = Apply(snapshots, Policy{KeepTags: []string{"kind:differential"}}, "sql01", "")
-	if got := forgottenIDs(r); got != "2,3,4,6,7" {
-		t.Fatalf("forgotten = %s, want 2,3,4,6,7", got)
+	if got := forgottenIDs(r); got != "3,6,7" {
+		t.Fatalf("forgotten = %s, want 3,6,7", got)
+	}
+}
+
+func TestApply_KeepsDifferentialsOfDatabasesWithoutLogs(t *testing.T) {
+	// An instance plan: A (FULL) takes logs, B (SIMPLE) does not. Keeping
+	// the newest log backup per day must still keep B's differentials.
+	base := time.Date(2026, 3, 1, 0, 0, 0, 0, time.UTC)
+	h := func(n int) time.Time { return base.Add(time.Duration(n) * time.Hour) }
+	tags := func(kind string, objs ...string) []string {
+		t := []string{"plugin:mssql", "kind:" + kind}
+		for _, o := range objs {
+			t = append(t, "obj:"+o)
+		}
+		return t
+	}
+	snapshots := []SnapshotInfo{
+		snap(1, h(0), "sql01", nil, tags("full", "I/A", "I/B")),
+		snap(2, h(1), "sql01", nil, tags("log", "I/A")),
+		snap(3, h(24), "sql01", nil, tags("differential", "I/A", "I/B")),
+		snap(4, h(25), "sql01", nil, tags("log", "I/A")),
+		snap(5, h(48), "sql01", nil, tags("differential", "I/A", "I/B")),
+		snap(6, h(49), "sql01", nil, tags("log", "I/A")),
+		snap(7, h(50), "sql01", nil, []string{"plugin:mssql", "kind:log", "objects:none"}),
+	}
+	r, err := Apply(snapshots, Policy{KeepDaily: 3}, "sql01", "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Daily heads are #2, #4 and #7. B's state as of each (#1, #3, #5) is
+	// kept; A's logs chain back to full #1.
+	if got := forgottenIDs(r); got != "" {
+		t.Fatalf("forgotten = %s, want none", got)
+	}
+	// With only the newest day kept: B's differential #5 and its full #1,
+	// A's log chain #6, #4, #2 and #1; the logs need no differentials, but
+	// #5 stays for B.
+	r, _ = Apply(snapshots, Policy{KeepLast: 1}, "sql01", "")
+	if got := forgottenIDs(r); got != "3" {
+		t.Fatalf("forgotten = %s, want 3", got)
+	}
+}
+
+func TestApply_CopyOnlyFullsAndLegacyBases(t *testing.T) {
+	base := time.Date(2026, 3, 1, 0, 0, 0, 0, time.UTC)
+	h := func(n int) time.Time { return base.Add(time.Duration(n) * time.Hour) }
+
+	// A plan of copy-only fulls only: each restores on its own, so older
+	// ones go.
+	var copies []SnapshotInfo
+	for i := 1; i <= 5; i++ {
+		copies = append(copies, snap(byte(i), h(24*i), "sql01", nil, []string{"plugin:mssql", "kind:full", "copy-only", "obj:I/a"}))
+	}
+	r, err := Apply(copies, Policy{KeepLast: 1}, "sql01", "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := forgottenIDs(r); got != "1,2,3,4" {
+		t.Fatalf("copy-only fulls: forgotten = %s, want 1,2,3,4", got)
+	}
+
+	// Before the upgrade two jobs took untagged fulls of a and b. The
+	// first tagged differential of a builds on a's full #1: b's newer
+	// untagged full #2 must not stop the walk there.
+	legacy := []SnapshotInfo{
+		snap(1, h(0), "sql01", nil, []string{"plugin:mssql", "kind:full"}),
+		snap(2, h(1), "sql01", nil, []string{"plugin:mssql", "kind:full"}),
+		snap(3, h(2), "sql01", nil, []string{"plugin:mssql", "kind:differential", "obj:I/a"}),
+	}
+	r, _ = Apply(legacy, Policy{KeepLast: 1}, "sql01", "")
+	if len(r.Forget) != 0 {
+		t.Fatalf("legacy bases: forgot %v", r.Forget)
 	}
 }

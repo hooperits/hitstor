@@ -15,7 +15,6 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/hooperits/hitstor/internal/fs"
 	pb "github.com/hooperits/hitstor/internal/proto/hitstor/v1"
 	"github.com/hooperits/hitstor/internal/repository"
 	"github.com/hooperits/hitstor/internal/server"
@@ -33,13 +32,8 @@ type workloadPoint struct {
 	SHA256     string          `json:"sha256"`
 	Metadata   json.RawMessage `json:"metadata,omitempty"`
 
-	repo    *repository.Repository
-	content []fs.ID
-}
-
-// readNodeContent calls fn with each decompressed chunk of a file node.
-func readNodeContent(repo *repository.Repository, content []fs.ID, fn func([]byte) error) error {
-	return workloadcat.ReadContent(repo, content, fn)
+	repo *repository.Repository
+	snap *repository.Snapshot
 }
 
 // workloadSnapshotMatches reports whether a workload snapshot belongs to
@@ -82,6 +76,7 @@ func (d *Dashboard) workloadItems(sourceAgent, pluginID, object, snapshot string
 		if err != nil {
 			return nil, err
 		}
+		workloadcat.Default.Retain(repo, ids)
 		for _, id := range ids {
 			if snapshot != "" && !strings.HasPrefix(id.String(), snapshot) {
 				continue
@@ -92,6 +87,7 @@ func (d *Dashboard) workloadItems(sourceAgent, pluginID, object, snapshot string
 			}
 			items, err := workloadcat.Default.SnapshotItems(repo, id, snap, pluginID)
 			if err != nil {
+				slog.Warn("workload backups: unreadable snapshot", "snapshot", id.String()[:8], "error", err)
 				continue
 			}
 			for _, it := range items {
@@ -105,7 +101,7 @@ func (d *Dashboard) workloadItems(sourceAgent, pluginID, object, snapshot string
 					points = append(points, workloadPoint{
 						Ref: it.SnapshotID[:16] + ":" + m.Item, SnapshotID: it.SnapshotID, Item: m.Item, Kind: m.Kind,
 						CreatedAt: m.CreatedAt, Size: m.Size, SHA256: m.SHA256, Metadata: m.Metadata,
-						repo: repo, content: it.Content,
+						repo: repo, snap: snap,
 					})
 				}
 			}
@@ -283,12 +279,16 @@ func (d *Dashboard) sendWorkloadItems(stream pb.AgentService_RestoreWorkloadClie
 		return err
 	}
 	for _, p := range planned {
+		content, err := workloadcat.ItemContent(p.repo, p.snap, sess.Plugin, p.Item)
+		if err != nil {
+			return fmt.Errorf("find item %s: %w", p.Item, err)
+		}
 		if err := send(&pb.WorkloadRestoreMessage{Payload: &pb.WorkloadRestoreMessage_Start{Start: &pb.WorkloadItemStart{
 			Ref: p.Ref, Item: p.Item, Metadata: p.Metadata, Size: p.Size, Sha256: p.SHA256,
 		}}}); err != nil {
 			return err
 		}
-		err := readNodeContent(p.repo, p.content, func(data []byte) error {
+		err = workloadcat.ReadContent(p.repo, content, func(data []byte) error {
 			for len(data) > 0 {
 				n := min(len(data), restoreChunkSize)
 				if err := send(&pb.WorkloadRestoreMessage{Payload: &pb.WorkloadRestoreMessage_Data{Data: data[:n]}}); err != nil {

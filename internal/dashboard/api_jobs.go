@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"log/slog"
+	"strconv"
 	"strings"
 
 	"github.com/hooperits/hitstor/internal/cron"
@@ -162,6 +163,9 @@ func jobToJSON(c *i18n.Catalog, j server.BackupJob) backupJobJSON {
 		result.NextRun = nextRun.Format(time.RFC3339)
 	}
 
+	if st, _, _, ok := legacyWorkloadOutcome(c, j); ok {
+		result.Status = st
+	}
 	if plan := buildPlanView(c, j, time.Now()); plan != nil {
 		result.Plan, result.RunNowKind = plan, j.RunNowKind
 		result.Status = planStatus(j, plan, time.Now())
@@ -244,7 +248,7 @@ func applyPlan(j *server.BackupJob, plan []server.PlanEntry) {
 // checkPlanOptions rejects plans their backup options defeat: copy-only
 // fulls are never the base of a differential.
 func checkPlanOptions(plan []server.PlanEntry, opts map[string]string) error {
-	if opts["copy_only"] != "true" {
+	if copyOnly, _ := strconv.ParseBool(opts["copy_only"]); !copyOnly {
 		return nil
 	}
 	for _, e := range plan {

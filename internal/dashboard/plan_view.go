@@ -95,16 +95,9 @@ func buildPlanView(c *i18n.Catalog, j server.BackupJob, now time.Time) []planKin
 			}
 		}
 		v.Partial = st.Partial && !v.Failed
-		for _, o := range st.Objects {
-			switch {
-			case o.Status == "excluded":
-				v.Excluded = append(v.Excluded, objectOutcome(c, o))
-			case chainReasons[o.Reason]:
-				v.FullRequired = append(v.FullRequired, fullRequiredFor(c, e.Kind, o.Object, o.Reason, o.Message))
-			default:
-				v.Failures = append(v.Failures, objectOutcome(c, o))
-			}
-		}
+		fr, failures, excluded := objectViews(c, e.Kind, st.Objects)
+		v.FullRequired = append(v.FullRequired, fr...)
+		v.Failures, v.Excluded = failures, excluded
 		out = append(out, v)
 	}
 	return out
@@ -181,6 +174,43 @@ var (
 	fullRequiredItemRe = regexp.MustCompile(`^(.+?) \(([a-z-]+)(?:: (.*))?\)$`)
 	otherBackupRe      = regexp.MustCompile(`^(full|log backup) of (.+?) by (.*) to (.*)$`)
 )
+
+// objectViews sorts a run's object outcomes into those that need a full
+// backup, other failures, and objects left out by design.
+func objectViews(c *i18n.Catalog, kind string, objects []server.ObjectOutcome) (fullRequired []fullRequiredItem, failures, excluded []objectOutcomeView) {
+	for _, o := range objects {
+		switch {
+		case o.Status == "excluded":
+			excluded = append(excluded, objectOutcome(c, o))
+		case chainReasons[o.Reason]:
+			fullRequired = append(fullRequired, fullRequiredFor(c, kind, o.Object, o.Reason, o.Message))
+		default:
+			failures = append(failures, objectOutcome(c, o))
+		}
+	}
+	return fullRequired, failures, excluded
+}
+
+// legacyWorkloadOutcome is, for a workload job scheduled by interval (no
+// plan), the status and failed objects of its latest run when it was partial
+// or reported objects; ok is false otherwise.
+func legacyWorkloadOutcome(c *i18n.Catalog, j server.BackupJob) (status string, fullRequired []fullRequiredItem, failures []objectOutcomeView, ok bool) {
+	if j.JobType != server.JobTypeWorkload || server.UsesPlan(j) || j.RunNow {
+		return "", nil, nil, false
+	}
+	kind := server.EffectivePlan(j)[0].Kind
+	st := server.KindState(j, kind)
+	failed := st.LastErrorAt != nil && (st.LastBackup == nil || st.LastErrorAt.After(*st.LastBackup))
+	if !failed && !st.Partial {
+		return "", nil, nil, false
+	}
+	fullRequired, failures, _ = objectViews(c, kind, st.Objects)
+	status = "partial"
+	if failed {
+		status = "failed"
+	}
+	return status, fullRequired, failures, true
+}
 
 // chainReasons are the reasons a differential or log backup needs a full
 // backup first (see the mssql plugin's checkChain).

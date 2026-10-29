@@ -49,11 +49,12 @@ Salvo que se indique lo contrario, los endpoints requieren autenticación en el 
 | Método | Ruta | Descripción |
 |--------|------|-------------|
 | `GET` | `/api/backups` | Lista las tareas de respaldo |
-| `POST` | `/api/backups` | Crea una tarea. `job_type` es `files` (con `paths`) o `workload` (con `plugin`, `selection` y, opcionalmente, `backup_kind` y `plugin_settings`; el agente debe haber reportado el plugin) |
+| `POST` | `/api/backups` | Crea una tarea. `job_type` es `files` (con `paths`) o `workload` (con `plugin`, `selection` y, opcionalmente, `plan` (un `{kind, enabled, cron_expression, timezone}` por tipo de respaldo), `backup_kind` y `plugin_settings`; el agente debe haber reportado el plugin) |
 | `GET` | `/api/backups/{id}` | Obtiene una tarea |
 | `PUT` | `/api/backups/{id}` | Actualiza una tarea |
 | `DELETE` | `/api/backups/{id}` | Elimina una tarea |
-| `POST` | `/api/backups/{id}/run` | Ejecuta la tarea ahora |
+| `POST` | `/api/backups/{id}/run` | Ejecuta la tarea ahora; en tareas de workload, `{"kind": "full"}` elige el tipo del plan |
+| `GET` | `/api/backups/{id}/chains` | Cadenas de respaldo de cada base de una tarea de workload |
 | `POST` | `/api/backups/{id}/cancel` | Cancela un respaldo en curso |
 | `GET` | `/api/backups/validate-cron` | Valida una expresión cron |
 | `GET` | `/api/timezones` | Lista las zonas horarias admitidas |

@@ -18,6 +18,7 @@
                 {{else if eq $v.Status "overdue"}}<span class="badge badge-stale backup-detail-status-badge">{{t "overdue"}}</span>
                 {{else if eq $v.Status "pending"}}<span class="badge badge-pending backup-detail-status-badge">{{t "pending"}}</span>
                 {{else if eq $v.Status "disabled"}}<span class="badge badge-disabled backup-detail-status-badge">{{t "disabled"}}</span>
+                {{else if eq $v.Status "failed"}}<span class="badge badge-failed backup-detail-status-badge">{{t "failed"}}</span>
                 {{else}}<span class="badge badge-never backup-detail-status-badge">{{t "never run"}}</span>{{end}}
                 <span class="job-type-chip">{{t $v.JobTypeLabel}}</span>
             </div>
@@ -25,7 +26,16 @@
             <p class="backup-detail-subtitle">{{$v.SourceLabel}}</p>
         </div>
             <div class="backup-detail-hero__actions">
+            {{if $v.Plan}}
+            <div class="run-menu" id="run-menu">
+                <button class="btn" id="run-now-btn" type="button" aria-haspopup="menu" aria-expanded="false" onclick="toggleRunMenu()" {{if $job.RunNow}}disabled{{end}}>{{if $job.RunNow}}{{tf "{kind} pending..." "kind" $v.RunNowKind}}{{else}}{{t "Backup Now"}} <span class="run-menu__caret" aria-hidden="true">▾</span>{{end}}</button>
+                <div class="run-menu__list" role="menu" hidden>
+                    {{range $v.Plan}}<button type="button" role="menuitem" class="run-menu__item" onclick="runNow('{{.Kind}}')"><span class="bp-badge bp-badge--{{.Kind}}" aria-hidden="true">{{if eq .Kind "full"}}F{{else if eq .Kind "differential"}}D{{else if eq .Kind "log"}}L{{end}}</span>{{.Label}}</button>{{end}}
+                </div>
+            </div>
+            {{else}}
             <button class="btn" id="run-now-btn" onclick="runNow()" {{if $job.RunNow}}disabled{{end}}>{{if $job.RunNow}}{{t "Backup Pending..."}}{{else}}{{t "Backup Now"}}{{end}}</button>
+            {{end}}
             <button class="btn btn-danger" id="cancel-btn" onclick="cancelBackup()" {{if not (or $job.RunNow $v.Running)}}hidden{{end}}>{{t "Cancel Backup"}}</button>
             <button class="btn backup-detail-delete-btn" onclick="deleteJob()">{{t "Delete"}}</button>
         </div>
@@ -85,6 +95,43 @@
         </div>
     </div>
 </section>
+
+{{if $v.FullRequired}}
+<section class="fullreq" role="alert">
+    <div class="fullreq__icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+    </div>
+    <div class="fullreq__body">
+        <h2 class="fullreq__title">{{t "A full backup is required"}}</h2>
+        <p class="fullreq__lead">{{tf "The {kind} backup did not run, so as not to store a backup HitStor could not restore." "kind" $v.FailedKind}}</p>
+        <ul class="fullreq__list">
+            {{range $v.FullRequired}}
+            <li>
+                <code class="path-chip">{{.Object}}</code>
+                <span>{{.Message}}</span>
+                {{if .When}}<div class="fullreq__other">
+                    <span><b>{{t "When"}}</b> {{.When}}</span>
+                    <span><b>{{t "By"}}</b> {{.By}}</span>
+                    <span><b>{{t "Where"}}</b> <code>{{.Where}}</code></span>
+                </div>{{end}}
+            </li>
+            {{end}}
+        </ul>
+        <p class="fullreq__hint">{{t "Run a full backup now; the next differential and log backups will build on it."}}</p>
+    </div>
+    <button class="btn fullreq__action" type="button" onclick="runNow('full')" {{if $job.RunNow}}disabled{{end}}>{{t "Run full backup now"}}</button>
+</section>
+{{else if and $v.LastError (eq $v.Status "failed")}}
+<section class="fullreq fullreq--error" role="alert">
+    <div class="fullreq__icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+    </div>
+    <div class="fullreq__body">
+        <h2 class="fullreq__title">{{if $v.FailedKind}}{{tf "The last {kind} backup failed" "kind" $v.FailedKind}}{{else}}{{t "The last backup failed"}}{{end}}</h2>
+        <p class="fullreq__error">{{$v.LastError}}</p>
+    </div>
+</section>
+{{end}}
 
 <!-- Live Progress Panel (SSE-driven) -->
 <div class="card backup-detail-progress" id="progress-panel" hidden>
@@ -179,10 +226,12 @@
         </div>
 
         <div class="detail-meta-tiles">
+            {{if not $v.Plan}}
             <div class="detail-meta-tile">
                 <span class="detail-meta-tile__label">{{t "Backup kind"}}</span>
                 <span class="detail-meta-tile__value"><span class="badge badge-ok">{{t $job.BackupKind}}</span></span>
             </div>
+            {{end}}
             <div class="detail-meta-tile">
                 <span class="detail-meta-tile__label">{{t "Agent"}}</span>
                 <span class="detail-meta-tile__value"><a href="/agents/{{$v.AgentName}}" class="agent-chip">{{$v.AgentName}}</a></span>
@@ -248,9 +297,42 @@
             <span class="backup-detail-panel__icon backup-detail-panel__icon--schedule" aria-hidden="true">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
             </span>
-            <h2 class="backup-detail-panel__title">{{t "Schedule & settings"}}</h2>
+            <h2 class="backup-detail-panel__title">{{if $v.Plan}}{{t "Backup plan"}}{{else}}{{t "Schedule & settings"}}{{end}}</h2>
         </div>
 
+        {{if $v.Plan}}
+        <div class="plan-rows">
+            {{range $v.Plan}}
+            <div class="plan-row{{if not .Enabled}} plan-row--off{{end}}{{if .Failed}} plan-row--failed{{end}}{{if .Next}} plan-row--next{{end}}">
+                <span class="bp-badge bp-badge--{{.Kind}}" aria-hidden="true">{{if eq .Kind "full"}}F{{else if eq .Kind "differential"}}D{{else if eq .Kind "log"}}L{{end}}</span>
+                <div class="plan-row__main">
+                    <div class="plan-row__title"><strong>{{.Label}}</strong>{{if .Next}}<span class="plan-row__tag">{{t "next"}}</span>{{end}}</div>
+                    <div class="plan-row__schedule">{{.Schedule}}</div>
+                    <div class="plan-row__meta">
+                        {{if .NextRun}}<span>{{tf "Next {when}" "when" .NextRun}}</span>{{end}}
+                        <span>{{t "Last success"}}: {{if .LastBackup}}{{timeAgo .LastBackup}}{{else}}{{t "never"}}{{end}}</span>
+                        {{if .Failed}}<span class="plan-row__error">{{if .FullRequired}}{{t "needs a full backup"}}{{else}}{{t "failed"}}{{end}} · {{timeAgo .LastErrorAt}}</span>{{end}}
+                    </div>
+                </div>
+                <button type="button" class="btn btn-secondary plan-row__run" onclick="runNow('{{.Kind}}')" {{if $job.RunNow}}disabled{{end}}>{{t "Run now"}}</button>
+            </div>
+            {{end}}
+            <p class="detail-schedule-tile__meta">{{tf "Created {when}" "when" (timeFormat $v.CreatedAt)}}</p>
+        </div>
+        <div class="detail-accordion" id="plan-accordion">
+            <button type="button" class="detail-accordion__toggle" onclick="toggleDetailAccordion('plan-accordion')" aria-expanded="false" aria-controls="plan-accordion-body">
+                <span>{{t "Edit plan"}}</span>
+                <svg class="detail-accordion__chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+            <div class="detail-accordion__body" id="plan-accordion-body">
+                <div id="edit-plan"></div>
+                <div class="detail-accordion__actions">
+                    <button type="button" class="btn" onclick="savePlan()">{{t "Save plan"}}</button>
+                    <span id="edit-plan-status" class="detail-form-status"></span>
+                </div>
+            </div>
+        </div>
+        {{else}}
         <div class="detail-schedule-tile{{if not $v.ScheduleEnabled}} detail-schedule-tile--off{{end}}">
             <span class="detail-schedule-tile__icon" aria-hidden="true">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
@@ -290,10 +372,26 @@
     </form>
             </div>
         </div>
+        {{end}}
     </div>
 </div>
 
+{{if eq $job.JobType "workload"}}
+<section class="card chain-panel">
+    <div class="backup-detail-panel__head">
+        <span class="backup-detail-panel__icon backup-detail-panel__icon--schedule" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+        </span>
+        <h2 class="backup-detail-panel__title">{{t "Backup chain"}}</h2>
+    </div>
+    <p class="chain-panel__lead">{{t "Each full backup starts a chain: the differentials based on it and the log backups that follow. A restore uses one chain."}}</p>
+    <div id="chains" class="chains"><p class="text-muted">{{t "Loading..."}}</p></div>
+</section>
+{{end}}
+
 <script src="/static/schedule.js"></script>
+<script src="/static/backup_plan.js"></script>
+<script src="/static/backup_chains.js"></script>
 <script src="/static/plugins.js"></script>
 <script src="/static/backup_job.js"></script>
 <script>
@@ -623,23 +721,35 @@ var backupProgress = (function() {
     return { showPending: showPending };
 })();
 
-function runNow() {
-    var forceFull = confirm(t('Force a full re-scan? (OK = full re-scan, Cancel = incremental)'));
-    if (!confirm(forceFull
-        ? t('Trigger an immediate full backup for "{name}"?', {name: '{{$job.Name}}'})
-        : t('Trigger an immediate incremental backup for "{name}"?', {name: '{{$job.Name}}'}))) return;
+// runNow triggers a backup now: of one kind of the plan for workload jobs,
+// a full or incremental scan for file systems.
+function runNow(kind) {
+    closeRunMenu();
+    var body = {};
+    if (kind) {
+        var label = {{if $v.Plan}}{ {{range $i, $k := $v.Plan}}{{if $i}}, {{end}}{{$k.Kind}}: {{$k.Label}}{{end}} }[kind] || kind{{else}}kind{{end}};
+        if (!confirm(t('Run a {kind} backup of "{name}" now?', {kind: label, name: '{{$job.Name}}'}))) return;
+        body.kind = kind;
+    } else {
+        var forceFull = confirm(t('Force a full re-scan? (OK = full re-scan, Cancel = incremental)'));
+        if (!confirm(forceFull
+            ? t('Trigger an immediate full backup for "{name}"?', {name: '{{$job.Name}}'})
+            : t('Trigger an immediate incremental backup for "{name}"?', {name: '{{$job.Name}}'}))) return;
+        body.force_full = forceFull;
+    }
     var btn = document.getElementById('run-now-btn');
     btn.disabled = true;
     btn.textContent = t('Triggering...');
     fetch('/api/backups/' + jobID + '/run', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({force_full: forceFull})
+        body: JSON.stringify(body)
     })
     .then(function(r) {
         if (!r.ok) return r.text().then(function(t) { throw new Error(t); });
-        btn.textContent = t('Backup Pending...');
+        btn.textContent = kind ? t('{kind} pending...', {kind: label}) : t('Backup Pending...');
         btn.style.opacity = '0.6';
+        document.querySelectorAll('.plan-row__run, .fullreq__action').forEach(function(b) { b.disabled = true; });
         // Immediately show progress panel in pending state.
         backupProgress.showPending();
     })
@@ -649,6 +759,22 @@ function runNow() {
         btn.textContent = t('Backup Now');
     });
 }
+
+function toggleRunMenu() {
+    var list = document.querySelector('.run-menu__list');
+    if (!list) return;
+    list.hidden = !list.hidden;
+    document.getElementById('run-now-btn').setAttribute('aria-expanded', String(!list.hidden));
+}
+
+function closeRunMenu() {
+    var list = document.querySelector('.run-menu__list');
+    if (list) list.hidden = true;
+}
+
+document.addEventListener('click', function(e) {
+    if (!e.target.closest('#run-menu')) closeRunMenu();
+});
 
 function cancelBackup() {
     if (!confirm(t('Cancel the running backup for "{name}"?', {name: '{{$job.Name}}'}))) return;
@@ -699,7 +825,8 @@ var editSchedule = (function() {
     if (!cron && {{$job.ScheduleEnabled}} && hours > 0) {
         cron = hours < 24 ? '0 */' + hours + ' * * *' : '0 2 * * *';
     }
-    return HitStorSchedule.mount(document.getElementById('edit-schedule'), {cron: cron, timezone: '{{$job.Timezone}}'});
+    var host = document.getElementById('edit-schedule');
+    return host && HitStorSchedule.mount(host, {cron: cron, timezone: '{{$job.Timezone}}'});
 })();
 
 function saveSchedule(e) {
@@ -735,6 +862,46 @@ function saveSchedule(e) {
         status.style.color = 'var(--danger)';
     });
 }
+
+{{if $v.Plan}}
+var editPlan = HitStorPlan.mount(document.getElementById('edit-plan'), {
+    kinds: {{index $data "PlanKinds"}},
+    plan: {{index $data "Plan"}}
+});
+
+function savePlan() {
+    var status = document.getElementById('edit-plan-status');
+    var plan;
+    try {
+        plan = editPlan.value();
+    } catch (err) {
+        status.textContent = err.message;
+        status.style.color = 'var(--danger)';
+        return;
+    }
+    status.textContent = t('Saving...');
+    status.style.color = 'var(--text-muted)';
+    fetch('/api/backups/' + jobID, {
+        method: 'PUT',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({plan: plan})
+    })
+    .then(function(r) {
+        if (!r.ok) return r.text().then(function(t) { throw new Error(t); });
+        status.textContent = t('Saved');
+        status.style.color = 'var(--ok)';
+        setTimeout(function() { location.reload(); }, 600);
+    })
+    .catch(function(err) {
+        status.textContent = err.message;
+        status.style.color = 'var(--danger)';
+    });
+}
+{{end}}
+
+{{if eq $job.JobType "workload"}}
+HitStorChains.render(document.getElementById('chains'), jobID);
+{{end}}
 
 {{if index $data "Managed"}}
 HitStorBackupJob.editSelection(document.getElementById('edit-selection'), {{$job}});

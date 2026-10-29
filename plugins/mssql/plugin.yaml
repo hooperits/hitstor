@@ -1,6 +1,6 @@
 id: mssql
 name: Microsoft SQL Server
-version: 0.3.0
+version: 0.4.0
 type: workload
 protocol_version: 1
 min_agent_version: 0.1.0

@@ -11,10 +11,9 @@
     var esc = ui.esc;
     var api = ui.api;
 
-    // A usual plan per backup kind until the operator changes the schedule:
-    // weekly fulls, daily differentials, logs every 15 minutes; file
-    // systems back up nightly.
-    var DEFAULT_SCHEDULES = { files: '0 2 * * *', full: '0 1 * * 0', differential: '0 1 * * 1,2,3,4,5,6', log: '*/15 * * * *' };
+    // File systems back up nightly by default; plugin sources get a backup
+    // plan with one schedule per kind (backup_plan.js).
+    var FILES_SCHEDULE = '0 2 * * *';
 
     function splitSource(src) {
         var i = (src || '').indexOf('|');
@@ -33,8 +32,9 @@
     }
 
     // sourceOptions renders the options of a source into el: excludes and
-    // snapshots for a file system, the backup kind and the plugin's own
-    // fields for a plugin. values holds the job's current options.
+    // snapshots for a file system, the plugin's own fields for a plugin
+    // (which kinds run when is the job's plan). values holds the job's
+    // current options.
     function sourceOptions(el, plugin, values) {
         values = values || {};
         if (!plugin) {
@@ -46,7 +46,6 @@
                 esc(t('Consistent snapshot (VSS / LVM / btrfs)')) + '</label>' +
                 '<p class="form-hint">' + esc(t('Reads from a volume snapshot for crash-consistent open files. Windows: VSS. Linux: LVM or btrfs when available (agent needs privileges).')) + '</p>';
             return {
-                kind: function () { return 'files'; },
                 collect: function () {
                     var ex = el.querySelector('.bw-excludes').value.trim();
                     return {
@@ -56,12 +55,7 @@
                 }
             };
         }
-        var kinds = backupKinds(plugin);
-        var kind = kinds.indexOf(values.backup_kind) >= 0 ? values.backup_kind : kinds[0];
         el.innerHTML =
-            '<div class="form-group"><label>' + esc(t('Backup kind')) + '</label><select class="bw-kind">' + kinds.map(function (k) {
-                return '<option value="' + esc(k) + '"' + (k === kind ? ' selected' : '') + '>' + esc(t(k)) + '</option>';
-            }).join('') + '</select></div>' +
             '<div class="bw-backup-fields"></div>' +
             // Plugins that keep credentials per object (set from the tree) have no job settings.
             '<fieldset class="plugin-fieldset bw-settings-set"><legend>' + esc(t('Connection settings')) + '</legend><div class="bw-settings"></div></fieldset>';
@@ -70,11 +64,12 @@
         el.querySelector('.bw-settings-set').hidden = !settingsFields.length;
         ui.renderFields(el.querySelector('.bw-backup-fields'), backupFields, values.backup_options || {});
         ui.renderFields(el.querySelector('.bw-settings'), settingsFields, values.plugin_settings || {});
+        if (!backupFields.length && !settingsFields.length) {
+            el.innerHTML = '<p class="form-hint">' + esc(t('This source has no options. Which kinds of backup run, and when, is set in the next step.')) + '</p>';
+        }
         return {
-            kind: function () { return el.querySelector('.bw-kind').value; },
             collect: function () {
                 return {
-                    backup_kind: el.querySelector('.bw-kind').value,
                     backup_options: ui.collectFields(el.querySelector('.bw-backup-fields'), backupFields),
                     plugin_settings: ui.collectFields(el.querySelector('.bw-settings'), settingsFields)
                 };
@@ -151,7 +146,7 @@
         var url = '/api/backups/validate-cron?expr=' + encodeURIComponent(when.cron_expression) + (when.timezone ? '&tz=' + encodeURIComponent(when.timezone) : '');
         return api('GET', url).then(function (d) {
             if (!d.valid) return t('Invalid expression');
-            return d.next_3 && d.next_3.length ? t('{description} — Next: {next}', { description: d.description, next: new Date(d.next_3[0]).toLocaleString() }) : d.description;
+            return d.next_3 && d.next_3.length ? t('{description} — Next: {next}', { description: d.description, next: new Date(d.next_3[0]).toLocaleString(document.documentElement.lang || undefined) }) : d.description;
         }).catch(function () { return when.cron_expression; });
     }
 
@@ -165,7 +160,10 @@
             '<section class="bw-step" data-step="1"><div class="bw-select"></div></section>' +
             '<section class="bw-step" data-step="2" hidden>' +
             '<div class="form-group"><label>' + esc(t('Repository')) + '</label><select class="bw-repo" required></select></div>' +
-            '<fieldset class="plugin-fieldset"><legend>' + esc(t('Schedule')) + '</legend><div class="bw-schedule"></div></fieldset></section>' +
+            '<fieldset class="plugin-fieldset bw-schedule-set"><legend>' + esc(t('Schedule')) + '</legend><div class="bw-schedule"></div></fieldset>' +
+            '<div class="bw-plan-set"><div class="bw-plan-title">' + esc(t('Backup plan')) + '</div>' +
+            '<p class="form-hint">' + esc(t('One selection, several kinds of backup: each runs on its own schedule. Differential and log backups build on this job\'s full backups.')) + '</p>' +
+            '<div class="bw-plan"></div></div></section>' +
             '<section class="bw-step" data-step="3" hidden>' +
             '<div class="form-group"><label>' + esc(t('Job Name')) + '</label><input type="text" class="bw-name" required autocomplete="off"></div>' +
             '<dl class="bw-review"></dl></section>' +
@@ -181,12 +179,10 @@
         var step = 1;
         var agents = [];
         var panel = null;
-        var schedule = null;
-        var scheduleFor = '';
-        var scheduleTouched = false;
+        var schedule = null; // file systems: one schedule
+        var plan = null;     // plugins: one schedule per kind
+        var mountedFor = '';
         var nameTouched = false;
-        var scheduleBox = d.q('.bw-schedule');
-        scheduleBox.addEventListener('change', function () { scheduleTouched = true; });
         d.q('.bw-name').addEventListener('input', function () { nameTouched = true; });
         d.q('.bw-cancel').addEventListener('click', d.close);
 
@@ -200,15 +196,21 @@
             panel = selectionPanel(d.q('.bw-select'), { agents: agents });
         }).catch(function (err) { ui.showError(errEl, err); });
 
-        // The schedule follows the backup kind until the operator edits it.
+        // A file system gets one schedule, a plugin source a plan of its
+        // kinds; both are kept while the source stays the same.
         function mountSchedule() {
-            var key = panel.options().kind();
-            if (schedule && (scheduleTouched || key === scheduleFor)) return;
-            scheduleFor = key;
-            scheduleBox.innerHTML = '';
-            var host = document.createElement('div');
-            scheduleBox.appendChild(host);
-            schedule = HitStorSchedule.mount(host, { defaultCron: DEFAULT_SCHEDULES[key] || DEFAULT_SCHEDULES.full });
+            var src = panel.source();
+            if (src === mountedFor) return;
+            mountedFor = src;
+            var files = splitSource(src).id === 'files';
+            d.q('.bw-schedule-set').hidden = !files;
+            d.q('.bw-plan-set').hidden = files;
+            schedule = plan = null;
+            if (files) {
+                schedule = HitStorSchedule.mount(d.q('.bw-schedule'), { defaultCron: FILES_SCHEDULE });
+            } else {
+                plan = HitStorPlan.mount(d.q('.bw-plan'), { kinds: backupKinds(pluginOf(agents, src) || {}) });
+            }
         }
 
         function suggestName() {
@@ -218,7 +220,6 @@
             var what = s.id === 'files' ? t('Files') : P.describeSource(src, agents);
             var parts = [s.agent, what];
             if (sel.length === 1) parts.push(sel[0].split(/[\/\\]/).filter(Boolean).pop() || sel[0]);
-            if (s.id !== 'files') parts.push(t(panel.options().kind()));
             return parts.join(' – ');
         }
 
@@ -226,7 +227,6 @@
             var src = panel.source();
             var s = splitSource(src);
             var o = panel.options().collect();
-            var when = schedule.value();
             if (!nameTouched) d.q('.bw-name').value = suggestName();
             var rows = [
                 [t('Machine'), esc(s.agent)],
@@ -237,14 +237,22 @@
                 rows.push([t('Excludes'), o.excludes.length ? o.excludes.map(function (x) { return '<code class="path-chip path-chip--exclude">' + esc(x) + '</code>'; }).join(' ') : '—']);
                 rows.push([t('Consistent snapshot'), esc(o.use_vss ? t('Yes') : t('No'))]);
             } else {
-                rows.push([t('Backup kind'), esc(t(o.backup_kind))]);
                 var set = Object.keys(o.backup_options || {});
                 if (set.length) rows.push([t('Options'), esc(set.map(function (k) { return k + '=' + o.backup_options[k]; }).join(', '))]);
             }
             rows.push([t('Repository'), esc(d.q('.bw-repo').value)]);
-            rows.push([t('Schedule'), '<span class="bw-when">' + esc(t('Loading...')) + '</span>']);
+            var whens = plan ? plan.value() : [schedule.value()];
+            rows.push([plan ? t('Backup plan') : t('Schedule'), '<ul class="bw-plan-review">' + whens.map(function (w, i) {
+                return '<li>' + (plan ? HitStorPlan.badge(w.kind) + '<strong>' + esc(HitStorPlan.label(w.kind)) + '</strong> ' : '') +
+                    '<span class="bw-when" data-i="' + i + '">' + esc(t('Loading...')) + '</span></li>';
+            }).join('') + '</ul>']);
             d.q('.bw-review').innerHTML = rows.map(function (r) { return '<dt>' + esc(r[0]) + '</dt><dd>' + r[1] + '</dd>'; }).join('');
-            describeSchedule(when).then(function (text) { d.q('.bw-when').textContent = text; });
+            whens.forEach(function (w, i) {
+                describeSchedule(plan ? { schedule_enabled: w.enabled, cron_expression: w.cron_expression, timezone: w.timezone } : w).then(function (text) {
+                    var el = d.q('.bw-when[data-i="' + i + '"]');
+                    if (el) el.textContent = text;
+                });
+            });
         }
 
         // check validates the current step before moving on.
@@ -253,7 +261,7 @@
                 if (!panel || !panel.value().length) throw new Error(t('Select at least one item to back up.'));
             } else if (step === 2) {
                 if (!d.q('.bw-repo').value) throw new Error(t('Select a repository.'));
-                schedule.value();
+                if (plan) plan.value(); else schedule.value();
             }
         }
 
@@ -298,11 +306,15 @@
                 return;
             }
             var s = splitSource(panel.source());
-            var when = schedule.value();
-            var body = {
-                name: name, agent_name: s.agent, repo_name: d.q('.bw-repo').value,
-                schedule_enabled: when.schedule_enabled, cron_expression: when.cron_expression, timezone: when.timezone
-            };
+            var body = { name: name, agent_name: s.agent, repo_name: d.q('.bw-repo').value };
+            if (plan) {
+                body.plan = plan.value();
+            } else {
+                var when = schedule.value();
+                body.schedule_enabled = when.schedule_enabled;
+                body.cron_expression = when.cron_expression;
+                body.timezone = when.timezone;
+            }
             var o = panel.options().collect();
             if (s.id === 'files') {
                 body.job_type = 'files';
@@ -313,7 +325,6 @@
                 body.job_type = 'workload';
                 body.plugin = s.id;
                 body.selection = panel.value();
-                body.backup_kind = o.backup_kind;
                 body.backup_options = o.backup_options;
                 body.plugin_settings = o.plugin_settings;
             }

@@ -90,8 +90,10 @@
 
     // mount renders the picker into el. opts.cron and opts.timezone set the
     // initial value (an empty cron means on demand unless opts.defaultCron
-    // is given). Returns { value() } with schedule_enabled, cron_expression
-    // and timezone, or throws an Error saying what to fix.
+    // is given). opts.repeatOnly hides the on-demand choice, for callers
+    // that switch the schedule on and off themselves. Returns { value() }
+    // with schedule_enabled, cron_expression and timezone, or throws an
+    // Error saying what to fix.
     function mount(host, opts) {
         opts = opts || {};
         // A fresh root per mount, so remounting leaves no stale listeners.
@@ -255,7 +257,7 @@
                 }
                 var next = (data.next_3 || []).map(function (s) {
                     var dt = new Date(s);
-                    return dt.toLocaleString(undefined, { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+                    return dt.toLocaleString(document.documentElement.lang || undefined, { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
                 });
                 box.innerHTML = '<strong>' + esc(data.description) + '</strong>' +
                     (next.length ? '<span class="sched-next">' + esc(t('Next runs')) + ': ' + next.map(esc).join(' · ') + '</span>' : '');
@@ -295,6 +297,7 @@
         // Sensible starting points for each method.
         setChecked('dow', ['0']);
         setChecked('dom', ['1']);
+        if (opts.repeatOnly) q('.sched > .sched-seg').hidden = true;
         var initial = opts.cron || opts.defaultCron || '';
         if (initial) {
             load(initial);
@@ -356,7 +359,7 @@
 
         return {
             value: function () {
-                if (radio('type') === 'manual') return { schedule_enabled: false, cron_expression: '', timezone: '' };
+                if (radio('type') === 'manual' && !opts.repeatOnly) return { schedule_enabled: false, cron_expression: '', timezone: '' };
                 var expr = cronValue();
                 if (!expr) throw new Error(t('Enter a cron expression.'));
                 return { schedule_enabled: true, cron_expression: expr, timezone: q('.sched-tz').value };

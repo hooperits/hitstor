@@ -89,7 +89,10 @@
                     <td class="paths-cell" title="{{range .Paths}}{{.}} {{end}}">{{.SourceLabel}}</td>
                     <td><span class="repo-chip">{{.RepoName}}</span></td>
                     <td class="schedule-cell">
-                        {{if .ScheduleEnabled}}
+                        {{if .Plan}}
+                        <span class="plan-kinds">{{range .Plan}}<span class="bp-badge bp-badge--{{.Kind}}{{if not .Enabled}} bp-badge--off{{end}}{{if .Failed}} bp-badge--failed{{end}}" title="{{.Label}}: {{.Schedule}}">{{if eq .Kind "full"}}F{{else if eq .Kind "differential"}}D{{else if eq .Kind "log"}}L{{end}}</span>{{end}}</span>
+                        {{if .NextRun}}<span class="schedule-next">{{tf "Next {when}" "when" .NextRun}}</span>{{end}}
+                        {{else if .ScheduleEnabled}}
                         <span class="schedule-primary">{{.ScheduleDisplay}}</span>
                         {{if .NextRun}}<span class="schedule-next">{{tf "Next {when}" "when" .NextRun}}</span>{{end}}
                         {{else}}<span class="schedule-off">{{t "Schedule off"}}</span>{{end}}
@@ -118,7 +121,8 @@
                         {{if gt .DedupPercent 10.0}}<div class="backup-progress-dedup">{{tf "{pct}% dedup" "pct" (printf "%.0f" .DedupPercent)}}</div>{{end}}
                         {{else}}
                         <span class="badge {{if eq .Status "ok"}}badge-ok{{else if eq .Status "overdue"}}badge-stale{{else if eq .Status "failed"}}badge-critical{{else if eq .Status "pending"}}badge-pending{{else if eq .Status "disabled"}}badge-disabled{{else}}badge-never{{end}}"{{if .LastError}} title="{{.LastError}}"{{end}}>{{t .Status}}</span>
-                        {{if .LastError}}<div class="job-last-error">{{.LastError}}</div>{{end}}
+                        {{if .FullRequired}}<div class="job-last-error">{{t "A full backup is required"}}</div>
+                        {{else if .LastError}}<div class="job-last-error">{{.LastError}}</div>{{end}}
                         {{end}}
                     </td>
                     <td class="col-actions" onclick="event.stopPropagation()">
@@ -135,6 +139,7 @@
 {{end}}
 
 <script src="/static/schedule.js"></script>
+<script src="/static/backup_plan.js"></script>
 <script src="/static/plugins.js"></script>
 <script src="/static/backup_job.js"></script>
 <script>

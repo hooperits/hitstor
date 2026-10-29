@@ -174,6 +174,12 @@ type BackupJob struct {
 	BackupKind     string            `json:"backup_kind,omitempty"`
 	// BackupOptions are passed with each run (e.g. copy_only).
 	BackupOptions map[string]string `json:"backup_options,omitempty"`
+	// Plan schedules each backup kind of the selection (see plan.go); when
+	// empty, the job runs BackupKind on its own schedule. KindRuns records
+	// each kind's runs, and RunNowKind the kind of a pending manual run.
+	Plan       []PlanEntry        `json:"plan,omitempty"`
+	KindRuns   map[string]KindRun `json:"kind_runs,omitempty"`
+	RunNowKind string             `json:"run_now_kind,omitempty"`
 
 	// LastError and LastErrorAt record the most recent failed run reported
 	// by the agent; a successful backup clears them.
@@ -834,18 +840,52 @@ func (r *AgentRegistry) ReattachJobs(targetAgentName string, jobIDs []string) er
 
 // UpdateJobLastBackup sets the last backup time for the given job ID.
 func (r *AgentRegistry) UpdateJobLastBackup(id string, t time.Time) error {
+	return r.RecordKindBackup(id, "", t)
+}
+
+// RecordKindBackup records a successful run of a workload job's kind (""
+// for jobs without kinds), along with the job's last backup.
+func (r *AgentRegistry) RecordKindBackup(id, kind string, t time.Time) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	for i := range r.jobs {
 		if r.jobs[i].ID == id {
-			r.jobs[i].LastBackup = &t
-			r.jobs[i].RunNow = false        // Clear manual trigger after backup completes.
-			r.jobs[i].ForceFullScan = false // Clear force-full after backup completes.
-			r.jobs[i].LastError, r.jobs[i].LastErrorAt = "", nil
+			j := &r.jobs[i]
+			if kind != "" && j.JobType == JobTypeWorkload {
+				// Keep the other kinds' history of a job made before plans.
+				j.KindRuns = kindRunsOf(*j)
+				j.KindRuns[kind] = KindRun{LastBackup: &t}
+				for _, e := range EffectivePlan(*j) {
+					if kindCovers(kind, e.Kind) {
+						st := j.KindRuns[e.Kind]
+						st.LastBackup = &t
+						j.KindRuns[e.Kind] = st
+					}
+				}
+			}
+			j.LastBackup = &t
+			j.RunNow, j.RunNowKind = false, "" // Clear manual trigger after backup completes.
+			j.ForceFullScan = false            // Clear force-full after backup completes.
+			j.LastError, j.LastErrorAt = "", nil
 			return r.save()
 		}
 	}
 	return fmt.Errorf("server: job %q not found", id)
+}
+
+// kindRunsOf returns a copy of j's per-kind records, filled from the job's
+// own record for a job made before plans.
+func kindRunsOf(j BackupJob) map[string]KindRun {
+	out := make(map[string]KindRun, len(j.KindRuns)+1)
+	for _, e := range EffectivePlan(j) {
+		if st := KindState(j, e.Kind); st.LastBackup != nil || st.LastErrorAt != nil {
+			out[e.Kind] = st
+		}
+	}
+	for k, v := range j.KindRuns {
+		out[k] = v
+	}
+	return out
 }
 
 // UpdateJobLastFullBackup sets the last full backup time for the given job ID.
@@ -902,16 +942,28 @@ func (r *AgentRegistry) UpdateJobVerifyResult(id string, result JobVerifyResult)
 // RecordJobFailure stores a failed run reported by the agent and clears the
 // manual "Backup Now" flag, so a failing job is not retried on every poll.
 func (r *AgentRegistry) RecordJobFailure(id, msg string, t time.Time) error {
+	return r.RecordKindFailure(id, "", msg, t)
+}
+
+// RecordKindFailure is RecordJobFailure for one kind of a workload job.
+func (r *AgentRegistry) RecordKindFailure(id, kind, msg string, t time.Time) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	for i := range r.jobs {
 		if r.jobs[i].ID == id {
+			j := &r.jobs[i]
 			if len(msg) > 2000 {
 				msg = msg[:2000]
 			}
-			r.jobs[i].LastError = msg
-			r.jobs[i].LastErrorAt = &t
-			r.jobs[i].RunNow = false
+			if kind != "" && j.JobType == JobTypeWorkload {
+				j.KindRuns = kindRunsOf(*j)
+				st := j.KindRuns[kind]
+				st.LastError, st.LastErrorAt = msg, &t
+				j.KindRuns[kind] = st
+			}
+			j.LastError = msg
+			j.LastErrorAt = &t
+			j.RunNow, j.RunNowKind = false, ""
 			return r.save()
 		}
 	}
@@ -920,11 +972,21 @@ func (r *AgentRegistry) RecordJobFailure(id, msg string, t time.Time) error {
 
 // SetJobRunNow marks or clears the manual "Backup Now" flag on a job.
 func (r *AgentRegistry) SetJobRunNow(id string, runNow bool) error {
+	return r.SetJobRunNowKind(id, runNow, "")
+}
+
+// SetJobRunNowKind marks a manual run of one kind of a workload job ("":
+// the plan's first kind), or clears the flag.
+func (r *AgentRegistry) SetJobRunNowKind(id string, runNow bool, kind string) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	for i := range r.jobs {
 		if r.jobs[i].ID == id {
 			r.jobs[i].RunNow = runNow
+			r.jobs[i].RunNowKind = ""
+			if runNow {
+				r.jobs[i].RunNowKind = kind
+			}
 			return r.save()
 		}
 	}

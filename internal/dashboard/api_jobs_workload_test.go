@@ -182,3 +182,75 @@ func TestAPIUpdateJobKeepsOmittedFields(t *testing.T) {
 		t.Fatalf("after options update = %+v", j)
 	}
 }
+
+func TestAPIWorkloadJobPlan(t *testing.T) {
+	dash, _, cleanup := setupTestDashboardWithRepoManager(t)
+	defer cleanup()
+	if _, err := dash.registry.AddAgent("sql01"); err != nil {
+		t.Fatal(err)
+	}
+	if err := dash.registry.SetAgentPlugins("sql01", []server.AgentPlugin{{ID: "mssql", Version: "0.4.0", Status: "active",
+		Capabilities: []string{"browse", "backup.full", "backup.differential", "backup.log"}}}); err != nil {
+		t.Fatal(err)
+	}
+	plan := `"plan":[{"kind":"full","enabled":true,"cron_expression":"0 1 * * 0","timezone":"UTC"},
+		{"kind":"differential","enabled":true,"cron_expression":"0 1 * * 1-6","timezone":"UTC"},
+		{"kind":"log","enabled":false}]`
+	base := `"name":"db plan","agent_name":"sql01","repo_name":"default","job_type":"workload","plugin":"mssql","selection":["MSSQLSERVER/db"]`
+
+	// The plugin offers no incremental backups.
+	if rec := postWorkloadJob(t, dash, `{`+base+`,"plan":[{"kind":"incremental","enabled":true,"cron_expression":"0 1 * * *"}]}`); rec.Code != http.StatusBadRequest {
+		t.Fatalf("unknown kind: %d %s", rec.Code, rec.Body)
+	}
+	// Copy-only fulls cannot be the base of the plan's differentials.
+	if rec := postWorkloadJob(t, dash, `{`+base+`,"backup_options":{"copy_only":"true"},`+plan+`}`); rec.Code != http.StatusBadRequest || !strings.Contains(rec.Body.String(), "copy-only") {
+		t.Fatalf("copy-only with differentials: %d %s", rec.Code, rec.Body)
+	}
+
+	rec := postWorkloadJob(t, dash, `{`+base+`,`+plan+`}`)
+	if rec.Code != http.StatusCreated {
+		t.Fatalf("create: %d %s", rec.Code, rec.Body)
+	}
+	var got backupJobJSON
+	if err := json.NewDecoder(rec.Body).Decode(&got); err != nil {
+		t.Fatal(err)
+	}
+	if len(got.Plan) != 3 || got.Plan[0].Kind != "full" || !got.Plan[1].Enabled || got.Plan[2].Enabled || !got.ScheduleEnabled {
+		t.Fatalf("plan = %+v", got.Plan)
+	}
+
+	// Saving the selection leaves the plan alone.
+	req := httptest.NewRequest("PUT", "/api/backups/"+got.ID, strings.NewReader(`{"selection":["MSSQLSERVER"]}`))
+	upd := httptest.NewRecorder()
+	dash.Handler().ServeHTTP(upd, req)
+	if j := dash.registry.GetJob(got.ID); upd.Code != http.StatusOK || len(j.Plan) != 3 || j.Selection[0] != "MSSQLSERVER" {
+		t.Fatalf("update selection: %d %s %+v", upd.Code, upd.Body, j)
+	}
+
+	// Run one kind of the plan now.
+	run := func(body string) int {
+		rec := httptest.NewRecorder()
+		dash.Handler().ServeHTTP(rec, httptest.NewRequest("POST", "/api/backups/"+got.ID+"/run", strings.NewReader(body)))
+		return rec.Code
+	}
+	if code := run(`{"kind":"incremental"}`); code != http.StatusBadRequest {
+		t.Fatalf("run unknown kind: %d", code)
+	}
+	if code := run(`{"kind":"differential"}`); code != http.StatusOK {
+		t.Fatalf("run differential: %d", code)
+	}
+	if j := dash.registry.GetJob(got.ID); !j.RunNow || j.RunNowKind != "differential" {
+		t.Fatalf("run now = %v %q", j.RunNow, j.RunNowKind)
+	}
+	if kind, _, _ := server.DueKind(*dash.registry.GetJob(got.ID), time.Now()); kind != "differential" {
+		t.Fatalf("due kind = %s", kind)
+	}
+
+	// A differential that needs a full shows as such on the job.
+	dash.registry.RecordKindFailure(got.ID, "differential", "full backup required: MSSQLSERVER/db (no-full)", time.Now())
+	j := dash.registry.GetJob(got.ID)
+	v := buildJobView(dash.catalog(httptest.NewRequest("GET", "/", nil)), *j, nil, time.Now())
+	if v.Status != "failed" || len(v.FullRequired) != 1 || v.FullRequired[0].Reason != "no-full" {
+		t.Fatalf("view = %s %+v", v.Status, v.FullRequired)
+	}
+}

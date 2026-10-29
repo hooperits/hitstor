@@ -99,32 +99,74 @@ Los objetos se escriben `<instancia>/<base de datos>`, por ejemplo
 completa**: todas las bases en línea en cada ejecución, incluidas las que se
 creen después de la tarea. Los respaldos diferenciales de una instancia
 completa omiten `master`, y los de log omiten las bases en el modelo de
-recuperación SIMPLE y las que aún no tienen un respaldo completo (que inicia
-su cadena de log). Una tarea respalda sus bases con un tipo de respaldo;
-programe tareas separadas por tipo. Un plan habitual:
+recuperación SIMPLE.
 
-| Tarea | Tipo | Programación |
-|-------|------|--------------|
-| Completo semanal | `full` | Domingo 01:00 |
-| Diferencial diario | `differential` | Todos los días 01:00 |
-| Log | `log` | Cada 15 minutos |
+### Plan de respaldo { #backup-plan }
+
+Una tarea respalda una selección con un **plan de respaldo**: cada tipo de
+respaldo tiene su propia programación, y los diferenciales y logs se basan en
+los respaldos completos de la propia tarea. El asistente propone un plan
+habitual:
+
+| Tipo | Programación por defecto | Notas |
+|------|--------------------------|-------|
+| Completo | Domingo 01:00 | Inicia la cadena |
+| Diferencial | Lunes a sábado 01:00 | Cambios desde el último completo de la tarea |
+| Log de transacciones | Apagado; p. ej. cada 15 minutos | Requiere el modelo de recuperación FULL |
+
+Cada tipo se puede apagar (solo a demanda). Si dos tipos coinciden a la misma
+hora, se ejecuta el completo y cubre al diferencial. **Respaldar ahora**
+pregunta qué tipo ejecutar, y cada fila del plan en la página de la tarea tiene
+su propio **Ejecutar ahora**.
 
 En el dashboard, elija **Nueva tarea de respaldo**, expanda la máquina y
 **Microsoft SQL Server** en el árbol de selección, y marque la instancia o bases
-individuales. El panel lateral define el tipo de respaldo y las opciones; el
-paso siguiente, el repositorio y la programación. Vea
+individuales. El paso siguiente define el repositorio y el plan. Vea
 [Tareas de respaldo](../admin-guide/dashboard.md#backups).
 
 La misma tarea con la API del dashboard:
 
 ```bash
 curl -X POST https://<servidor>:8420/api/backups -H 'Content-Type: application/json' -d '{
-  "name": "Sales log", "agent_name": "sql01", "repo_name": "default",
-  "job_type": "workload", "plugin": "mssql",
-  "selection": ["MSSQLSERVER/Sales"], "backup_kind": "log",
-  "schedule_enabled": true, "cron_expression": "*/15 * * * *"
+  "name": "Sales", "agent_name": "sql01", "repo_name": "default",
+  "job_type": "workload", "plugin": "mssql", "selection": ["MSSQLSERVER/Sales"],
+  "plan": [
+    {"kind": "full", "enabled": true, "cron_expression": "0 1 * * 0", "timezone": "America/Panama"},
+    {"kind": "differential", "enabled": true, "cron_expression": "0 1 * * 1,2,3,4,5,6", "timezone": "America/Panama"},
+    {"kind": "log", "enabled": true, "cron_expression": "*/15 * * * *", "timezone": "America/Panama"}
+  ]
 }'
 ```
+
+`POST /api/backups/<id>/run` con `{"kind": "full"}` ejecuta un tipo de inmediato.
+
+### Se requiere un respaldo completo { #full-required }
+
+Antes de un diferencial o un log, el plugin comprueba en `msdb` que el respaldo
+se podrá restaurar desde HitStor. Si no es así, la ejecución falla **antes de
+respaldar nada** y la página de la tarea ofrece **Ejecutar respaldo completo
+ahora**:
+
+| Motivo | Significado |
+|--------|-------------|
+| `no-full` | No hay un completo desde que se creó la base o se pasó a FULL |
+| `external-full` | El completo del que depende lo hizo otra herramienta (la página muestra cuándo, quién y dónde) |
+| `external-log` | Otra herramienta hizo el último respaldo de log y dejó un hueco en la cadena de HitStor |
+| `unknown-base` | `msdb` no tiene registro del completo del que depende (por ejemplo, una copia restaurada) |
+
+Si la selección tiene varias bases, primero se revisan todas y el mensaje lista
+cada una que necesita un completo. SQL Server aceptaría muchos de estos
+respaldos (un diferencial sobre el completo de otra herramienta, por ejemplo),
+pero HitStor no podría restaurarlos con sus propios respaldos.
+
+### Cadena de respaldos { #backup-chain }
+
+La página de la tarea muestra la **cadena de respaldos** de cada base: cada
+completo, los diferenciales basados en él (su LSN base es el LSN de checkpoint
+del completo) y los logs posteriores, con hasta cuándo restaura la cadena. Los
+huecos en la cadena de log se marcan, y los respaldos que dependen de un
+completo que HitStor no tiene se listan aparte. La pantalla de restauración
+muestra el mismo vínculo en su columna **Basado en**.
 
 Cada respaldo se guarda en la instantánea como
 `mssql/<instancia>/<base>/<tipo>-<fecha>.bak` (`.trn` para los logs), junto a

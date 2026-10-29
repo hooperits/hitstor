@@ -121,6 +121,19 @@ func (s *Server) CancelSessionByJobID(jobID string) bool {
 	return true
 }
 
+// sessionKindByJobID returns the backup kind tagged on the job's open
+// session, or "".
+func (s *Server) sessionKindByJobID(jobID string) string {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	for _, sess := range s.sessions {
+		if sess.JobID == jobID {
+			return KindFromTags(sess.Tags)
+		}
+	}
+	return ""
+}
+
 // AbortSessionsByRepo cancels and removes all active sessions for a repo.
 func (s *Server) AbortSessionsByRepo(repoName string) int {
 	s.mu.Lock()

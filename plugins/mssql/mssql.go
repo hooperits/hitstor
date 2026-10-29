@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log/slog"
@@ -240,9 +241,10 @@ type backupTarget struct {
 // resolveSelection expands instances into their databases and drops
 // duplicates. An instance stands for every online database that supports
 // the backup kind: differentials skip master, and log backups skip
-// databases in the SIMPLE recovery model or whose log chain no full backup
-// has started yet. Databases selected one by one are
-// kept as they are, so an unsupported kind fails loudly.
+// databases in the SIMPLE recovery model. Databases selected one by one are
+// kept as they are, so an unsupported kind fails loudly. A database whose
+// log chain no full backup has started is kept: checkChains asks for the
+// full backup it needs rather than leaving it unprotected.
 func (p *mssqlPlugin) resolveSelection(ctx context.Context, selection []string, kind string) ([]backupTarget, error) {
 	var out []backupTarget
 	seen := map[string]bool{}
@@ -280,8 +282,6 @@ func (p *mssqlPlugin) resolveSelection(ctx context.Context, selection []string, 
 				skip = "master takes only full backups"
 			case kind == "log" && d.RecoveryModel == "SIMPLE":
 				skip = "SIMPLE recovery model has no log backups"
-			case kind == "log" && !d.LogChain:
-				skip = "no full backup has started its log chain yet"
 			}
 			if skip != "" {
 				slog.Info("database skipped", "instance", instance, "database", d.Name, "kind", kind, "reason", skip)
@@ -295,6 +295,39 @@ func (p *mssqlPlugin) resolveSelection(ctx context.Context, selection []string, 
 		}
 	}
 	return out, nil
+}
+
+// checkChains makes sure every target's differential or log backup will
+// restore from HitStor before any is taken, so a run does not back up half
+// its databases and then fail.
+func (p *mssqlPlugin) checkChains(ctx context.Context, targets []backupTarget, kind string) error {
+	if kind == "full" {
+		return nil
+	}
+	var issues fullRequiredError
+	for _, t := range targets {
+		db, _, err := p.conn(ctx, t.instance)
+		if err != nil {
+			return err
+		}
+		st, err := readChainState(ctx, db, t.database)
+		if err != nil {
+			if errors.Is(err, sql.ErrNoRows) {
+				continue // not visible: the backup itself names the login
+			}
+			return fmt.Errorf("%s/%s: %w", t.instance, t.database, err)
+		}
+		if kind == "log" && st.RecoveryModel == "SIMPLE" {
+			return fmt.Errorf("%s/%s uses the SIMPLE recovery model, which has no log backups", t.instance, t.database)
+		}
+		if issue := checkChain(kind, t.instance+"/"+t.database, st); issue != nil {
+			issues = append(issues, *issue)
+		}
+	}
+	if len(issues) > 0 {
+		return issues
+	}
+	return nil
 }
 
 func boolOption(opts map[string]string, key string, def bool) (bool, error) {
@@ -329,6 +362,9 @@ func (p *mssqlPlugin) Backup(ctx context.Context, req hitstorplugin.BackupReques
 
 	targets, err := p.resolveSelection(ctx, req.Selection, kind)
 	if err != nil {
+		return err
+	}
+	if err := p.checkChains(ctx, targets, kind); err != nil {
 		return err
 	}
 	for _, t := range targets {

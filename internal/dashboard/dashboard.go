@@ -311,6 +311,7 @@ func (d *Dashboard) Handler() http.Handler {
 	mux.Handle("DELETE /api/backups/{id}", d.protect(http.HandlerFunc(d.handleAPIDeleteBackupJob)))
 	mux.Handle("POST /api/backups/{id}/run", d.protect(http.HandlerFunc(d.handleAPIRunBackupJob)))
 	mux.Handle("POST /api/backups/{id}/cancel", d.protect(http.HandlerFunc(d.handleAPICancelBackupJob)))
+	mux.Handle("GET /api/backups/{id}/chains", d.protect(http.HandlerFunc(d.handleAPIBackupJobChains)))
 	mux.Handle("GET /api/backups/validate-cron", d.protect(http.HandlerFunc(d.handleAPIValidateCron)))
 	mux.Handle("GET /api/timezones", d.protect(http.HandlerFunc(d.handleAPITimezones)))
 

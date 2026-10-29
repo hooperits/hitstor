@@ -737,7 +737,7 @@
             '<label><input type="radio" name="wr-when" value="at"> ' + esc(t('Point in time')) + '</label> ' +
             '<input type="datetime-local" class="wr-at" step="1" disabled></div>' +
             '<div class="table-wrap"><table class="wr-set-table"><thead><tr><th></th><th>' + esc(t('Kind')) + '</th><th>' + esc(t('Time')) + '</th><th>' +
-            esc(t('Size')) + '</th><th>' + esc(t('Snapshot')) + '</th></tr></thead><tbody></tbody></table></div></div>' +
+            esc(t('Size')) + '</th><th>' + esc(t('Based on')) + '</th><th>' + esc(t('Snapshot')) + '</th></tr></thead><tbody></tbody></table></div></div>' +
             '</div>' +
             '<div class="wr-col wr-right" hidden>' +
             '<div class="wr-card"><div class="wr-card-title">' + esc(t('Destination')) + '</div>' +
@@ -828,6 +828,28 @@
             }
         }
 
+        // basedOn names the full backup a point builds on, from the LSNs the
+        // plugin recorded: a differential's base, a log's chain.
+        function basedOn(p) {
+            var m = p.metadata || {};
+            var fulls = points.filter(function (f) {
+                var fm = f.metadata || {};
+                return fm.type === 'D' && !fm.copy_only && fm.database_guid === m.database_guid;
+            });
+            if (m.type === 'I') {
+                var base = fulls.filter(function (f) { return f.metadata.checkpoint_lsn === m.differential_base_lsn; })[0];
+                return base ? esc(t('Full of {when}', { when: fmtTime(base.created_at) }))
+                    : '<span class="wr-nobase">' + esc(t('a full HitStor does not hold')) + '</span>';
+            }
+            if (m.type === 'L') {
+                var owner = fulls.filter(function (f) { return new Date(f.created_at) <= new Date(p.created_at); })[0];
+                return owner ? esc(t('Chain of the full of {when}', { when: fmtTime(owner.created_at) }))
+                    : '<span class="wr-nobase">' + esc(t('a full HitStor does not hold')) + '</span>';
+            }
+            if (m.type === 'D' && m.copy_only) return esc(t('copy only'));
+            return '—';
+        }
+
         function selectObject(obj) {
             current = obj;
             overrides = {};
@@ -838,8 +860,8 @@
             points.forEach(function (p, i) { if (opts.snapshot && p.snapshot_id.indexOf(opts.snapshot) === 0 && pick === 0) pick = i; });
             tb.innerHTML = points.map(function (p, i) {
                 return '<tr><td><input type="radio" name="wr-set" data-time="' + esc(p.created_at) + '"' + (i === pick ? ' checked' : '') + '></td><td>' +
-                    esc(t(KIND_LABEL[p.kind] || p.kind || 'Full')) + '</td><td>' + esc(fmtTime(p.created_at)) + '</td><td>' + esc(formatBytes(p.size)) + '</td><td><code>' +
-                    esc(p.snapshot_id.slice(0, 8)) + '</code></td></tr>';
+                    esc(t(KIND_LABEL[p.kind] || p.kind || 'Full')) + '</td><td>' + esc(fmtTime(p.created_at)) + '</td><td>' + esc(formatBytes(p.size)) + '</td><td>' +
+                    basedOn(p) + '</td><td><code>' + esc(p.snapshot_id.slice(0, 8)) + '</code></td></tr>';
             }).join('');
             q('.wr-sets').hidden = false;
             q('.wr-right').hidden = false;

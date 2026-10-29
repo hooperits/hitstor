@@ -338,10 +338,11 @@ func (s *Server) FinalizeBackup(ctx context.Context, req *pb.FinalizeBackupReque
 		slog.Warn("failed to update agent last backup time", "agent", session.AgentName, "error", updateErr)
 	}
 	if session.JobID != "" {
-		if updateErr := s.registry.UpdateJobLastBackup(session.JobID, now); updateErr != nil {
+		if updateErr := s.registry.RecordKindBackup(session.JobID, KindFromTags(session.Tags), now); updateErr != nil {
 			slog.Warn("failed to update job last backup time", "job", session.JobID, "error", updateErr)
 		}
-		if session.BackupType == "full" {
+		// Workload sessions are always stored whole; only a full kind is a full backup.
+		if kind := KindFromTags(session.Tags); session.BackupType == "full" && (kind == "" || kind == "full") {
 			if updateErr := s.registry.UpdateJobLastFullBackup(session.JobID, now); updateErr != nil {
 				slog.Warn("failed to update job last full backup time", "job", session.JobID, "error", updateErr)
 			}
@@ -452,7 +453,20 @@ func (s *Server) GetSchedule(ctx context.Context, req *pb.GetScheduleRequest) (*
 			sj.LastFullBackupUnix = j.LastFullBackup.Unix()
 		}
 
-		if j.ScheduleEnabled && j.CronExpression != "" {
+		if UsesPlan(j) {
+			// The plan's kind that is due next, as the job's kind for this
+			// poll; the session's kind tag tells which kind ran.
+			sj.Enabled = false
+			for _, e := range EffectivePlan(j) {
+				sj.Enabled = sj.Enabled || e.Enabled
+			}
+			if kind, at, ok := DueKind(j, time.Now()); ok {
+				sj.BackupKind = kind
+				if !j.RunNow {
+					sj.NextRunUnix = at.Unix()
+				}
+			}
+		} else if j.ScheduleEnabled && j.CronExpression != "" {
 			// Cron mode: parse expression and compute next run in job's timezone.
 			expr, err := cron.Parse(j.CronExpression)
 			if err != nil {
@@ -495,7 +509,7 @@ func (s *Server) GetSchedule(ctx context.Context, req *pb.GetScheduleRequest) (*
 			sj.NextRunUnix = nextRun.Unix()
 		}
 		// Interval jobs retry a failed run after a pause, not on every poll.
-		if j.CronExpression == "" && JobFailedSinceLastBackup(j) {
+		if !UsesPlan(j) && j.CronExpression == "" && JobFailedSinceLastBackup(j) {
 			if retry := j.LastErrorAt.Add(failedJobRetryDelay).Unix(); sj.NextRunUnix < retry {
 				sj.NextRunUnix = retry
 			}
@@ -609,6 +623,19 @@ func pluginFieldsFromProto(fs []*pb.PluginField) []plugin.FieldSpec {
 	return out
 }
 
+// failedKind returns the kind of a workload job's run that just failed: the
+// kind of its open session, or else the kind that was due.
+func (s *Server) failedKind(j BackupJob) string {
+	if j.JobType != JobTypeWorkload {
+		return ""
+	}
+	if kind := s.sessionKindByJobID(j.ID); kind != "" {
+		return kind
+	}
+	kind, _, _ := DueKind(j, time.Now())
+	return kind
+}
+
 // failedJobRetryDelay is how long an interval job waits after a failed run.
 const failedJobRetryDelay = 15 * time.Minute
 
@@ -625,7 +652,7 @@ func (s *Server) ReportJobFailure(ctx context.Context, req *pb.ReportJobFailureR
 	if job.AgentName != agentName {
 		return nil, status.Error(codes.PermissionDenied, "job does not belong to this agent")
 	}
-	if err := s.registry.RecordJobFailure(req.JobId, req.Error, time.Now()); err != nil {
+	if err := s.registry.RecordKindFailure(req.JobId, s.failedKind(*job), req.Error, time.Now()); err != nil {
 		return nil, status.Errorf(codes.Internal, "record job failure: %v", err)
 	}
 	dropped := s.CancelSessionByJobID(req.JobId)

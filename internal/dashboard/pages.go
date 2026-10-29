@@ -85,6 +85,13 @@ type jobView struct {
 	LastVerifyBytes  uint64
 	VerifyOK         bool
 	VerifyFailed     bool
+
+	// Plan describes each backup kind of a workload job; FullRequired lists
+	// the databases a failed differential or log backup needs a full for.
+	Plan         []planKindView
+	FullRequired []fullRequiredItem
+	FailedKind   string // label of the kind whose run failed
+	RunNowKind   string
 }
 
 // buildJobView prepares a job for display; schedule and date text are in
@@ -167,6 +174,25 @@ func buildJobView(c *i18n.Catalog, j server.BackupJob, sess *server.SessionInfo,
 		Status:           status,
 		LastError:        lastError,
 		CreatedAt:        j.CreatedAt,
+	}
+
+	if plan := buildPlanView(c, j, now); plan != nil {
+		v.Plan = plan
+		v.Status = planStatus(j, plan, now)
+		v.ScheduleDisplay, v.NextRun = planSummary(c, plan)
+		v.ScheduleEnabled = v.Status != "disabled"
+		v.LastError = ""
+		if j.RunNow {
+			v.RunNowKind = kindLabel(c, server.EffectivePlan(j)[0].Kind)
+			if j.RunNowKind != "" {
+				v.RunNowKind = kindLabel(c, j.RunNowKind)
+			}
+		}
+		for _, k := range plan {
+			if k.Failed && v.LastError == "" {
+				v.LastError, v.FullRequired, v.FailedKind = k.LastError, k.FullRequired, k.Label
+			}
+		}
 	}
 
 	if sess != nil {
@@ -534,9 +560,25 @@ func (d *Dashboard) handleBackupDetail(w http.ResponseWriter, r *http.Request) {
 		"Managed":    managed,
 		"PluginName": pluginName,
 		"Progress":   progress,
+		"PlanKinds":  planKinds(agent, *job),
+		"Plan":       server.EffectivePlan(*job),
 	})
 	data.TitleRaw = true
 	d.render(w, r, "backup_detail", data)
+}
+
+// planKinds returns the kinds a workload job's plan can schedule: those
+// the agent's plugin offers, or the plan's own when the agent has not
+// reported the plugin.
+func planKinds(agent *server.AgentRecord, j server.BackupJob) []string {
+	if kinds := pluginKinds(agent, j.Plugin); len(kinds) > 0 {
+		return kinds
+	}
+	var kinds []string
+	for _, e := range server.EffectivePlan(j) {
+		kinds = append(kinds, e.Kind)
+	}
+	return kinds
 }
 
 type snapshotAgentGroup struct {

@@ -95,32 +95,70 @@ Objects are written `<instance>/<database>`, for example
 `MSSQLSERVER/Sales`, or just `<instance>` to back up **the whole instance**:
 every online database at each run, including databases created after the job.
 Differential backups of a whole instance skip `master`, and log backups skip
-databases in the SIMPLE recovery model and those without a full backup yet
-(which starts their log chain). A job backs up its databases with one
-backup kind; schedule separate jobs per kind. A common plan:
+databases in the SIMPLE recovery model.
 
-| Job | Kind | Schedule |
-|-----|------|----------|
-| Weekly full | `full` | Sunday 01:00 |
-| Daily differential | `differential` | Daily 01:00 |
-| Log | `log` | Every 15 minutes |
+### Backup plan
+
+A job backs up one selection with a **backup plan**: each backup kind has its
+own schedule, and differential and log backups build on the job's own fulls.
+The wizard proposes a common plan:
+
+| Kind | Default schedule | Notes |
+|------|------------------|-------|
+| Full | Sunday 01:00 | Starts the chain |
+| Differential | Monday to Saturday 01:00 | Changes since the job's last full |
+| Transaction log | Off; e.g. every 15 minutes | Needs the FULL recovery model |
+
+Each kind can be switched off (on demand only). When two kinds fall at the
+same time, the full runs and covers the differential. **Backup Now** asks which
+kind to run, and each kind's row on the job page has its own **Run now**.
 
 In the dashboard, choose **New Backup Job**, expand the machine and
 **Microsoft SQL Server** in the selection tree, and check the instance or
-individual databases. The side panel sets the backup kind and options; the next
-step sets the repository and schedule. See
+individual databases. The next step sets the repository and the plan. See
 [Backup jobs](../admin-guide/dashboard.md#backups).
 
 The same job through the dashboard API:
 
 ```bash
 curl -X POST https://<server>:8420/api/backups -H 'Content-Type: application/json' -d '{
-  "name": "Sales log", "agent_name": "sql01", "repo_name": "default",
-  "job_type": "workload", "plugin": "mssql",
-  "selection": ["MSSQLSERVER/Sales"], "backup_kind": "log",
-  "schedule_enabled": true, "cron_expression": "*/15 * * * *"
+  "name": "Sales", "agent_name": "sql01", "repo_name": "default",
+  "job_type": "workload", "plugin": "mssql", "selection": ["MSSQLSERVER/Sales"],
+  "plan": [
+    {"kind": "full", "enabled": true, "cron_expression": "0 1 * * 0", "timezone": "America/Panama"},
+    {"kind": "differential", "enabled": true, "cron_expression": "0 1 * * 1,2,3,4,5,6", "timezone": "America/Panama"},
+    {"kind": "log", "enabled": true, "cron_expression": "*/15 * * * *", "timezone": "America/Panama"}
+  ]
 }'
 ```
+
+`POST /api/backups/<id>/run` with `{"kind": "full"}` runs one kind now.
+
+### A full backup is required
+
+Before a differential or log backup, the plugin checks in `msdb` that the
+backup will restore from HitStor. If it would not, the run fails **before
+backing anything up** and the job page offers **Run full backup now**:
+
+| Reason | Meaning |
+|--------|---------|
+| `no-full` | No full backup since the database was created or switched to FULL |
+| `external-full` | The full it depends on was taken by another tool (the page shows when, by whom and where) |
+| `external-log` | Another tool took the last log backup, leaving a gap in HitStor's chain |
+| `unknown-base` | `msdb` has no record of the full it depends on (for example, a restored copy) |
+
+When a selection holds several databases, all are checked first, and the
+message lists each one that needs a full. SQL Server itself would accept many
+of these backups (a differential on another tool's full, for instance), but
+HitStor could not restore them from its own backups.
+
+### Backup chain
+
+The job page shows each database's **backup chain**: every full, the
+differentials based on it (their base LSN is the full's checkpoint LSN) and the
+log backups after it, with how far the chain restores. A gap in the log chain is
+marked, and backups that build on a full HitStor does not hold are listed apart.
+The restore page shows the same link in its **Based on** column.
 
 Each backup is stored in the snapshot as
 `mssql/<instance>/<database>/<kind>-<time>.bak` (`.trn` for logs), next to a

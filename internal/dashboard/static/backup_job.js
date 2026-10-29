@@ -63,9 +63,11 @@
                 return '<option value="' + esc(k) + '"' + (k === kind ? ' selected' : '') + '>' + esc(t(k)) + '</option>';
             }).join('') + '</select></div>' +
             '<div class="bw-backup-fields"></div>' +
-            '<fieldset class="plugin-fieldset"><legend>' + esc(t('Connection settings')) + '</legend><div class="bw-settings"></div></fieldset>';
+            // Plugins that keep credentials per object (set from the tree) have no job settings.
+            '<fieldset class="plugin-fieldset bw-settings-set"><legend>' + esc(t('Connection settings')) + '</legend><div class="bw-settings"></div></fieldset>';
         var backupFields = ui.fieldsFor(plugin.fields, 'backup');
         var settingsFields = ui.fieldsFor(plugin.fields, 'settings');
+        el.querySelector('.bw-settings-set').hidden = !settingsFields.length;
         ui.renderFields(el.querySelector('.bw-backup-fields'), backupFields, values.backup_options || {});
         ui.renderFields(el.querySelector('.bw-settings'), settingsFields, values.plugin_settings || {});
         return {
@@ -149,7 +151,7 @@
         var url = '/api/backups/validate-cron?expr=' + encodeURIComponent(when.cron_expression) + (when.timezone ? '&tz=' + encodeURIComponent(when.timezone) : '');
         return api('GET', url).then(function (d) {
             if (!d.valid) return t('Invalid expression');
-            return d.next_3 && d.next_3.length ? t('{description} — Next: {next}', { description: d.description, next: d.next_3[0] }) : d.description;
+            return d.next_3 && d.next_3.length ? t('{description} — Next: {next}', { description: d.description, next: new Date(d.next_3[0]).toLocaleString() }) : d.description;
         }).catch(function () { return when.cron_expression; });
     }
 
@@ -256,7 +258,7 @@
         }
 
         function go(n) {
-            step = n;
+            step = n = Math.min(Math.max(n, 1), 3);
             form.querySelectorAll('.bw-step').forEach(function (s) { s.hidden = +s.getAttribute('data-step') !== n; });
             form.querySelectorAll('.form-stepper-step').forEach(function (s) {
                 var k = +s.getAttribute('data-step');

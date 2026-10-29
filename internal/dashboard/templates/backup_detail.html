@@ -273,147 +273,16 @@
             </button>
             <div class="detail-accordion__body" id="schedule-accordion-body">
     <form id="edit-schedule-form" onsubmit="saveSchedule(event)">
-        <label style="display:flex; align-items:center; gap:0.5rem; margin-bottom:1rem;">
-            <input type="checkbox" id="edit-sched-enabled"
-                   {{if $job.ScheduleEnabled}}checked{{end}}
-                   onchange="toggleScheduleInputs();">
-            {{t "Enable scheduled backups"}}
-        </label>
-        <div style="display:flex; gap:1rem; margin-bottom:1rem;">
-            <label style="display:flex; align-items:center; gap:0.3rem;">
-                <input type="radio" name="sched-mode" value="interval"
-                       {{if not $job.CronExpression}}checked{{end}}
-                       onchange="toggleScheduleMode();">
-                {{t "Interval"}}
-            </label>
-            <label style="display:flex; align-items:center; gap:0.3rem;">
-                <input type="radio" name="sched-mode" value="schedule"
-                       onchange="toggleScheduleMode();">
-                {{t "Schedule"}}
-            </label>
-            <label style="display:flex; align-items:center; gap:0.3rem;">
-                <input type="radio" name="sched-mode" value="cron"
-                       {{if $job.CronExpression}}checked{{end}}
-                       onchange="toggleScheduleMode();">
-                {{t "Advanced"}}
-            </label>
-        </div>
-        <div id="interval-inputs" style="{{if $job.CronExpression}}display:none;{{end}}">
-            <label style="display:flex; align-items:center; gap:0.5rem; margin-bottom:1rem;">
-                {{t "Every"}}
-                <input type="number" id="edit-sched-hours"
-                       value="{{if $job.ScheduleHours}}{{$job.ScheduleHours}}{{else}}24{{end}}"
-                       min="1" max="8760" style="width:5rem;">
-                {{t "hours"}}
-            </label>
-        </div>
-        <div id="schedule-inputs" style="display:none;">
-            <label style="display:flex; align-items:center; gap:0.5rem; margin-bottom:1rem;">
-                {{t "Frequency"}}
-                <select id="sched-frequency" style="width:10rem;" onchange="toggleFrequencyDetails(); updateSchedulePreview();">
-                    <option value="daily">{{t "Daily"}}</option>
-                    <option value="weekly">{{t "Weekly"}}</option>
-                    <option value="monthly">{{t "Monthly"}}</option>
-                </select>
-            </label>
-            <label style="display:flex; align-items:center; gap:0.5rem; margin-bottom:1rem;">
-                {{t "Time"}}
-                <select id="sched-hour" style="width:4rem;" onchange="updateSchedulePreview();">
-                    <option value="12">12</option>
-                    <option value="1">1</option>
-                    <option value="2" selected>2</option>
-                    <option value="3">3</option>
-                    <option value="4">4</option>
-                    <option value="5">5</option>
-                    <option value="6">6</option>
-                    <option value="7">7</option>
-                    <option value="8">8</option>
-                    <option value="9">9</option>
-                    <option value="10">10</option>
-                    <option value="11">11</option>
-                </select>
-                :
-                <select id="sched-minute" style="width:4.5rem;" onchange="updateSchedulePreview();">
-                    <option value="0">00</option>
-                    <option value="15">15</option>
-                    <option value="30">30</option>
-                    <option value="45">45</option>
-                </select>
-                <select id="sched-ampm" style="width:4.5rem;" onchange="updateSchedulePreview();">
-                    <option value="AM" selected>AM</option>
-                    <option value="PM">PM</option>
-                </select>
-            </label>
-            <div id="sched-dow-group" style="display:none; margin-bottom:1rem;">
-                <div style="font-size:0.85rem; color:var(--text-muted); margin-bottom:0.4rem;">{{t "Days of week"}}</div>
-                <div style="display:flex; gap:0.3rem; flex-wrap:wrap;">
-                    <label class="dow-toggle" style="display:inline-flex; align-items:center; justify-content:center; width:2.8rem; height:2rem; border-radius:4px; cursor:pointer; border:1px solid var(--border); font-size:0.8rem; user-select:none; background:transparent; color:var(--text);">
-                        <input type="checkbox" value="1" onchange="updateDowStyle(this); updateSchedulePreview();" style="display:none;">
-                        <span>{{t "Mon"}}</span>
-                    </label>
-                    <label class="dow-toggle" style="display:inline-flex; align-items:center; justify-content:center; width:2.8rem; height:2rem; border-radius:4px; cursor:pointer; border:1px solid var(--border); font-size:0.8rem; user-select:none; background:transparent; color:var(--text);">
-                        <input type="checkbox" value="2" onchange="updateDowStyle(this); updateSchedulePreview();" style="display:none;">
-                        <span>{{t "Tue"}}</span>
-                    </label>
-                    <label class="dow-toggle" style="display:inline-flex; align-items:center; justify-content:center; width:2.8rem; height:2rem; border-radius:4px; cursor:pointer; border:1px solid var(--border); font-size:0.8rem; user-select:none; background:transparent; color:var(--text);">
-                        <input type="checkbox" value="3" onchange="updateDowStyle(this); updateSchedulePreview();" style="display:none;">
-                        <span>{{t "Wed"}}</span>
-                    </label>
-                    <label class="dow-toggle" style="display:inline-flex; align-items:center; justify-content:center; width:2.8rem; height:2rem; border-radius:4px; cursor:pointer; border:1px solid var(--border); font-size:0.8rem; user-select:none; background:transparent; color:var(--text);">
-                        <input type="checkbox" value="4" onchange="updateDowStyle(this); updateSchedulePreview();" style="display:none;">
-                        <span>{{t "Thu"}}</span>
-                    </label>
-                    <label class="dow-toggle" style="display:inline-flex; align-items:center; justify-content:center; width:2.8rem; height:2rem; border-radius:4px; cursor:pointer; border:1px solid var(--border); font-size:0.8rem; user-select:none; background:transparent; color:var(--text);">
-                        <input type="checkbox" value="5" onchange="updateDowStyle(this); updateSchedulePreview();" style="display:none;">
-                        <span>{{t "Fri"}}</span>
-                    </label>
-                    <label class="dow-toggle" style="display:inline-flex; align-items:center; justify-content:center; width:2.8rem; height:2rem; border-radius:4px; cursor:pointer; border:1px solid var(--border); font-size:0.8rem; user-select:none; background:transparent; color:var(--text);">
-                        <input type="checkbox" value="6" onchange="updateDowStyle(this); updateSchedulePreview();" style="display:none;">
-                        <span>{{t "Sat"}}</span>
-                    </label>
-                    <label class="dow-toggle" style="display:inline-flex; align-items:center; justify-content:center; width:2.8rem; height:2rem; border-radius:4px; cursor:pointer; border:1px solid var(--border); font-size:0.8rem; user-select:none; background:transparent; color:var(--text);">
-                        <input type="checkbox" value="0" onchange="updateDowStyle(this); updateSchedulePreview();" style="display:none;">
-                        <span>{{t "Sun"}}</span>
-                    </label>
-                </div>
-                <div id="sched-dow-error" style="font-size:0.8rem; color:var(--danger); margin-top:0.3rem; display:none;">{{t "Select at least one day."}}</div>
-            </div>
-            <div id="sched-dom-group" style="display:none; margin-bottom:1rem;">
-                <label style="display:flex; align-items:center; gap:0.5rem;">
-                    {{t "Day of month"}}
-                    <select id="sched-dom" style="width:5rem;" onchange="updateSchedulePreview();"></select>
-                </label>
-            </div>
-            <div id="schedule-preview" style="font-size:0.85rem; color:var(--text-muted); margin:0 0 0.75rem 0;"></div>
-        </div>
-        <div id="cron-inputs" style="{{if not $job.CronExpression}}display:none;{{end}}">
-            <label style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.5rem;">
-                {{t "Expression"}}
-                <input type="text" id="edit-cron-expr"
-                       value="{{$job.CronExpression}}"
-                       placeholder="0 2 * * *"
-                       style="width:12rem; font-family:monospace;"
-                       onblur="validateCron();">
-            </label>
-            <div id="cron-preview" style="font-size:0.85rem; color:var(--text-muted); margin:0 0 0.75rem 0;"></div>
-        </div>
-        <div id="tz-inputs" style="{{if not $job.CronExpression}}display:none;{{end}}">
-            <label style="display:flex; align-items:center; gap:0.5rem; margin-bottom:1rem;">
-                {{t "Timezone"}}
-                <select id="edit-timezone" style="width:16rem;">
-                    <option value="">{{t "Server local"}}</option>
-                </select>
-            </label>
-        </div>
+        {{if and $job.ScheduleEnabled (not $job.CronExpression)}}
+        <p class="form-hint">{{tf "Runs every {hours} hours after the last backup. Saving replaces it with the schedule below." "hours" $job.ScheduleHours}}</p>
+        {{end}}
+        <div id="edit-schedule" style="margin-bottom:1rem;"></div>
         {{if ne $job.JobType "workload"}}
-        <label style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.5rem;">
-            {{t "Full re-scan every"}}
-            <input type="number" id="edit-rescan-days"
-                   value="{{$job.FullRescanDays}}"
-                   min="0" max="365"
-                   style="width:5rem;">
-            {{t "days"}}
-        </label>
+        <div class="sched-row" style="margin-bottom:0.25rem;">
+            <label>{{t "Full re-scan every"}}
+                <input type="number" id="edit-rescan-days" value="{{$job.FullRescanDays}}" min="0" max="365" style="width:5rem;">
+                {{t "days"}}</label>
+        </div>
         <p style="color:var(--text-muted); font-size:0.8rem; margin:0 0 1rem 0;">{{t "Set to 0 to disable periodic full re-scans."}}{{if $job.LastFullBackup}} {{tf "Last full backup: {when}" "when" (timeAgo $job.LastFullBackup)}}{{end}}</p>
         {{end}}
         <button type="submit" class="btn">{{t "Save Schedule"}}</button>
@@ -424,6 +293,7 @@
     </div>
 </div>
 
+<script src="/static/schedule.js"></script>
 <script src="/static/plugins.js"></script>
 <script src="/static/backup_job.js"></script>
 <script>
@@ -821,236 +691,32 @@ function deleteJob() {
     .catch(function(err) { alert(t('Error: {message}', {message: err.message})); });
 }
 
-function toggleScheduleMode() {
-    var mode = document.querySelector('input[name="sched-mode"]:checked').value;
-    document.getElementById('interval-inputs').style.display = mode === 'interval' ? '' : 'none';
-    document.getElementById('schedule-inputs').style.display = mode === 'schedule' ? '' : 'none';
-    document.getElementById('cron-inputs').style.display = mode === 'cron' ? '' : 'none';
-    document.getElementById('tz-inputs').style.display = mode === 'interval' ? 'none' : '';
-    if (mode === 'schedule') updateSchedulePreview();
-    if (mode === 'cron') validateCron();
-}
-
-function toggleScheduleInputs() {
-    // No-op for now; mode toggle handles visibility.
-}
-
-function toggleFrequencyDetails() {
-    var freq = document.getElementById('sched-frequency').value;
-    document.getElementById('sched-dow-group').style.display = freq === 'weekly' ? '' : 'none';
-    document.getElementById('sched-dom-group').style.display = freq === 'monthly' ? '' : 'none';
-}
-
-function buildCronFromVisual() {
-    var freq = document.getElementById('sched-frequency').value;
-    var hour = parseInt(document.getElementById('sched-hour').value);
-    var minute = document.getElementById('sched-minute').value;
-    var ampm = document.getElementById('sched-ampm').value;
-    if (ampm === 'AM' && hour === 12) hour = 0;
-    else if (ampm === 'PM' && hour !== 12) hour += 12;
-
-    if (freq === 'daily') return minute + ' ' + hour + ' * * *';
-    if (freq === 'weekly') {
-        var days = [];
-        document.querySelectorAll('#sched-dow-group input:checked').forEach(function(cb) {
-            days.push(cb.value);
-        });
-        if (days.length === 0) return null;
-        return minute + ' ' + hour + ' * * ' + days.join(',');
+// The same schedule picker as the new-job wizard. Jobs from before cron
+// schedules ran every N hours; they start from the nearest cron.
+var editSchedule = (function() {
+    var cron = '{{$job.CronExpression}}';
+    var hours = {{$job.ScheduleHours}};
+    if (!cron && {{$job.ScheduleEnabled}} && hours > 0) {
+        cron = hours < 24 ? '0 */' + hours + ' * * *' : '0 2 * * *';
     }
-    if (freq === 'monthly') {
-        var dom = document.getElementById('sched-dom').value;
-        return minute + ' ' + hour + ' ' + dom + ' * *';
-    }
-    return minute + ' ' + hour + ' * * *';
-}
-
-function parseVisualFromCron(expr) {
-    var parts = expr.trim().split(/\s+/);
-    if (parts.length !== 5) return false;
-    var minute = parts[0], hour = parts[1], dom = parts[2], month = parts[3], dow = parts[4];
-    if (!/^\d+$/.test(minute) || !/^\d+$/.test(hour)) return false;
-    if (month !== '*') return false;
-    var h = parseInt(hour), m = parseInt(minute);
-    if ([0, 15, 30, 45].indexOf(m) === -1) return false;
-    if (h < 0 || h > 23) return false;
-    var ampm = h >= 12 ? 'PM' : 'AM';
-    var h12 = h % 12; if (h12 === 0) h12 = 12;
-
-    if (dom === '*' && dow === '*') {
-        setVisualControls('daily', h12, m, ampm, [], 1);
-        return true;
-    }
-    if (dom === '*' && /^[0-6](,[0-6])*$/.test(dow)) {
-        setVisualControls('weekly', h12, m, ampm, dow.split(','), 1);
-        return true;
-    }
-    if (/^\d+$/.test(dom) && dow === '*') {
-        var d = parseInt(dom);
-        if (d < 1 || d > 31) return false;
-        setVisualControls('monthly', h12, m, ampm, [], d);
-        return true;
-    }
-    return false;
-}
-
-function setVisualControls(freq, hour, minute, ampm, dowDays, dom) {
-    document.getElementById('sched-frequency').value = freq;
-    document.getElementById('sched-hour').value = hour;
-    document.getElementById('sched-minute').value = minute;
-    document.getElementById('sched-ampm').value = ampm;
-    document.querySelectorAll('#sched-dow-group input').forEach(function(cb) {
-        cb.checked = dowDays.indexOf(cb.value) >= 0;
-        updateDowStyle(cb);
-    });
-    document.getElementById('sched-dom').value = dom;
-    toggleFrequencyDetails();
-}
-
-function updateDowStyle(cb) {
-    var label = cb.closest('.dow-toggle');
-    if (!label) return;
-    if (cb.checked) {
-        label.style.background = 'var(--primary)';
-        label.style.color = '#fff';
-        label.style.borderColor = 'var(--primary)';
-    } else {
-        label.style.background = 'transparent';
-        label.style.color = 'var(--text)';
-        label.style.borderColor = 'var(--border)';
-    }
-    // Validate at least one day selected for weekly.
-    var freq = document.getElementById('sched-frequency').value;
-    if (freq === 'weekly') {
-        var any = document.querySelector('#sched-dow-group input:checked');
-        document.getElementById('sched-dow-error').style.display = any ? 'none' : '';
-    }
-}
-
-function updateSchedulePreview() {
-    var expr = buildCronFromVisual();
-    var preview = document.getElementById('schedule-preview');
-    if (!expr) {
-        preview.style.color = 'var(--danger)';
-        preview.textContent = t('Select at least one day.');
-        return;
-    }
-    var tz = document.getElementById('edit-timezone').value;
-    var url = '/api/backups/validate-cron?expr=' + encodeURIComponent(expr);
-    if (tz) url += '&tz=' + encodeURIComponent(tz);
-    fetch(url)
-    .then(function(r) { return r.json(); })
-    .then(function(data) {
-        if (data.valid) {
-            preview.style.color = 'var(--ok)';
-            var text = data.description;
-            if (data.next_3 && data.next_3.length > 0) {
-                text += ' — ' + t('Next: {when}', {when: new Date(data.next_3[0]).toLocaleString()});
-            }
-            preview.textContent = text;
-        } else {
-            preview.style.color = 'var(--danger)';
-            preview.textContent = data.error;
-        }
-    })
-    .catch(function() { preview.textContent = ''; });
-}
-
-function validateCron() {
-    var expr = document.getElementById('edit-cron-expr').value.trim();
-    var preview = document.getElementById('cron-preview');
-    if (!expr) { preview.textContent = ''; return; }
-    var tz = document.getElementById('edit-timezone').value;
-    var url = '/api/backups/validate-cron?expr=' + encodeURIComponent(expr);
-    if (tz) url += '&tz=' + encodeURIComponent(tz);
-    fetch(url)
-    .then(function(r) { return r.json(); })
-    .then(function(data) {
-        if (data.valid) {
-            preview.style.color = 'var(--ok)';
-            var text = data.description;
-            if (data.next_3 && data.next_3.length > 0) {
-                text += ' — ' + t('Next: {when}', {when: new Date(data.next_3[0]).toLocaleString()});
-            }
-            preview.textContent = text;
-        } else {
-            preview.style.color = 'var(--danger)';
-            preview.textContent = data.error;
-        }
-    })
-    .catch(function() { preview.textContent = ''; });
-}
-
-function loadTimezones() {
-    fetch('/api/timezones')
-    .then(function(r) { return r.json(); })
-    .then(function(zones) {
-        var sel = document.getElementById('edit-timezone');
-        var current = '{{$job.Timezone}}';
-        zones.forEach(function(tz) {
-            var opt = document.createElement('option');
-            opt.value = tz;
-            opt.textContent = tz;
-            if (tz === current) opt.selected = true;
-            sel.appendChild(opt);
-        });
-    });
-}
-loadTimezones();
-
-// Populate day-of-month dropdown.
-(function() {
-    var sel = document.getElementById('sched-dom');
-    for (var i = 1; i <= 31; i++) {
-        var opt = document.createElement('option');
-        opt.value = i;
-        opt.textContent = i;
-        sel.appendChild(opt);
-    }
-})();
-
-// On load: detect correct schedule mode.
-(function() {
-    var cronExpr = '{{$job.CronExpression}}';
-    if (cronExpr) {
-        if (parseVisualFromCron(cronExpr)) {
-            document.querySelector('input[name="sched-mode"][value="schedule"]').checked = true;
-            toggleScheduleMode();
-            updateSchedulePreview();
-        } else {
-            validateCron();
-        }
-    }
+    return HitStorSchedule.mount(document.getElementById('edit-schedule'), {cron: cron, timezone: '{{$job.Timezone}}'});
 })();
 
 function saveSchedule(e) {
     e.preventDefault();
     var status = document.getElementById('edit-sched-status');
+    var body;
+    try {
+        body = editSchedule.value();
+    } catch (err) {
+        status.textContent = err.message;
+        status.style.color = 'var(--danger)';
+        return;
+    }
+    var rescanDays = document.getElementById('edit-rescan-days');
+    if (rescanDays) body.full_rescan_days = parseInt(rescanDays.value) || 0;
     status.textContent = t('Saving...');
     status.style.color = 'var(--text-muted)';
-
-    var mode = document.querySelector('input[name="sched-mode"]:checked').value;
-    var rescanDays = document.getElementById('edit-rescan-days');
-    var body = {
-        schedule_enabled: document.getElementById('edit-sched-enabled').checked,
-        schedule_hours: parseInt(document.getElementById('edit-sched-hours').value) || 24,
-        full_rescan_days: rescanDays ? (parseInt(rescanDays.value) || 0) : 0,
-        cron_expression: '',
-        timezone: ''
-    };
-    if (mode === 'cron') {
-        body.cron_expression = document.getElementById('edit-cron-expr').value.trim();
-        body.timezone = document.getElementById('edit-timezone').value;
-    } else if (mode === 'schedule') {
-        var expr = buildCronFromVisual();
-        if (!expr) {
-            status.textContent = t('Select at least one day for weekly schedule.');
-            status.style.color = 'var(--danger)';
-            return;
-        }
-        body.cron_expression = expr;
-        body.timezone = document.getElementById('edit-timezone').value;
-    }
 
     fetch('/api/backups/' + jobID, {
         method: 'PUT',
@@ -1061,6 +727,8 @@ function saveSchedule(e) {
         if (!r.ok) return r.text().then(function(t) { throw new Error(t); });
         status.textContent = t('Saved');
         status.style.color = 'var(--ok)';
+        // The schedule tile above is drawn by the server.
+        setTimeout(function() { location.reload(); }, 600);
     })
     .catch(function(err) {
         status.textContent = err.message;

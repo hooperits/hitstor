@@ -19,6 +19,7 @@
                 {{else if eq $v.Status "pending"}}<span class="badge badge-pending backup-detail-status-badge">{{t "pending"}}</span>
                 {{else if eq $v.Status "disabled"}}<span class="badge badge-disabled backup-detail-status-badge">{{t "disabled"}}</span>
                 {{else if eq $v.Status "failed"}}<span class="badge badge-failed backup-detail-status-badge">{{t "failed"}}</span>
+                {{else if eq $v.Status "partial"}}<span class="badge badge-stale backup-detail-status-badge">{{t "partial"}}</span>
                 {{else}}<span class="badge badge-never backup-detail-status-badge">{{t "never run"}}</span>{{end}}
                 <span class="job-type-chip">{{t $v.JobTypeLabel}}</span>
             </div>
@@ -96,14 +97,14 @@
     </div>
 </section>
 
-{{if $v.FullRequired}}
-<section class="fullreq" role="alert">
+{{if or $v.FullRequired $v.Failures}}
+<section class="fullreq{{if not $v.FullRequired}} fullreq--error{{end}}" role="alert">
     <div class="fullreq__icon" aria-hidden="true">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
     </div>
     <div class="fullreq__body">
-        <h2 class="fullreq__title">{{t "A full backup is required"}}</h2>
-        <p class="fullreq__lead">{{tf "The {kind} backup did not run, so as not to store a backup HitStor could not restore." "kind" $v.FailedKind}}</p>
+        <h2 class="fullreq__title">{{if $v.FullRequired}}{{t "A full backup is required"}}{{else if $v.Partial}}{{tf "The {kind} backup was partial" "kind" $v.FailedKind}}{{else}}{{tf "The last {kind} backup failed" "kind" $v.FailedKind}}{{end}}</h2>
+        <p class="fullreq__lead">{{if $v.Partial}}{{tf "The {kind} backup stored the other databases; these were not backed up:" "kind" $v.FailedKind}}{{else if $v.FullRequired}}{{tf "The {kind} backup did not run, so as not to store a backup HitStor could not restore." "kind" $v.FailedKind}}{{else}}{{t "No database could be backed up:"}}{{end}}</p>
         <ul class="fullreq__list">
             {{range $v.FullRequired}}
             <li>
@@ -116,10 +117,17 @@
                 </div>{{end}}
             </li>
             {{end}}
+            {{range $v.Failures}}
+            <li>
+                <code class="path-chip">{{.Object}}</code>
+                <span>{{.Message}}</span>
+                {{if .Detail}}<div class="fullreq__other"><code>{{.Detail}}</code></div>{{end}}
+            </li>
+            {{end}}
         </ul>
-        <p class="fullreq__hint">{{t "Run a full backup now; the next differential and log backups will build on it."}}</p>
+        {{if $v.FullRequired}}<p class="fullreq__hint">{{t "Run a full backup now; the next differential and log backups will build on it."}}</p>{{end}}
     </div>
-    <button class="btn fullreq__action" type="button" onclick="runNow('full')" {{if $job.RunNow}}disabled{{end}}>{{t "Run full backup now"}}</button>
+    {{if $v.FullRequired}}<button class="btn fullreq__action" type="button" onclick="runNow('full')" {{if $job.RunNow}}disabled{{end}}>{{t "Run full backup now"}}</button>{{end}}
 </section>
 {{else if and $v.LastError (eq $v.Status "failed")}}
 <section class="fullreq fullreq--error" role="alert">
@@ -303,7 +311,7 @@
         {{if $v.Plan}}
         <div class="plan-rows">
             {{range $v.Plan}}
-            <div class="plan-row{{if not .Enabled}} plan-row--off{{end}}{{if .Failed}} plan-row--failed{{end}}{{if .Next}} plan-row--next{{end}}">
+            <div class="plan-row{{if not .Enabled}} plan-row--off{{end}}{{if .Failed}} plan-row--failed{{end}}{{if .Partial}} plan-row--partial{{end}}{{if .Next}} plan-row--next{{end}}">
                 <span class="bp-badge bp-badge--{{.Kind}}" aria-hidden="true">{{if eq .Kind "full"}}F{{else if eq .Kind "differential"}}D{{else if eq .Kind "log"}}L{{end}}</span>
                 <div class="plan-row__main">
                     <div class="plan-row__title"><strong>{{.Label}}</strong>{{if .Next}}<span class="plan-row__tag">{{t "next"}}</span>{{end}}</div>
@@ -312,7 +320,9 @@
                         {{if .NextRun}}<span>{{tf "Next {when}" "when" .NextRun}}</span>{{end}}
                         <span>{{t "Last success"}}: {{if .LastBackup}}{{timeAgo .LastBackup}}{{else}}{{t "never"}}{{end}}</span>
                         {{if .Failed}}<span class="plan-row__error">{{if .FullRequired}}{{t "needs a full backup"}}{{else}}{{t "failed"}}{{end}} · {{timeAgo .LastErrorAt}}</span>{{end}}
+                        {{if .Partial}}<span class="plan-row__warn">{{t "partial"}}{{if .FullRequired}} · {{t "needs a full backup"}}{{end}}</span>{{end}}
                     </div>
+                    {{if .Excluded}}<div class="plan-row__excluded"><span>{{t "Not included"}}:</span>{{range .Excluded}}<code class="path-chip" title="{{.Message}}{{if .Detail}} ({{.Detail}}){{end}}">{{.Object}}</code>{{end}}</div>{{end}}
                 </div>
                 <button type="button" class="btn btn-secondary plan-row__run" onclick="runNow('{{.Kind}}')" {{if $job.RunNow}}disabled{{end}}>{{t "Run now"}}</button>
             </div>

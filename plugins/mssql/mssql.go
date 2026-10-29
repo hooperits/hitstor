@@ -240,13 +240,16 @@ type backupTarget struct {
 
 // resolveSelection expands instances into their databases and drops
 // duplicates. An instance stands for every online database that supports
-// the backup kind: differentials skip master, and log backups skip
-// databases in the SIMPLE recovery model. Databases selected one by one are
-// kept as they are, so an unsupported kind fails loudly. A database whose
-// log chain no full backup has started is kept: checkChains asks for the
-// full backup it needs rather than leaving it unprotected.
-func (p *mssqlPlugin) resolveSelection(ctx context.Context, selection []string, kind string) ([]backupTarget, error) {
+// the backup kind: differentials leave out master, and log backups the
+// databases in the SIMPLE recovery model; those come back as exclusions.
+// Databases selected one by one are kept as they are; checkChains judges
+// them. A database whose log chain no full backup has started is kept too:
+// checkChains asks for the full it needs rather than leaving it unprotected.
+// Without results (an older host), an instance with nothing to back up is an
+// error.
+func (p *mssqlPlugin) resolveSelection(ctx context.Context, selection []string, kind string, results bool) ([]backupTarget, []hitstorplugin.ObjectResult, error) {
 	var out []backupTarget
+	var excluded []hitstorplugin.ObjectResult
 	seen := map[string]bool{}
 	add := func(t backupTarget) {
 		key := strings.ToUpper(t.instance + "/" + t.database)
@@ -258,7 +261,7 @@ func (p *mssqlPlugin) resolveSelection(ctx context.Context, selection []string, 
 	for _, obj := range selection {
 		instance, database, err := splitObject(obj)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 		if database != "" {
 			add(backupTarget{instance, database})
@@ -266,68 +269,97 @@ func (p *mssqlPlugin) resolveSelection(ctx context.Context, selection []string, 
 		}
 		db, _, err := p.conn(ctx, instance)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 		dbs, err := listDatabases(ctx, db)
 		if err != nil {
-			return nil, fmt.Errorf("%s: list databases: %w", instance, err)
+			return nil, nil, fmt.Errorf("%s: list databases: %w", instance, err)
 		}
 		n := 0
 		for _, d := range dbs {
-			skip := ""
+			reason, msg := "", ""
 			switch {
 			case d.State != "ONLINE":
-				skip = "database is " + d.State
+				reason, msg = reasonNotOnline, "database is "+d.State
 			case kind == "differential" && d.Name == "master":
-				skip = "master takes only full backups"
+				reason, msg = reasonFullOnly, "master takes only full backups"
 			case kind == "log" && d.RecoveryModel == "SIMPLE":
-				skip = "SIMPLE recovery model has no log backups"
+				reason, msg = reasonSimpleRecovery, "SIMPLE recovery model has no log backups"
 			}
-			if skip != "" {
-				slog.Info("database skipped", "instance", instance, "database", d.Name, "kind", kind, "reason", skip)
+			if reason != "" {
+				slog.Info("database excluded", "instance", instance, "database", d.Name, "kind", kind, "reason", msg)
+				excluded = append(excluded, hitstorplugin.ObjectResult{Object: instance + "/" + d.Name,
+					Status: hitstorplugin.ObjectExcluded, Reason: reason, Message: msg})
 				continue
 			}
 			add(backupTarget{instance, d.Name})
 			n++
 		}
-		if n == 0 {
-			return nil, fmt.Errorf("instance %s has no databases that take %s backups", instance, kind)
+		if n == 0 && !results {
+			return nil, nil, fmt.Errorf("instance %s has no databases that take %s backups", instance, kind)
 		}
 	}
-	return out, nil
+	return out, excluded, nil
 }
 
-// checkChains makes sure every target's differential or log backup will
-// restore from HitStor before any is taken, so a run does not back up half
-// its databases and then fail.
-func (p *mssqlPlugin) checkChains(ctx context.Context, targets []backupTarget, kind string) error {
-	if kind == "full" {
-		return nil
-	}
+// checkChains decides, before any backup is taken, which targets can be
+// backed up: a database selected one by one that is not online fails, one in
+// SIMPLE recovery takes no log backups, and a differential or log backup
+// must build on backups HitStor holds (checkChain). It returns the targets
+// to back up and the reports on the others. Without results (an older
+// host), any problem fails the whole run, before anything is backed up.
+func (p *mssqlPlugin) checkChains(ctx context.Context, targets []backupTarget, kind string, req hitstorplugin.BackupRequest) ([]backupTarget, []hitstorplugin.ObjectResult, error) {
+	known := newKnownBackups(req)
+	var ok []backupTarget
+	var reports []hitstorplugin.ObjectResult
 	var issues fullRequiredError
 	for _, t := range targets {
+		obj := t.instance + "/" + t.database
 		db, _, err := p.conn(ctx, t.instance)
 		if err != nil {
-			return err
+			return nil, nil, err
 		}
 		st, err := readChainState(ctx, db, t.database)
+		if errors.Is(err, sql.ErrNoRows) {
+			ok = append(ok, t) // not visible: the backup itself names the login
+			continue
+		}
 		if err != nil {
-			if errors.Is(err, sql.ErrNoRows) {
-				continue // not visible: the backup itself names the login
+			return nil, nil, fmt.Errorf("%s: %w", obj, err)
+		}
+		switch {
+		case st.State != "ONLINE":
+			if !req.ObjectResults {
+				ok = append(ok, t) // SQL Server's own error says it
+				continue
 			}
-			return fmt.Errorf("%s/%s: %w", t.instance, t.database, err)
+			reports = append(reports, hitstorplugin.ObjectResult{Object: obj, Status: hitstorplugin.ObjectFailed,
+				Reason: reasonNotOnline, Message: "database is " + st.State})
+			continue
+		case kind == "log" && st.RecoveryModel == "SIMPLE":
+			if !req.ObjectResults {
+				return nil, nil, fmt.Errorf("%s uses the SIMPLE recovery model, which has no log backups", obj)
+			}
+			reports = append(reports, hitstorplugin.ObjectResult{Object: obj, Status: hitstorplugin.ObjectExcluded,
+				Reason: reasonSimpleRecovery, Message: "SIMPLE recovery model has no log backups"})
+			continue
 		}
-		if kind == "log" && st.RecoveryModel == "SIMPLE" {
-			return fmt.Errorf("%s/%s uses the SIMPLE recovery model, which has no log backups", t.instance, t.database)
+		if kind == "full" {
+			ok = append(ok, t)
+			continue
 		}
-		if issue := checkChain(kind, t.instance+"/"+t.database, st); issue != nil {
+		if issue := checkChain(kind, obj, st, known); issue != nil {
 			issues = append(issues, *issue)
+			reports = append(reports, hitstorplugin.ObjectResult{Object: obj, Status: hitstorplugin.ObjectFailed,
+				Reason: issue.Reason, Message: issue.Detail})
+			continue
 		}
+		ok = append(ok, t)
 	}
-	if len(issues) > 0 {
-		return issues
+	if len(issues) > 0 && !req.ObjectResults {
+		return nil, nil, issues
 	}
-	return nil
+	return ok, reports, nil
 }
 
 func boolOption(opts map[string]string, key string, def bool) (bool, error) {
@@ -360,76 +392,111 @@ func (p *mssqlPlugin) Backup(ctx context.Context, req hitstorplugin.BackupReques
 		return err
 	}
 
-	targets, err := p.resolveSelection(ctx, req.Selection, kind)
+	targets, excluded, err := p.resolveSelection(ctx, req.Selection, kind, req.ObjectResults)
 	if err != nil {
 		return err
 	}
-	if err := p.checkChains(ctx, targets, kind); err != nil {
+	// Chains are checked for every database before any is backed up.
+	var reports []hitstorplugin.ObjectResult
+	if targets, reports, err = p.checkChains(ctx, targets, kind, req); err != nil {
 		return err
 	}
-	for _, t := range targets {
-		obj, dbName := t.instance+"/"+t.database, t.database
-		db, cfg, err := p.conn(ctx, t.instance)
-		if err != nil {
+	for _, r := range append(excluded, reports...) {
+		if err := sink.Result(r); err != nil {
 			return err
 		}
-		files, err := readFiles(ctx, db, dbName)
-		if err != nil {
-			return fmt.Errorf("%s: read files: %w", obj, err)
-		}
-		if len(files) == 0 {
-			// Without VIEW ANY DEFINITION or access to the database, the
-			// login cannot see it either; name the login to make that clear.
-			var login string
-			if err := db.QueryRowContext(ctx, `SELECT SUSER_SNAME()`).Scan(&login); err != nil {
-				login = "?"
-			}
-			return fmt.Errorf("database %q not found or not visible to login %q (check auth/username and the login's permissions)", dbName, login)
-		}
-
-		// Milliseconds: log backups can be seconds apart.
-		stamp := time.Now().UTC().Format("20060102T150405.000Z")
-		w, err := sink.Item(fmt.Sprintf("%s/%s/%s-%s.%s", cfg.Instance, dbName, kind, stamp, ext))
-		if err != nil {
-			return err
-		}
-		var device string
-		start := time.Now()
-		var written int64
-		err = withVirtualDevice(ctx, cfg.vdiInstance(),
-			func(ctx context.Context, dev string) error {
-				device = dev
-				stmt, err := backupStatement(kind, dbName, dev, o)
-				if err != nil {
-					return err
-				}
-				_, err = db.ExecContext(ctx, stmt)
-				return err
-			},
-			func(dev vdDevice) error {
-				n, err := backupTransfer(dev, w)
-				written = n
-				return err
-			})
-		if err != nil {
-			return fmt.Errorf("%s: %s backup: %w", obj, kind, err)
-		}
-		meta, err := readBackupSet(ctx, db, device)
-		if err != nil {
-			return fmt.Errorf("%s: %w", obj, err)
-		}
-		meta.Instance = cfg.Instance
-		meta.Files = files
-		raw, err := json.Marshal(meta)
-		if err != nil {
-			return err
-		}
-		if err := w.Finish(raw); err != nil {
-			return err
-		}
-		slog.Info("database backed up", "object", obj, "kind", kind, "bytes", written,
-			"duration", time.Since(start).Round(time.Millisecond), "last_lsn", meta.LastLSN)
 	}
+	for _, t := range targets {
+		err := p.backupDatabase(ctx, t, kind, ext, o, sink)
+		if err == nil {
+			continue
+		}
+		if !req.ObjectResults || ctx.Err() != nil {
+			return err
+		}
+		// The other databases still get their backups; this one is reported.
+		slog.Error("database backup failed", "object", t.instance+"/"+t.database, "kind", kind, "error", err)
+		if err := sink.Result(hitstorplugin.ObjectResult{Object: t.instance + "/" + t.database,
+			Status: hitstorplugin.ObjectFailed, Reason: reasonError, Message: err.Error()}); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// backupDatabase backs up one database into a new item. If it fails after
+// the item was started, the item is aborted when the host allows it.
+func (p *mssqlPlugin) backupDatabase(ctx context.Context, t backupTarget, kind, ext string, o backupOptions, sink hitstorplugin.ItemSink) error {
+	obj, dbName := t.instance+"/"+t.database, t.database
+	db, cfg, err := p.conn(ctx, t.instance)
+	if err != nil {
+		return err
+	}
+	files, err := readFiles(ctx, db, dbName)
+	if err != nil {
+		return fmt.Errorf("%s: read files: %w", obj, err)
+	}
+	if len(files) == 0 {
+		// Without VIEW ANY DEFINITION or access to the database, the
+		// login cannot see it either; name the login to make that clear.
+		var login string
+		if err := db.QueryRowContext(ctx, `SELECT SUSER_SNAME()`).Scan(&login); err != nil {
+			login = "?"
+		}
+		return fmt.Errorf("database %q not found or not visible to login %q (check auth/username and the login's permissions)", dbName, login)
+	}
+
+	// Milliseconds: log backups can be seconds apart.
+	stamp := time.Now().UTC().Format("20060102T150405.000Z")
+	w, err := sink.Item(fmt.Sprintf("%s/%s/%s-%s.%s", cfg.Instance, dbName, kind, stamp, ext))
+	if err != nil {
+		return err
+	}
+	finished := false
+	defer func() {
+		if !finished {
+			if aerr := w.Abort(); aerr != nil {
+				slog.Debug("item not aborted", "object", obj, "error", aerr)
+			}
+		}
+	}()
+	var device string
+	start := time.Now()
+	var written int64
+	err = withVirtualDevice(ctx, cfg.vdiInstance(),
+		func(ctx context.Context, dev string) error {
+			device = dev
+			stmt, err := backupStatement(kind, dbName, dev, o)
+			if err != nil {
+				return err
+			}
+			_, err = db.ExecContext(ctx, stmt)
+			return err
+		},
+		func(dev vdDevice) error {
+			n, err := backupTransfer(dev, w)
+			written = n
+			return err
+		})
+	if err != nil {
+		return fmt.Errorf("%s: %s backup: %w", obj, kind, err)
+	}
+	meta, err := readBackupSet(ctx, db, device)
+	if err != nil {
+		return fmt.Errorf("%s: %w", obj, err)
+	}
+	meta.Instance = cfg.Instance
+	meta.Files = files
+	raw, err := json.Marshal(meta)
+	if err != nil {
+		return err
+	}
+	if err := w.Finish(raw); err != nil {
+		return err
+	}
+	finished = true
+	slog.Info("database backed up", "object", obj, "kind", kind, "bytes", written,
+		"duration", time.Since(start).Round(time.Millisecond), "last_lsn", meta.LastLSN)
 	return nil
 }
 

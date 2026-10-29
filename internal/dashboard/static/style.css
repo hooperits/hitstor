@@ -6298,3 +6298,9 @@ body.dr-drawer-open {
 .plan-kinds .bp-badge { width: 1.35rem; height: 1.35rem; font-size: 0.68rem; border-radius: 5px; }
 .bp-badge--off { background: #c7ced8 !important; }
 .bp-badge--failed { box-shadow: 0 0 0 2px var(--bg-card), 0 0 0 4px var(--danger); }
+
+/* Partial runs and objects left out */
+.plan-row--partial { border-color: rgba(245, 158, 11, 0.55); background: rgba(245, 158, 11, 0.05); }
+.plan-row__warn { color: #b45309; font-weight: 600; }
+.plan-row__excluded { display: flex; flex-wrap: wrap; align-items: center; gap: 0.3rem; margin-top: 0.35rem; font-size: 0.75rem; color: var(--text-muted); }
+.plan-row__excluded .path-chip { font-size: 0.72rem; opacity: 0.8; cursor: help; }

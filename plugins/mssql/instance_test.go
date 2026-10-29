@@ -92,8 +92,8 @@ func TestConfigureObjectsAndInstanceList(t *testing.T) {
 
 func TestResolveSelectionDedup(t *testing.T) {
 	p := &mssqlPlugin{}
-	got, err := p.resolveSelection(context.Background(), []string{"I/a", "i/A", "I/b"}, "full")
-	if err != nil || len(got) != 2 || got[1].database != "b" {
+	got, excluded, err := p.resolveSelection(context.Background(), []string{"I/a", "i/A", "I/b"}, "full", true)
+	if err != nil || len(got) != 2 || got[1].database != "b" || len(excluded) != 0 {
 		t.Fatalf("targets = %+v, %v", got, err)
 	}
 }

@@ -247,7 +247,7 @@ func TestAPIWorkloadJobPlan(t *testing.T) {
 	}
 
 	// A differential that needs a full shows as such on the job.
-	dash.registry.RecordKindFailure(got.ID, "differential", "full backup required: MSSQLSERVER/db (no-full)", time.Now())
+	dash.registry.RecordKindFailure(got.ID, "differential", "full backup required: MSSQLSERVER/db (no-full)", time.Now(), nil)
 	j := dash.registry.GetJob(got.ID)
 	v := buildJobView(dash.catalog(httptest.NewRequest("GET", "/", nil)), *j, nil, time.Now())
 	if v.Status != "failed" || len(v.FullRequired) != 1 || v.FullRequired[0].Reason != "no-full" {

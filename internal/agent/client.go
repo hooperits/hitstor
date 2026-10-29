@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
+	"errors"
 	"fmt"
 	"os"
 	"time"
@@ -12,8 +13,10 @@ import (
 	"github.com/hooperits/hitstor/internal/pluginmgr"
 	pb "github.com/hooperits/hitstor/internal/proto/hitstor/v1"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/keepalive"
+	"google.golang.org/grpc/status"
 )
 
 // Client wraps the gRPC connection to a HitStor server.
@@ -342,13 +345,19 @@ func (c *Client) BeginSessionWithJob(ctx context.Context, apiKey, hostname strin
 // systemProfile carries the host's disk and boot layout as JSON for bare-metal
 // restore, and is nil when the job does not capture it.
 func (c *Client) FinalizeBackup(ctx context.Context, sessionID string, files []*pb.FileNode, systemProfile []byte) (*pb.FinalizeBackupResponse, error) {
+	return c.finalize(ctx, &pb.FinalizeBackupRequest{SessionId: sessionID, Files: files, SystemProfile: systemProfile})
+}
+
+// FinalizeWorkload closes a workload backup session with the plugin's
+// reports on the objects that produced no item.
+func (c *Client) FinalizeWorkload(ctx context.Context, sessionID string, files []*pb.FileNode, results []plugin.ObjectResult) (*pb.FinalizeBackupResponse, error) {
+	return c.finalize(ctx, &pb.FinalizeBackupRequest{SessionId: sessionID, Files: files, ObjectResults: objectResultsToProto(results)})
+}
+
+func (c *Client) finalize(ctx context.Context, req *pb.FinalizeBackupRequest) (*pb.FinalizeBackupResponse, error) {
 	ctx, cancel := context.WithTimeout(ctx, 5*time.Minute)
 	defer cancel()
-	return c.backup.FinalizeBackup(ctx, &pb.FinalizeBackupRequest{
-		SessionId:     sessionID,
-		Files:         files,
-		SystemProfile: systemProfile,
-	})
+	return c.backup.FinalizeBackup(ctx, req)
 }
 
 // AnnounceForRecovery tells the server that this host has booted off
@@ -374,8 +383,41 @@ func pluginFieldsToProto(fs []plugin.FieldSpec) []*pb.PluginField {
 
 // ReportJobFailure tells the server that a job failed on this agent.
 func (c *Client) ReportJobFailure(ctx context.Context, apiKey, jobID string, jobErr error) error {
+	var results []plugin.ObjectResult
+	var re *WorkloadRunError
+	if errors.As(jobErr, &re) {
+		results = re.Results
+	}
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
-	_, err := c.backup.ReportJobFailure(ctx, &pb.ReportJobFailureRequest{ApiKey: apiKey, JobId: jobID, Error: jobErr.Error()})
+	_, err := c.backup.ReportJobFailure(ctx, &pb.ReportJobFailureRequest{ApiKey: apiKey, JobId: jobID, Error: jobErr.Error(),
+		ObjectResults: objectResultsToProto(results)})
 	return err
+}
+
+// GetWorkloadKnown returns the workload items the server holds for a job's
+// selection. provided is false from a server that predates the RPC.
+func (c *Client) GetWorkloadKnown(ctx context.Context, apiKey, jobID string) (items []plugin.KnownItem, provided bool, err error) {
+	ctx, cancel := context.WithTimeout(ctx, 2*time.Minute)
+	defer cancel()
+	resp, err := c.backup.GetWorkloadKnown(ctx, &pb.GetWorkloadKnownRequest{ApiKey: apiKey, JobId: jobID})
+	if status.Code(err) == codes.Unimplemented {
+		return nil, false, nil
+	}
+	if err != nil {
+		return nil, false, err
+	}
+	out := make([]plugin.KnownItem, 0, len(resp.Items))
+	for _, it := range resp.Items {
+		out = append(out, plugin.KnownItem{Item: it.Item, Metadata: it.Metadata})
+	}
+	return out, true, nil
+}
+
+func objectResultsToProto(rs []plugin.ObjectResult) []*pb.WorkloadObjectResult {
+	out := make([]*pb.WorkloadObjectResult, 0, len(rs))
+	for _, r := range rs {
+		out = append(out, &pb.WorkloadObjectResult{Object: r.Object, Status: r.Status, Reason: r.Reason, Message: r.Message})
+	}
+	return out
 }

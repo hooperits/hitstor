@@ -35,6 +35,7 @@ const (
 	BackupService_GetSchedule_FullMethodName         = "/hitstor.v1.BackupService/GetSchedule"
 	BackupService_AnnounceForRecovery_FullMethodName = "/hitstor.v1.BackupService/AnnounceForRecovery"
 	BackupService_ReportJobFailure_FullMethodName    = "/hitstor.v1.BackupService/ReportJobFailure"
+	BackupService_GetWorkloadKnown_FullMethodName    = "/hitstor.v1.BackupService/GetWorkloadKnown"
 )
 
 // BackupServiceClient is the client API for BackupService service.
@@ -77,6 +78,10 @@ type BackupServiceClient interface {
 	// database). The server records the error on the job, clears a pending
 	// "run now", and drops the job's abandoned session.
 	ReportJobFailure(ctx context.Context, in *ReportJobFailureRequest, opts ...grpc.CallOption) (*ReportJobFailureResponse, error)
+	// GetWorkloadKnown lists the workload items the repositories hold for a
+	// job's selection, with their plugin metadata, so the plugin can check
+	// that a differential or log backup builds on backups HitStor can restore.
+	GetWorkloadKnown(ctx context.Context, in *GetWorkloadKnownRequest, opts ...grpc.CallOption) (*GetWorkloadKnownResponse, error)
 }
 
 type backupServiceClient struct {
@@ -170,6 +175,16 @@ func (c *backupServiceClient) ReportJobFailure(ctx context.Context, in *ReportJo
 	return out, nil
 }
 
+func (c *backupServiceClient) GetWorkloadKnown(ctx context.Context, in *GetWorkloadKnownRequest, opts ...grpc.CallOption) (*GetWorkloadKnownResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetWorkloadKnownResponse)
+	err := c.cc.Invoke(ctx, BackupService_GetWorkloadKnown_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // BackupServiceServer is the server API for BackupService service.
 // All implementations must embed UnimplementedBackupServiceServer
 // for forward compatibility.
@@ -210,6 +225,10 @@ type BackupServiceServer interface {
 	// database). The server records the error on the job, clears a pending
 	// "run now", and drops the job's abandoned session.
 	ReportJobFailure(context.Context, *ReportJobFailureRequest) (*ReportJobFailureResponse, error)
+	// GetWorkloadKnown lists the workload items the repositories hold for a
+	// job's selection, with their plugin metadata, so the plugin can check
+	// that a differential or log backup builds on backups HitStor can restore.
+	GetWorkloadKnown(context.Context, *GetWorkloadKnownRequest) (*GetWorkloadKnownResponse, error)
 	mustEmbedUnimplementedBackupServiceServer()
 }
 
@@ -243,6 +262,9 @@ func (UnimplementedBackupServiceServer) AnnounceForRecovery(context.Context, *An
 }
 func (UnimplementedBackupServiceServer) ReportJobFailure(context.Context, *ReportJobFailureRequest) (*ReportJobFailureResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ReportJobFailure not implemented")
+}
+func (UnimplementedBackupServiceServer) GetWorkloadKnown(context.Context, *GetWorkloadKnownRequest) (*GetWorkloadKnownResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetWorkloadKnown not implemented")
 }
 func (UnimplementedBackupServiceServer) mustEmbedUnimplementedBackupServiceServer() {}
 func (UnimplementedBackupServiceServer) testEmbeddedByValue()                       {}
@@ -398,6 +420,24 @@ func _BackupService_ReportJobFailure_Handler(srv interface{}, ctx context.Contex
 	return interceptor(ctx, in, info, handler)
 }
 
+func _BackupService_GetWorkloadKnown_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetWorkloadKnownRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(BackupServiceServer).GetWorkloadKnown(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: BackupService_GetWorkloadKnown_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(BackupServiceServer).GetWorkloadKnown(ctx, req.(*GetWorkloadKnownRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // BackupService_ServiceDesc is the grpc.ServiceDesc for BackupService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -432,6 +472,10 @@ var BackupService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ReportJobFailure",
 			Handler:    _BackupService_ReportJobFailure_Handler,
+		},
+		{
+			MethodName: "GetWorkloadKnown",
+			Handler:    _BackupService_GetWorkloadKnown_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

@@ -13,6 +13,7 @@ import (
 	"os"
 	"path"
 	"sort"
+	"strings"
 	"sync"
 	"time"
 
@@ -23,7 +24,39 @@ import (
 // WorkloadSource runs a plugin backup. *plugin.WorkloadGRPCClient
 // implements it.
 type WorkloadSource interface {
-	Backup(ctx context.Context, req plugin.BackupRequest, handle plugin.ItemHandler) ([]plugin.BackupItem, error)
+	Backup(ctx context.Context, req plugin.BackupRequest, handle plugin.ItemHandler) (plugin.BackupOutcome, error)
+}
+
+// WorkloadRunError is a workload backup that stored nothing, with the
+// plugin's reports on each object, so the server can show why per object.
+type WorkloadRunError struct {
+	Err     error
+	Results []plugin.ObjectResult
+}
+
+func (e *WorkloadRunError) Error() string {
+	var failed []string
+	for _, r := range e.Results {
+		if r.Status == plugin.ObjectFailed && r.Object != "" {
+			failed = append(failed, fmt.Sprintf("%s (%s: %s)", r.Object, r.Reason, r.Message))
+		}
+	}
+	if len(failed) == 0 {
+		return e.Err.Error()
+	}
+	return e.Err.Error() + ": " + strings.Join(failed, "; ")
+}
+
+func (e *WorkloadRunError) Unwrap() error { return e.Err }
+
+func failedResults(rs []plugin.ObjectResult) int {
+	n := 0
+	for _, r := range rs {
+		if r.Status == plugin.ObjectFailed {
+			n++
+		}
+	}
+	return n
 }
 
 // WorkloadPathPrefix marks the snapshot paths of workload backups, e.g.
@@ -65,6 +98,23 @@ func (b *WorkloadBackup) Run(ctx context.Context) (*BackupResult, error) {
 	tags := append(append([]string{}, b.Tags...), "plugin:"+b.PluginID)
 	if b.Request.Kind != "" {
 		tags = append(tags, "kind:"+b.Request.Kind)
+	}
+	// A copy-only full is no base for later backups; retention must know.
+	if b.Request.Options["copy_only"] == "true" {
+		tags = append(tags, "copy-only")
+	}
+
+	// The plugin reports objects it skips or fails and keeps going; before a
+	// differential or log backup it checks the chain against what the
+	// repositories hold.
+	req := b.Request
+	req.ObjectResults = true
+	if req.Kind != "" && req.Kind != "full" && b.JobID != "" && b.Client != nil {
+		known, provided, err := b.Client.GetWorkloadKnown(ctx, b.APIKey, b.JobID)
+		if err != nil {
+			slog.Warn("could not list the backups the server holds; the plugin checks the chain on its own", "error", err)
+		}
+		req.Known, req.KnownProvided = known, provided && err == nil
 	}
 
 	var (
@@ -116,7 +166,7 @@ func (b *WorkloadBackup) Run(ctx context.Context) (*BackupResult, error) {
 		return n, nil
 	}
 
-	items, err := b.Source.Backup(ctx, b.Request, func(itemPath string, data io.Reader) error {
+	outcome, err := b.Source.Backup(ctx, req, func(itemPath string, data io.Reader) error {
 		h := sha256.New()
 		if _, err := store(b.PluginID+"/"+itemPath, io.TeeReader(data, h)); err != nil {
 			return fmt.Errorf("store item %s: %w", itemPath, err)
@@ -124,11 +174,24 @@ func (b *WorkloadBackup) Run(ctx context.Context) (*BackupResult, error) {
 		digests[itemPath] = hex.EncodeToString(h.Sum(nil))
 		return nil
 	})
+	items, results := outcome.Items, outcome.Results
 	if err != nil {
-		return nil, fmt.Errorf("plugin backup: %w", err)
+		if errors.Is(err, ErrSessionCancelled) || len(items) == 0 {
+			return nil, &WorkloadRunError{Err: fmt.Errorf("plugin backup: %w", err), Results: results}
+		}
+		// The database already counts the finished items as backed up
+		// (a log backup truncates the log): keep them, and report the rest.
+		slog.Warn("workload backup failed part way; keeping the items that finished", "items", len(items), "error", err)
+		results = append(results, plugin.ObjectResult{Status: plugin.ObjectFailed, Reason: "error", Message: err.Error()})
 	}
 	if len(items) == 0 {
-		return nil, errors.New("plugin backup produced no items")
+		switch {
+		case failedResults(results) > 0:
+			return nil, &WorkloadRunError{Err: errors.New("no object could be backed up"), Results: results}
+		case len(results) == 0:
+			return nil, errors.New("plugin backup produced no items")
+		}
+		// Every object was excluded by design: a run with nothing to do.
 	}
 
 	created := time.Now().UTC()
@@ -156,8 +219,8 @@ func (b *WorkloadBackup) Run(ctx context.Context) (*BackupResult, error) {
 	}
 	nodes = append(nodes, parentDirNodes(nodes)...)
 
-	slog.Info("finalizing workload backup", "items", len(items), "file_nodes", len(nodes))
-	finalResp, err := b.Client.FinalizeBackup(ctx, sessionID, nodes, nil)
+	slog.Info("finalizing workload backup", "items", len(items), "file_nodes", len(nodes), "objects_without_items", len(results))
+	finalResp, err := b.Client.FinalizeWorkload(ctx, sessionID, nodes, results)
 	if err != nil {
 		return nil, fmt.Errorf("finalize backup: %w", err)
 	}

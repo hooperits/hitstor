@@ -352,7 +352,7 @@ plugin's connection settings and output on this host.`,
 			defer closeAll()
 
 			digests := make(map[string]string)
-			items, err := c.Backup(cmd.Context(), hitstorplugin.BackupRequest{Selection: selection, Kind: kind, Options: options},
+			out, err := c.Backup(cmd.Context(), hitstorplugin.BackupRequest{Selection: selection, Kind: kind, Options: options, ObjectResults: true},
 				func(itemPath string, data io.Reader) error {
 					dst := filepath.Join(outDir, filepath.FromSlash(itemPath))
 					if err := os.MkdirAll(filepath.Dir(dst), 0o700); err != nil {
@@ -365,13 +365,21 @@ plugin's connection settings and output on this host.`,
 					h := sha256.New()
 					if _, err := io.Copy(io.MultiWriter(f, h), data); err != nil {
 						f.Close()
+						os.Remove(dst) // aborted or broken: keep only finished items
 						return err
 					}
 					digests[itemPath] = hex.EncodeToString(h.Sum(nil))
 					return f.Close()
 				})
-			if err != nil {
+			items := out.Items
+			for _, r := range out.Results {
+				fmt.Fprintf(os.Stderr, "%s %s: %s %s\n", r.Status, r.Object, r.Reason, r.Message)
+			}
+			if err != nil && len(items) == 0 {
 				return err
+			}
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "error after %d item(s): %v\n", len(items), err)
 			}
 			// Same manifest the agent stores in snapshots, so test-restore
 			// can plan from this directory the way the server plans from
@@ -391,13 +399,16 @@ plugin's connection settings and output on this host.`,
 				}
 			}
 			if jsonFlag {
-				return writePluginJSON(items)
+				if jerr := writePluginJSON(items); jerr != nil {
+					return jerr
+				}
+				return err
 			}
 			for _, it := range items {
 				fmt.Printf("%s  %d bytes\n", it.Path, it.Size)
 			}
 			fmt.Printf("%d item(s) written to %s\n", len(items), outDir)
-			return nil
+			return err // a failure after some items still fails the test
 		},
 	}
 	f := cmd.Flags()

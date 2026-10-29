@@ -3,6 +3,7 @@ package plugin
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -58,6 +59,23 @@ func (f *fakeWorkload) Backup(_ context.Context, req BackupRequest, sink ItemSin
 	case "escape":
 		_, err := sink.Item("../evil")
 		return err
+	case "partial":
+		// a finishes, b is aborted half way, c is excluded, then d fails hard.
+		w, _ := sink.Item("a.bak")
+		w.Write([]byte("aaaa"))
+		w.Finish([]byte(`{"db":"a"}`))
+		w, _ = sink.Item("b.bak")
+		w.Write([]byte("partial"))
+		if err := w.Abort(); err != nil {
+			return err
+		}
+		if err := sink.Result(ObjectResult{Object: "inst/b", Status: ObjectFailed, Reason: "error", Message: "disk full"}); err != nil {
+			return err
+		}
+		if err := sink.Result(ObjectResult{Object: "inst/c", Status: ObjectExcluded, Reason: "simple-recovery"}); err != nil {
+			return err
+		}
+		return errors.New("instance went away")
 	}
 	for _, p := range f.order {
 		w, err := sink.Item(p)
@@ -107,7 +125,7 @@ func TestWorkloadBackupStreamsItems(t *testing.T) {
 	c := setupWorkloadBufconn(t, impl)
 
 	got := map[string][]byte{}
-	items, err := c.Backup(context.Background(), BackupRequest{Selection: []string{"inst/db"}, Kind: "full", Options: map[string]string{"k": "v"}},
+	out, err := c.Backup(context.Background(), BackupRequest{Selection: []string{"inst/db"}, Kind: "full", Options: map[string]string{"k": "v"}},
 		func(p string, r io.Reader) error {
 			data, err := io.ReadAll(r)
 			got[p] = data
@@ -119,6 +137,7 @@ func TestWorkloadBackupStreamsItems(t *testing.T) {
 	if impl.gotReq.Kind != "full" || impl.gotReq.Selection[0] != "inst/db" || impl.gotReq.Options["k"] != "v" {
 		t.Fatalf("plugin got %+v", impl.gotReq)
 	}
+	items := out.Items
 	if len(items) != 2 || items[0].Path != "inst/db/full.bak" || items[0].Size != int64(len(big)) {
 		t.Fatalf("items = %+v", items)
 	}
@@ -133,7 +152,8 @@ func TestWorkloadBackupStreamsItems(t *testing.T) {
 func TestWorkloadBackupHandlerMayStopEarly(t *testing.T) {
 	impl := &fakeWorkload{items: map[string][]byte{"a.bak": []byte("aaaa"), "b.bak": []byte("bb")}, order: []string{"a.bak", "b.bak"}}
 	c := setupWorkloadBufconn(t, impl)
-	items, err := c.Backup(context.Background(), BackupRequest{}, func(string, io.Reader) error { return nil })
+	out, err := c.Backup(context.Background(), BackupRequest{}, func(string, io.Reader) error { return nil })
+	items := out.Items
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -170,6 +190,45 @@ func TestWorkloadBackupHandlerErrorAborts(t *testing.T) {
 	c := setupWorkloadBufconn(t, impl)
 	_, err := c.Backup(context.Background(), BackupRequest{}, func(string, io.Reader) error { return errors.New("upload failed") })
 	if err == nil || !strings.Contains(err.Error(), "upload failed") {
+		t.Fatalf("err = %v", err)
+	}
+}
+
+func TestWorkloadBackupObjectResults(t *testing.T) {
+	impl := &fakeWorkload{misbehave: "partial"}
+	c := setupWorkloadBufconn(t, impl)
+	known := []KnownItem{{Item: "inst/a/full.bak", Metadata: json.RawMessage(`{"type":"D"}`)}}
+	var stored []string
+	out, err := c.Backup(context.Background(), BackupRequest{Selection: []string{"inst"}, Kind: "log", Known: known, ObjectResults: true},
+		func(p string, r io.Reader) error {
+			data, err := io.ReadAll(r)
+			if err != nil {
+				return err // an aborted item is not kept
+			}
+			stored = append(stored, p+"="+string(data))
+			return nil
+		})
+	// The hard failure comes back, together with what finished before it.
+	if err == nil || !strings.Contains(err.Error(), "instance went away") {
+		t.Fatalf("err = %v", err)
+	}
+	if len(out.Items) != 1 || out.Items[0].Path != "a.bak" || strings.Join(stored, ",") != "a.bak=aaaa" {
+		t.Fatalf("items = %+v, stored = %v", out.Items, stored)
+	}
+	if len(out.Results) != 2 || out.Results[0].Status != ObjectFailed || out.Results[1].Reason != "simple-recovery" {
+		t.Fatalf("results = %+v", out.Results)
+	}
+	if len(impl.gotReq.Known) != 1 || string(impl.gotReq.Known[0].Metadata) != `{"type":"D"}` || !impl.gotReq.ObjectResults {
+		t.Fatalf("request = %+v", impl.gotReq)
+	}
+}
+
+func TestWorkloadBackupResultsNeedHostSupport(t *testing.T) {
+	// A plugin may not report results or abort items to a host that did
+	// not ask for them: older hosts would not understand.
+	c := setupWorkloadBufconn(t, &fakeWorkload{misbehave: "partial"})
+	_, err := c.Backup(context.Background(), BackupRequest{}, func(_ string, r io.Reader) error { _, err := io.ReadAll(r); return err })
+	if err == nil || !strings.Contains(err.Error(), "does not accept aborted items") {
 		t.Fatalf("err = %v", err)
 	}
 }

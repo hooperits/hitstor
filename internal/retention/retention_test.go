@@ -408,15 +408,54 @@ func TestApply_ProtectsWorkloadChains(t *testing.T) {
 		t.Fatalf("forgotten = %s, want 1,10,2,3,4", got)
 	}
 
-	// Keeping the differential (#3) keeps full #1 and the log between them.
+	// Keeping the differential (#3) keeps its base, full #1; a differential
+	// restores straight onto it, so the log between them may go.
 	r, _ = Apply(snapshots, Policy{KeepTags: []string{"kind:differential"}}, "sql01", "")
-	if got := forgottenIDs(r); got != "10,4,5,6,7" {
-		t.Fatalf("forgotten = %s, want 10,4,5,6,7", got)
+	if got := forgottenIDs(r); got != "10,2,4,5,6,7" {
+		t.Fatalf("forgotten = %s, want 10,2,4,5,6,7", got)
 	}
 
 	// A log with no earlier full keeps everything older in its group.
 	r, _ = Apply(snapshots[8:9], Policy{KeepLast: 1}, "", "")
 	if len(r.Forget) != 0 {
 		t.Fatalf("forgot %v", r.Forget)
+	}
+}
+
+func TestApply_ProtectsChainsPerObject(t *testing.T) {
+	base := time.Date(2026, 3, 1, 0, 0, 0, 0, time.UTC)
+	h := func(n int) time.Time { return base.Add(time.Duration(n) * time.Hour) }
+	wl := func(kind string, objs ...string) []string {
+		tags := []string{"plugin:mssql", "kind:" + kind}
+		for _, o := range objs {
+			tags = append(tags, "obj:"+o)
+		}
+		return tags
+	}
+	snapshots := []SnapshotInfo{
+		snap(1, h(0), "sql01", nil, wl("full", "I/a")),                      // a's base
+		snap(2, h(1), "sql01", nil, wl("full", "I/b")),                      // b's base, another job
+		snap(3, h(2), "sql01", nil, append(wl("full", "I/a"), "copy-only")), // no base for a
+		snap(4, h(3), "sql01", nil, wl("log", "I/b")),                       // b's chain
+		snap(5, h(4), "sql01", nil, wl("differential", "I/a")),              // a's differential
+		snap(6, h(5), "sql01", nil, wl("full", "I/c")),                      // unrelated
+		snap(7, h(6), "sql01", nil, wl("log", "I/a", "I/b")),                // both
+	}
+
+	// Keeping only the newest log keeps both log chains: a's full #1 (not
+	// the copy-only #3, nor a's differential, which a log restore does not
+	// need), b's log #4 and full #2; c's full #6 goes.
+	r, err := Apply(snapshots, Policy{KeepLast: 1}, "sql01", "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := forgottenIDs(r); got != "3,5,6" {
+		t.Fatalf("forgotten = %s, want 3,5,6", got)
+	}
+
+	// Keeping a's differential keeps a's full, not b's or the copy-only.
+	r, _ = Apply(snapshots, Policy{KeepTags: []string{"kind:differential"}}, "sql01", "")
+	if got := forgottenIDs(r); got != "2,3,4,6,7" {
+		t.Fatalf("forgotten = %s, want 2,3,4,6,7", got)
 	}
 }

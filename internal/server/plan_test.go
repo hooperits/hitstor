@@ -115,10 +115,10 @@ func TestRecordKindRuns(t *testing.T) {
 		t.Fatal(err)
 	}
 	at := time.Date(2026, 11, 1, 1, 5, 0, 0, time.UTC)
-	if err := r.RecordKindFailure("plan", "differential", "full backup required: MSSQLSERVER/db (no-full)", at); err != nil {
+	if err := r.RecordKindFailure("plan", "differential", "full backup required: MSSQLSERVER/db (no-full)", at, nil); err != nil {
 		t.Fatal(err)
 	}
-	if err := r.RecordKindBackup("plan", "full", at.Add(time.Minute)); err != nil {
+	if err := r.RecordKindBackup("plan", "full", at.Add(time.Minute), nil); err != nil {
 		t.Fatal(err)
 	}
 	got := r.GetJob("plan")

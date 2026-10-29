@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"path"
 	"sort"
-	"strings"
 	"time"
 
 	"github.com/hooperits/hitstor/internal/i18n"
@@ -194,17 +193,6 @@ func shortSnapshot(id string) string {
 	return id
 }
 
-// selectionCovers reports whether a job's selection includes object: the
-// object itself or a container of it (an instance holds its databases).
-func selectionCovers(selection []string, object string) bool {
-	for _, s := range selection {
-		if object == s || strings.HasPrefix(object, s+"/") {
-			return true
-		}
-	}
-	return false
-}
-
 // handleAPIBackupJobChains handles GET /api/backups/{id}/chains: the backup
 // chains of every database a workload job backs up.
 func (d *Dashboard) handleAPIBackupJobChains(w http.ResponseWriter, r *http.Request) {
@@ -226,7 +214,7 @@ func (d *Dashboard) handleAPIBackupJobChains(w http.ResponseWriter, r *http.Requ
 	var objects []string
 	for _, p := range points {
 		obj := path.Dir(p.Item)
-		if !selectionCovers(job.Selection, obj) {
+		if !server.SelectionCovers(job.Selection, obj) {
 			continue
 		}
 		if _, ok := byObject[obj]; !ok {

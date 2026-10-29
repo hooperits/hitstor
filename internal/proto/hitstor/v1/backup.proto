@@ -55,6 +55,38 @@ service BackupService {
   // database). The server records the error on the job, clears a pending
   // "run now", and drops the job's abandoned session.
   rpc ReportJobFailure(ReportJobFailureRequest) returns (ReportJobFailureResponse);
+
+  // GetWorkloadKnown lists the workload items the repositories hold for a
+  // job's selection, with their plugin metadata, so the plugin can check
+  // that a differential or log backup builds on backups HitStor can restore.
+  rpc GetWorkloadKnown(GetWorkloadKnownRequest) returns (GetWorkloadKnownResponse);
+}
+
+message GetWorkloadKnownRequest {
+  string api_key = 1;
+  string job_id = 2;
+}
+
+message GetWorkloadKnownResponse {
+  repeated WorkloadKnownItem items = 1;
+}
+
+message WorkloadKnownItem {
+  // Item path as the plugin produced it, e.g. "MSSQLSERVER/db/full-....bak".
+  string item = 1;
+  // The plugin's JSON metadata for the item.
+  bytes metadata = 2;
+}
+
+// WorkloadObjectResult reports a selected object of a workload backup that
+// produced no item: excluded by design, or failed.
+message WorkloadObjectResult {
+  string object = 1;
+  // "excluded" or "failed".
+  string status = 2;
+  // Plugin-defined reason code.
+  string reason = 3;
+  string message = 4;
 }
 
 message ReportJobFailureRequest {
@@ -62,6 +94,8 @@ message ReportJobFailureRequest {
   string job_id = 2;
   // Human-readable error, shown in the dashboard.
   string error = 3;
+  // Workload jobs: the objects that produced no item, and why.
+  repeated WorkloadObjectResult object_results = 4;
 }
 
 message ReportJobFailureResponse {}
@@ -203,6 +237,10 @@ message FinalizeBackupRequest {
   // bare-metal-restore state; the server stores it as a blob referenced by the
   // snapshot. Empty otherwise.
   bytes system_profile = 5;
+
+  // Workload backups: objects of the selection that produced no item. A
+  // failed one makes the run partial; the items that finished are kept.
+  repeated WorkloadObjectResult object_results = 6;
 }
 
 // FileNode represents a file or directory from the agent's filesystem.

@@ -27,6 +27,30 @@ type KindRun struct {
 	LastBackup  *time.Time `json:"last_backup,omitempty"`
 	LastError   string     `json:"last_error,omitempty"`
 	LastErrorAt *time.Time `json:"last_error_at,omitempty"`
+	// Objects are the objects of the latest run that produced no item:
+	// excluded by design or failed. Partial marks a run that stored some
+	// objects and failed others.
+	Objects []ObjectOutcome `json:"objects,omitempty"`
+	Partial bool            `json:"partial,omitempty"`
+}
+
+// ObjectOutcome is a plugin's report on one object that produced no item.
+type ObjectOutcome struct {
+	Object  string `json:"object"`
+	Status  string `json:"status"` // excluded, failed
+	Reason  string `json:"reason,omitempty"`
+	Message string `json:"message,omitempty"`
+}
+
+// failedObjects counts the failed objects among outcomes.
+func failedObjects(outcomes []ObjectOutcome) int {
+	n := 0
+	for _, o := range outcomes {
+		if o.Status == "failed" {
+			n++
+		}
+	}
+	return n
 }
 
 // failed reports whether the kind's latest run failed.

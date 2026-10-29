@@ -840,12 +840,14 @@ func (r *AgentRegistry) ReattachJobs(targetAgentName string, jobIDs []string) er
 
 // UpdateJobLastBackup sets the last backup time for the given job ID.
 func (r *AgentRegistry) UpdateJobLastBackup(id string, t time.Time) error {
-	return r.RecordKindBackup(id, "", t)
+	return r.RecordKindBackup(id, "", t, nil)
 }
 
-// RecordKindBackup records a successful run of a workload job's kind (""
-// for jobs without kinds), along with the job's last backup.
-func (r *AgentRegistry) RecordKindBackup(id, kind string, t time.Time) error {
+// RecordKindBackup records a run of a workload job's kind ("" for jobs
+// without kinds) that stored a snapshot, along with the job's last backup.
+// outcomes are the objects that produced no item; failed ones make the run
+// partial.
+func (r *AgentRegistry) RecordKindBackup(id, kind string, t time.Time, outcomes []ObjectOutcome) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	for i := range r.jobs {
@@ -854,7 +856,8 @@ func (r *AgentRegistry) RecordKindBackup(id, kind string, t time.Time) error {
 			if kind != "" && j.JobType == JobTypeWorkload {
 				// Keep the other kinds' history of a job made before plans.
 				j.KindRuns = kindRunsOf(*j)
-				j.KindRuns[kind] = KindRun{LastBackup: &t}
+				run := KindRun{LastBackup: &t, Objects: outcomes, Partial: failedObjects(outcomes) > 0}
+				j.KindRuns[kind] = run
 				for _, e := range EffectivePlan(*j) {
 					if kindCovers(kind, e.Kind) {
 						st := j.KindRuns[e.Kind]
@@ -942,11 +945,12 @@ func (r *AgentRegistry) UpdateJobVerifyResult(id string, result JobVerifyResult)
 // RecordJobFailure stores a failed run reported by the agent and clears the
 // manual "Backup Now" flag, so a failing job is not retried on every poll.
 func (r *AgentRegistry) RecordJobFailure(id, msg string, t time.Time) error {
-	return r.RecordKindFailure(id, "", msg, t)
+	return r.RecordKindFailure(id, "", msg, t, nil)
 }
 
-// RecordKindFailure is RecordJobFailure for one kind of a workload job.
-func (r *AgentRegistry) RecordKindFailure(id, kind, msg string, t time.Time) error {
+// RecordKindFailure is RecordJobFailure for one kind of a workload job,
+// with the plugin's report on each object when it gave one.
+func (r *AgentRegistry) RecordKindFailure(id, kind, msg string, t time.Time, outcomes []ObjectOutcome) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	for i := range r.jobs {
@@ -958,7 +962,7 @@ func (r *AgentRegistry) RecordKindFailure(id, kind, msg string, t time.Time) err
 			if kind != "" && j.JobType == JobTypeWorkload {
 				j.KindRuns = kindRunsOf(*j)
 				st := j.KindRuns[kind]
-				st.LastError, st.LastErrorAt = msg, &t
+				st.LastError, st.LastErrorAt, st.Objects, st.Partial = msg, &t, outcomes, false
 				j.KindRuns[kind] = st
 			}
 			j.LastError = msg

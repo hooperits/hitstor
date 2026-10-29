@@ -8,7 +8,6 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
-	"path"
 	"slices"
 	"sort"
 	"strings"
@@ -16,13 +15,11 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/hooperits/hitstor/internal/backend"
-	"github.com/hooperits/hitstor/internal/compress"
 	"github.com/hooperits/hitstor/internal/fs"
-	"github.com/hooperits/hitstor/internal/plugin"
 	pb "github.com/hooperits/hitstor/internal/proto/hitstor/v1"
 	"github.com/hooperits/hitstor/internal/repository"
 	"github.com/hooperits/hitstor/internal/server"
+	"github.com/hooperits/hitstor/internal/workloadcat"
 )
 
 // workloadPoint is one item a workload plugin produced, found in a snapshot.
@@ -42,96 +39,7 @@ type workloadPoint struct {
 
 // readNodeContent calls fn with each decompressed chunk of a file node.
 func readNodeContent(repo *repository.Repository, content []fs.ID, fn func([]byte) error) error {
-	for _, id := range content {
-		blob, packID := repo.LookupBlob(repository.ID(id))
-		if blob == nil {
-			return fmt.Errorf("blob %s not found in index", backend.ID(id))
-		}
-		compressed, err := repo.LoadBlob(*packID, *blob)
-		if err != nil {
-			return fmt.Errorf("load blob %s: %w", backend.ID(id), err)
-		}
-		data, err := compress.Decompress(compressed)
-		if err != nil {
-			return fmt.Errorf("decompress blob %s: %w", backend.ID(id), err)
-		}
-		if err := fn(data); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-// findTreeDir descends from root along slash-separated dir, returning nil
-// when any component is missing.
-func findTreeDir(repo *repository.Repository, root *restoreTree, dir string) *restoreTree {
-	cur := root
-	for _, name := range strings.Split(dir, "/") {
-		var next *restoreTree
-		for _, n := range cur.Nodes {
-			if n.Name == name && n.Type == fs.NodeTypeDir {
-				t, err := loadRestoreTree(repo, backend.ID(n.Subtree))
-				if err != nil {
-					return nil
-				}
-				next = t
-				break
-			}
-		}
-		if next == nil {
-			return nil
-		}
-		cur = next
-	}
-	return cur
-}
-
-// collectItemManifests walks t (the directory at itemDir inside the plugin's
-// snapshot directory) and returns a point for every item with a manifest.
-func collectItemManifests(repo *repository.Repository, snapHex string, t *restoreTree, itemDir string, out *[]workloadPoint) {
-	files := make(map[string]fs.Node)
-	for _, n := range t.Nodes {
-		switch n.Type {
-		case fs.NodeTypeFile:
-			files[n.Name] = n
-		case fs.NodeTypeDir:
-			if sub, err := loadRestoreTree(repo, backend.ID(n.Subtree)); err == nil {
-				collectItemManifests(repo, snapHex, sub, path.Join(itemDir, n.Name), out)
-			}
-		}
-	}
-	for name, n := range files {
-		itemName, ok := strings.CutSuffix(name, plugin.MetadataSuffix)
-		if !ok {
-			continue
-		}
-		item, ok := files[itemName]
-		if !ok {
-			continue
-		}
-		var raw []byte
-		if err := readNodeContent(repo, n.Content, func(b []byte) error { raw = append(raw, b...); return nil }); err != nil {
-			slog.Warn("workload restore: unreadable item manifest", "snapshot", snapHex, "item", path.Join(itemDir, name), "error", err)
-			continue
-		}
-		var m plugin.ItemManifest
-		if err := json.Unmarshal(raw, &m); err != nil {
-			slog.Warn("workload restore: invalid item manifest", "snapshot", snapHex, "item", path.Join(itemDir, name), "error", err)
-			continue
-		}
-		*out = append(*out, workloadPoint{
-			Ref:        snapHex[:16] + ":" + m.Item,
-			SnapshotID: snapHex,
-			Item:       m.Item,
-			Kind:       m.Kind,
-			CreatedAt:  m.CreatedAt,
-			Size:       m.Size,
-			SHA256:     m.SHA256,
-			Metadata:   m.Metadata,
-			repo:       repo,
-			content:    item.Content,
-		})
-	}
+	return workloadcat.ReadContent(repo, content, fn)
 }
 
 // workloadSnapshotMatches reports whether a workload snapshot belongs to
@@ -182,21 +90,23 @@ func (d *Dashboard) workloadItems(sourceAgent, pluginID, object, snapshot string
 			if err != nil || !slices.Contains(snap.Tags, "plugin:"+pluginID) || !d.workloadSnapshotMatches(snap, sourceAgent, jobIDs) {
 				continue
 			}
-			root, err := loadRestoreTree(repo, backend.ID(snap.Tree))
+			items, err := workloadcat.Default.SnapshotItems(repo, id, snap, pluginID)
 			if err != nil {
 				continue
 			}
-			dir := findTreeDir(repo, root, strings.TrimSuffix(pluginID+"/"+object, "/"))
-			if dir == nil {
-				continue
-			}
-			var found []workloadPoint
-			collectItemManifests(repo, id.String(), dir, object, &found)
-			for _, p := range found {
+			for _, it := range items {
+				m := it.Manifest
+				if object != "" && !strings.HasPrefix(m.Item, object+"/") {
+					continue
+				}
 				// An item is the same backup wherever it is stored.
-				if key := p.Item + "|" + p.SHA256; !seen[key] {
+				if key := m.Item + "|" + m.SHA256; !seen[key] {
 					seen[key] = true
-					points = append(points, p)
+					points = append(points, workloadPoint{
+						Ref: it.SnapshotID[:16] + ":" + m.Item, SnapshotID: it.SnapshotID, Item: m.Item, Kind: m.Kind,
+						CreatedAt: m.CreatedAt, Size: m.Size, SHA256: m.SHA256, Metadata: m.Metadata,
+						repo: repo, content: it.Content,
+					})
 				}
 			}
 		}

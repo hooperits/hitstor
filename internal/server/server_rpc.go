@@ -322,6 +322,9 @@ func (s *Server) FinalizeBackup(ctx context.Context, req *pb.FinalizeBackupReque
 	}
 
 	session.SetPhase("finalizing")
+	// Tag a workload snapshot with the objects it holds, so retention keeps
+	// each object's chain on its own.
+	session.Tags = append(session.Tags, workloadObjectTags(session.Paths, req.Files)...)
 	resp, err := session.Finalize(req.Files, req.SystemProfile)
 	if err != nil {
 		s.backupsFailed.Add(1)
@@ -338,7 +341,7 @@ func (s *Server) FinalizeBackup(ctx context.Context, req *pb.FinalizeBackupReque
 		slog.Warn("failed to update agent last backup time", "agent", session.AgentName, "error", updateErr)
 	}
 	if session.JobID != "" {
-		if updateErr := s.registry.RecordKindBackup(session.JobID, KindFromTags(session.Tags), now); updateErr != nil {
+		if updateErr := s.registry.RecordKindBackup(session.JobID, KindFromTags(session.Tags), now, outcomesFromProto(req.ObjectResults)); updateErr != nil {
 			slog.Warn("failed to update job last backup time", "job", session.JobID, "error", updateErr)
 		}
 		// Workload sessions are always stored whole; only a full kind is a full backup.
@@ -652,7 +655,7 @@ func (s *Server) ReportJobFailure(ctx context.Context, req *pb.ReportJobFailureR
 	if job.AgentName != agentName {
 		return nil, status.Error(codes.PermissionDenied, "job does not belong to this agent")
 	}
-	if err := s.registry.RecordKindFailure(req.JobId, s.failedKind(*job), req.Error, time.Now()); err != nil {
+	if err := s.registry.RecordKindFailure(req.JobId, s.failedKind(*job), req.Error, time.Now(), outcomesFromProto(req.ObjectResults)); err != nil {
 		return nil, status.Errorf(codes.Internal, "record job failure: %v", err)
 	}
 	dropped := s.CancelSessionByJobID(req.JobId)

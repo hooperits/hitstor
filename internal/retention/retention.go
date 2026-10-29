@@ -191,12 +191,17 @@ func bucketYearly(t time.Time) string {
 
 // protectChains keeps the backups that kept workload backups depend on.
 //
-// Workload snapshots carry "plugin:<id>" and "kind:<kind>" tags. A kept
-// snapshot of any kind other than full (a differential, a log) is only
-// restorable together with the earlier snapshots of the same host and
-// plugin back to a full one, so those are kept too. Without a full before
-// it, every earlier snapshot of the group is kept. inScope is sorted newest
-// first.
+// Workload snapshots carry "plugin:<id>" and "kind:<kind>" tags, and newer
+// ones an "obj:<object>" tag per object they hold (a database, say). A kept
+// differential or log backup of an object restores only together with the
+// earlier backups of that object back to its base: a full that is not
+// copy-only ("copy-only" tag). So for each object of each kept snapshot that
+// is not such a full, the earlier snapshots of the same host and plugin
+// holding the object that its kind needs (see chainNeeds) are kept, back to
+// and including the object's base; without one, all of them. Snapshots without object tags may hold any
+// object of their group. Kept snapshots may hold other objects whose chains
+// must be kept in turn, so this runs until nothing changes. inScope is
+// sorted newest first.
 func protectChains(inScope []SnapshotInfo, keep map[int]bool) {
 	groups := make(map[string][]int) // host|plugin -> indices, newest first
 	for i, s := range inScope {
@@ -205,19 +210,85 @@ func protectChains(inScope []SnapshotInfo, keep map[int]bool) {
 			groups[key] = append(groups[key], i)
 		}
 	}
-	for _, idx := range groups {
-		for pos, i := range idx {
-			if !keep[i] || tagValue(inScope[i].Tags, "kind:") == "full" {
-				continue
-			}
-			for _, older := range idx[pos+1:] {
-				keep[older] = true
-				if tagValue(inScope[older].Tags, "kind:") == "full" {
-					break
+	for changed := true; changed; {
+		changed = false
+		for _, idx := range groups {
+			for pos, i := range idx {
+				if !keep[i] || isChainBase(inScope[i]) {
+					continue
+				}
+				kind := tagValue(inScope[i].Tags, "kind:")
+				for _, obj := range objectsOf(inScope[i]) {
+					for _, older := range idx[pos+1:] {
+						o := inScope[older]
+						if !holdsObject(o, obj) || !chainNeeds(kind, o) {
+							continue
+						}
+						if !keep[older] {
+							keep[older] = true
+							changed = true
+						}
+						if isChainBase(o) {
+							break
+						}
+					}
 				}
 			}
 		}
 	}
+}
+
+// chainNeeds reports whether a backup of kind needs the earlier backup o
+// of the same object to restore: a differential needs only its base, a log
+// the earlier logs and their base; other kinds keep everything back to the
+// base.
+func chainNeeds(kind string, o SnapshotInfo) bool {
+	switch kind {
+	case "differential":
+		return isChainBase(o)
+	case "log":
+		return isChainBase(o) || tagValue(o.Tags, "kind:") == "log"
+	}
+	return true
+}
+
+// isChainBase reports whether s is a full workload backup that later ones
+// can build on.
+func isChainBase(s SnapshotInfo) bool {
+	return tagValue(s.Tags, "kind:") == "full" && !hasTag(s.Tags, "copy-only")
+}
+
+// objectsOf returns the objects s holds, or "" for a snapshot that does not
+// say (it may hold any object of its group).
+func objectsOf(s SnapshotInfo) []string {
+	var objs []string
+	for _, t := range s.Tags {
+		if len(t) > 4 && t[:4] == "obj:" {
+			objs = append(objs, t[4:])
+		}
+	}
+	if len(objs) == 0 {
+		return []string{""}
+	}
+	return objs
+}
+
+// holdsObject reports whether s may hold obj ("" matches every snapshot).
+func holdsObject(s SnapshotInfo, obj string) bool {
+	if obj == "" {
+		return true
+	}
+	objs := objectsOf(s)
+	return objs[0] == "" || hasTag(s.Tags, "obj:"+obj)
+}
+
+func hasTag(tags []string, tag string) bool {
+	for _, t := range tags {
+		if t == tag {
+			return true
+		}
+	}
+	return false
 }
 
 func tagValue(tags []string, prefix string) string {

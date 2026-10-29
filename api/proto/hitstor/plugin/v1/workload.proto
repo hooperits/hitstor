@@ -154,6 +154,36 @@ message BackupRequest {
   string kind = 2;
   // Per-run options. Connection settings come from Configure.
   map<string, string> options = 3;
+  // Items the host holds for the selection, so a plugin can check that a
+  // differential or log backup builds on backups the host can restore.
+  // Only meaningful when known_provided is set; otherwise the host does not
+  // know and plugins use their own means.
+  repeated KnownItem known = 4;
+  // Set by hosts that accept ObjectResult messages and aborted items. A
+  // plugin then reports objects it skipped or failed and goes on with the
+  // others; without it, the first failure ends the backup.
+  bool object_results = 5;
+  // Set when known lists every item the host holds (possibly none).
+  bool known_provided = 6;
+}
+
+// KnownItem is an item the host holds, with the metadata the plugin gave it.
+message KnownItem {
+  string item = 1;
+  bytes metadata = 2;
+}
+
+// ObjectResult reports a selected object that produced no item.
+message ObjectResult {
+  // Object path, as in BackupRequest.selection or below it.
+  string object = 1;
+  // "excluded" (by design, e.g. no log backups in SIMPLE recovery) or
+  // "failed" (should have been backed up).
+  string status = 2;
+  // Plugin-defined reason code, e.g. "simple-recovery", "no-full".
+  string reason = 3;
+  // Human-readable detail.
+  string message = 4;
 }
 
 message BackupMessage {
@@ -162,6 +192,8 @@ message BackupMessage {
     // A slice of the current item's bytes (at most 1 MiB per message).
     bytes data = 2;
     ItemEnd end = 3;
+    // Only when the request set object_results.
+    ObjectResult result = 4;
   }
 }
 
@@ -174,6 +206,9 @@ message ItemEnd {
   // Plugin-defined metadata for the item, as a JSON value. Stored next to
   // the item and handed back to the plugin when planning a restore.
   bytes metadata = 1;
+  // The item failed part way and must be discarded (only when the request
+  // set object_results).
+  bool aborted = 2;
 }
 
 // RestoreCandidate is an item available in some snapshot.

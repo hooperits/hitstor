@@ -90,7 +90,9 @@ type jobView struct {
 	// the databases a failed differential or log backup needs a full for.
 	Plan         []planKindView
 	FullRequired []fullRequiredItem
-	FailedKind   string // label of the kind whose run failed
+	Failures     []objectOutcomeView // failed objects a full would not fix
+	FailedKind   string              // label of the kind whose run failed or was partial
+	Partial      bool                // that run backed up some objects
 	RunNowKind   string
 }
 
@@ -188,9 +190,15 @@ func buildJobView(c *i18n.Catalog, j server.BackupJob, sess *server.SessionInfo,
 				v.RunNowKind = kindLabel(c, j.RunNowKind)
 			}
 		}
-		for _, k := range plan {
-			if k.Failed && v.LastError == "" {
-				v.LastError, v.FullRequired, v.FailedKind = k.LastError, k.FullRequired, k.Label
+		// The alert explains the first kind whose latest run failed, else the
+		// first one that was partial.
+		for _, partial := range []bool{false, true} {
+			for _, k := range plan {
+				if v.FailedKind != "" || (partial && !k.Partial) || (!partial && !k.Failed) {
+					continue
+				}
+				v.FailedKind, v.Partial = k.Label, partial
+				v.LastError, v.FullRequired, v.Failures = k.LastError, k.FullRequired, k.Failures
 			}
 		}
 	}

@@ -3,17 +3,22 @@ package main
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
+
+	hitstorplugin "github.com/hooperits/hitstor/internal/plugin"
 )
 
-// A differential is restorable from HitStor only when its base, the last
-// full backup that was not copy-only, is one HitStor took; a log backup only
-// when the log chain it continues is HitStor's (no other tool took a log
-// backup in between, and HitStor's full started it). SQL Server does not
-// care who took a backup, so the plugin checks msdb before it backs up, and
-// asks for a full backup instead of producing backups no restore could use.
+// A differential is restorable from HitStor only when HitStor holds its
+// base, the last full backup that was not copy-only; a log backup only when
+// HitStor holds the backup the log chain continues from (no other tool took
+// a log backup in between). SQL Server does not care who took a backup, so
+// the plugin checks before it backs up, and asks for a full backup instead
+// of producing backups no restore could use. The host lists the items it
+// holds (BackupRequest.Known); a host that does not, gets the older check
+// of msdb: was the backup written to a HitStor virtual device.
 
 // fullRequiredPrefix starts the error of a run that needs a full backup
 // first; the dashboard recognises it and offers to run one.
@@ -25,7 +30,67 @@ const (
 	reasonExternalFull = "external-full" // the base or chain-starting full was taken by another tool
 	reasonExternalLog  = "external-log"  // another tool took the last log backup
 	reasonUnknownBase  = "unknown-base"  // msdb has no record of the base (history purged)
+	reasonNotHeld      = "not-held"      // HitStor took the base but no longer holds it
 )
+
+// Reasons a database produced no backup, besides the chain reasons above.
+const (
+	reasonSimpleRecovery = "simple-recovery" // no log backups in SIMPLE recovery
+	reasonNotOnline      = "not-online"      // OFFLINE, RESTORING, ...
+	reasonFullOnly       = "full-only"       // master takes only full backups
+	reasonError          = "error"           // the backup failed
+)
+
+// knownBackups are the backups HitStor holds, by database GUID.
+type knownBackups map[string][]itemMeta
+
+// newKnownBackups reads the host's list of items, or returns nil when the
+// host did not send one.
+func newKnownBackups(req hitstorplugin.BackupRequest) knownBackups {
+	if !req.KnownProvided {
+		return nil
+	}
+	k := knownBackups{}
+	for _, it := range req.Known {
+		var m itemMeta
+		if json.Unmarshal(it.Metadata, &m) == nil && m.DatabaseGUID != "" {
+			guid := strings.ToUpper(m.DatabaseGUID)
+			k[guid] = append(k[guid], m)
+		}
+	}
+	return k
+}
+
+// holdsBase reports whether HitStor holds the full a differential with this
+// base would build on.
+func (k knownBackups) holdsBase(guid, baseLSN string) bool {
+	for _, m := range k[strings.ToUpper(guid)] {
+		if m.Type == typeFull && !m.CopyOnly && lsn(m.CheckpointLSN).Cmp(lsn(baseLSN)) == 0 {
+			return true
+		}
+	}
+	return false
+}
+
+// holdsChainEnd reports whether HitStor holds the backup the next log backup
+// continues from: the log ending at lsnEnd, or the full that started the
+// chain there.
+func (k knownBackups) holdsChainEnd(guid, lsnEnd string) bool {
+	end := lsn(lsnEnd)
+	for _, m := range k[strings.ToUpper(guid)] {
+		switch m.Type {
+		case typeLog:
+			if lsn(m.LastLSN).Cmp(end) == 0 {
+				return true
+			}
+		case typeFull:
+			if !m.CopyOnly && (lsn(m.CheckpointLSN).Cmp(end) == 0 || lsn(m.FirstLSN).Cmp(end) == 0) {
+				return true
+			}
+		}
+	}
+	return false
+}
 
 // historyEntry is one backup recorded in msdb.
 type historyEntry struct {
@@ -51,7 +116,9 @@ func isHitStorDevice(device string) bool { return strings.HasPrefix(device, "Hit
 
 // chainState is what msdb and the database say about one database's chain.
 type chainState struct {
+	State         string // ONLINE, OFFLINE, ...
 	RecoveryModel string
+	DatabaseGUID  string
 	// DiffBaseLSN is the checkpoint LSN of the full backup a differential
 	// would be based on; empty when there is none.
 	DiffBaseLSN string
@@ -77,16 +144,34 @@ func (c chainIssue) String() string {
 }
 
 // checkChain returns the issue that keeps a kind backup of obj from being
-// restorable from HitStor, or nil. Full backups have none.
-func checkChain(kind, obj string, s chainState) *chainIssue {
+// restorable from HitStor, or nil. Full backups have none. known is what
+// HitStor holds; nil falls back to msdb's record of the backup device.
+func checkChain(kind, obj string, s chainState, known knownBackups) *chainIssue {
 	issue := func(reason, detail string) *chainIssue {
 		return &chainIssue{Object: obj, Reason: reason, Detail: detail}
+	}
+	// other names why HitStor cannot build on the backup msdb recorded.
+	other := func(h *historyEntry, lsnValue string) *chainIssue {
+		switch {
+		case h == nil:
+			return issue(reasonUnknownBase, "no backup history for LSN "+lsnValue)
+		case !h.hitstor() && h.Type == "L":
+			return issue(reasonExternalLog, h.describe())
+		case !h.hitstor():
+			return issue(reasonExternalFull, h.describe())
+		default:
+			return issue(reasonNotHeld, h.describe())
+		}
 	}
 	switch kind {
 	case "differential":
 		switch {
 		case s.DiffBaseLSN == "":
 			return issue(reasonNoFull, "")
+		case known != nil && known.holdsBase(s.DatabaseGUID, s.DiffBaseLSN):
+			return nil
+		case known != nil:
+			return other(s.Base, s.DiffBaseLSN)
 		case s.Base == nil:
 			return issue(reasonUnknownBase, "no backup history for base LSN "+s.DiffBaseLSN)
 		case !s.Base.hitstor():
@@ -96,6 +181,10 @@ func checkChain(kind, obj string, s chainState) *chainIssue {
 		switch {
 		case s.LastLogLSN == "":
 			return issue(reasonNoFull, "")
+		case known != nil && known.holdsChainEnd(s.DatabaseGUID, s.LastLogLSN):
+			return nil
+		case known != nil:
+			return other(s.Chain, s.LastLogLSN)
 		case s.Chain == nil:
 			return issue(reasonUnknownBase, "no backup history for log chain LSN "+s.LastLogLSN)
 		case !s.Chain.hitstor() && s.Chain.Type == "L":
@@ -126,7 +215,7 @@ func readChainState(ctx context.Context, db *sql.DB, database string) (chainStat
 	// history. A full starts the log chain at its first or
 	// checkpoint LSN; a log backup ends it at its last LSN.
 	const q = `
-SELECT d.recovery_model_desc,
+SELECT d.state_desc, d.recovery_model_desc, CONVERT(varchar(40), r.database_guid),
   ISNULL(CONVERT(varchar(40), f.differential_base_lsn), ''),
   ISNULL(CONVERT(varchar(40), r.last_log_backup_lsn), ''),
   b.physical_device_name, DATEADD(minute, DATEDIFF(minute, GETDATE(), GETUTCDATE()), b.backup_finish_date), b.user_name,
@@ -151,7 +240,7 @@ WHERE d.name = @p1`
 	var s chainState
 	var bDev, bUser, cType, cDev, cUser sql.NullString
 	var bFinish, cFinish sql.NullTime
-	err := db.QueryRowContext(ctx, q, database).Scan(&s.RecoveryModel, &s.DiffBaseLSN, &s.LastLogLSN,
+	err := db.QueryRowContext(ctx, q, database).Scan(&s.State, &s.RecoveryModel, &s.DatabaseGUID, &s.DiffBaseLSN, &s.LastLogLSN,
 		&bDev, &bFinish, &bUser, &cType, &cDev, &cFinish, &cUser)
 	if err != nil {
 		return s, fmt.Errorf("read backup chain of %s: %w", database, err)

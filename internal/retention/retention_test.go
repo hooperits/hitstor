@@ -408,11 +408,11 @@ func TestApply_ProtectsWorkloadChains(t *testing.T) {
 		t.Fatalf("forgotten = %s, want 1,10,2,3,4", got)
 	}
 
-	// Keeping the differential (#3) keeps its base, full #1; a differential
-	// restores straight onto it, so the log between them may go.
+	// Keeping the differential (#3) keeps full #1 and the log between
+	// them: snapshots without object tags keep their whole chain.
 	r, _ = Apply(snapshots, Policy{KeepTags: []string{"kind:differential"}}, "sql01", "")
-	if got := forgottenIDs(r); got != "10,2,4,5,6,7" {
-		t.Fatalf("forgotten = %s, want 10,2,4,5,6,7", got)
+	if got := forgottenIDs(r); got != "10,4,5,6,7" {
+		t.Fatalf("forgotten = %s, want 10,4,5,6,7", got)
 	}
 
 	// A log with no earlier full keeps everything older in its group.
@@ -519,16 +519,57 @@ func TestApply_CopyOnlyFullsAndLegacyBases(t *testing.T) {
 		t.Fatalf("copy-only fulls: forgotten = %s, want 1,2,3,4", got)
 	}
 
-	// Before the upgrade two jobs took untagged fulls of a and b. The
-	// first tagged differential of a builds on a's full #1: b's newer
+	// Before the upgrade jobs A and B took untagged fulls of a and b. The
+	// first tagged differential of a builds on A's full #1: B's newer
 	// untagged full #2 must not stop the walk there.
 	legacy := []SnapshotInfo{
-		snap(1, h(0), "sql01", nil, []string{"plugin:mssql", "kind:full"}),
-		snap(2, h(1), "sql01", nil, []string{"plugin:mssql", "kind:full"}),
-		snap(3, h(2), "sql01", nil, []string{"plugin:mssql", "kind:differential", "obj:I/a"}),
+		snap(1, h(0), "sql01", nil, []string{"plugin:mssql", "kind:full", "job:A"}),
+		snap(2, h(1), "sql01", nil, []string{"plugin:mssql", "kind:full", "job:B"}),
+		snap(3, h(2), "sql01", nil, []string{"plugin:mssql", "kind:differential", "obj:I/a", "job:A"}),
 	}
 	r, _ = Apply(legacy, Policy{KeepLast: 1}, "sql01", "")
-	if len(r.Forget) != 0 {
-		t.Fatalf("legacy bases: forgot %v", r.Forget)
+	if got := forgottenIDs(r); got != "2" {
+		t.Fatalf("legacy bases: forgotten = %s, want 2", got)
+	}
+
+	// Tagged logs taken after the upgrade but before the job's first tagged
+	// full keep the job's untagged logs back to its newest untagged full,
+	// not all history.
+	var hist []SnapshotInfo
+	for d := 0; d < 5; d++ {
+		hist = append(hist,
+			snap(byte(10*d+1), h(24*d), "sql01", nil, []string{"plugin:mssql", "kind:full", "job:A"}),
+			snap(byte(10*d+2), h(24*d+1), "sql01", nil, []string{"plugin:mssql", "kind:log", "job:A"}))
+	}
+	hist = append(hist, snap(99, h(24*5), "sql01", nil, []string{"plugin:mssql", "kind:log", "obj:I/a", "job:A"}))
+	r, _ = Apply(hist, Policy{KeepLast: 1}, "sql01", "")
+	if len(r.Keep) != 3 { // #99, the day-4 log and full
+		t.Fatalf("kept %d snapshots, want 3: %v", len(r.Keep), r.Keep)
+	}
+}
+
+func TestApply_DroppedDatabaseIsNotKeptForever(t *testing.T) {
+	base := time.Date(2026, 3, 1, 0, 0, 0, 0, time.UTC)
+	h := func(n int) time.Time { return base.Add(time.Duration(n) * time.Hour) }
+	tags := func(kind string, objs ...string) []string {
+		t := []string{"plugin:mssql", "kind:" + kind, "job:J"}
+		for _, o := range objs {
+			t = append(t, "obj:"+o)
+		}
+		return t
+	}
+	// X was dropped after day 1: later fulls and logs hold only A.
+	snapshots := []SnapshotInfo{
+		snap(1, h(0), "sql01", nil, tags("full", "I/A", "I/X")),
+		snap(2, h(1), "sql01", nil, tags("log", "I/A", "I/X")),
+		snap(3, h(24), "sql01", nil, tags("full", "I/A")),
+		snap(4, h(25), "sql01", nil, tags("log", "I/A")),
+	}
+	r, err := Apply(snapshots, Policy{KeepLast: 1}, "sql01", "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := forgottenIDs(r); got != "1,2" {
+		t.Fatalf("forgotten = %s, want 1,2", got)
 	}
 }

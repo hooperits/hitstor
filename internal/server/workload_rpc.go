@@ -2,7 +2,7 @@ package server
 
 import (
 	"context"
-	"fmt"
+	"log/slog"
 	"path"
 	"slices"
 	"sort"
@@ -13,15 +13,16 @@ import (
 
 	"github.com/hooperits/hitstor/internal/plugin"
 	pb "github.com/hooperits/hitstor/internal/proto/hitstor/v1"
+	"github.com/hooperits/hitstor/internal/repository"
 	"github.com/hooperits/hitstor/internal/workloadcat"
 )
 
 // knownPerKind caps the items of each kind GetWorkloadKnown returns per
-// object, newest first. A chain check needs a differential's base (the
-// newest full that is not copy-only), the backup that ends the log chain
-// (the newest log, or a full) and any full or differential after it.
-// Copy-only fulls count as fulls, hence the margin.
-var knownPerKind = map[string]int{"full": 30, "differential": 5, "log": 20}
+// object, newest first. Every full is returned: a differential's base is
+// the newest full that is not copy-only, which other jobs' copy-only fulls
+// may follow by the dozen, and retention bounds them anyway. A log check
+// needs the backup that ends the chain: the newest log, or a full.
+var knownPerKind = map[string]int{"full": -1, "differential": 5, "log": 20}
 
 // knownOtherKinds caps items of kinds a plugin defines beyond those.
 const knownOtherKinds = 20
@@ -64,26 +65,35 @@ func (s *Server) knownWorkloadItems(job BackupJob) ([]workloadcat.Item, error) {
 	}
 	byObject := map[string][]workloadcat.Item{}
 	seen := map[string]bool{}
-	// A snapshot that cannot be read fails the call: a partial list would
-	// read as backups HitStor does not hold. The agent then falls back to the
-	// plugin's own check.
+	// A snapshot that cannot be read is left out, with a warning. The
+	// plugin then finds no base in it and asks for a full backup: a visible
+	// failure. Failing the call instead would send the plugin back to its
+	// msdb check, which cannot tell a backup HitStor no longer holds. The
+	// catalog caches nothing from a failed read, so the next run retries.
+	var repos []*repository.Repository
 	for _, mr := range s.repos.List() {
-		ids, err := mr.Repo.ListSnapshots()
+		repos = append(repos, mr.Repo)
+	}
+	workloadcat.Default.RetainRepos(repos)
+	for _, repo := range repos {
+		ids, err := repo.ListSnapshots()
 		if err != nil {
 			return nil, err
 		}
-		workloadcat.Default.Retain(mr.Repo, ids)
+		workloadcat.Default.Retain(repo, ids)
 		for _, id := range ids {
-			snap, err := mr.Repo.LoadSnapshot(id)
+			snap, err := repo.LoadSnapshot(id)
 			if err != nil {
-				return nil, fmt.Errorf("load snapshot %s: %w", id.String()[:8], err)
+				slog.Warn("workload catalog: unreadable snapshot", "snapshot", id.String()[:8], "error", err)
+				continue
 			}
 			if !slices.Contains(snap.Tags, "plugin:"+job.Plugin) || !slices.ContainsFunc(snap.Tags, func(t string) bool { return jobTags[t] }) {
 				continue
 			}
-			items, err := workloadcat.Default.SnapshotItems(mr.Repo, id, snap, job.Plugin)
+			items, err := workloadcat.Default.SnapshotItems(repo, id, snap, job.Plugin)
 			if err != nil {
-				return nil, fmt.Errorf("snapshot %s: %w", id.String()[:8], err)
+				slog.Warn("workload catalog: unreadable snapshot", "snapshot", id.String()[:8], "error", err)
+				continue
 			}
 			for _, it := range items {
 				obj := it.Object()
@@ -109,7 +119,7 @@ func (s *Server) knownWorkloadItems(job BackupJob) ([]workloadcat.Item, error) {
 			if !ok {
 				limit, kind = knownOtherKinds, "other"
 			}
-			if taken[kind] < limit {
+			if limit < 0 || taken[kind] < limit {
 				taken[kind]++
 				out = append(out, it)
 			}
@@ -139,17 +149,25 @@ func workloadObjectTags(paths []string, files []*pb.FileNode) []string {
 	pluginID := strings.TrimPrefix(paths[0], "workload:")
 	seen := map[string]bool{}
 	var tags []string
+	items := 0
 	for _, f := range files {
 		rel, ok := strings.CutPrefix(f.Path, pluginID+"/")
 		if f.IsDir || !ok || strings.HasSuffix(rel, plugin.MetadataSuffix) {
 			continue
 		}
-		if obj := path.Dir(rel); obj != "." && !seen[obj] {
+		items++
+		obj := path.Dir(rel)
+		if obj == "." {
+			// An item outside any object: the snapshot may hold anything,
+			// as an untagged one does.
+			return nil
+		}
+		if !seen[obj] {
 			seen[obj] = true
 			tags = append(tags, "obj:"+obj)
 		}
 	}
-	if len(tags) == 0 {
+	if items == 0 {
 		// Every object was left out: say so, or retention would take the
 		// snapshot for an older one that may hold any object.
 		return []string{"objects:none"}

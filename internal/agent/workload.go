@@ -52,17 +52,18 @@ func (e *WorkloadRunError) Error() string {
 
 func (e *WorkloadRunError) Unwrap() error { return e.Err }
 
-// abortWatch notes whether reading an item ended because the plugin
-// aborted it.
+// abortWatch notes whether reading an item failed on the plugin's side:
+// the plugin aborted it, or its stream broke. Either loses nothing already
+// stored, unlike a failure to chunk or upload.
 type abortWatch struct {
-	r       io.Reader
-	aborted bool
+	r      io.Reader
+	failed bool
 }
 
 func (a *abortWatch) Read(p []byte) (int, error) {
 	n, err := a.r.Read(p)
-	if errors.Is(err, plugin.ErrItemAborted) {
-		a.aborted = true
+	if err != nil && err != io.EOF {
+		a.failed = true
 	}
 	return n, err
 }
@@ -197,8 +198,8 @@ func (b *WorkloadBackup) Run(ctx context.Context) (*BackupResult, error) {
 		h := sha256.New()
 		aw := &abortWatch{r: data}
 		if _, err := store(b.PluginID+"/"+itemPath, io.TeeReader(aw, h)); err != nil {
-			if !aw.aborted {
-				storeErr = err
+			if !aw.failed {
+				storeErr = err // not the plugin's stream: ours
 			}
 			return fmt.Errorf("store item %s: %w", itemPath, err)
 		}
@@ -217,7 +218,8 @@ func (b *WorkloadBackup) Run(ctx context.Context) (*BackupResult, error) {
 		return nil, &WorkloadRunError{Err: fmt.Errorf("store backup: %w", storeErr), Results: results}
 	}
 	if err != nil {
-		if errors.Is(err, ErrSessionCancelled) || len(items) == 0 {
+		// An older server would record a partial run as a plain success.
+		if errors.Is(err, ErrSessionCancelled) || len(items) == 0 || !b.ServerRecordsResults {
 			return nil, &WorkloadRunError{Err: fmt.Errorf("plugin backup: %w", err), Results: results}
 		}
 		// The database already counts the finished items as backed up

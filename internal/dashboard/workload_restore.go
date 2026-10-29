@@ -71,6 +71,7 @@ func (d *Dashboard) workloadItems(sourceAgent, pluginID, object, snapshot string
 
 	var points []workloadPoint
 	seen := make(map[string]bool)
+	workloadcat.Default.RetainRepos(repos)
 	for _, repo := range repos {
 		ids, err := repo.ListSnapshots()
 		if err != nil {

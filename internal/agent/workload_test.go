@@ -301,36 +301,25 @@ func TestWorkloadPlanRunsEndToEnd(t *testing.T) {
 	}
 }
 
-func TestWorkloadBackupStoreFailureKeepsNothing(t *testing.T) {
+func TestWorkloadBackupPluginFailuresKeepFinishedItems(t *testing.T) {
 	client, repo, registry, cleanup := testSetup(t)
 	defer cleanup()
 	apiKey, _ := registry.AddAgent("db-agent")
 
-	// a finished, b was aborted by the plugin (fine), c could not be read
-	// (the host's own failure: chunks of finished items may be lost too).
-	src := &fakeSource{items: []fakeItem{
-		{path: "inst/a/log.trn", data: []byte("a")},
-		{path: "inst/b/log.trn", data: []byte("b"), readErr: plugin.ErrItemAborted},
-		{path: "inst/c/log.trn", data: []byte("c"), readErr: errors.New("connection reset")},
-	}}
-	b := &WorkloadBackup{Client: client, APIKey: apiKey, PluginID: "fakedb", Source: src, ServerRecordsResults: true}
-	_, err := b.Run(context.Background())
-	var re *WorkloadRunError
-	if !errors.As(err, &re) || !strings.Contains(err.Error(), "store backup") {
-		t.Fatalf("err = %v", err)
+	// The plugin's stream breaking inside an item, or the plugin aborting
+	// it, is the plugin's failure: the finished item is kept.
+	for _, readErr := range []error{errors.New("plugin: backup stream: connection reset"), plugin.ErrItemAborted} {
+		src := &fakeSource{items: []fakeItem{
+			{path: "inst/a/log.trn", data: []byte("a")},
+			{path: "inst/b/log.trn", data: []byte("b"), readErr: readErr},
+		}}
+		b := &WorkloadBackup{Client: client, APIKey: apiKey, PluginID: "fakedb", Source: src, ServerRecordsResults: true}
+		if _, err := b.Run(context.Background()); err != nil {
+			t.Fatalf("%v: %v", readErr, err)
+		}
 	}
-	if ids, _ := repo.ListSnapshots(); len(ids) != 0 {
-		t.Fatalf("a snapshot was kept: %v", ids)
-	}
-
-	// An aborted item alone is not a host failure: the others are kept.
-	src = &fakeSource{items: []fakeItem{
-		{path: "inst/a/log.trn", data: []byte("a")},
-		{path: "inst/b/log.trn", data: []byte("b"), readErr: plugin.ErrItemAborted},
-	}}
-	b = &WorkloadBackup{Client: client, APIKey: apiKey, PluginID: "fakedb", Source: src, ServerRecordsResults: true}
-	if _, err := b.Run(context.Background()); err != nil {
-		t.Fatalf("aborted item: %v", err)
+	if ids, _ := repo.ListSnapshots(); len(ids) != 2 {
+		t.Fatalf("snapshots = %d, want 2", len(ids))
 	}
 }
 
@@ -345,5 +334,33 @@ func TestWorkloadBackupOlderServerGetsNoResults(t *testing.T) {
 	}
 	if src.gotReq.ObjectResults {
 		t.Fatal("a server that cannot record per-object results must not get partial runs")
+	}
+
+	// A plugin failure after some items fails the run, as before: an older
+	// server would show a partial run as a plain success.
+	src = &fakeSource{items: []fakeItem{{path: "inst/a/log.trn", data: []byte("a")}}, err: errors.New("inst/b: login failed")}
+	b = &WorkloadBackup{Client: client, APIKey: apiKey, PluginID: "fakedb", Source: src}
+	if _, err := b.Run(context.Background()); err == nil || !strings.Contains(err.Error(), "login failed") {
+		t.Fatalf("older server, failure part way: %v", err)
+	}
+}
+
+func TestAbortWatchTellsPluginFailures(t *testing.T) {
+	// Reading an item fails on the plugin's side (aborted, stream broken):
+	// nothing stored is lost. A clean read leaves any later failure to the
+	// host (chunking, upload), which keeps nothing.
+	for _, tt := range []struct {
+		err    error
+		failed bool
+	}{{nil, false}, {plugin.ErrItemAborted, true}, {errors.New("stream reset"), true}} {
+		var r io.Reader = bytes.NewReader([]byte("data"))
+		if tt.err != nil {
+			r = &failingReader{data: []byte("data"), err: tt.err}
+		}
+		aw := &abortWatch{r: r}
+		io.ReadAll(aw)
+		if aw.failed != tt.failed {
+			t.Errorf("%v: failed = %v", tt.err, aw.failed)
+		}
 	}
 }

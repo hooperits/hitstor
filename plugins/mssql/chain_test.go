@@ -128,18 +128,18 @@ func TestLogChainRestartsAfterAGap(t *testing.T) {
 	if got := checkChain("log", "I/db", gap, known("I/db", before, after)); got != nil {
 		t.Fatalf("full after the gap: got %v", got)
 	}
-	// A differential after the gap counts only when HitStor holds its base.
+	// A differential does not: retention would not keep it for the logs.
 	diff := itemMeta{Type: typeDifferential, DifferentialBaseLSN: "100", LastLSN: "650"}
-	if got := checkChain("log", "I/db", gap, known("I/db", before, diff)); got != nil {
-		t.Fatalf("differential on a held base: got %v", got)
-	}
-	if got := checkChain("log", "I/db", gap, known("I/db", diff)); got == nil {
-		t.Fatal("differential on a base HitStor does not hold")
+	if got := checkChain("log", "I/db", gap, known("I/db", before, diff)); got == nil {
+		t.Fatal("a differential after the gap restarted the chain")
 	}
 	// Held under another name (renamed database): retention keeps chains
 	// by name, so it does not count.
 	if got := checkChain("log", "I/db2", gap, known("I/db", before, after)); got == nil {
 		t.Fatal("backups of the old name")
+	}
+	if got := checkChain("log", "I/DB", gap, known("I/db", before, after)); got == nil {
+		t.Fatal("backups of a name that differs in case")
 	}
 	// Without a list from the host, msdb's record of a later HitStor full
 	// does the same.

@@ -10,6 +10,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"path"
+	"slices"
 	"strings"
 	"sync"
 
@@ -88,6 +89,18 @@ func (c *Catalog) Retain(repo *repository.Repository, ids []repository.ID) {
 	for key := range c.items[repo] {
 		if snap, _, _ := strings.Cut(key, "|"); !live[snap] {
 			delete(c.items[repo], key)
+		}
+	}
+}
+
+// RetainRepos drops the cached items of repositories not in repos, such as
+// one that was disconnected or reopened.
+func (c *Catalog) RetainRepos(repos []*repository.Repository) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	for repo := range c.items {
+		if !slices.Contains(repos, repo) {
+			delete(c.items, repo)
 		}
 	}
 }

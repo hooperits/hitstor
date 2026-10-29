@@ -198,12 +198,14 @@ func bucketYearly(t time.Time) string {
 //
 // Two rules:
 //
-//   - A snapshot the policy keeps also keeps, for every object of its host
-//     and plugin, the newest snapshot holding that object at or before it:
-//     what restores the object as of that point. Without this, keeping only
-//     the newest log backups would forget the differentials of databases
-//     that take no log backups (SIMPLE recovery). Only the policy's own
-//     choices count, or every kept snapshot would keep an older one.
+//   - A snapshot the policy keeps also keeps, for every object its job
+//     ("job:<id>" tag) backed up since the job's latest full at or before
+//     it, the newest snapshot holding that object: what restores the object
+//     as of that point. Without this, keeping only the newest log backups
+//     would forget the differentials of databases that take no log backups
+//     (SIMPLE recovery). Only the policy's own choices count, or every kept
+//     snapshot would keep an older one; and only the current full cycle, so
+//     that a database dropped from the job is not kept forever.
 //   - A kept differential or log backup of an object keeps the earlier
 //     backups of that object its kind needs (see chainNeeds), back to its
 //     base: a full that is not copy-only ("copy-only" tag). A kept full,
@@ -226,30 +228,30 @@ func protectChains(inScope []SnapshotInfo, keep map[int]bool) {
 		}
 	}
 	for _, idx := range groups {
-		var objects []string // tagged objects of the group
-		seen := map[string]bool{}
-		for _, i := range idx {
-			for _, o := range taggedObjects(inScope[i]) {
-				if !seen[o] {
-					seen[o] = true
-					objects = append(objects, o)
-				}
-			}
-		}
-		var heads []int // positions the policy kept
+		var unused bool
+		var heads []int // positions the policy kept, before this rule adds any
 		for pos, i := range idx {
 			if keep[i] {
 				heads = append(heads, pos)
 			}
 		}
-		var unused bool
 		for _, pos := range heads {
-			for _, obj := range objects {
-				for _, older := range idx[pos:] {
-					if hasTag(inScope[older].Tags, "obj:"+obj) {
+			i := idx[pos]
+			job := tagValue(inScope[i].Tags, "job:")
+			found := map[string]bool{}
+			for _, older := range idx[pos:] {
+				o := inScope[older]
+				if tagValue(o.Tags, "job:") != job {
+					continue
+				}
+				for _, obj := range taggedObjects(o) {
+					if !found[obj] {
+						found[obj] = true
 						mark(older, &unused)
-						break
 					}
+				}
+				if isChainBase(o) {
+					break // the job's latest full: the cycle starts here
 				}
 			}
 		}
@@ -265,16 +267,17 @@ func protectChains(inScope []SnapshotInfo, keep map[int]bool) {
 				if kind == "full" {
 					continue
 				}
+				job := tagValue(inScope[i].Tags, "job:")
 				for _, obj := range objectsOf(inScope[i]) {
 					for _, older := range idx[pos+1:] {
 						o := inScope[older]
-						if !holdsObject(o, obj) || !chainNeeds(kind, o) {
+						// A snapshot that does not say what it holds keeps
+						// everything back to its base, as before object tags.
+						if !holdsObjectOf(o, obj, job) || (obj != "" && !chainNeeds(kind, o)) {
 							continue
 						}
 						mark(older, &changed)
-						// An older snapshot without object tags may not hold
-						// this object: go on to the object's own base.
-						if isChainBase(o) && (obj == "" || hasTag(o.Tags, "obj:"+obj)) {
+						if isChainBase(o) {
 							break
 						}
 					}
@@ -327,14 +330,22 @@ func objectsOf(s SnapshotInfo) []string {
 	return []string{""}
 }
 
-// holdsObject reports whether s may hold obj ("" matches every snapshot
-// that may hold objects).
-func holdsObject(s SnapshotInfo, obj string) bool {
+// holdsObjectOf reports whether s may hold obj of job ("" matches every
+// snapshot that may hold objects). A snapshot without object tags (from
+// before them) holds what its job backed up: another job's older full
+// does not end an object's chain.
+func holdsObjectOf(s SnapshotInfo, obj, job string) bool {
 	objs := objectsOf(s)
-	if len(objs) == 0 {
+	switch {
+	case len(objs) == 0:
 		return false
+	case obj == "":
+		return true
+	case objs[0] == "":
+		other := tagValue(s.Tags, "job:")
+		return job == "" || other == "" || other == job
 	}
-	return obj == "" || objs[0] == "" || hasTag(s.Tags, "obj:"+obj)
+	return hasTag(s.Tags, "obj:"+obj)
 }
 
 func hasTag(tags []string, tag string) bool {

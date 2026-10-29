@@ -47,7 +47,8 @@ const (
 // name (a renamed database) does not count.
 type knownBackups map[string][]itemMeta
 
-func knownKey(guid, object string) string { return strings.ToUpper(guid + "|" + object) }
+// The object name compares exactly, as retention's object tags do.
+func knownKey(guid, object string) string { return strings.ToUpper(guid) + "|" + object }
 
 // newKnownBackups reads the host's list of items, or returns nil when the
 // host did not send one.
@@ -79,10 +80,11 @@ func (k knownBackups) holdsBase(guid, object, baseLSN string) bool {
 
 // holdsChainEnd reports whether a log backup starting at lsnEnd will
 // restore from what HitStor holds: HitStor holds the log ending there or the
-// full that started the chain there, or a full or differential (on a held
-// base) taken after it, which the next log covers. The last case lets the
-// full that a gap asks for restore the chain, although a full does not move
-// the log chain's start.
+// full that started the chain there, or a full taken after it, which the
+// next log covers. The last case lets the full that a gap asks for restore
+// the chain, although a full does not move the log chain's start. A
+// differential would bridge a gap too, but retention keeps a log's earlier
+// logs and full, not differentials, so only a full restarts a chain.
 func (k knownBackups) holdsChainEnd(guid, object, lsnEnd string) bool {
 	end := lsn(lsnEnd)
 	for _, m := range k[knownKey(guid, object)] {
@@ -93,10 +95,6 @@ func (k knownBackups) holdsChainEnd(guid, object, lsnEnd string) bool {
 			}
 		case typeFull:
 			if !m.CopyOnly && (lsn(m.CheckpointLSN).Cmp(end) == 0 || lsn(m.FirstLSN).Cmp(end) == 0 || lsn(m.LastLSN).Cmp(end) > 0) {
-				return true
-			}
-		case typeDifferential:
-			if lsn(m.LastLSN).Cmp(end) > 0 && k.holdsBase(guid, object, m.DifferentialBaseLSN) {
 				return true
 			}
 		}
@@ -139,8 +137,8 @@ type chainState struct {
 	// backup has started a log chain.
 	LastLogLSN string
 	Chain      *historyEntry // msdb's record of the backup that ends the chain so far
-	// Restart is msdb's record of a full or differential to a HitStor
-	// device taken after the chain's end, which the next log covers.
+	// Restart is msdb's record of a full to a HitStor device taken after
+	// the chain's end, which the next log covers.
 	Restart *historyEntry
 }
 
@@ -258,7 +256,7 @@ OUTER APPLY (
   SELECT TOP (1) bs.type, mf.physical_device_name, bs.backup_finish_date, bs.user_name
   FROM msdb.dbo.backupset bs JOIN msdb.dbo.backupmediafamily mf ON mf.media_set_id = bs.media_set_id
   WHERE bs.database_name = d.name AND bs.database_guid = r.database_guid AND bs.is_copy_only = 0
-    AND bs.type IN ('D', 'I') AND bs.last_lsn > r.last_log_backup_lsn AND mf.physical_device_name LIKE 'HitStor[_]%'
+    AND bs.type = 'D' AND bs.last_lsn > r.last_log_backup_lsn AND mf.physical_device_name LIKE 'HitStor[_]%'
   ORDER BY bs.backup_set_id DESC) g
 WHERE d.name = @p1`
 	var s chainState

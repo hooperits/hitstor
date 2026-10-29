@@ -79,30 +79,41 @@ body.dashboard-app {
     z-index: 1;
 }
 
+/* icon.svg carries its own rounded tile, so shadow follows the shape instead of a CSS radius. */
 .brand-icon {
     display: block;
-    border-radius: 12px;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.28);
+    filter: drop-shadow(0 6px 16px rgba(0, 0, 0, 0.28));
     flex-shrink: 0;
 }
 
 .brand-icon-sm {
     width: var(--brand-header-icon);
     height: var(--brand-header-icon);
-    border-radius: 10px;
 }
 
 .brand-icon-md {
     width: 44px;
     height: 44px;
-    border-radius: 12px;
 }
 
-.brand-icon-lg {
-    width: 72px;
-    height: 72px;
-    border-radius: 18px;
-    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+/* Horizontal lockup: icon sized and centred on the wordmark's letters (em-based, scales with font-size). */
+.brand-lockup {
+    display: flex;
+    align-items: center;
+    gap: 0.32em;
+}
+
+.brand-lockup .brand-icon {
+    width: 1em;
+    height: 1em;
+    /* line-height:1 boxes sit a little above the letters' optical centre */
+    transform: translateY(0.05em);
+    filter: drop-shadow(0 10px 24px rgba(0, 0, 0, 0.35));
+}
+
+.brand-lockup .brand-wordmark {
+    font-size: 1em;
+    margin: 0;
 }
 
 .brand-wordmark {
@@ -736,13 +747,9 @@ tr:hover td {
     z-index: 1;
 }
 
-.login-brand .brand-icon-lg {
-    margin-bottom: 1.5rem;
-}
-
-.login-brand-wordmark {
-    font-size: 2.75rem;
-    margin-bottom: 0.75rem;
+.login-brand-lockup {
+    font-size: 3.25rem;
+    margin-bottom: 0.9rem;
 }
 
 .login-brand-lead {
@@ -806,8 +813,7 @@ tr:hover td {
 .login-card-icon {
     width: 48px;
     height: 48px;
-    border-radius: 12px;
-    flex-shrink: 0;
+    filter: drop-shadow(0 4px 10px rgba(11, 31, 58, 0.22));
 }
 
 .login-card-title {

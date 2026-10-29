@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="HitStor">
+  <rect width="64" height="64" rx="12" fill="#0B1F3A"/>
+  <path d="M21.5 28 V19 a10.5 10.5 0 0 1 21 0 V28" fill="none" stroke="#FF7A45" stroke-width="7"/>
+  <rect x="10" y="25" width="44" height="18" rx="5" fill="#E8602C"/>
+  <rect x="10" y="47" width="44" height="8" rx="4" fill="#FF9A6B"/>
+</svg>

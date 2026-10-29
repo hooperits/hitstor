@@ -9,8 +9,9 @@ The recommended approach is server-managed scheduling, where backup schedules ar
 ### Configure from the Dashboard
 
 1. Open the [Dashboard](dashboard.md) at `http://SERVER_IP:8421`.
-2. Navigate to **Backups** and click **+ New Backup Job** (or open an existing job).
-3. Choose a schedule mode:
+2. Navigate to **Backups** and click **+ New Backup Job**. Step 2 of the wizard sets the
+   schedule with the schedule picker (see [New Jobs: Schedule Picker](#plugin-jobs-schedule-picker)).
+3. To change the schedule of an existing job, open it and expand **Edit schedule**, then choose a mode:
     - **Interval**: Run every N hours (simple, no timezone awareness).
     - **Cron Expression**: Use standard 5-field cron syntax for precise scheduling with timezone support.
 4. If using Cron mode, enter the expression and select a timezone. The dashboard validates the expression and shows a human-readable description with the next 3 run times.
@@ -28,9 +29,9 @@ The simplest scheduling option. Set the number of hours between backups:
 - **Timezone**: Not applicable (relative to last backup time)
 - **Best for**: Simple setups where exact run times don't matter
 
-#### Plugin Jobs: Schedule Picker
+#### New Jobs: Schedule Picker { #plugin-jobs-schedule-picker }
 
-Plugin backup jobs (**New Backup Job → Application (plugin)**) set their
+New backup jobs, of files or of a plugin, set their
 schedule with a picker modeled on the schedule sets of enterprise backup
 tools, and store the result as a cron expression:
 

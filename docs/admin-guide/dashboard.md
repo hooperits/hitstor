@@ -55,6 +55,33 @@ The main page displays a summary of the backup infrastructure:
 - Agent health breakdown (OK, stale, never backed up)
 - Quick links to Agents, Snapshots, and Storage pages
 
+### Backups { #backups }
+
+Lists the backup jobs with their agent, last run, restore verification, and
+status. **+ New Backup Job** opens a three-step wizard modeled on the backup
+jobs of enterprise backup tools:
+
+1. **Selection.** A tree shows every registered machine with its status and
+   operating system. Expanding a machine lists its sources: the **File
+   system** and each installed plugin (for example **Microsoft SQL Server**,
+   then its instances and databases). Check what to back up; checking a
+   container (a folder, an instance) backs up everything in it, including
+   what is added later. A job backs up **one source of one machine**: once
+   something is checked, the other sources lock until the selection is
+   cleared. The side panel lists the selection and the source's options:
+   exclude patterns and consistent snapshots for a file system, the backup
+   kind and plugin options for a plugin.
+2. **Target and schedule.** The repository and the schedule. The schedule
+   starts from a usual plan for the source (nightly for files, weekly fulls,
+   daily differentials, or logs every 15 minutes).
+3. **Review.** A summary of the job, with the schedule in words and its next
+   run, and a suggested name.
+
+Machines that are offline or suspended appear in the tree but cannot be
+expanded. On a job's page, **Edit selection** opens the same tree for that
+job's machine and source, with the current selection checked; the source
+options can change there too. To back up another source, create another job.
+
 ### Agents
 
 Lists all registered agents with their current status, type (managed or CLI), last backup time, and creation date. Click an agent name to view its detail page.

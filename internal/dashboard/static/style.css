@@ -3421,52 +3421,6 @@ a.btn, a.btn:hover, a.btn:visited {
     border-bottom-color: var(--ok);
 }
 
-.form-step {
-    display: none;
-}
-
-.form-step.active {
-    display: block;
-}
-
-.job-type-grid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 0.75rem;
-    margin-bottom: 1rem;
-}
-
-.job-type-card {
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    padding: 0.9rem;
-    cursor: pointer;
-    background: var(--bg-card);
-    transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
-}
-
-.job-type-card:hover {
-    border-color: var(--primary);
-    box-shadow: var(--shadow);
-}
-
-.job-type-card.selected {
-    border-color: var(--primary);
-    background: var(--primary-soft);
-    box-shadow: inset 0 0 0 1px var(--primary);
-}
-
-.job-type-card strong {
-    display: block;
-    font-size: 0.9rem;
-    margin-bottom: 0.2rem;
-}
-
-.job-type-card span {
-    font-size: 0.78rem;
-    color: var(--text-muted);
-}
-
 .dialog-box.dialog-lg {
     max-width: 640px;
 }
@@ -3545,8 +3499,7 @@ a.btn, a.btn:hover, a.btn:visited {
         padding: 1.25rem;
     }
 
-    .grid-2,
-    .job-type-grid {
+    .grid-2 {
         grid-template-columns: 1fr;
     }
 
@@ -6147,4 +6100,32 @@ body.dr-drawer-open {
 #workload-restore-body { padding: 1rem 1.25rem 1.25rem; }
 @media (max-width: 900px) {
     .wr { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* Backup job wizard and selection editor (backup_job.js) */
+.bw-step[hidden], .bw-opts[hidden], .ptree-count[hidden] { display: none; }
+.bw-cols { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); gap: 1rem; align-items: start; }
+.bw-side { display: flex; flex-direction: column; gap: 1rem; min-width: 0; }
+.bw-tree { min-height: 18rem; max-height: 52vh; }
+.bw-origin { margin-bottom: 0.45rem; overflow-wrap: anywhere; }
+.bw-picked { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.25rem; max-height: 14rem; overflow: auto; }
+.bw-picked li { display: flex; align-items: center; justify-content: space-between; gap: 0.4rem; padding: 0.2rem 0.45rem; border-radius: 4px; background: var(--primary-soft, rgba(127, 127, 127, 0.08)); }
+.bw-picked code { font-size: 0.82rem; overflow-wrap: anywhere; }
+.bw-unpick { flex: none; border: 0; background: transparent; color: var(--text-muted); cursor: pointer; font-size: 1.1rem; line-height: 1; padding: 0 0.2rem; }
+.bw-unpick:hover { color: var(--danger, #c0392b); }
+.bw-lock { margin: 0.6rem 0 0; }
+.bw-review { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 0.5rem 1.25rem; margin: 0; }
+.bw-review dt { color: var(--text-muted); font-size: 0.85rem; font-weight: 600; }
+.bw-review dd { margin: 0; overflow-wrap: anywhere; }
+.bw-edit { margin-bottom: 0.75rem; }
+.ptree-locked { opacity: 0.45; }
+.ptree-locked .ptree-check { cursor: not-allowed; }
+.ptree-kind-machine .ptree-name { font-weight: 700; }
+.ptree-kind-filesystem .ptree-name, .ptree-kind-plugin .ptree-name { font-weight: 600; }
+.ptree-icon-file { color: var(--text-muted); }
+.ptree-count { font-size: 0.72em; }
+@media (max-width: 860px) {
+    .bw-cols { grid-template-columns: 1fr; }
+    .bw-review { grid-template-columns: 1fr; gap: 0.15rem; }
+    .bw-review dd { margin-bottom: 0.5rem; }
 }

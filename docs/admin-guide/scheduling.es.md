@@ -9,8 +9,9 @@ El enfoque recomendado es la programación gestionada por el servidor, en la que
 ### Configurar desde el dashboard { #configure-from-the-dashboard }
 
 1. Abra el [Dashboard](dashboard.md) en `http://SERVER_IP:8421`.
-2. Vaya a **Respaldos** y haga clic en **+ Nueva tarea de respaldo** (o abra una tarea existente).
-3. Elija un modo de programación:
+2. Vaya a **Respaldos** y haga clic en **+ Nueva tarea de respaldo**. El paso 2 del asistente
+   define la programación con el asistente de programación (vea [Tareas nuevas: asistente de programación](#plugin-jobs-schedule-picker)).
+3. Para cambiar la programación de una tarea existente, ábrala y despliegue **Editar programación**; luego elija un modo:
     - **Intervalo**: ejecutar cada N horas (sencillo, sin tener en cuenta la zona horaria).
     - **Expresión cron**: usar la sintaxis cron estándar de 5 campos para una programación precisa con soporte de zona horaria.
 4. Si usa el modo cron, ingrese la expresión y seleccione una zona horaria. El dashboard valida la expresión y muestra una descripción legible junto con las próximas 3 ejecuciones.
@@ -28,10 +29,9 @@ La opción de programación más sencilla. Defina el número de horas entre resp
 - **Zona horaria**: no aplica (relativo a la hora del último respaldo)
 - **Ideal para**: configuraciones sencillas en las que la hora exacta de ejecución no importa
 
-#### Tareas con plugin: asistente de programación { #plugin-jobs-schedule-picker }
+#### Tareas nuevas: asistente de programación { #plugin-jobs-schedule-picker }
 
-Las tareas de respaldo con plugin (**Nueva tarea de respaldo → Aplicación
-(plugin)**) definen su programación con un asistente inspirado en los
+Las tareas de respaldo nuevas, de archivos o de un plugin, definen su programación con un asistente inspirado en los
 conjuntos de programación de las herramientas de respaldo empresariales, y
 guardan el resultado como una expresión cron:
 

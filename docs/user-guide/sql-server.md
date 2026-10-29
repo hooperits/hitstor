@@ -49,8 +49,9 @@ up. The settings are tested before they are saved, stored encrypted (DPAPI)
 in the agent's plugin store, and the password is never shown again or sent to
 the server.
 
-In the dashboard, open the object tree (in **New Backup Job → Application
-(plugin)** or a plugin restore) and choose **Configure** next to the instance:
+In the dashboard, open the selection tree (in **New Backup Job**, expand the
+machine and **Microsoft SQL Server**, or in a plugin restore) and choose
+**Configure** next to the instance:
 
 | Setting | Description |
 |---------|-------------|
@@ -104,9 +105,11 @@ backup kind; schedule separate jobs per kind. A common plan:
 | Daily differential | `differential` | Daily 01:00 |
 | Log | `log` | Every 15 minutes |
 
-In the dashboard, choose **New Backup Job → Application (plugin)**, pick the
-agent and the `mssql` plugin, check the instance or individual databases in the
-object tree, and set the backup kind, options, and cron schedule.
+In the dashboard, choose **New Backup Job**, expand the machine and
+**Microsoft SQL Server** in the selection tree, and check the instance or
+individual databases. The side panel sets the backup kind and options; the next
+step sets the repository and schedule. See
+[Backup jobs](../admin-guide/dashboard.md#backups).
 
 The same job through the dashboard API:
 

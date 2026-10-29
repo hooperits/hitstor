@@ -121,3 +121,64 @@ func TestFailedJobShowsError(t *testing.T) {
 		t.Fatal("backups page does not show the failure")
 	}
 }
+
+// TestAPIUpdateJobKeepsOmittedFields: saving one part of a job, such as its
+// selection or its schedule, leaves the other parts as they were, while a
+// field that is sent replaces the old value, even when empty.
+func TestAPIUpdateJobKeepsOmittedFields(t *testing.T) {
+	dash, _, cleanup := setupTestDashboardWithRepoManager(t)
+	defer cleanup()
+	if _, err := dash.registry.AddAgent("db-agent"); err != nil {
+		t.Fatal(err)
+	}
+	if err := dash.registry.SetAgentPlugins("db-agent", []server.AgentPlugin{{ID: "example", Version: "0.1.0", Status: "active"}}); err != nil {
+		t.Fatal(err)
+	}
+	put := func(id, body string) {
+		t.Helper()
+		rec := httptest.NewRecorder()
+		dash.Handler().ServeHTTP(rec, httptest.NewRequest("PUT", "/api/backups/"+id, strings.NewReader(body)))
+		if rec.Code != http.StatusOK {
+			t.Fatalf("PUT %s: %d %s", body, rec.Code, rec.Body)
+		}
+	}
+	create := func(body string) string {
+		t.Helper()
+		rec := postWorkloadJob(t, dash, body)
+		if rec.Code != http.StatusCreated {
+			t.Fatalf("create: %d %s", rec.Code, rec.Body)
+		}
+		var got backupJobJSON
+		if err := json.NewDecoder(rec.Body).Decode(&got); err != nil {
+			t.Fatal(err)
+		}
+		return got.ID
+	}
+
+	id := create(`{"name":"files","agent_name":"db-agent","repo_name":"default","job_type":"files","paths":["/srv"],
+		"excludes":["*.tmp"],"use_vss":true,"schedule_enabled":true,"cron_expression":"0 2 * * *","timezone":"UTC"}`)
+	put(id, `{"paths":["/srv","/etc"]}`)
+	j := dash.registry.GetJob(id)
+	if len(j.Paths) != 2 || len(j.Excludes) != 1 || !j.UseVSS || !j.ScheduleEnabled || j.CronExpression != "0 2 * * *" || j.Timezone != "UTC" {
+		t.Fatalf("after paths update = %+v", j)
+	}
+	put(id, `{"schedule_enabled":false,"cron_expression":"","excludes":[]}`)
+	j = dash.registry.GetJob(id)
+	if len(j.Paths) != 2 || len(j.Excludes) != 0 || !j.UseVSS || j.ScheduleEnabled || j.CronExpression != "" {
+		t.Fatalf("after schedule update = %+v", j)
+	}
+
+	id = create(`{"name":"db","agent_name":"db-agent","repo_name":"default","job_type":"workload","plugin":"example",
+		"selection":["demo/alpha"],"backup_kind":"full","backup_options":{"copy_only":"true"},"schedule_enabled":true,"cron_expression":"0 1 * * 0"}`)
+	put(id, `{"selection":["demo/beta"]}`)
+	j = dash.registry.GetJob(id)
+	if j.Selection[0] != "demo/beta" || j.BackupOptions["copy_only"] != "true" || j.CronExpression != "0 1 * * 0" {
+		t.Fatalf("after selection update = %+v", j)
+	}
+	// Unchecking an option sends the options without it.
+	put(id, `{"backup_kind":"log","backup_options":{}}`)
+	j = dash.registry.GetJob(id)
+	if j.BackupKind != "log" || len(j.BackupOptions) != 0 || j.Selection[0] != "demo/beta" {
+		t.Fatalf("after options update = %+v", j)
+	}
+}

@@ -55,6 +55,36 @@ La página principal muestra un resumen de la infraestructura de respaldo:
 - Desglose del estado de los agentes (OK, inactivo, nunca respaldado)
 - Accesos rápidos a las páginas Agentes, Instantáneas y Almacenamiento
 
+### Respaldos { #backups }
+
+Lista las tareas de respaldo con su agente, última ejecución, verificación de
+restauración y estado. **+ Nueva tarea de respaldo** abre un asistente de tres
+pasos inspirado en las tareas de las herramientas de respaldo empresariales:
+
+1. **Selección.** Un árbol muestra cada máquina registrada con su estado y su
+   sistema operativo. Al expandir una máquina aparecen sus orígenes: el
+   **Sistema de archivos** y cada plugin instalado (por ejemplo **Microsoft
+   SQL Server**, con sus instancias y bases de datos). Marque lo que desea
+   respaldar; marcar un contenedor (una carpeta, una instancia) respalda todo
+   lo que contiene, incluido lo que se agregue después. Una tarea respalda
+   **un solo origen de una máquina**: al marcar algo, los demás orígenes se
+   bloquean hasta vaciar la selección. El panel lateral muestra la selección
+   y las opciones del origen: patrones de exclusión e instantáneas
+   consistentes para un sistema de archivos, el tipo de respaldo y las
+   opciones del plugin para un plugin.
+2. **Destino y programación.** El repositorio y la programación. La
+   programación parte de un plan habitual para el origen (cada noche para
+   archivos; completos semanales, diferenciales diarios o logs cada 15
+   minutos).
+3. **Revisar.** Un resumen de la tarea, con la programación en palabras y su
+   próxima ejecución, y un nombre sugerido.
+
+Las máquinas sin conexión o suspendidas aparecen en el árbol pero no se pueden
+expandir. En la página de una tarea, **Editar selección** abre el mismo árbol
+para la máquina y el origen de esa tarea, con la selección actual marcada; ahí
+también se cambian las opciones del origen. Para respaldar otro origen, cree
+otra tarea.
+
 ### Agentes { #agents }
 
 Lista todos los agentes registrados con su estado actual, tipo (administrado o CLI), hora del último respaldo y fecha de creación. Haga clic en el nombre de un agente para ver su página de detalle.

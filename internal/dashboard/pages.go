@@ -500,6 +500,14 @@ func (d *Dashboard) handleBackupDetail(w http.ResponseWriter, r *http.Request) {
 	// Check if agent is managed (for filesystem browsing).
 	agent := d.registry.GetAgent(job.AgentName)
 	managed := agent != nil && agent.Managed
+	pluginName := job.Plugin
+	if agent != nil {
+		for _, p := range agent.Plugins {
+			if p.ID == job.Plugin && p.Name != "" {
+				pluginName = p.Name
+			}
+		}
+	}
 
 	// Check for active backup session for this job.
 	var progress *sessionProgressJSON
@@ -524,6 +532,7 @@ func (d *Dashboard) handleBackupDetail(w http.ResponseWriter, r *http.Request) {
 		"AgentNames": agentNames,
 		"RepoNames":  repoNames,
 		"Managed":    managed,
+		"PluginName": pluginName,
 		"Progress":   progress,
 	})
 	data.TitleRaw = true

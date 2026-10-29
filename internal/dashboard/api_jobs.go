@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"sort"
 	"time"
@@ -327,10 +328,42 @@ func (d *Dashboard) handleAPIUpdateBackupJob(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	var req createBackupJobRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	// Fields left out of the request keep their current values, so saving
+	// one part of a job (its schedule, its selection) leaves the rest alone.
+	// Slices and maps are taken from the request only when present, never
+	// decoded over the registry's own.
+	body, err := io.ReadAll(io.LimitReader(r.Body, 1<<20))
+	if err != nil {
 		http.Error(w, "invalid JSON", http.StatusBadRequest)
 		return
+	}
+	var present map[string]json.RawMessage
+	req := createBackupJobRequest{
+		Name: existing.Name, AgentName: existing.AgentName, RepoName: existing.RepoName,
+		ScheduleEnabled: existing.ScheduleEnabled, ScheduleHours: existing.ScheduleHours,
+		CronExpression: existing.CronExpression, Timezone: existing.Timezone,
+		FullRescanDays: existing.FullRescanDays, UseVSS: existing.UseVSS, JobType: existing.JobType,
+		Plugin: existing.Plugin, BackupKind: existing.BackupKind,
+	}
+	if json.Unmarshal(body, &present) != nil || json.Unmarshal(body, &req) != nil {
+		http.Error(w, "invalid JSON", http.StatusBadRequest)
+		return
+	}
+	keep := func(key string) bool { _, ok := present[key]; return !ok }
+	if keep("paths") {
+		req.Paths = existing.Paths
+	}
+	if keep("excludes") {
+		req.Excludes = existing.Excludes
+	}
+	if keep("selection") {
+		req.Selection = existing.Selection
+	}
+	if keep("plugin_settings") {
+		req.PluginSettings = existing.PluginSettings
+	}
+	if keep("backup_options") {
+		req.BackupOptions = existing.BackupOptions
 	}
 	if err := validateJobType(req.JobType); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)

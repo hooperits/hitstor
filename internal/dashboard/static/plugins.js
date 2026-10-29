@@ -119,14 +119,15 @@
         });
     }
 
-    // collectFields reads the values back, skipping hidden fields and
-    // keeping only non-default ones so plugins apply their own defaults.
-    // An empty password is sent as "" (keep the saved one).
+    // collectFields reads the values back, skipping fields hidden by their
+    // show_if condition and keeping only non-default ones so plugins apply
+    // their own defaults. An empty password is sent as "" (keep the saved
+    // one).
     function collectFields(container, list) {
         var out = {};
         list.forEach(function (f) {
             var el = container.querySelector('[data-key="' + CSS.escape(f.key) + '"]');
-            if (!el || el.closest('[hidden]')) return;
+            if (!el || el.closest('[data-show-if][hidden]')) return;
             var type = el.getAttribute('data-type');
             if (type === 'password') {
                 out[f.key] = el.value;
@@ -168,6 +169,9 @@
     }
 
     var ICONS = {
+        machine: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="12" rx="1.5"/><path d="M8 20h8M12 16v4"/></svg>',
+        filesystem: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M7 14h.01M11 14h6"/></svg>',
+        plugin: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3v4M15 3v4M6 7h12v4a6 6 0 0 1-12 0zM12 17v4"/></svg>',
         instance: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="7" rx="1.5"/><rect x="3" y="13" width="18" height="7" rx="1.5"/><circle cx="7" cy="7.5" r="1"/><circle cx="7" cy="16.5" r="1"/></svg>',
         database: '<svg viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="5.5" rx="7.5" ry="2.8"/><path d="M4.5 5.5v13c0 1.5 3.4 2.8 7.5 2.8s7.5-1.3 7.5-2.8v-13"/><path d="M4.5 12c0 1.5 3.4 2.8 7.5 2.8s7.5-1.3 7.5-2.8"/></svg>',
         folder: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6.5A1.5 1.5 0 0 1 4.5 5H9l2 2h8.5A1.5 1.5 0 0 1 21 8.5v9a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 17.5z"/></svg>',
@@ -177,62 +181,108 @@
     };
 
     function iconFor(e) {
-        if (e.kind === 'instance' || e.kind === 'server') return ICONS.instance;
+        if (ICONS[e.kind] && e.kind !== 'item') return ICONS[e.kind];
+        if (e.kind === 'server') return ICONS.instance;
         if (/database$/.test(e.kind || '')) return ICONS.database;
-        return e.has_children ? ICONS.folder : ICONS.item;
+        return e.has_children || e.kind === 'dir' ? ICONS.folder : ICONS.item;
     }
 
-    // objectPicker renders a lazily expanding tree of the plugin's objects.
-    // multi: checkboxes, where checking a container selects it as a whole
-    // (everything in it, including objects added later); otherwise radio
-    // buttons on leaf objects only. fields are the plugin's fields, for the
-    // Configure action on objects that take settings.
-    function objectPicker(container, agent, plugin, multi, fields) {
+    // under reports whether path v lies inside container path base, for
+    // both plugin paths (a/b) and filesystem paths (C:\a, /a).
+    function under(v, base) {
+        if (v === base || !base) return false;
+        if (/[\/\\]$/.test(base)) return v.indexOf(base) === 0;
+        return v.indexOf(base + '/') === 0 || v.indexOf(base + '\\') === 0;
+    }
+
+    // selectionTree renders a lazily expanding selection tree. Entries come
+    // from opts.load(parentEntry) as {path, name, kind, has_children,
+    // selectable, detail, status, configurable, configured, open}; the
+    // loader may also resolve to {entries, detail} to annotate the parent.
+    // Children inherit their parent's source (one machine's file system or
+    // one plugin) and ctx ({agent, plugin, fields}, for Configure).
+    //
+    // multi gives checkboxes, where checking a container selects it as a
+    // whole (everything in it, including objects added later); otherwise
+    // radio buttons on leaf objects only. Like the selection sets of
+    // enterprise backup tools, one selection holds objects of one source:
+    // once something is checked, other sources lock until it is cleared.
+    // opts.initial preselects values (of opts.source) and opens the tree
+    // down to them; values not shown yet stay selected.
+    function selectionTree(container, opts) {
+        var multi = opts.multi !== false;
         var name = 'obj-' + Math.random().toString(36).slice(2);
-        var base = '/api/agents/' + encodeURIComponent(agent) + '/plugins/' + encodeURIComponent(plugin);
+        var pending = (opts.initial || []).slice();
+        var fixedSource = opts.source || '';
         container.innerHTML = '<div class="ptree-root" role="tree"></div>';
         var rootEl = container.querySelector('.ptree-root');
-        var summary = document.createElement('div');
-        summary.className = 'ptree-summary form-hint';
-        container.parentNode.insertBefore(summary, container.nextSibling);
-        var old = container.parentNode.querySelectorAll('.ptree-summary');
-        for (var i = 0; i < old.length; i++) if (old[i] !== summary) old[i].remove();
+        var listeners = [];
 
-        function updateSummary() {
-            var n = selected().length;
-            summary.textContent = multi && n ? t('{n} selected', { n: n }) : '';
+        function inputs() {
+            return Array.prototype.slice.call(container.querySelectorAll('input[name="' + name + '"]'));
         }
 
-        // syncParent shows a partly selected container as indeterminate.
-        function syncParent(node) {
-            var box = node.querySelector(':scope > .ptree-row > .ptree-check');
-            if (!box || box.checked) return;
-            var kids = node.querySelectorAll(':scope > .ptree-children > .ptree-node > .ptree-row > .ptree-check');
-            box.indeterminate = Array.prototype.some.call(kids, function (k) { return k.checked || k.indeterminate; });
-        }
-
-        // cascade marks a checked container's descendants as included.
-        function cascade(node) {
-            var box = node.querySelector(':scope > .ptree-row > .ptree-check');
-            var on = !!(box && box.checked);
-            node.querySelectorAll(':scope > .ptree-children .ptree-check').forEach(function (k) {
-                if (on) {
-                    k.checked = false;
-                    k.indeterminate = false;
-                }
-                k.disabled = on || k.hasAttribute('data-unselectable');
-                k.closest('.ptree-row').classList.toggle('ptree-included', on);
+        // selected lists the chosen values: checked boxes plus preselected
+        // values not shown yet, without those inside a chosen container.
+        function selected() {
+            var shown = {};
+            var out = [];
+            inputs().forEach(function (i) {
+                shown[i.value] = true;
+                if (i.checked && !i.disabled) out.push(i.value);
             });
-            if (on) box.indeterminate = false;
+            pending.forEach(function (v) { if (!shown[v]) out.push(v); });
+            return out.filter(function (v) {
+                return !out.some(function (o) { return under(v, o); });
+            });
+        }
+
+        function activeSource() {
+            if (fixedSource) return fixedSource;
+            var box = inputs().filter(function (i) { return i.checked && !i.disabled; })[0];
+            return box ? box.getAttribute('data-source') : (pending.length ? fixedSource : '');
+        }
+
+        // refresh derives every row's state from the selection: included
+        // (inside a checked container), locked (another source), partly
+        // selected, and the per-machine and per-source counts.
+        function refresh() {
+            var sel = selected();
+            var src = sel.length ? activeSource() : '';
+            inputs().forEach(function (i) {
+                var row = i.closest('.ptree-row');
+                var node = row.parentNode;
+                var included = false;
+                for (var p = node.parentElement && node.parentElement.closest('.ptree-node'); p; p = p.parentElement && p.parentElement.closest('.ptree-node')) {
+                    var pb = p.querySelector(':scope > .ptree-row > .ptree-check');
+                    if (pb && pb.checked) { included = true; break; }
+                }
+                var locked = !!src && i.getAttribute('data-source') !== src;
+                if (included) i.checked = false;
+                i.disabled = included || locked || i.hasAttribute('data-unselectable');
+                i.indeterminate = multi && !i.checked && !locked && sel.some(function (v) { return under(v, i.value); });
+                row.classList.toggle('ptree-included', included);
+                row.classList.toggle('ptree-locked', locked);
+            });
+            container.querySelectorAll('.ptree-count').forEach(function (c) {
+                var on = !!src && (src === c.getAttribute('data-for') || src.indexOf(c.getAttribute('data-for') + '|') === 0);
+                c.hidden = !on;
+                c.textContent = on ? t('{n} selected', { n: sel.length }) : '';
+                c.closest('.ptree-row').classList.toggle('ptree-locked', !!src && !on);
+            });
+            listeners.forEach(function (fn) { fn(sel, src); });
         }
 
         function load(childrenEl, parentNode, entry) {
-            var path = entry ? entry.path : '';
             childrenEl.innerHTML = '<div class="ptree-msg form-hint">' + esc(t('Loading...')) + '</div>';
-            return api('GET', base + '/browse?path=' + encodeURIComponent(path)).then(function (entries) {
+            return Promise.resolve(opts.load(entry)).then(function (res) {
+                var entries = Array.isArray(res) ? res : (res.entries || []);
+                if (parentNode && res.detail !== undefined) {
+                    parentNode.querySelector(':scope > .ptree-row > .ptree-detail').textContent = res.detail;
+                }
                 childrenEl.innerHTML = '';
                 if (!entries.length) {
-                    childrenEl.innerHTML = '<div class="ptree-msg form-hint">' + esc(t('No objects')) + '</div>';
+                    childrenEl.innerHTML = '<div class="ptree-msg form-hint">' + esc(opts.emptyText || t('No objects')) + '</div>';
                     return entries;
                 }
                 if (entries.length > 8) {
@@ -248,8 +298,22 @@
                     });
                     childrenEl.appendChild(filter);
                 }
-                entries.forEach(function (e) { childrenEl.appendChild(node(e)); });
-                if (parentNode) cascade(parentNode);
+                entries.forEach(function (e) {
+                    if (entry) {
+                        if (e.source === undefined) e.source = entry.source;
+                        if (e.ctx === undefined) e.ctx = entry.ctx;
+                    }
+                    childrenEl.appendChild(node(e));
+                });
+                refresh();
+                // Open containers on the way to preselected values, and those
+                // the loader asks to open (a single instance, say).
+                childrenEl.querySelectorAll(':scope > .ptree-node').forEach(function (n) {
+                    if (n._entry.open || (n._entry.source === fixedSource && pending.some(function (v) { return under(v, n._entry.path); }))) {
+                        var tg = n.querySelector(':scope > .ptree-row > .ptree-toggle');
+                        if (tg) tg.click();
+                    }
+                });
                 return entries;
             }).catch(function (err) {
                 childrenEl.innerHTML = '';
@@ -257,7 +321,8 @@
                 msg.className = 'ptree-msg plugin-error';
                 msg.textContent = err.message;
                 childrenEl.appendChild(msg);
-                if (entry && entry.configurable) {
+                if (parentNode) parentNode.querySelector(':scope > .ptree-row').classList.add('ptree-unavailable');
+                if (entry && entry.configurable && entry.ctx) {
                     var fix = document.createElement('button');
                     fix.type = 'button';
                     fix.className = 'btn btn-secondary btn-sm ptree-fix';
@@ -270,13 +335,15 @@
         }
 
         function configure(entry, nodeEl) {
-            openObjectConfigDialog(agent, plugin, entry, fields || [], function (configured) {
+            var c = entry.ctx;
+            openObjectConfigDialog(c.agent, c.plugin, entry, c.fields || [], function (configured) {
                 entry.configured = configured;
                 var chip = nodeEl.querySelector(':scope > .ptree-row .ptree-config-state');
                 if (chip) {
                     chip.className = 'ptree-config-state badge ' + (configured ? 'badge-ok' : 'badge-stale');
                     chip.textContent = configured ? t('Credentials saved') : t('Agent account');
                 }
+                nodeEl.querySelector(':scope > .ptree-row').classList.remove('ptree-unavailable');
                 var kids = nodeEl.querySelector(':scope > .ptree-children');
                 if (!kids) return;
                 if (nodeEl.classList.contains('ptree-open')) {
@@ -290,27 +357,30 @@
         function node(e) {
             var el = document.createElement('div');
             el.className = 'ptree-node';
+            el._entry = e;
             el.setAttribute('role', 'treeitem');
             el.setAttribute('data-name', e.name || e.path);
             var row = document.createElement('div');
-            row.className = 'ptree-row' + (e.status ? ' ptree-unavailable' : '');
+            row.className = 'ptree-row ptree-kind-' + esc((e.kind || 'item').replace(/[^a-z_]/gi, '')) + (e.status ? ' ptree-unavailable' : '');
             var html = e.has_children
                 ? '<button type="button" class="ptree-toggle" aria-label="' + esc(t('Expand')) + '" aria-expanded="false">' + ICONS.chevron + '</button>'
                 : '<span class="ptree-toggle-spacer"></span>';
             var pickable = multi ? e.selectable : (e.selectable && !e.has_children);
             var id = name + '-' + Math.random().toString(36).slice(2, 8);
-            if (multi || pickable) {
+            if (e.selectable !== undefined && (multi || pickable)) {
                 html += '<input class="ptree-check" id="' + id + '" type="' + (multi ? 'checkbox' : 'radio') + '" name="' + name + '" value="' + esc(e.path) + '"' +
-                    (pickable ? '' : ' disabled data-unselectable') + '>';
-            } else {
+                    ' data-source="' + esc(e.source || '') + '"' + (pickable ? '' : ' disabled data-unselectable') + '>';
+            } else if (e.selectable !== undefined) {
                 html += '<span class="ptree-check-spacer"></span>';
             }
             html += '<span class="ptree-icon ptree-icon-' + esc((e.kind || 'item').replace(/[^a-z_]/gi, '')) + '">' + iconFor(e) + '</span>' +
                 '<label class="ptree-name" for="' + id + '">' + esc(e.name || e.path) + '</label>';
             if (e.kind === 'system_database') html += '<span class="ptree-tag">' + esc(t('system')) + '</span>';
+            if (e.tag) html += '<span class="ptree-tag">' + esc(e.tag) + '</span>';
             if (e.status) html += '<span class="badge badge-stale">' + esc(e.status) + '</span>';
+            if (e.count_key) html += '<span class="ptree-count badge badge-ok" data-for="' + esc(e.count_key) + '" hidden></span>';
             html += '<span class="ptree-detail">' + esc(e.detail || '') + '</span>';
-            if (e.configurable) {
+            if (e.configurable && e.ctx) {
                 html += '<span class="ptree-config-state badge ' + (e.configured ? 'badge-ok' : 'badge-stale') + '">' +
                     esc(e.configured ? t('Credentials saved') : t('Agent account')) + '</span>' +
                     '<button type="button" class="ptree-configure btn btn-secondary btn-sm" title="' + esc(t('Configure credentials')) + '">' +
@@ -321,13 +391,12 @@
 
             var check = row.querySelector('.ptree-check');
             if (check) {
+                if (e.source === fixedSource && pending.indexOf(e.path) >= 0) check.checked = true;
                 check.addEventListener('change', function () {
-                    if (multi) {
-                        cascade(el);
-                        var parent = el.parentElement && el.parentElement.closest('.ptree-node');
-                        if (parent) syncParent(parent);
-                    }
-                    updateSummary();
+                    // A choice made in the tree replaces the preselection
+                    // at and below this object.
+                    pending = pending.filter(function (v) { return v !== e.path && !under(v, e.path); });
+                    refresh();
                 });
             }
             var cfg = row.querySelector('.ptree-configure');
@@ -341,7 +410,7 @@
                 el.appendChild(kids);
                 var toggle = row.querySelector('.ptree-toggle');
                 var loaded = false;
-                toggle.addEventListener('click', function () {
+                var expand = function () {
                     var open = !el.classList.contains('ptree-open');
                     el.classList.toggle('ptree-open', open);
                     toggle.setAttribute('aria-expanded', String(open));
@@ -350,24 +419,115 @@
                         loaded = true;
                         load(kids, el, e);
                     }
-                });
+                };
+                toggle.addEventListener('click', expand);
+                if (!check) row.querySelector('.ptree-name').addEventListener('click', expand);
             }
             return el;
         }
 
-        function selected() {
-            return Array.prototype.map.call(container.querySelectorAll('input[name="' + name + '"]:checked:not(:disabled)'), function (i) { return i.value; });
+        load(rootEl, null, null);
+        return {
+            value: selected,
+            source: function () { return selected().length ? activeSource() : ''; },
+            // remove drops one value, as the selection summary does.
+            remove: function (v) {
+                pending = pending.filter(function (p) { return p !== v; });
+                inputs().forEach(function (i) { if (i.value === v) i.checked = false; });
+                refresh();
+            },
+            onChange: function (fn) { listeners.push(fn); }
+        };
+    }
+
+    // backupSources loads the backup selection tree: machines, then each
+    // machine's sources (its file system and every plugin it reported),
+    // then their contents. opts.agent and opts.source narrow it to one
+    // machine and one source, for editing a job.
+    function backupSources(opts) {
+        opts = opts || {};
+        var agents = {};
+        function agentURL(n) { return '/api/agents/' + encodeURIComponent(n); }
+
+        function machines() {
+            return api('GET', '/api/agents').then(function (list) {
+                return (list || []).filter(function (a) { return !opts.agent || a.name === opts.agent; }).map(function (a) {
+                    agents[a.name] = a;
+                    return {
+                        path: 'agent:' + a.name, name: a.name, kind: 'machine', has_children: !a.suspended,
+                        status: a.suspended ? t('suspended') : '', count_key: a.name, machine: a.name, open: !!opts.agent
+                    };
+                });
+            });
         }
 
-        // A single top-level container (one SQL Server instance, say) opens
-        // by itself, so its objects are one click away.
-        load(rootEl, null, null).then(function (entries) {
-            if (entries.length === 1 && entries[0].has_children) {
-                var toggle = rootEl.querySelector('.ptree-toggle');
-                if (toggle) toggle.click();
-            }
-        });
-        return selected;
+        // sources asks the agent who it is, which also tells whether it is
+        // reachable, and lists what it can back up.
+        function sources(m) {
+            var a = agents[m.machine];
+            return api('GET', agentURL(a.name) + '/info').then(function (info) {
+                var list = [{
+                    path: 'files:' + a.name, name: t('File system'), kind: 'filesystem', has_children: true,
+                    source: a.name + '|files', count_key: a.name + '|files', fs: a.name,
+                    detail: info.hostname || ''
+                }];
+                (a.plugins || []).forEach(function (p) {
+                    var active = !p.status || p.status === 'active';
+                    list.push({
+                        path: 'plugin:' + a.name + '/' + p.id, name: p.name || p.id, kind: 'plugin', has_children: active,
+                        source: a.name + '|' + p.id, count_key: a.name + '|' + p.id, plugin: p,
+                        ctx: { agent: a.name, plugin: p.id, fields: p.fields || [] },
+                        detail: 'v' + p.version, status: active ? '' : t(p.status)
+                    });
+                });
+                if (opts.source) list = list.filter(function (s) { return s.source === opts.source; });
+                list.forEach(function (s) { s.open = !!opts.source; });
+                var os = [info.os === 'windows' ? 'Windows' : info.os === 'linux' ? 'Linux' : info.os, info.arch].filter(Boolean).join(' · ');
+                return { entries: list, detail: [os, info.version ? 'v' + info.version : ''].filter(Boolean).join(' · ') };
+            }, function (err) {
+                throw new Error(t('Agent unreachable: {message}', { message: err.message }));
+            });
+        }
+
+        function files(agent, path) {
+            return api('POST', agentURL(agent) + '/browse', { path: path || '' }).then(function (list) {
+                return (list || []).map(function (f) {
+                    return {
+                        path: f.path, name: f.name, kind: f.is_dir ? 'dir' : 'file',
+                        has_children: f.is_dir && f.has_children, selectable: f.is_dir && f.readable !== false,
+                        detail: f.is_dir ? '' : formatBytes(f.size || 0),
+                        status: f.readable === false ? t('Not readable') : '', fs: agent
+                    };
+                });
+            });
+        }
+
+        function objects(e) {
+            var c = e.ctx;
+            var path = e.kind === 'plugin' ? '' : e.path;
+            return api('GET', agentURL(c.agent) + '/plugins/' + encodeURIComponent(c.plugin) + '/browse?path=' + encodeURIComponent(path)).then(function (list) {
+                // A single top-level container (one SQL Server instance, say)
+                // opens by itself, so its objects are one click away.
+                if (e.kind === 'plugin' && list.length === 1 && list[0].has_children) list[0].open = true;
+                return list;
+            });
+        }
+
+        return function (e) {
+            if (!e) return machines();
+            if (e.kind === 'machine') return sources(e);
+            if (e.fs) return files(e.fs, e.kind === 'filesystem' ? '' : e.path);
+            return objects(e);
+        };
+    }
+
+    // describeSource names a source key ("agent|files" or "agent|plugin").
+    function describeSource(src, agentsList) {
+        var parts = (src || '').split('|');
+        if (parts[1] === 'files') return t('File system');
+        var a = (agentsList || []).filter(function (x) { return x.name === parts[0]; })[0];
+        var p = a && (a.plugins || []).filter(function (x) { return x.id === parts[1]; })[0];
+        return p ? (p.name || p.id) : parts[1];
     }
 
     // openObjectConfigDialog edits the settings an object keeps on the agent,
@@ -541,98 +701,6 @@
             });
         }
         render();
-    }
-
-    // --- Backups: new plugin backup job ---
-
-    function openJobDialog() {
-        var d = openDialog(t('New Plugin Backup Job'),
-            '<form class="plugin-job-form">' +
-            '<div class="form-group"><label>' + esc(t('Job Name')) + '</label><input type="text" name="name" required></div>' +
-            '<div class="form-group"><label>' + esc(t('Agent')) + '</label><select name="agent" required></select></div>' +
-            '<div class="form-group"><label>' + esc(t('Plugin')) + '</label><select name="plugin" required></select></div>' +
-            '<div class="form-group"><label>' + esc(t('Objects to back up')) + '</label><div class="plugin-objects plugin-tree-box"></div>' +
-            '<p class="form-hint">' + esc(t('Checking a container, such as an instance, backs up everything in it, including objects added later.')) + '</p></div>' +
-            '<div class="form-group"><label>' + esc(t('Backup kind')) + '</label><select name="kind"></select></div>' +
-            '<fieldset class="plugin-fieldset"><legend>' + esc(t('Connection settings')) + '</legend><div class="plugin-settings"></div></fieldset>' +
-            '<fieldset class="plugin-fieldset"><legend>' + esc(t('Backup options')) + '</legend><div class="plugin-backup-opts"></div></fieldset>' +
-            '<div class="form-group"><label>' + esc(t('Repository')) + '</label><select name="repo" required></select></div>' +
-            '<fieldset class="plugin-fieldset plugin-schedule-set"><legend>' + esc(t('Schedule')) + '</legend><div class="plugin-schedule"></div></fieldset>' +
-            '<div class="plugin-error" style="display:none"></div>' +
-            '<div class="dialog-actions"><button type="submit" class="btn">' + esc(t('Create Job')) + '</button></div></form>');
-        var form = d.q('form');
-        var errEl = d.q('.plugin-error');
-        var agents = [];
-        var current = null;
-        var selected = function () { return []; };
-
-        // A usual plan per backup kind until the operator changes the
-        // schedule: weekly fulls, daily differentials, logs every 15 minutes.
-        var KIND_SCHEDULES = { full: '0 1 * * 0', differential: '0 1 * * 1,2,3,4,5,6', log: '*/15 * * * *' };
-        var scheduleBox = d.q('.plugin-schedule');
-        var scheduleTouched = false;
-        var schedule = HitStorSchedule.mount(scheduleBox, { defaultCron: KIND_SCHEDULES.full });
-        scheduleBox.addEventListener('change', function () { scheduleTouched = true; });
-        form.elements.kind.addEventListener('change', function () {
-            if (!scheduleTouched) schedule = HitStorSchedule.mount(scheduleBox, { defaultCron: KIND_SCHEDULES[form.elements.kind.value] || KIND_SCHEDULES.full });
-        });
-
-        function pluginChanged() {
-            var a = agents.filter(function (x) { return x.name === form.elements.agent.value; })[0];
-            current = a ? a.plugins.filter(function (p) { return p.id === form.elements.plugin.value; })[0] : null;
-            if (!current) return;
-            var kinds = (current.capabilities || []).filter(function (c) { return c.indexOf('backup.') === 0; }).map(function (c) { return c.slice(7); });
-            if (!kinds.length) kinds = ['full'];
-            form.elements.kind.innerHTML = kinds.map(function (k) { return '<option value="' + esc(k) + '">' + esc(t(k)) + '</option>'; }).join('');
-            renderFields(d.q('.plugin-settings'), fieldsFor(current.fields, 'settings'));
-            renderFields(d.q('.plugin-backup-opts'), fieldsFor(current.fields, 'backup'));
-            selected = objectPicker(d.q('.plugin-objects'), a.name, current.id, true, current.fields);
-        }
-        function agentChanged() {
-            var a = agents.filter(function (x) { return x.name === form.elements.agent.value; })[0];
-            form.elements.plugin.innerHTML = (a ? a.plugins : []).map(function (p) { return '<option value="' + esc(p.id) + '">' + esc(p.name || p.id) + '</option>'; }).join('');
-            pluginChanged();
-        }
-        form.elements.agent.addEventListener('change', agentChanged);
-        form.elements.plugin.addEventListener('change', pluginChanged);
-
-        Promise.all([agentsWithPlugins(), api('GET', '/api/repos')]).then(function (res) {
-            agents = res[0];
-            if (!agents.length) {
-                showError(errEl, new Error(t('No agent has reported a plugin yet. Install one from the agent page.')));
-                return;
-            }
-            form.elements.agent.innerHTML = agents.map(function (a) { return '<option>' + esc(a.name) + '</option>'; }).join('');
-            form.elements.repo.innerHTML = (res[1] || []).map(function (r) { return '<option>' + esc(r.name) + '</option>'; }).join('');
-            agentChanged();
-        }).catch(function (err) { showError(errEl, err); });
-
-        form.addEventListener('submit', function (ev) {
-            ev.preventDefault();
-            var sel = selected();
-            if (!sel.length) {
-                showError(errEl, new Error(t('Select at least one object.')));
-                return;
-            }
-            var when;
-            try {
-                when = schedule.value();
-            } catch (err) {
-                showError(errEl, err);
-                return;
-            }
-            var body = {
-                name: form.elements.name.value.trim(), agent_name: form.elements.agent.value, repo_name: form.elements.repo.value,
-                job_type: 'workload', plugin: current.id, selection: sel, backup_kind: form.elements.kind.value,
-                plugin_settings: collectFields(d.q('.plugin-settings'), fieldsFor(current.fields, 'settings')),
-                backup_options: collectFields(d.q('.plugin-backup-opts'), fieldsFor(current.fields, 'backup')),
-                schedule_enabled: when.schedule_enabled, cron_expression: when.cron_expression, timezone: when.timezone
-            };
-            api('POST', '/api/backups', body).then(function () {
-                d.close();
-                location.reload();
-            }).catch(function (err) { showError(errEl, err); });
-        });
     }
 
     // --- Restores: workload restore ---
@@ -953,8 +1021,16 @@
     window.HitStorPlugins = {
         agentPanel: agentPanel,
         packagesPanel: packagesPanel,
-        openJobDialog: openJobDialog,
+        // Plugin jobs are created in the backup job wizard.
+        openJobDialog: function () { HitStorBackupJob.openWizard(); },
         openRestoreDialog: openRestoreDialog,
-        workloadRestore: workloadRestore
+        workloadRestore: workloadRestore,
+        selectionTree: selectionTree,
+        backupSources: backupSources,
+        describeSource: describeSource,
+        ui: {
+            esc: esc, api: api, formatBytes: formatBytes, fieldsFor: fieldsFor, renderFields: renderFields,
+            collectFields: collectFields, openDialog: openDialog, showError: showError
+        }
     };
 })();

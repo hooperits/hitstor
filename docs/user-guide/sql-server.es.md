@@ -51,9 +51,9 @@ tareas: una tarea solo indica qué respaldar. La configuración se prueba antes
 de guardarse, se almacena cifrada (DPAPI) en el almacén de plugins del agente,
 y la contraseña nunca se vuelve a mostrar ni se envía al servidor.
 
-En el dashboard, abra el árbol de objetos (en **Nueva tarea de respaldo →
-Aplicación (plugin)** o en una restauración con plugin) y elija **Configurar**
-junto a la instancia:
+En el dashboard, abra el árbol de selección (en **Nueva tarea de respaldo**,
+expanda la máquina y **Microsoft SQL Server**, o en una restauración con plugin)
+y elija **Configurar** junto a la instancia:
 
 | Campo | Descripción |
 |-------|-------------|
@@ -109,10 +109,11 @@ programe tareas separadas por tipo. Un plan habitual:
 | Diferencial diario | `differential` | Todos los días 01:00 |
 | Log | `log` | Cada 15 minutos |
 
-En el dashboard, elija **Nueva tarea de respaldo → Aplicación (plugin)**,
-seleccione el agente y el plugin `mssql`, marque la instancia o bases individuales en el
-árbol de objetos y defina el tipo de respaldo, las opciones y la programación
-cron.
+En el dashboard, elija **Nueva tarea de respaldo**, expanda la máquina y
+**Microsoft SQL Server** en el árbol de selección, y marque la instancia o bases
+individuales. El panel lateral define el tipo de respaldo y las opciones; el
+paso siguiente, el repositorio y la programación. Vea
+[Tareas de respaldo](../admin-guide/dashboard.md#backups).
 
 La misma tarea con la API del dashboard:
 

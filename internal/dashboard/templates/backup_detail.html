@@ -159,6 +159,40 @@
         </div>
 
         
+        {{if eq $job.JobType "workload"}}
+        <div class="detail-paths-tile">
+            <div class="detail-paths-tile__label">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 1.7 3.6 3 8 3s8-1.3 8-3V5"/><path d="M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></svg>
+                {{index $data "PluginName"}}
+            </div>
+            <div class="backup-detail-paths detail-paths-tile__content">
+                {{range $job.Selection}}<code class="path-chip">{{.}}</code>{{else}}<span class="text-muted">—</span>{{end}}
+            </div>
+            {{if $job.BackupOptions}}
+            <div class="detail-paths-tile__excludes">
+                <span class="detail-paths-tile__excludes-label">{{t "Options"}}</span>
+                <div class="backup-detail-paths">
+                    {{range $k, $v := $job.BackupOptions}}<code class="path-chip">{{$k}}={{$v}}</code>{{end}}
+                </div>
+            </div>
+            {{end}}
+        </div>
+
+        <div class="detail-meta-tiles">
+            <div class="detail-meta-tile">
+                <span class="detail-meta-tile__label">{{t "Backup kind"}}</span>
+                <span class="detail-meta-tile__value"><span class="badge badge-ok">{{t $job.BackupKind}}</span></span>
+            </div>
+            <div class="detail-meta-tile">
+                <span class="detail-meta-tile__label">{{t "Agent"}}</span>
+                <span class="detail-meta-tile__value"><a href="/agents/{{$v.AgentName}}" class="agent-chip">{{$v.AgentName}}</a></span>
+            </div>
+            <div class="detail-meta-tile detail-meta-tile--wide">
+                <span class="detail-meta-tile__label">{{t "Repository"}}</span>
+                <span class="detail-meta-tile__value"><span class="repo-chip">{{$v.RepoName}}</span></span>
+            </div>
+        </div>
+        {{else}}
         <div class="detail-paths-tile">
             <div class="detail-paths-tile__label">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
@@ -193,27 +227,20 @@
                 <span class="detail-meta-tile__value"><span class="repo-chip">{{$v.RepoName}}</span></span>
             </div>
         </div>
+        {{end}}
 
         {{if index $data "Managed"}}
         <div class="detail-accordion" id="paths-accordion">
             <button type="button" class="detail-accordion__toggle" onclick="toggleDetailAccordion('paths-accordion')" aria-expanded="false" aria-controls="paths-accordion-body">
-                <span>{{t "Edit backup paths"}}</span>
+                <span>{{t "Edit selection"}}</span>
                 <svg class="detail-accordion__chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
             </button>
             <div class="detail-accordion__body" id="paths-accordion-body">
-                <p class="detail-accordion__hint">{{t "Browse the agent filesystem and update paths for this job."}}</p>
-                <div id="edit-fs-tree" class="fs-tree backup-detail-fs-tree">
-                    <div class="text-muted backup-detail-fs-loading">{{t "Loading filesystem..."}}</div>
-                </div>
-                <div class="detail-accordion__actions">
-                    <button type="button" class="btn" onclick="saveEditedPaths()">{{t "Save Paths"}}</button>
-                    <span id="edit-paths-status"></span>
-                </div>
-                <div id="edit-selected-summary" class="detail-accordion__summary"></div>
+                <p class="detail-accordion__hint">{{t "Change what this job backs up. The machine and the source stay the same; to back up another source, create another job."}}</p>
+                <div id="edit-selection"></div>
             </div>
         </div>
         {{end}}
-        
     </div>
 
     <div class="backup-detail-panel card backup-detail-panel--schedule">
@@ -378,6 +405,7 @@
                 </select>
             </label>
         </div>
+        {{if ne $job.JobType "workload"}}
         <label style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.5rem;">
             {{t "Full re-scan every"}}
             <input type="number" id="edit-rescan-days"
@@ -387,11 +415,7 @@
             {{t "days"}}
         </label>
         <p style="color:var(--text-muted); font-size:0.8rem; margin:0 0 1rem 0;">{{t "Set to 0 to disable periodic full re-scans."}}{{if $job.LastFullBackup}} {{tf "Last full backup: {when}" "when" (timeAgo $job.LastFullBackup)}}{{end}}</p>
-        <label style="display:flex; align-items:center; gap:0.5rem; margin-bottom:1rem;">
-            <input type="checkbox" id="edit-use-vss" {{if $job.UseVSS}}checked{{end}}>
-            {{t "Consistent snapshot (VSS / LVM / btrfs)"}}
-        </label>
-        <p style="color:var(--text-muted); font-size:0.8rem; margin:-0.5rem 0 1rem 0;">{{t "Windows only. Creates a consistent snapshot before backup for open files and databases."}}</p>
+        {{end}}
         <button type="submit" class="btn">{{t "Save Schedule"}}</button>
         <span id="edit-sched-status" class="detail-form-status"></span>
     </form>
@@ -400,6 +424,8 @@
     </div>
 </div>
 
+<script src="/static/plugins.js"></script>
+<script src="/static/backup_job.js"></script>
 <script>
 function toggleDetailAccordion(id) {
     var el = document.getElementById(id);
@@ -1004,11 +1030,11 @@ function saveSchedule(e) {
     status.style.color = 'var(--text-muted)';
 
     var mode = document.querySelector('input[name="sched-mode"]:checked').value;
+    var rescanDays = document.getElementById('edit-rescan-days');
     var body = {
         schedule_enabled: document.getElementById('edit-sched-enabled').checked,
         schedule_hours: parseInt(document.getElementById('edit-sched-hours').value) || 24,
-        full_rescan_days: parseInt(document.getElementById('edit-rescan-days').value) || 0,
-        use_vss: document.getElementById('edit-use-vss').checked,
+        full_rescan_days: rescanDays ? (parseInt(rescanDays.value) || 0) : 0,
         cron_expression: '',
         timezone: ''
     };
@@ -1043,169 +1069,7 @@ function saveSchedule(e) {
 }
 
 {{if index $data "Managed"}}
-// Filesystem tree browser for editing paths.
-function loadEditTree(parentEl, path) {
-    fetch('/api/agents/' + encodeURIComponent(agentName) + '/browse', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({path: path})
-    })
-    .then(function(r) {
-        if (!r.ok) return r.text().then(function(t) { throw new Error(t); });
-        return r.json();
-    })
-    .then(function(entries) { renderEditEntries(parentEl, entries); })
-    .catch(function(err) {
-        parentEl.innerHTML = '<div style="color:var(--danger);">' + t('Error: {message}', {message: err.message}) + '</div>';
-    });
-}
-
-function isEditAncestorChecked(el) {
-    var p = el.closest('.fs-children');
-    while (p) {
-        var parentNode = p.closest('.fs-node');
-        if (!parentNode) break;
-        var parentCb = parentNode.querySelector(':scope > .fs-row > .fs-check');
-        if (parentCb && parentCb.checked) return true;
-        p = parentNode.closest('.fs-children');
-    }
-    return false;
-}
-
-function cascadeEditCheck(nodeEl, checked) {
-    nodeEl.querySelectorAll('.fs-check').forEach(function(cb) { cb.checked = checked; });
-}
-
-function renderEditEntries(parentEl, entries) {
-    parentEl.innerHTML = '';
-    var parentChecked = isEditAncestorChecked(parentEl);
-    entries.forEach(function(entry) {
-        var node = document.createElement('div');
-        node.className = 'fs-node';
-
-        var row = document.createElement('div');
-        row.className = 'fs-row';
-
-        if (entry.is_dir && entry.has_children) {
-            var expand = document.createElement('span');
-            expand.className = 'fs-expand';
-            expand.textContent = '\u25B8';
-            node.appendChild(expand);
-        } else {
-            var spacer = document.createElement('span');
-            spacer.className = 'fs-expand';
-            if (entry.is_dir) { spacer.textContent = '\u25B8'; spacer.style.opacity = '0.3'; }
-            node.appendChild(spacer);
-        }
-
-        if (entry.is_dir) {
-            var cb = document.createElement('input');
-            cb.type = 'checkbox';
-            cb.dataset.path = entry.path;
-            cb.className = 'fs-check';
-            cb.checked = parentChecked || currentPaths.indexOf(entry.path) !== -1;
-            cb.onchange = function() { cascadeEditCheck(node, cb.checked); updateEditSummary(); };
-            row.appendChild(cb);
-        }
-
-        var icon = document.createElement('span');
-        icon.className = 'fs-icon';
-        icon.textContent = entry.is_dir ? '\uD83D\uDCC1' : '\uD83D\uDCC4';
-        row.appendChild(icon);
-
-        var label = document.createElement('span');
-        label.className = entry.is_dir ? 'fs-label fs-label-dir' : 'fs-label fs-label-file';
-        label.textContent = entry.name;
-        if (!entry.readable) { label.style.opacity = '0.4'; label.title = t('Not readable'); }
-        row.appendChild(label);
-
-        node.appendChild(row);
-
-        var children = document.createElement('div');
-        children.className = 'fs-children';
-        children.style.display = 'none';
-        node.appendChild(children);
-
-        if (entry.is_dir && entry.has_children) {
-            expand.onclick = function(e) { e.stopPropagation(); toggleEditDir(node, entry.path, expand); };
-            row.ondblclick = function(e) { e.stopPropagation(); toggleEditDir(node, entry.path, expand); };
-        }
-
-        parentEl.appendChild(node);
-    });
-}
-
-function toggleEditDir(nodeEl, path, expandBtn) {
-    var children = nodeEl.querySelector('.fs-children');
-    if (children.style.display === 'none') {
-        if (children.children.length === 0) {
-            children.innerHTML = '<div style="color:var(--text-muted); font-style:italic; padding:3px 4px;">' + t('Loading...') + '</div>';
-            loadEditTree(children, path);
-        }
-        children.style.display = '';
-        expandBtn.textContent = '\u25BE';
-        var icon = nodeEl.querySelector('.fs-icon');
-        if (icon) icon.textContent = '\uD83D\uDCC2';
-    } else {
-        children.style.display = 'none';
-        expandBtn.textContent = '\u25B8';
-        var icon = nodeEl.querySelector('.fs-icon');
-        if (icon) icon.textContent = '\uD83D\uDCC1';
-    }
-}
-
-function getEditSelectedPaths() {
-    var all = [];
-    document.querySelectorAll('#edit-fs-tree .fs-check:checked').forEach(function(cb) {
-        all.push(cb.dataset.path);
-    });
-    all.sort();
-    var paths = [];
-    for (var i = 0; i < all.length; i++) {
-        var dominated = false;
-        for (var j = 0; j < paths.length; j++) {
-            if (all[i].indexOf(paths[j] + '/') === 0 || all[i].indexOf(paths[j] + '\\') === 0) { dominated = true; break; }
-        }
-        if (!dominated) paths.push(all[i]);
-    }
-    return paths;
-}
-
-function updateEditSummary() {
-    var paths = getEditSelectedPaths();
-    var el = document.getElementById('edit-selected-summary');
-    el.textContent = paths.length > 0 ? t('Selected: {paths}', {paths: paths.join(', ')}) : '';
-}
-
-function saveEditedPaths() {
-    var paths = getEditSelectedPaths();
-    if (paths.length === 0) {
-        alert(t('Select at least one directory to back up.'));
-        return;
-    }
-    var status = document.getElementById('edit-paths-status');
-    status.textContent = t('Saving...');
-    status.style.color = 'var(--text-muted)';
-
-    fetch('/api/backups/' + jobID, {
-        method: 'PUT',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({paths: paths})
-    })
-    .then(function(r) {
-        if (!r.ok) return r.text().then(function(t) { throw new Error(t); });
-        status.textContent = t('Saved');
-        status.style.color = 'var(--ok)';
-        currentPaths = paths;
-    })
-    .catch(function(err) {
-        status.textContent = err.message;
-        status.style.color = 'var(--danger)';
-    });
-}
-
-loadEditTree(document.getElementById('edit-fs-tree'), '');
-updateEditSummary();
+HitStorBackupJob.editSelection(document.getElementById('edit-selection'), {{$job}});
 {{end}}
 </script>
 {{end}}

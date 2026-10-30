@@ -1,0 +1,24 @@
+{{define "content"}}
+<div id="users-app" class="users-page" data-agents="{{toJSON .Content.Agents}}" data-roles="{{toJSON .Content.Roles}}">
+    <div class="page-actions">
+        <button type="button" id="user-add" class="btn">{{t "New user"}}</button>
+    </div>
+    <section class="acct-section acct-section--wide">
+        <div class="table-wrap">
+            <table class="users-table">
+                <thead><tr><th>{{t "User"}}</th><th>{{t "Roles"}}</th><th>{{t "Two-step"}}</th><th>{{t "Last sign-in"}}</th><th>{{t "Status"}}</th><th></th></tr></thead>
+                <tbody id="users-body"><tr><td colspan="6" class="text-muted">{{t "Loading..."}}</td></tr></tbody>
+            </table>
+        </div>
+    </section>
+    <section class="acct-section roles-help">
+        <h2 class="section-title">{{t "Roles"}}</h2>
+        <dl>
+            <dt>{{t "Administrator"}}</dt><dd>{{t "Everything, on every agent: users, storage, settings, deleting snapshots."}}</dd>
+            <dt>{{t "Backup operator"}}</dt><dd>{{t "Runs, schedules and edits backup jobs on the agents it is given. Cannot restore."}}</dd>
+            <dt>{{t "Restore operator"}}</dt><dd>{{t "Browses snapshots and restores on the agents it is given. Cannot change jobs."}}</dd>
+            <dt>{{t "Viewer"}}</dt><dd>{{t "Reads jobs, results and reports. Changes nothing."}}</dd>
+        </dl>
+    </section>
+</div>
+{{end}}

@@ -18,6 +18,7 @@ import (
 	"github.com/hooperits/hitstor/internal/cron"
 	"github.com/hooperits/hitstor/internal/i18n"
 	"github.com/hooperits/hitstor/internal/server"
+	"github.com/hooperits/hitstor/internal/users"
 )
 
 type backupJobJSON struct {
@@ -180,7 +181,7 @@ func jobToJSON(c *i18n.Catalog, j server.BackupJob) backupJobJSON {
 }
 
 func (d *Dashboard) handleAPIBackupJobs(w http.ResponseWriter, r *http.Request) {
-	jobs := d.registry.ListJobs()
+	jobs := d.visibleJobs(r)
 	result := make([]backupJobJSON, 0, len(jobs))
 	for _, j := range jobs {
 		result = append(result, jobToJSON(d.catalog(r), j))
@@ -295,6 +296,9 @@ func (d *Dashboard) handleAPICreateBackupJob(w http.ResponseWriter, r *http.Requ
 	}
 	if req.AgentName == "" {
 		http.Error(w, "agent_name is required for backup jobs", http.StatusBadRequest)
+		return
+	}
+	if !d.requireAgent(w, r, users.PermBackup, req.AgentName) {
 		return
 	}
 	workload := server.IsWorkloadJobType(req.JobType)

@@ -12,6 +12,7 @@ import (
 
 	"github.com/hooperits/hitstor/internal/backend"
 	"github.com/hooperits/hitstor/internal/repository"
+	"github.com/hooperits/hitstor/internal/users"
 )
 
 // handleAPIStartRestore handles POST /api/snapshots/{id}/restore.
@@ -29,6 +30,10 @@ func (d *Dashboard) handleAPIStartRestore(w http.ResponseWriter, r *http.Request
 	}
 	if req.AgentName == "" {
 		http.Error(w, "agent_name is required", http.StatusBadRequest)
+		return
+	}
+	// The route checked the snapshot's agent; the target must be allowed too.
+	if !d.requireAgent(w, r, users.PermRestore, req.AgentName) {
 		return
 	}
 
@@ -237,8 +242,11 @@ func (d *Dashboard) handleAPIRestores(w http.ResponseWriter, r *http.Request) {
 	}
 	sessions := d.restores.ListSessions()
 	result := make([]restoreProgress, 0, len(sessions))
+	visible := agentFilter(r, users.PermRestore)
 	for _, s := range sessions {
-		result = append(result, s.Progress())
+		if p := s.Progress(); visible == nil || visible(p.AgentName) {
+			result = append(result, p)
+		}
 	}
 	writeJSON(w, result)
 }
@@ -286,6 +294,9 @@ func (d *Dashboard) handleAPIRestoreSources(w http.ResponseWriter, r *http.Reque
 			for _, cs := range summaries {
 				bt := d.snapshotBackupType(cs)
 				if typeFilter != "" && bt != typeFilter {
+					continue
+				}
+				if !d.snapshotVisible(r, users.PermRestore, cs) {
 					continue
 				}
 				id := cs.Hostname

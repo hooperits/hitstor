@@ -27,7 +27,7 @@ type agentJSON struct {
 }
 
 func (d *Dashboard) handleAPIAgents(w http.ResponseWriter, r *http.Request) {
-	agents := d.registry.ListAgents()
+	agents := d.visibleAgents(r)
 
 	// Count snapshots per host across all repositories.
 	hostCounts := make(map[string]int)

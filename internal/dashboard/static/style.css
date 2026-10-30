@@ -1098,6 +1098,10 @@ a.btn, a.btn:hover, a.btn:visited {
     color: #fff;
 }
 
+a.btn-secondary, a.btn-secondary:hover, a.btn-secondary:visited {
+    color: var(--text);
+}
+
 .btn:hover {
     background: var(--primary-dark);
     box-shadow: 0 2px 4px rgba(0,0,0,0.12);
@@ -6304,3 +6308,288 @@ body.dr-drawer-open {
 .plan-row__warn { color: #b45309; font-weight: 600; }
 .plan-row__excluded { display: flex; flex-wrap: wrap; align-items: center; gap: 0.3rem; margin-top: 0.35rem; font-size: 0.75rem; color: var(--text-muted); }
 .plan-row__excluded .path-chip { font-size: 0.72rem; opacity: 0.8; cursor: help; }
+
+/* Users, accounts and sign-in steps */
+.login-card--wide { max-width: 520px; }
+
+.login-form input[type="text"] {
+    width: 100%;
+    padding: 0.75rem 0.9rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    font-family: var(--font);
+    font-size: 0.95rem;
+    background: #fff;
+}
+
+.login-form input[type="text"]:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px var(--primary-soft);
+}
+
+.login-code-input {
+    font-family: var(--font-mono, ui-monospace, monospace) !important;
+    font-size: 1.25rem !important;
+    letter-spacing: 0.2em;
+    text-align: center;
+}
+
+.login-hint {
+    margin: 0;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.login-alt {
+    margin-top: 1rem;
+    text-align: center;
+}
+
+.login-link {
+    display: inline-block;
+    margin-top: 0.75rem;
+    background: none;
+    border: none;
+    padding: 0;
+    color: var(--primary-dark);
+    font-family: var(--font);
+    font-size: 0.85rem;
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+.login-submit--link {
+    display: block;
+    text-align: center;
+    text-decoration: none;
+}
+
+.enroll-steps {
+    margin: 0 0 1rem;
+    padding-left: 1.25rem;
+    font-size: 0.9rem;
+}
+
+.enroll-steps li { margin-bottom: 0.75rem; }
+
+.enroll-qr {
+    display: block;
+    margin: 0.75rem 0;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: #fff;
+}
+
+.enroll-manual summary {
+    cursor: pointer;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+.enroll-secret {
+    display: block;
+    margin-top: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    background: var(--surface-alt);
+    border-radius: var(--radius-sm);
+    word-break: break-all;
+    letter-spacing: 0.08em;
+}
+
+.recovery-codes {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.4rem 1rem;
+    margin: 0 0 1rem;
+    padding: 1rem 0.75rem 1rem 2.25rem;
+    background: var(--surface-alt);
+    border-radius: var(--radius-sm);
+    font-size: 0.9rem;
+}
+
+.recovery-codes code {
+    white-space: nowrap;
+    font-size: 0.8rem;
+}
+
+.recovery-actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.account-page,
+.users-page,
+.audit-page {
+    display: grid;
+    gap: 1.25rem;
+    max-width: 960px;
+}
+
+.account-page {
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    align-items: start;
+}
+
+.acct-section {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.25rem 1.5rem;
+    min-width: 0;
+}
+
+.acct-section--wide { grid-column: 1 / -1; }
+
+.acct-section .table-wrap { margin: 0; }
+
+.account-facts {
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    gap: 0.5rem 1.25rem;
+    margin: 0;
+    font-size: 0.9rem;
+}
+
+.account-facts dt { color: var(--text-muted); }
+.account-facts dd { margin: 0; }
+
+.account-actions,
+.user-actions,
+.page-actions {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.user-actions { margin: 1.25rem 0; }
+
+td.ua {
+    max-width: 260px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+}
+
+.nowrap { white-space: nowrap; }
+
+.role-chip {
+    display: inline-block;
+    padding: 0.1rem 0.5rem;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    background: var(--surface-alt);
+    color: var(--text);
+}
+
+.role-chip--admin { background: var(--primary-soft); color: var(--primary-dark); }
+.role-chip--backup_operator { background: rgba(37, 99, 235, 0.1); color: #1d4ed8; }
+.role-chip--restore_operator { background: rgba(22, 163, 74, 0.1); color: #15803d; }
+
+.role-scope {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.roles-help dl {
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    gap: 0.5rem 1.25rem;
+    margin: 0;
+    font-size: 0.88rem;
+}
+
+.roles-help dt { font-weight: 600; }
+.roles-help dd { margin: 0; color: var(--text-muted); }
+
+.grant-row {
+    display: grid;
+    grid-template-columns: 230px 1fr auto;
+    gap: 0.75rem;
+    align-items: start;
+    padding: 0.75rem;
+    margin-bottom: 0.5rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+}
+
+.grant-row select { width: 100%; }
+
+.grant-scope label {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.85rem;
+    font-weight: 400;
+}
+
+.grant-agents {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 0.25rem 0.75rem;
+    margin-top: 0.4rem;
+    max-height: 180px;
+    overflow-y: auto;
+}
+
+.grant-remove {
+    background: none;
+    border: none;
+    font-size: 1.25rem;
+    line-height: 1;
+    color: var(--text-muted);
+    cursor: pointer;
+}
+
+.grant-remove:hover { color: var(--danger); }
+
+.temp-password code {
+    display: block;
+    padding: 0.75rem 1rem;
+    background: var(--surface-alt);
+    border-radius: var(--radius-sm);
+    font-size: 1.15rem;
+    letter-spacing: 0.05em;
+    text-align: center;
+    user-select: all;
+}
+
+.user-sessions-title {
+    font-size: 0.95rem;
+    margin: 0 0 0.5rem;
+}
+
+.user-sessions {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    font-size: 0.85rem;
+}
+
+.user-sessions li {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.35rem 0;
+    border-bottom: 1px solid var(--border);
+}
+
+.audit-intact {
+    margin: 0;
+    color: var(--ok);
+    font-size: 0.88rem;
+}
+
+.audit-table td { font-size: 0.85rem; vertical-align: top; }
+
+@media (max-width: 640px) {
+    .grant-row { grid-template-columns: 1fr auto; }
+    .grant-scope { grid-column: 1 / -1; }
+    .recovery-codes { grid-template-columns: 1fr; }
+}

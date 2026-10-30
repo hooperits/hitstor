@@ -1,6 +1,7 @@
 package dashboard
 
 import (
+	"encoding/json"
 	"fmt"
 	"html/template"
 	"io/fs"
@@ -15,6 +16,7 @@ import (
 	"github.com/hooperits/hitstor/internal/i18n"
 	"github.com/hooperits/hitstor/internal/repository"
 	"github.com/hooperits/hitstor/internal/server"
+	"github.com/hooperits/hitstor/internal/users"
 )
 
 // Options configures the dashboard.
@@ -35,8 +37,10 @@ type Dashboard struct {
 	opts             Options
 	templates        map[string]map[string]*template.Template // language → page → template
 	mu               sync.RWMutex
-	sessions         map[string]time.Time // token -> expiry
 	loginLimits      *loginLimiter
+	legacy           legacySessions
+	users            *users.Store    // nil until SetUsers
+	audit            *users.AuditLog // nil until SetUsers
 	activeSessionsFn func() int
 	metricsHandler   http.HandlerFunc
 	opMu             sync.RWMutex
@@ -121,7 +125,13 @@ func New(repo *repository.Repository, registry *server.AgentRegistry, be backend
 		"statusClass":  statusClass,
 		"timeFormat":   timeFormat,
 		"safeHTML":     func(s string) template.HTML { return template.HTML(s) },
-		"percent":      func(val float64) string { return fmt.Sprintf("%.1f%%", val*100) },
+		"toJSON": func(v any) (string, error) {
+			b, err := json.Marshal(v)
+			return string(b), err
+		},
+		// safeURL marks a URL the server built (a data: QR code) as safe for src.
+		"safeURL": func(s string) template.URL { return template.URL(s) },
+		"percent": func(val float64) string { return fmt.Sprintf("%.1f%%", val*100) },
 		"hasStr": func(list []string, want string) bool {
 			for _, s := range list {
 				if s == want {
@@ -157,7 +167,6 @@ func New(repo *repository.Repository, registry *server.AgentRegistry, be backend
 		be:               be,
 		opts:             opts,
 		templates:        make(map[string]map[string]*template.Template),
-		sessions:         make(map[string]time.Time),
 		loginLimits:      newLoginLimiter(),
 		activeSessionsFn: activeSessionsFn,
 		operations:       make(map[string]*operation),
@@ -166,7 +175,7 @@ func New(repo *repository.Repository, registry *server.AgentRegistry, be backend
 
 	// Parse page templates (each page + layout) once per language, with the
 	// translation helpers bound to that language's catalog.
-	pages := []string{"overview", "backups", "backup_detail", "restores", "disaster", "agents", "agent_detail", "snapshot_detail", "storage", "storage_detail", "logs", "settings"}
+	pages := []string{"overview", "backups", "backup_detail", "restores", "disaster", "agents", "agent_detail", "snapshot_detail", "storage", "storage_detail", "logs", "settings", "account", "users", "audit"}
 	for _, lang := range i18n.Languages() {
 		funcMap := template.FuncMap{}
 		for k, v := range baseFuncs {
@@ -257,132 +266,161 @@ func (d *Dashboard) Handler() http.Handler {
 	// Login (always registered; middleware decides if auth is needed).
 	mux.HandleFunc("GET /login", d.handleLoginPage)
 	mux.HandleFunc("POST /login", d.handleLoginSubmit)
+	mux.HandleFunc("GET /login/code", d.handleCodePage)
+	mux.HandleFunc("POST /login/code", d.handleCodeSubmit)
+	mux.HandleFunc("GET /login/enroll", d.handleEnrollPage)
+	mux.HandleFunc("POST /login/enroll", d.handleEnrollSubmit)
+	mux.HandleFunc("GET /setup", d.handleSetupPage)
+	mux.HandleFunc("POST /setup", d.handleSetupSubmit)
 	mux.HandleFunc("POST /logout", d.handleLogout)
+
+	// Accounts: the user's own, and (administrators) everyone's.
+	for pattern, h := range map[string]http.HandlerFunc{
+		"GET /account":                           d.handleAccountPage,
+		"GET /account/password":                  d.handleAccountPasswordPage,
+		"POST /api/account/password":             d.handleAPIAccountPassword,
+		"POST /api/account/recovery-codes":       d.handleAPIAccountRecoveryCodes,
+		"GET /api/account/sessions":              d.handleAPIAccountSessions,
+		"DELETE /api/account/sessions/{id}":      d.handleAPIAccountEndSession,
+		"POST /api/reauth":                       d.handleAPIReauth,
+		"GET /users":                             d.handleUsersPage,
+		"GET /api/users":                         d.handleAPIUsers,
+		"POST /api/users":                        d.handleAPIAddUser,
+		"PUT /api/users/{name}":                  d.handleAPIUpdateUser,
+		"DELETE /api/users/{name}":               d.handleAPIRemoveUser,
+		"POST /api/users/{name}/password":        d.handleAPIResetUserPassword,
+		"DELETE /api/users/{name}/second-factor": d.handleAPIResetUserSecondFactor,
+		"GET /api/users/{name}/sessions":         d.handleAPIUserSessions,
+		"DELETE /api/users/{name}/sessions/{id}": d.handleAPIEndUserSession,
+		"GET /audit":                             d.handleAuditPage,
+	} {
+		mux.Handle(pattern, d.guard(pattern, h))
+	}
 	mux.HandleFunc("GET /language", d.handleSetLanguage)
 
 	// Pages.
-	mux.Handle("GET /{$}", d.protect(http.HandlerFunc(d.handleOverview)))
-	mux.Handle("GET /backups", d.protect(http.HandlerFunc(d.handleBackups)))
-	mux.Handle("GET /backups/{id}", d.protect(http.HandlerFunc(d.handleBackupDetail)))
-	mux.Handle("GET /restores", d.protect(http.HandlerFunc(d.handleRestores)))
-	mux.Handle("GET /disaster", d.protect(http.HandlerFunc(d.handleDisasterPage)))
-	mux.Handle("GET /agents", d.protect(http.HandlerFunc(d.handleAgents)))
-	mux.Handle("GET /agents/{name}", d.protect(http.HandlerFunc(d.handleAgentDetail)))
-	mux.Handle("GET /snapshots", d.protect(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	mux.Handle("GET /{$}", d.guard("GET /{$}", http.HandlerFunc(d.handleOverview)))
+	mux.Handle("GET /backups", d.guard("GET /backups", http.HandlerFunc(d.handleBackups)))
+	mux.Handle("GET /backups/{id}", d.guard("GET /backups/{id}", http.HandlerFunc(d.handleBackupDetail)))
+	mux.Handle("GET /restores", d.guard("GET /restores", http.HandlerFunc(d.handleRestores)))
+	mux.Handle("GET /disaster", d.guard("GET /disaster", http.HandlerFunc(d.handleDisasterPage)))
+	mux.Handle("GET /agents", d.guard("GET /agents", http.HandlerFunc(d.handleAgents)))
+	mux.Handle("GET /agents/{name}", d.guard("GET /agents/{name}", http.HandlerFunc(d.handleAgentDetail)))
+	mux.Handle("GET /snapshots", d.guard("GET /snapshots", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/storage", http.StatusFound)
 	})))
-	mux.Handle("GET /snapshots/{id}", d.protect(http.HandlerFunc(d.handleSnapshotDetail)))
-	mux.Handle("GET /storage", d.protect(http.HandlerFunc(d.handleStorage)))
-	mux.Handle("GET /storage/{name}", d.protect(http.HandlerFunc(d.handleStorageDetail)))
+	mux.Handle("GET /snapshots/{id}", d.guard("GET /snapshots/{id}", http.HandlerFunc(d.handleSnapshotDetail)))
+	mux.Handle("GET /storage", d.guard("GET /storage", http.HandlerFunc(d.handleStorage)))
+	mux.Handle("GET /storage/{name}", d.guard("GET /storage/{name}", http.HandlerFunc(d.handleStorageDetail)))
 
 	// API (JSON).
-	mux.Handle("GET /api/agents", d.protect(http.HandlerFunc(d.handleAPIAgents)))
-	mux.Handle("GET /api/agents/{name}/snapshots", d.protect(http.HandlerFunc(d.handleAPIAgentSnapshots)))
-	mux.Handle("POST /api/agents/{name}/schedule", d.protect(http.HandlerFunc(d.handleAPIAgentSchedule)))
-	mux.Handle("POST /api/agents/{name}/repo", d.protect(http.HandlerFunc(d.handleAPIAgentRepo)))
-	mux.Handle("GET /api/snapshots", d.protect(http.HandlerFunc(d.handleAPISnapshots)))
-	mux.Handle("GET /api/stats", d.protect(http.HandlerFunc(d.handleAPIStats)))
-	mux.Handle("GET /api/repos", d.protect(http.HandlerFunc(d.handleAPIRepos)))
-	mux.Handle("GET /api/repos/growth", d.protect(http.HandlerFunc(d.handleAPIReposGrowthBatch)))
-	mux.Handle("POST /api/repos", d.protect(http.HandlerFunc(d.handleAPICreateRepo)))
-	mux.Handle("GET /api/repos/{name}", d.protect(http.HandlerFunc(d.handleAPIRepo)))
-	mux.Handle("GET /api/repos/{name}/health", d.protect(http.HandlerFunc(d.handleAPIRepoHealth)))
-	mux.Handle("DELETE /api/repos/{name}", d.protect(http.HandlerFunc(d.handleAPIDeleteRepo)))
-	mux.Handle("GET /api/disk-space", d.protect(http.HandlerFunc(d.handleAPIDiskSpace)))
-	mux.Handle("POST /api/repos/test-s3", d.protect(http.HandlerFunc(d.handleAPITestS3)))
-	mux.Handle("POST /api/repos/detect", d.protect(http.HandlerFunc(d.handleAPIDetectRepo)))
-	mux.Handle("POST /api/repos/validate-path", d.protect(http.HandlerFunc(d.handleAPIValidatePath)))
-	mux.Handle("POST /api/repos/detect-s3", d.protect(http.HandlerFunc(d.handleAPIDetectS3)))
-	mux.Handle("GET /api/repos/{name}/snapshots", d.protect(http.HandlerFunc(d.handleAPIRepoSnapshots)))
-	mux.Handle("GET /api/repos/{name}/growth", d.protect(http.HandlerFunc(d.handleAPIGrowth)))
-	mux.Handle("POST /api/repos/{name}/check", d.protect(http.HandlerFunc(d.handleAPICheck)))
-	mux.Handle("POST /api/repos/{name}/prune", d.protect(http.HandlerFunc(d.handleAPIPrune)))
-	mux.Handle("POST /api/repos/{name}/forget", d.protect(http.HandlerFunc(d.handleAPIForget)))
-	mux.Handle("GET /api/repos/{name}/sessions", d.protect(http.HandlerFunc(d.handleAPISessions)))
-	mux.Handle("GET /api/operations/{id}/events", d.protect(http.HandlerFunc(d.handleAPIOperationEvents)))
-	mux.Handle("GET /api/active-backups", d.protect(http.HandlerFunc(d.handleAPIActiveBackups)))
-	mux.Handle("GET /api/backup-progress/events", d.protect(http.HandlerFunc(d.handleAPIBackupProgressEvents)))
+	mux.Handle("GET /api/agents", d.guard("GET /api/agents", http.HandlerFunc(d.handleAPIAgents)))
+	mux.Handle("GET /api/agents/{name}/snapshots", d.guard("GET /api/agents/{name}/snapshots", http.HandlerFunc(d.handleAPIAgentSnapshots)))
+	mux.Handle("POST /api/agents/{name}/schedule", d.guard("POST /api/agents/{name}/schedule", http.HandlerFunc(d.handleAPIAgentSchedule)))
+	mux.Handle("POST /api/agents/{name}/repo", d.guard("POST /api/agents/{name}/repo", http.HandlerFunc(d.handleAPIAgentRepo)))
+	mux.Handle("GET /api/snapshots", d.guard("GET /api/snapshots", http.HandlerFunc(d.handleAPISnapshots)))
+	mux.Handle("GET /api/stats", d.guard("GET /api/stats", http.HandlerFunc(d.handleAPIStats)))
+	mux.Handle("GET /api/repos", d.guard("GET /api/repos", http.HandlerFunc(d.handleAPIRepos)))
+	mux.Handle("GET /api/repos/growth", d.guard("GET /api/repos/growth", http.HandlerFunc(d.handleAPIReposGrowthBatch)))
+	mux.Handle("POST /api/repos", d.guard("POST /api/repos", http.HandlerFunc(d.handleAPICreateRepo)))
+	mux.Handle("GET /api/repos/{name}", d.guard("GET /api/repos/{name}", http.HandlerFunc(d.handleAPIRepo)))
+	mux.Handle("GET /api/repos/{name}/health", d.guard("GET /api/repos/{name}/health", http.HandlerFunc(d.handleAPIRepoHealth)))
+	mux.Handle("DELETE /api/repos/{name}", d.guard("DELETE /api/repos/{name}", http.HandlerFunc(d.handleAPIDeleteRepo)))
+	mux.Handle("GET /api/disk-space", d.guard("GET /api/disk-space", http.HandlerFunc(d.handleAPIDiskSpace)))
+	mux.Handle("POST /api/repos/test-s3", d.guard("POST /api/repos/test-s3", http.HandlerFunc(d.handleAPITestS3)))
+	mux.Handle("POST /api/repos/detect", d.guard("POST /api/repos/detect", http.HandlerFunc(d.handleAPIDetectRepo)))
+	mux.Handle("POST /api/repos/validate-path", d.guard("POST /api/repos/validate-path", http.HandlerFunc(d.handleAPIValidatePath)))
+	mux.Handle("POST /api/repos/detect-s3", d.guard("POST /api/repos/detect-s3", http.HandlerFunc(d.handleAPIDetectS3)))
+	mux.Handle("GET /api/repos/{name}/snapshots", d.guard("GET /api/repos/{name}/snapshots", http.HandlerFunc(d.handleAPIRepoSnapshots)))
+	mux.Handle("GET /api/repos/{name}/growth", d.guard("GET /api/repos/{name}/growth", http.HandlerFunc(d.handleAPIGrowth)))
+	mux.Handle("POST /api/repos/{name}/check", d.guard("POST /api/repos/{name}/check", http.HandlerFunc(d.handleAPICheck)))
+	mux.Handle("POST /api/repos/{name}/prune", d.guard("POST /api/repos/{name}/prune", http.HandlerFunc(d.handleAPIPrune)))
+	mux.Handle("POST /api/repos/{name}/forget", d.guard("POST /api/repos/{name}/forget", http.HandlerFunc(d.handleAPIForget)))
+	mux.Handle("GET /api/repos/{name}/sessions", d.guard("GET /api/repos/{name}/sessions", http.HandlerFunc(d.handleAPISessions)))
+	mux.Handle("GET /api/operations/{id}/events", d.guard("GET /api/operations/{id}/events", http.HandlerFunc(d.handleAPIOperationEvents)))
+	mux.Handle("GET /api/active-backups", d.guard("GET /api/active-backups", http.HandlerFunc(d.handleAPIActiveBackups)))
+	mux.Handle("GET /api/backup-progress/events", d.guard("GET /api/backup-progress/events", http.HandlerFunc(d.handleAPIBackupProgressEvents)))
 
 	// Backup jobs API.
-	mux.Handle("GET /api/backups", d.protect(http.HandlerFunc(d.handleAPIBackupJobs)))
-	mux.Handle("POST /api/backups", d.protect(http.HandlerFunc(d.handleAPICreateBackupJob)))
-	mux.Handle("GET /api/backups/{id}", d.protect(http.HandlerFunc(d.handleAPIGetBackupJob)))
-	mux.Handle("PUT /api/backups/{id}", d.protect(http.HandlerFunc(d.handleAPIUpdateBackupJob)))
-	mux.Handle("DELETE /api/backups/{id}", d.protect(http.HandlerFunc(d.handleAPIDeleteBackupJob)))
-	mux.Handle("POST /api/backups/{id}/run", d.protect(http.HandlerFunc(d.handleAPIRunBackupJob)))
-	mux.Handle("POST /api/backups/{id}/cancel", d.protect(http.HandlerFunc(d.handleAPICancelBackupJob)))
-	mux.Handle("GET /api/backups/{id}/chains", d.protect(http.HandlerFunc(d.handleAPIBackupJobChains)))
-	mux.Handle("GET /api/backups/validate-cron", d.protect(http.HandlerFunc(d.handleAPIValidateCron)))
-	mux.Handle("GET /api/timezones", d.protect(http.HandlerFunc(d.handleAPITimezones)))
+	mux.Handle("GET /api/backups", d.guard("GET /api/backups", http.HandlerFunc(d.handleAPIBackupJobs)))
+	mux.Handle("POST /api/backups", d.guard("POST /api/backups", http.HandlerFunc(d.handleAPICreateBackupJob)))
+	mux.Handle("GET /api/backups/{id}", d.guard("GET /api/backups/{id}", http.HandlerFunc(d.handleAPIGetBackupJob)))
+	mux.Handle("PUT /api/backups/{id}", d.guard("PUT /api/backups/{id}", http.HandlerFunc(d.handleAPIUpdateBackupJob)))
+	mux.Handle("DELETE /api/backups/{id}", d.guard("DELETE /api/backups/{id}", http.HandlerFunc(d.handleAPIDeleteBackupJob)))
+	mux.Handle("POST /api/backups/{id}/run", d.guard("POST /api/backups/{id}/run", http.HandlerFunc(d.handleAPIRunBackupJob)))
+	mux.Handle("POST /api/backups/{id}/cancel", d.guard("POST /api/backups/{id}/cancel", http.HandlerFunc(d.handleAPICancelBackupJob)))
+	mux.Handle("GET /api/backups/{id}/chains", d.guard("GET /api/backups/{id}/chains", http.HandlerFunc(d.handleAPIBackupJobChains)))
+	mux.Handle("GET /api/backups/validate-cron", d.guard("GET /api/backups/validate-cron", http.HandlerFunc(d.handleAPIValidateCron)))
+	mux.Handle("GET /api/timezones", d.guard("GET /api/timezones", http.HandlerFunc(d.handleAPITimezones)))
 
 	// Restore API.
-	mux.Handle("POST /api/snapshots/{id}/restore", d.protect(http.HandlerFunc(d.handleAPIStartRestore)))
-	mux.Handle("GET /api/snapshots/{id}/tree", d.protect(http.HandlerFunc(d.handleAPISnapshotTree)))
-	mux.Handle("GET /api/restore/{id}/events", d.protect(http.HandlerFunc(d.handleAPIRestoreEvents)))
-	mux.Handle("GET /api/restores", d.protect(http.HandlerFunc(d.handleAPIRestores)))
-	mux.Handle("GET /api/restores/sources", d.protect(http.HandlerFunc(d.handleAPIRestoreSources)))
-	mux.Handle("GET /api/disaster/plans", d.protect(http.HandlerFunc(d.handleAPIDisasterPlans)))
-	mux.Handle("GET /api/disaster/plans/{agent}", d.protect(http.HandlerFunc(d.handleAPIDisasterPlan)))
-	mux.Handle("POST /api/disaster/recover", d.protect(http.HandlerFunc(d.handleAPIDisasterRecover)))
-	mux.Handle("GET /api/disaster/recoveries", d.protect(http.HandlerFunc(d.handleAPIDisasterRecoveries)))
-	mux.Handle("GET /api/disaster/recoveries/{id}", d.protect(http.HandlerFunc(d.handleAPIDisasterRecovery)))
+	mux.Handle("POST /api/snapshots/{id}/restore", d.guard("POST /api/snapshots/{id}/restore", http.HandlerFunc(d.handleAPIStartRestore)))
+	mux.Handle("GET /api/snapshots/{id}/tree", d.guard("GET /api/snapshots/{id}/tree", http.HandlerFunc(d.handleAPISnapshotTree)))
+	mux.Handle("GET /api/restore/{id}/events", d.guard("GET /api/restore/{id}/events", http.HandlerFunc(d.handleAPIRestoreEvents)))
+	mux.Handle("GET /api/restores", d.guard("GET /api/restores", http.HandlerFunc(d.handleAPIRestores)))
+	mux.Handle("GET /api/restores/sources", d.guard("GET /api/restores/sources", http.HandlerFunc(d.handleAPIRestoreSources)))
+	mux.Handle("GET /api/disaster/plans", d.guard("GET /api/disaster/plans", http.HandlerFunc(d.handleAPIDisasterPlans)))
+	mux.Handle("GET /api/disaster/plans/{agent}", d.guard("GET /api/disaster/plans/{agent}", http.HandlerFunc(d.handleAPIDisasterPlan)))
+	mux.Handle("POST /api/disaster/recover", d.guard("POST /api/disaster/recover", http.HandlerFunc(d.handleAPIDisasterRecover)))
+	mux.Handle("GET /api/disaster/recoveries", d.guard("GET /api/disaster/recoveries", http.HandlerFunc(d.handleAPIDisasterRecoveries)))
+	mux.Handle("GET /api/disaster/recoveries/{id}", d.guard("GET /api/disaster/recoveries/{id}", http.HandlerFunc(d.handleAPIDisasterRecovery)))
 
 	// Bare-metal recovery: media readiness, build, download.
-	mux.Handle("GET /api/bmr/hosts", d.protect(http.HandlerFunc(d.handleAPIBMRHosts)))
-	mux.Handle("POST /api/bmr/media/{agent}/build", d.protect(http.HandlerFunc(d.handleAPIBMRBuild)))
-	mux.Handle("GET /api/bmr/media/{agent}/download", d.protect(http.HandlerFunc(d.handleAPIBMRDownload)))
-	mux.Handle("DELETE /api/bmr/media/{agent}", d.protect(http.HandlerFunc(d.handleAPIBMRDeleteMedia)))
-	mux.Handle("POST /api/bmr/prepare/{agent}", d.protect(http.HandlerFunc(d.handleAPIBMRPrepare)))
-	mux.Handle("GET /api/bmr/tokens", d.protect(http.HandlerFunc(d.handleAPIBMRTokens)))
-	mux.Handle("DELETE /api/bmr/tokens/{id}", d.protect(http.HandlerFunc(d.handleAPIBMRRevokeToken)))
+	mux.Handle("GET /api/bmr/hosts", d.guard("GET /api/bmr/hosts", http.HandlerFunc(d.handleAPIBMRHosts)))
+	mux.Handle("POST /api/bmr/media/{agent}/build", d.guard("POST /api/bmr/media/{agent}/build", http.HandlerFunc(d.handleAPIBMRBuild)))
+	mux.Handle("GET /api/bmr/media/{agent}/download", d.guard("GET /api/bmr/media/{agent}/download", http.HandlerFunc(d.handleAPIBMRDownload)))
+	mux.Handle("DELETE /api/bmr/media/{agent}", d.guard("DELETE /api/bmr/media/{agent}", http.HandlerFunc(d.handleAPIBMRDeleteMedia)))
+	mux.Handle("POST /api/bmr/prepare/{agent}", d.guard("POST /api/bmr/prepare/{agent}", http.HandlerFunc(d.handleAPIBMRPrepare)))
+	mux.Handle("GET /api/bmr/tokens", d.guard("GET /api/bmr/tokens", http.HandlerFunc(d.handleAPIBMRTokens)))
+	mux.Handle("DELETE /api/bmr/tokens/{id}", d.guard("DELETE /api/bmr/tokens/{id}", http.HandlerFunc(d.handleAPIBMRRevokeToken)))
 
-	mux.Handle("GET /logs", d.protect(http.HandlerFunc(d.handleLogsPage)))
-	mux.Handle("GET /settings", d.protect(http.HandlerFunc(d.handleSettingsPage)))
+	mux.Handle("GET /logs", d.guard("GET /logs", http.HandlerFunc(d.handleLogsPage)))
+	mux.Handle("GET /settings", d.guard("GET /settings", http.HandlerFunc(d.handleSettingsPage)))
 
 	// Settings API.
-	mux.Handle("GET /api/settings", d.protect(http.HandlerFunc(d.handleAPISettings)))
-	mux.Handle("PUT /api/settings/general", d.protect(http.HandlerFunc(d.handleAPISettingsGeneral)))
-	mux.Handle("PUT /api/settings/security", d.protect(http.HandlerFunc(d.handleAPISettingsSecurity)))
-	mux.Handle("PUT /api/settings/network", d.protect(http.HandlerFunc(d.handleAPISettingsNetwork)))
-	mux.Handle("PUT /api/settings/notifications", d.protect(http.HandlerFunc(d.handleAPISettingsNotifications)))
-	mux.Handle("PUT /api/settings/integrations", d.protect(http.HandlerFunc(d.handleAPISettingsIntegrations)))
-	mux.Handle("POST /api/settings/integrations/import-env", d.protect(http.HandlerFunc(d.handleAPISettingsImportEnv)))
-	mux.Handle("GET /api/settings/tls/status", d.protect(http.HandlerFunc(d.handleAPITLSStatus)))
-	mux.Handle("POST /api/settings/tls/upload", d.protect(http.HandlerFunc(d.handleAPITLSUpload)))
-	mux.Handle("POST /api/settings/test/gemini", d.protect(http.HandlerFunc(d.handleAPISettingsTestGemini)))
-	mux.Handle("POST /api/settings/test/webhook", d.protect(http.HandlerFunc(d.handleAPISettingsTestWebhook)))
+	mux.Handle("GET /api/settings", d.guard("GET /api/settings", http.HandlerFunc(d.handleAPISettings)))
+	mux.Handle("PUT /api/settings/general", d.guard("PUT /api/settings/general", http.HandlerFunc(d.handleAPISettingsGeneral)))
+	mux.Handle("PUT /api/settings/security", d.guard("PUT /api/settings/security", http.HandlerFunc(d.handleAPISettingsSecurity)))
+	mux.Handle("PUT /api/settings/network", d.guard("PUT /api/settings/network", http.HandlerFunc(d.handleAPISettingsNetwork)))
+	mux.Handle("PUT /api/settings/notifications", d.guard("PUT /api/settings/notifications", http.HandlerFunc(d.handleAPISettingsNotifications)))
+	mux.Handle("PUT /api/settings/integrations", d.guard("PUT /api/settings/integrations", http.HandlerFunc(d.handleAPISettingsIntegrations)))
+	mux.Handle("POST /api/settings/integrations/import-env", d.guard("POST /api/settings/integrations/import-env", http.HandlerFunc(d.handleAPISettingsImportEnv)))
+	mux.Handle("GET /api/settings/tls/status", d.guard("GET /api/settings/tls/status", http.HandlerFunc(d.handleAPITLSStatus)))
+	mux.Handle("POST /api/settings/tls/upload", d.guard("POST /api/settings/tls/upload", http.HandlerFunc(d.handleAPITLSUpload)))
+	mux.Handle("POST /api/settings/test/gemini", d.guard("POST /api/settings/test/gemini", http.HandlerFunc(d.handleAPISettingsTestGemini)))
+	mux.Handle("POST /api/settings/test/webhook", d.guard("POST /api/settings/test/webhook", http.HandlerFunc(d.handleAPISettingsTestWebhook)))
 
 	// Agent discovery API.
-	mux.Handle("GET /api/discover/subnets", d.protect(http.HandlerFunc(d.handleAPIDiscoverSubnets)))
-	mux.Handle("POST /api/discover/scan", d.protect(http.HandlerFunc(d.handleAPIDiscoverScan)))
-	mux.Handle("POST /api/discover/probe", d.protect(http.HandlerFunc(d.handleAPIDiscoverProbe)))
+	mux.Handle("GET /api/discover/subnets", d.guard("GET /api/discover/subnets", http.HandlerFunc(d.handleAPIDiscoverSubnets)))
+	mux.Handle("POST /api/discover/scan", d.guard("POST /api/discover/scan", http.HandlerFunc(d.handleAPIDiscoverScan)))
+	mux.Handle("POST /api/discover/probe", d.guard("POST /api/discover/probe", http.HandlerFunc(d.handleAPIDiscoverProbe)))
 
 	// Agent management API.
-	mux.Handle("POST /api/agents", d.protect(http.HandlerFunc(d.handleAPIAddAgent)))
-	mux.Handle("POST /api/agents/{name}/browse", d.protect(http.HandlerFunc(d.handleAPIAgentBrowse)))
-	mux.Handle("POST /api/agents/{name}/configure", d.protect(http.HandlerFunc(d.handleAPIAgentConfigure)))
-	mux.Handle("GET /api/agents/{name}/info", d.protect(http.HandlerFunc(d.handleAPIAgentInfo)))
-	mux.Handle("GET /api/agents/{name}/plugins/{plugin}/browse", d.protect(http.HandlerFunc(d.handleAPIWorkloadBrowse)))
-	mux.Handle("GET /api/agents/{name}/plugins/{plugin}/object-config", d.protect(http.HandlerFunc(d.handleAPIGetObjectConfig)))
-	mux.Handle("PUT /api/agents/{name}/plugins/{plugin}/object-config", d.protect(http.HandlerFunc(d.handleAPISetObjectConfig)))
-	mux.Handle("GET /api/workload/points", d.protect(http.HandlerFunc(d.handleAPIWorkloadPoints)))
-	mux.Handle("GET /api/workload/catalog", d.protect(http.HandlerFunc(d.handleAPIWorkloadCatalog)))
-	mux.Handle("POST /api/workload/restore-plan", d.protect(http.HandlerFunc(d.handleAPIWorkloadRestorePlan)))
-	mux.Handle("GET /api/plugin-packages", d.protect(http.HandlerFunc(d.handleAPIPluginPackages)))
-	mux.Handle("POST /api/plugin-packages", d.protect(http.HandlerFunc(d.handleAPIUploadPluginPackage)))
-	mux.Handle("DELETE /api/plugin-packages/{file}", d.protect(http.HandlerFunc(d.handleAPIDeletePluginPackage)))
-	mux.Handle("POST /api/agents/{name}/plugins", d.protect(http.HandlerFunc(d.handleAPIInstallAgentPlugin)))
-	mux.Handle("DELETE /api/agents/{name}/plugins/{id}", d.protect(http.HandlerFunc(d.handleAPIRemoveAgentPlugin)))
-	mux.Handle("POST /api/workload/restores", d.protect(http.HandlerFunc(d.handleAPIStartWorkloadRestore)))
-	mux.Handle("GET /api/workload/restores/{id}", d.protect(http.HandlerFunc(d.handleAPIGetWorkloadRestore)))
-	mux.Handle("DELETE /api/agents/{name}", d.protect(http.HandlerFunc(d.handleAPIRemoveAgent)))
-	mux.Handle("POST /api/agents/{name}/suspend", d.protect(http.HandlerFunc(d.handleAPIAgentSuspend)))
-	mux.Handle("POST /api/agents/{name}/unsuspend", d.protect(http.HandlerFunc(d.handleAPIAgentUnsuspend)))
+	mux.Handle("POST /api/agents", d.guard("POST /api/agents", http.HandlerFunc(d.handleAPIAddAgent)))
+	mux.Handle("POST /api/agents/{name}/browse", d.guard("POST /api/agents/{name}/browse", http.HandlerFunc(d.handleAPIAgentBrowse)))
+	mux.Handle("POST /api/agents/{name}/configure", d.guard("POST /api/agents/{name}/configure", http.HandlerFunc(d.handleAPIAgentConfigure)))
+	mux.Handle("GET /api/agents/{name}/info", d.guard("GET /api/agents/{name}/info", http.HandlerFunc(d.handleAPIAgentInfo)))
+	mux.Handle("GET /api/agents/{name}/plugins/{plugin}/browse", d.guard("GET /api/agents/{name}/plugins/{plugin}/browse", http.HandlerFunc(d.handleAPIWorkloadBrowse)))
+	mux.Handle("GET /api/agents/{name}/plugins/{plugin}/object-config", d.guard("GET /api/agents/{name}/plugins/{plugin}/object-config", http.HandlerFunc(d.handleAPIGetObjectConfig)))
+	mux.Handle("PUT /api/agents/{name}/plugins/{plugin}/object-config", d.guard("PUT /api/agents/{name}/plugins/{plugin}/object-config", http.HandlerFunc(d.handleAPISetObjectConfig)))
+	mux.Handle("GET /api/workload/points", d.guard("GET /api/workload/points", http.HandlerFunc(d.handleAPIWorkloadPoints)))
+	mux.Handle("GET /api/workload/catalog", d.guard("GET /api/workload/catalog", http.HandlerFunc(d.handleAPIWorkloadCatalog)))
+	mux.Handle("POST /api/workload/restore-plan", d.guard("POST /api/workload/restore-plan", http.HandlerFunc(d.handleAPIWorkloadRestorePlan)))
+	mux.Handle("GET /api/plugin-packages", d.guard("GET /api/plugin-packages", http.HandlerFunc(d.handleAPIPluginPackages)))
+	mux.Handle("POST /api/plugin-packages", d.guard("POST /api/plugin-packages", http.HandlerFunc(d.handleAPIUploadPluginPackage)))
+	mux.Handle("DELETE /api/plugin-packages/{file}", d.guard("DELETE /api/plugin-packages/{file}", http.HandlerFunc(d.handleAPIDeletePluginPackage)))
+	mux.Handle("POST /api/agents/{name}/plugins", d.guard("POST /api/agents/{name}/plugins", http.HandlerFunc(d.handleAPIInstallAgentPlugin)))
+	mux.Handle("DELETE /api/agents/{name}/plugins/{id}", d.guard("DELETE /api/agents/{name}/plugins/{id}", http.HandlerFunc(d.handleAPIRemoveAgentPlugin)))
+	mux.Handle("POST /api/workload/restores", d.guard("POST /api/workload/restores", http.HandlerFunc(d.handleAPIStartWorkloadRestore)))
+	mux.Handle("GET /api/workload/restores/{id}", d.guard("GET /api/workload/restores/{id}", http.HandlerFunc(d.handleAPIGetWorkloadRestore)))
+	mux.Handle("DELETE /api/agents/{name}", d.guard("DELETE /api/agents/{name}", http.HandlerFunc(d.handleAPIRemoveAgent)))
+	mux.Handle("POST /api/agents/{name}/suspend", d.guard("POST /api/agents/{name}/suspend", http.HandlerFunc(d.handleAPIAgentSuspend)))
+	mux.Handle("POST /api/agents/{name}/unsuspend", d.guard("POST /api/agents/{name}/unsuspend", http.HandlerFunc(d.handleAPIAgentUnsuspend)))
 
-	mux.Handle("GET /api/logs", d.protect(http.HandlerFunc(d.handleAPILogs)))
-	mux.Handle("GET /api/logs/export", d.protect(http.HandlerFunc(d.handleAPILogsExport)))
-	mux.Handle("GET /api/alerts", d.protect(http.HandlerFunc(d.handleAPIGetAlerts)))
-	mux.Handle("POST /api/alerts/{id}/resolve", d.protect(http.HandlerFunc(d.handleAPIResolveAlert)))
+	mux.Handle("GET /api/logs", d.guard("GET /api/logs", http.HandlerFunc(d.handleAPILogs)))
+	mux.Handle("GET /api/logs/export", d.guard("GET /api/logs/export", http.HandlerFunc(d.handleAPILogsExport)))
+	mux.Handle("GET /api/alerts", d.guard("GET /api/alerts", http.HandlerFunc(d.handleAPIGetAlerts)))
+	mux.Handle("POST /api/alerts/{id}/resolve", d.guard("POST /api/alerts/{id}/resolve", http.HandlerFunc(d.handleAPIResolveAlert)))
 
 	return crossOriginProtect(mux)
 }
@@ -396,6 +434,11 @@ func (d *Dashboard) render(w http.ResponseWriter, r *http.Request, page string, 
 	w.Header().Set("Content-Language", d.language(r))
 	w.Header().Add("Vary", "Cookie, Accept-Language")
 
+	if pd, ok := data.(pageData); ok {
+		pd.Nav = navFor(r)
+		pd.HasAuth = pd.HasAuth || pd.Nav.User != ""
+		data = pd
+	}
 	// Login uses its own template name; pages use "layout".
 	tmplName := "layout"
 	if page == "login" {

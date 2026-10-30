@@ -31,40 +31,68 @@
     <div class="app-body">
         <nav class="sidebar" aria-label="{{t "Main navigation"}}">
             <div class="nav-section">{{t "Monitoring"}}</div>
+            {{if .Nav.All}}
             <a href="/" class="nav-item {{if eq .Active "overview"}}active{{end}}">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
                 <span>{{t "Overview"}}</span>
             </a>
+            {{end}}
             <a href="/backups" class="nav-item {{if eq .Active "backups"}}active{{end}}">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                 <span>{{t "Backups"}}</span>
             </a>
+            {{if .Nav.Restore}}
             <a href="/restores" class="nav-item {{if eq .Active "restores"}}active{{end}}">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
                 <span>{{t "Restores"}}</span>
             </a>
+            {{end}}
+            {{if .Nav.All}}
             <a href="/disaster" class="nav-item {{if eq .Active "disaster"}}active{{end}}">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
                 <span>{{t "Disaster Recovery"}}</span>
             </a>
+            {{end}}
             <a href="/agents" class="nav-item {{if eq .Active "agents"}}active{{end}}">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
                 <span>{{t "Agents"}}</span>
             </a>
+            {{if .Nav.All}}
             <a href="/storage" class="nav-item {{if or (eq .Active "storage") (eq .Active "storage_detail")}}active{{end}}">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
                 <span>{{t "Storage"}}</span>
             </a>
+            {{end}}
             <div class="nav-section">{{t "System"}}</div>
+            {{if .Nav.All}}
             <a href="/logs" class="nav-item {{if eq .Active "logs"}}active{{end}}">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
                 <span>{{t "View Logs"}}</span>
             </a>
+            {{end}}
+            {{if .Nav.Admin}}
             <a href="/settings" class="nav-item {{if eq .Active "settings"}}active{{end}}">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
                 <span>{{t "Settings"}}</span>
             </a>
+            {{end}}
+            {{if and .Nav.Admin .Nav.User}}
+            <a href="/users" class="nav-item {{if eq .Active "users"}}active{{end}}">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+                <span>{{t "Users"}}</span>
+            </a>
+            <a href="/audit" class="nav-item {{if eq .Active "audit"}}active{{end}}">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+                <span>{{t "Audit log"}}</span>
+            </a>
+            {{end}}
             <div class="nav-section">{{t "Account"}}</div>
+            {{if .Nav.User}}
+            <a href="/account" class="nav-item {{if eq .Active "account"}}active{{end}}">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                <span>{{.Nav.User}}</span>
+            </a>
+            {{end}}
             {{if .HasAuth}}
             <form method="POST" action="/logout" class="nav-logout">
                 <button type="submit" class="nav-item">
@@ -93,6 +121,7 @@
     <script src="/static/htmx.min.js"></script>
     <script src="/static/chart.min.js"></script>
     <script src="/static/app.js"></script>
+    <script src="/static/accounts.js"></script>
 </body>
 </html>
 {{end}}

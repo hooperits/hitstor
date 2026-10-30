@@ -1,0 +1,29 @@
+{{define "content"}}
+<div class="audit-page">
+    {{if .Content.Err}}<div class="alert-banner" role="alert">{{t "The audit log could not be read:"}} {{.Content.Err}}</div>{{end}}
+    {{if .Content.BrokenAt}}<div class="alert-banner" role="alert">{{tf "The audit log was altered: the chain breaks at line {line}." "line" .Content.BrokenAt}}</div>
+    {{else if not .Content.Err}}<p class="audit-intact">{{t "Chain intact: no entry has been changed or removed."}}</p>{{end}}
+    <section class="acct-section acct-section--wide">
+        <div class="table-wrap">
+            <table class="audit-table">
+                <thead><tr><th>{{t "Time"}}</th><th>{{t "User"}}</th><th>{{t "Address"}}</th><th>{{t "Action"}}</th><th>{{t "Target"}}</th><th>{{t "Result"}}</th><th>{{t "Detail"}}</th></tr></thead>
+                <tbody>
+                {{range .Content.Events}}
+                <tr>
+                    <td class="nowrap">{{timeFormat .Time.Local}}</td>
+                    <td>{{.User}}</td>
+                    <td>{{.IP}}</td>
+                    <td><code>{{.Action}}</code></td>
+                    <td>{{.Target}}</td>
+                    <td>{{if .OK}}<span class="badge badge-ok">{{t "ok"}}</span>{{else}}<span class="badge badge-stale">{{t "denied"}}</span>{{end}}</td>
+                    <td>{{.Detail}}</td>
+                </tr>
+                {{else}}
+                <tr><td colspan="7" class="text-muted">{{t "No events yet."}}</td></tr>
+                {{end}}
+                </tbody>
+            </table>
+        </div>
+    </section>
+</div>
+{{end}}

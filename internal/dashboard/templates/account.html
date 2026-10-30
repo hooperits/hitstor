@@ -1,0 +1,53 @@
+{{define "content"}}
+{{$u := .Content.User}}
+<div id="account-app" class="account-page">
+    <section class="acct-section">
+        <h2 class="section-title">{{t "Profile"}}</h2>
+        <dl class="account-facts">
+            <dt>{{t "User name"}}</dt><dd>{{$u.Username}}</dd>
+            {{if $u.DisplayName}}<dt>{{t "Full name"}}</dt><dd>{{$u.DisplayName}}</dd>{{end}}
+            <dt>{{t "Roles"}}</dt>
+            <dd>{{range $u.Grants}}<div><span class="role-chip role-chip--{{.Role}}">{{template "role_name" .Role}}</span>
+                <span class="role-scope">{{if or (eq .Role "admin") (not .Agents)}}{{t "all agents"}}{{else}}{{range $i, $a := .Agents}}{{if $i}}, {{end}}{{$a}}{{end}}{{end}}</span></div>{{end}}</dd>
+            <dt>{{t "Password changed"}}</dt><dd>{{timeFormat $u.PasswordSince.Local}}</dd>
+        </dl>
+    </section>
+
+    <section class="acct-section">
+        <h2 class="section-title">{{t "Change password"}}</h2>
+        <form id="account-password" class="settings-form" autocomplete="on">
+            <div class="form-group"><label for="ap-current">{{t "Current password"}}</label>
+                <input id="ap-current" name="current" type="password" autocomplete="current-password" required></div>
+            <div class="form-group"><label for="ap-new">{{t "New password"}}</label>
+                <input id="ap-new" name="password" type="password" autocomplete="new-password" minlength="12" maxlength="128" required>
+                <p class="form-hint">{{t "At least 12 characters. A phrase of several words is easy to remember and hard to guess."}}</p></div>
+            <div class="form-group"><label for="ap-confirm">{{t "Repeat the new password"}}</label>
+                <input id="ap-confirm" name="confirm" type="password" autocomplete="new-password" required></div>
+            <button type="submit" class="btn">{{t "Change password"}}</button>
+            <span id="account-password-status" class="form-status" role="status"></span>
+        </form>
+    </section>
+
+    <section class="acct-section">
+        <h2 class="section-title">{{t "Two-step verification"}}</h2>
+        <p>{{t "Signing in asks for a code from your authenticator app."}}
+            {{tf "You have {n} unused recovery codes." "n" $u.RecoveryLeft}}</p>
+        <div class="account-actions">
+            <button type="button" id="account-codes" class="btn btn-secondary">{{t "New recovery codes"}}</button>
+            <a href="/login/enroll" class="btn btn-secondary">{{t "Move to a new phone"}}</a>
+        </div>
+    </section>
+
+    <section class="acct-section acct-section--wide">
+        <h2 class="section-title">{{t "Signed-in sessions"}}</h2>
+        <div class="table-wrap">
+            <table>
+                <thead><tr><th>{{t "Signed in"}}</th><th>{{t "Last activity"}}</th><th>{{t "Address"}}</th><th>{{t "Browser"}}</th><th></th></tr></thead>
+                <tbody id="account-sessions"></tbody>
+            </table>
+        </div>
+    </section>
+</div>
+{{end}}
+
+{{define "role_name"}}{{if eq . "admin"}}{{t "Administrator"}}{{else if eq . "backup_operator"}}{{t "Backup operator"}}{{else if eq . "restore_operator"}}{{t "Restore operator"}}{{else if eq . "viewer"}}{{t "Viewer"}}{{else}}{{.}}{{end}}{{end}}

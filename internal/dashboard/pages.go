@@ -9,6 +9,7 @@ import (
 	"github.com/hooperits/hitstor/internal/i18n"
 	"github.com/hooperits/hitstor/internal/repository"
 	"github.com/hooperits/hitstor/internal/server"
+	"github.com/hooperits/hitstor/internal/users"
 )
 
 type pageData struct {
@@ -24,6 +25,24 @@ type pageData struct {
 	UpdateAvailable bool
 	LatestVersion   string
 	UpdateURL       string
+	Nav             navAccess // what the signed-in user may open
+}
+
+// navAccess decides which sections the layout shows. Without accounts,
+// everything.
+type navAccess struct {
+	User    string // signed-in user name, "" without accounts
+	All     bool   // reads that span agents: overview, storage, logs
+	Restore bool
+	Admin   bool
+}
+
+func navFor(r *http.Request) navAccess {
+	u := currentUser(r)
+	if u == nil {
+		return navAccess{All: true, Restore: true, Admin: true}
+	}
+	return navAccess{User: u.Username, All: u.CanAll(users.PermView), Restore: u.Can(users.PermRestore, ""), Admin: u.CanAll(users.PermAdmin)}
 }
 
 func (d *Dashboard) newPageData(title, subtitle, active string, content any) pageData {
@@ -258,6 +277,11 @@ func formatJobSource(c *i18n.Catalog, job server.BackupJob) string {
 }
 
 func (d *Dashboard) handleOverview(w http.ResponseWriter, r *http.Request) {
+	// The overview spans every agent: users limited to some start at their jobs.
+	if !can(r, users.PermView, "") {
+		http.Redirect(w, r, "/backups", http.StatusSeeOther)
+		return
+	}
 	agents := d.registry.ListAgents()
 	var snapIDs []repository.ID
 	if d.repo != nil {
@@ -371,7 +395,7 @@ func buildAgentView(a server.AgentRecord, jobCount int, now time.Time) agentView
 }
 
 func (d *Dashboard) handleAgents(w http.ResponseWriter, r *http.Request) {
-	agents := d.registry.ListAgents()
+	agents := d.visibleAgents(r)
 	now := time.Now()
 
 	jobCounts := make(map[string]int)
@@ -469,7 +493,7 @@ func (d *Dashboard) handleAgentDetail(w http.ResponseWriter, r *http.Request) {
 }
 
 func (d *Dashboard) handleBackups(w http.ResponseWriter, r *http.Request) {
-	jobs := d.registry.ListJobs()
+	jobs := d.visibleJobs(r)
 	now := time.Now()
 
 	// Build map of active sessions by JobID.

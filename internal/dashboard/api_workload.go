@@ -15,6 +15,7 @@ import (
 
 	pb "github.com/hooperits/hitstor/internal/proto/hitstor/v1"
 	"github.com/hooperits/hitstor/internal/server"
+	"github.com/hooperits/hitstor/internal/users"
 )
 
 // workloadAgent resolves the agent and plugin named in the request path and
@@ -210,6 +211,9 @@ func (d *Dashboard) handleAPIStartWorkloadRestore(w http.ResponseWriter, r *http
 	if req.SourceAgent == "" {
 		req.SourceAgent = req.AgentName
 	}
+	if !d.requireAgent(w, r, users.PermRestore, req.SourceAgent) || !d.requireAgent(w, r, users.PermRestore, req.AgentName) {
+		return
+	}
 	agentRec := d.registry.GetAgent(req.AgentName)
 	if agentRec == nil {
 		http.Error(w, "agent not found", http.StatusNotFound)
@@ -303,6 +307,9 @@ func (d *Dashboard) handleAPIWorkloadRestorePlan(w http.ResponseWriter, r *http.
 	}
 	if req.SourceAgent == "" {
 		req.SourceAgent = req.AgentName
+	}
+	if !d.requireAgent(w, r, users.PermRestore, req.SourceAgent) || !d.requireAgent(w, r, users.PermRestore, req.AgentName) {
+		return
 	}
 	agentRec := d.registry.GetAgent(req.AgentName)
 	if agentRec == nil {

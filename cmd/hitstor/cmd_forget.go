@@ -8,6 +8,7 @@ import (
 	"github.com/hooperits/hitstor/internal/repository"
 	"github.com/hooperits/hitstor/internal/retention"
 	"github.com/hooperits/hitstor/internal/ui"
+	"github.com/hooperits/hitstor/internal/workloadcat"
 	"github.com/spf13/cobra"
 )
 
@@ -116,7 +117,7 @@ func runForgetPolicy(repo *repository.Repository, policy retention.Policy, progr
 			Time:     snap.Time,
 			Hostname: snap.Hostname,
 			Paths:    snap.Paths,
-			Tags:     snap.Tags,
+			Tags:     workloadcat.Default.ObjectTags(repo, id, snap),
 		})
 	}
 

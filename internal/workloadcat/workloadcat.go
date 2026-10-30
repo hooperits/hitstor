@@ -232,3 +232,43 @@ func collect(repo *repository.Repository, snapHex string, t *tree, out *[]Item) 
 	}
 	return nil
 }
+
+// ObjectTags returns snap's tags, with an "obj:<object>" tag for each
+// object a workload snapshot holds when it lacks them (snapshots taken before
+// servers tagged them), read from its contents, so retention keeps each
+// object's chain on its own. A snapshot that cannot be read keeps its tags:
+// retention then treats it as possibly holding any object.
+func (c *Catalog) ObjectTags(repo *repository.Repository, id repository.ID, snap *repository.Snapshot) []string {
+	pluginID := ""
+	for _, t := range snap.Tags {
+		if strings.HasPrefix(t, "obj:") || t == "objects:none" {
+			return snap.Tags
+		}
+		if v, ok := strings.CutPrefix(t, "plugin:"); ok {
+			pluginID = v
+		}
+	}
+	if pluginID == "" {
+		return snap.Tags
+	}
+	items, err := c.SnapshotItems(repo, id, snap, pluginID)
+	if err != nil {
+		return snap.Tags
+	}
+	tags := append([]string{}, snap.Tags...)
+	seen := map[string]bool{}
+	for _, it := range items {
+		obj := it.Object()
+		if obj == "." {
+			return snap.Tags // an item outside any object: it may hold anything
+		}
+		if !seen[obj] {
+			seen[obj] = true
+			tags = append(tags, "obj:"+obj)
+		}
+	}
+	if len(items) == 0 {
+		tags = append(tags, "objects:none")
+	}
+	return tags
+}

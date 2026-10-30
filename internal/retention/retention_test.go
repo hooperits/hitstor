@@ -454,11 +454,10 @@ func TestApply_ProtectsChainsPerObject(t *testing.T) {
 		t.Fatalf("forgotten = %s, want 3,5", got)
 	}
 
-	// Keeping a's differential keeps a's full and, for b, its state then
-	// (log #4 and its full #2); not the copy-only, nor anything newer.
+	// Keeping differentials keeps a's and its full; b and c have none.
 	r, _ = Apply(snapshots, Policy{KeepTags: []string{"kind:differential"}}, "sql01", "")
-	if got := forgottenIDs(r); got != "3,6,7" {
-		t.Fatalf("forgotten = %s, want 3,6,7", got)
+	if got := forgottenIDs(r); got != "2,3,4,6,7" {
+		t.Fatalf("forgotten = %s, want 2,3,4,6,7", got)
 	}
 }
 
@@ -519,17 +518,17 @@ func TestApply_CopyOnlyFullsAndLegacyBases(t *testing.T) {
 		t.Fatalf("copy-only fulls: forgotten = %s, want 1,2,3,4", got)
 	}
 
-	// Before the upgrade jobs A and B took untagged fulls of a and b. The
-	// first tagged differential of a builds on A's full #1: B's newer
-	// untagged full #2 must not stop the walk there.
+	// A snapshot without object tags may hold any object, so the first such
+	// full ends a walk, as before tags. forget tags such snapshots from their
+	// contents, so this only applies when that cannot be read.
 	legacy := []SnapshotInfo{
 		snap(1, h(0), "sql01", nil, []string{"plugin:mssql", "kind:full", "job:A"}),
 		snap(2, h(1), "sql01", nil, []string{"plugin:mssql", "kind:full", "job:B"}),
 		snap(3, h(2), "sql01", nil, []string{"plugin:mssql", "kind:differential", "obj:I/a", "job:A"}),
 	}
 	r, _ = Apply(legacy, Policy{KeepLast: 1}, "sql01", "")
-	if got := forgottenIDs(r); got != "2" {
-		t.Fatalf("legacy bases: forgotten = %s, want 2", got)
+	if got := forgottenIDs(r); got != "1" {
+		t.Fatalf("legacy bases: forgotten = %s, want 1", got)
 	}
 
 	// Tagged logs taken after the upgrade but before the job's first tagged
@@ -548,28 +547,71 @@ func TestApply_CopyOnlyFullsAndLegacyBases(t *testing.T) {
 	}
 }
 
-func TestApply_DroppedDatabaseIsNotKeptForever(t *testing.T) {
+func TestApply_PolicyAppliesPerDatabase(t *testing.T) {
 	base := time.Date(2026, 3, 1, 0, 0, 0, 0, time.UTC)
 	h := func(n int) time.Time { return base.Add(time.Duration(n) * time.Hour) }
 	tags := func(kind string, objs ...string) []string {
-		t := []string{"plugin:mssql", "kind:" + kind, "job:J"}
+		t := []string{"plugin:mssql", "kind:" + kind}
 		for _, o := range objs {
 			t = append(t, "obj:"+o)
 		}
 		return t
 	}
-	// X was dropped after day 1: later fulls and logs hold only A.
+	// X was dropped after day 1, or its backups fail since: later runs hold
+	// only A. Each database keeps its own last backup and that backup's
+	// chain; nothing else of the old days.
 	snapshots := []SnapshotInfo{
 		snap(1, h(0), "sql01", nil, tags("full", "I/A", "I/X")),
 		snap(2, h(1), "sql01", nil, tags("log", "I/A", "I/X")),
 		snap(3, h(24), "sql01", nil, tags("full", "I/A")),
 		snap(4, h(25), "sql01", nil, tags("log", "I/A")),
+		snap(5, h(48), "sql01", nil, tags("full", "I/A")),
+		snap(6, h(49), "sql01", nil, tags("log", "I/A")),
 	}
 	r, err := Apply(snapshots, Policy{KeepLast: 1}, "sql01", "")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got := forgottenIDs(r); got != "1,2" {
-		t.Fatalf("forgotten = %s, want 1,2", got)
+	if got := forgottenIDs(r); got != "3,4" {
+		t.Fatalf("forgotten = %s, want 3,4", got)
+	}
+}
+
+func TestApply_SeparateJobsAndPartialFulls(t *testing.T) {
+	base := time.Date(2026, 3, 1, 0, 0, 0, 0, time.UTC)
+	h := func(n int) time.Time { return base.Add(time.Duration(n) * time.Hour) }
+	tags := func(job, kind string, objs ...string) []string {
+		t := []string{"plugin:mssql", "kind:" + kind, "job:" + job}
+		for _, o := range objs {
+			t = append(t, "obj:"+o)
+		}
+		return t
+	}
+	// Fulls, differentials and logs from three jobs; X (SIMPLE) takes no
+	// logs. The newest snapshots are logs, yet X keeps its differential.
+	jobs := []SnapshotInfo{
+		snap(1, h(0), "sql01", nil, tags("F", "full", "I/A", "I/X")),
+		snap(2, h(24), "sql01", nil, tags("D", "differential", "I/A", "I/X")),
+		snap(3, h(25), "sql01", nil, tags("L", "log", "I/A")),
+		snap(4, h(26), "sql01", nil, tags("L", "log", "I/A")),
+	}
+	r, err := Apply(jobs, Policy{KeepLast: 1}, "sql01", "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := forgottenIDs(r); got != "" {
+		t.Fatalf("separate jobs: forgotten = %s, want none (X's differential and full, A's logs and full)", got)
+	}
+
+	// X's latest full failed (partial run): X keeps its earlier backups.
+	partial := []SnapshotInfo{
+		snap(1, h(0), "sql01", nil, tags("J", "full", "I/A", "I/X")),
+		snap(2, h(24), "sql01", nil, tags("J", "differential", "I/A", "I/X")),
+		snap(3, h(48), "sql01", nil, tags("J", "full", "I/A")),
+		snap(4, h(49), "sql01", nil, tags("J", "log", "I/A")),
+	}
+	r, _ = Apply(partial, Policy{KeepLast: 1}, "sql01", "")
+	if got := forgottenIDs(r); got != "" {
+		t.Fatalf("partial full: forgotten = %s, want none", got)
 	}
 }

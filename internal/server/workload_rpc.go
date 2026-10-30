@@ -78,7 +78,8 @@ func (s *Server) knownWorkloadItems(job BackupJob) ([]workloadcat.Item, error) {
 	for _, repo := range repos {
 		ids, err := repo.ListSnapshots()
 		if err != nil {
-			return nil, err
+			slog.Warn("workload catalog: cannot list snapshots", "error", err)
+			continue
 		}
 		workloadcat.Default.Retain(repo, ids)
 		for _, id := range ids {

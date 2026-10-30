@@ -18,6 +18,7 @@ import (
 	"github.com/hooperits/hitstor/internal/plugin"
 	"github.com/hooperits/hitstor/internal/restorer"
 	"github.com/hooperits/hitstor/internal/server"
+	"github.com/hooperits/hitstor/internal/workloadcat"
 )
 
 // fakeSource plays a plugin: it hands each item to the handler in order.
@@ -324,7 +325,7 @@ func TestWorkloadBackupPluginFailuresKeepFinishedItems(t *testing.T) {
 }
 
 func TestWorkloadBackupOlderServerGetsNoResults(t *testing.T) {
-	client, _, registry, cleanup := testSetup(t)
+	client, repo, registry, cleanup := testSetup(t)
 	defer cleanup()
 	apiKey, _ := registry.AddAgent("db-agent")
 	src := &fakeSource{items: []fakeItem{{path: "inst/a/full.bak", data: []byte("a")}}}
@@ -336,12 +337,16 @@ func TestWorkloadBackupOlderServerGetsNoResults(t *testing.T) {
 		t.Fatal("a server that cannot record per-object results must not get partial runs")
 	}
 
-	// A plugin failure after some items fails the run, as before: an older
-	// server would show a partial run as a plain success.
+	// A plugin failure after some items keeps them (their logs are already
+	// truncated) and still fails the run: an older server would show a
+	// partial run as a plain success.
 	src = &fakeSource{items: []fakeItem{{path: "inst/a/log.trn", data: []byte("a")}}, err: errors.New("inst/b: login failed")}
 	b = &WorkloadBackup{Client: client, APIKey: apiKey, PluginID: "fakedb", Source: src}
-	if _, err := b.Run(context.Background()); err == nil || !strings.Contains(err.Error(), "login failed") {
+	if _, err := b.Run(context.Background()); err == nil || !strings.Contains(err.Error(), "login failed") || !strings.Contains(err.Error(), "kept") {
 		t.Fatalf("older server, failure part way: %v", err)
+	}
+	if ids, _ := repo.ListSnapshots(); len(ids) != 2 {
+		t.Fatalf("snapshots = %d, want 2 (the finished item was kept)", len(ids))
 	}
 }
 
@@ -362,5 +367,33 @@ func TestAbortWatchTellsPluginFailures(t *testing.T) {
 		if aw.failed != tt.failed {
 			t.Errorf("%v: failed = %v", tt.err, aw.failed)
 		}
+	}
+}
+
+func TestWorkloadObjectTagsFromContents(t *testing.T) {
+	client, repo, registry, cleanup := testSetup(t)
+	defer cleanup()
+	apiKey, _ := registry.AddAgent("db-agent")
+	src := &fakeSource{items: []fakeItem{
+		{path: "inst/a/full.bak", data: []byte("a")},
+		{path: "inst/b/full.bak", data: []byte("b")},
+	}}
+	b := &WorkloadBackup{Client: client, APIKey: apiKey, PluginID: "fakedb", Source: src, ServerRecordsResults: true}
+	if _, err := b.Run(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	ids, _ := repo.ListSnapshots()
+	snap, _ := repo.LoadSnapshot(ids[0])
+	// As a snapshot from before servers tagged objects.
+	var legacy []string
+	for _, tag := range snap.Tags {
+		if !strings.HasPrefix(tag, "obj:") {
+			legacy = append(legacy, tag)
+		}
+	}
+	snap.Tags = legacy
+	got := workloadcat.Default.ObjectTags(repo, ids[0], snap)
+	if !slices.Contains(got, "obj:inst/a") || !slices.Contains(got, "obj:inst/b") {
+		t.Fatalf("tags = %v", got)
 	}
 }

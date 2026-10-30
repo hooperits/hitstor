@@ -227,7 +227,9 @@ func readChainState(ctx context.Context, db *sql.DB, database string) (chainStat
 	// Backup dates in msdb are server local time; convert to UTC as
 	// readBackupSet does. Matching the database GUID keeps a database
 	// recreated or restored under the same name from inheriting another's
-	// history. A full starts the log chain at its first or
+	// history; matching the name in a binary collation keeps a rename that
+	// only changes case from inheriting it either (retention keeps chains by
+	// exact name). A full starts the log chain at its first or
 	// checkpoint LSN; a log backup ends it at its last LSN.
 	const q = `
 SELECT d.state_desc, d.recovery_model_desc, ISNULL(CONVERT(varchar(40), r.database_guid), ''),
@@ -242,20 +244,20 @@ JOIN sys.master_files f ON f.database_id = d.database_id AND f.file_id = 1
 OUTER APPLY (
   SELECT TOP (1) mf.physical_device_name, bs.backup_finish_date, bs.user_name
   FROM msdb.dbo.backupset bs JOIN msdb.dbo.backupmediafamily mf ON mf.media_set_id = bs.media_set_id
-  WHERE bs.database_name = d.name AND bs.database_guid = r.database_guid AND bs.type = 'D' AND bs.is_copy_only = 0
+  WHERE bs.database_name = d.name COLLATE Latin1_General_BIN2 AND bs.database_guid = r.database_guid AND bs.type = 'D' AND bs.is_copy_only = 0
     AND bs.checkpoint_lsn = f.differential_base_lsn
   ORDER BY bs.backup_set_id DESC) b
 OUTER APPLY (
   SELECT TOP (1) bs.type, mf.physical_device_name, bs.backup_finish_date, bs.user_name
   FROM msdb.dbo.backupset bs JOIN msdb.dbo.backupmediafamily mf ON mf.media_set_id = bs.media_set_id
-  WHERE bs.database_name = d.name AND bs.database_guid = r.database_guid AND bs.is_copy_only = 0 AND (
+  WHERE bs.database_name = d.name COLLATE Latin1_General_BIN2 AND bs.database_guid = r.database_guid AND bs.is_copy_only = 0 AND (
     (bs.type = 'L' AND bs.last_lsn = r.last_log_backup_lsn) OR
     (bs.type = 'D' AND (bs.checkpoint_lsn = r.last_log_backup_lsn OR bs.first_lsn = r.last_log_backup_lsn)))
   ORDER BY bs.backup_set_id DESC) c
 OUTER APPLY (
   SELECT TOP (1) bs.type, mf.physical_device_name, bs.backup_finish_date, bs.user_name
   FROM msdb.dbo.backupset bs JOIN msdb.dbo.backupmediafamily mf ON mf.media_set_id = bs.media_set_id
-  WHERE bs.database_name = d.name AND bs.database_guid = r.database_guid AND bs.is_copy_only = 0
+  WHERE bs.database_name = d.name COLLATE Latin1_General_BIN2 AND bs.database_guid = r.database_guid AND bs.is_copy_only = 0
     AND bs.type = 'D' AND bs.last_lsn > r.last_log_backup_lsn AND mf.physical_device_name LIKE 'HitStor[_]%'
   ORDER BY bs.backup_set_id DESC) g
 WHERE d.name = @p1`

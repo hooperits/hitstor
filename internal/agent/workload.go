@@ -217,10 +217,16 @@ func (b *WorkloadBackup) Run(ctx context.Context) (*BackupResult, error) {
 	if storeErr != nil {
 		return nil, &WorkloadRunError{Err: fmt.Errorf("store backup: %w", storeErr), Results: results}
 	}
+	// failAfter is a plugin failure to report once the finished items are
+	// stored: a server that does not record partial runs would show one as
+	// a plain success.
+	var failAfter error
 	if err != nil {
-		// An older server would record a partial run as a plain success.
-		if errors.Is(err, ErrSessionCancelled) || len(items) == 0 || !b.ServerRecordsResults {
+		if errors.Is(err, ErrSessionCancelled) || len(items) == 0 {
 			return nil, &WorkloadRunError{Err: fmt.Errorf("plugin backup: %w", err), Results: results}
+		}
+		if !b.ServerRecordsResults {
+			failAfter = &WorkloadRunError{Err: fmt.Errorf("plugin backup failed after %d item(s), which were kept: %w", len(items), err), Results: results}
 		}
 		// The database already counts the finished items as backed up
 		// (a log backup truncates the log): keep them, and report the rest.
@@ -266,6 +272,9 @@ func (b *WorkloadBackup) Run(ctx context.Context) (*BackupResult, error) {
 	finalResp, err := b.Client.FinalizeWorkload(ctx, sessionID, nodes, results)
 	if err != nil {
 		return nil, fmt.Errorf("finalize backup: %w", err)
+	}
+	if failAfter != nil {
+		return nil, failAfter
 	}
 	return &BackupResult{
 		SnapshotID:     finalResp.SnapshotId,

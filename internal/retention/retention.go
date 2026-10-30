@@ -72,37 +72,20 @@ func Apply(snapshots []SnapshotInfo, policy Policy, filterHost string, filterPat
 	})
 
 	// Track which snapshots are kept (by index in inScope).
-	keep := make(map[int]bool)
+	keep := applyPolicy(inScope, policy)
 
-	// Apply keep-tag: unconditionally keep snapshots matching any tag.
-	if len(policy.KeepTags) > 0 {
-		tagSet := make(map[string]bool, len(policy.KeepTags))
-		for _, t := range policy.KeepTags {
-			tagSet[t] = true
+	// Workload snapshots hold several objects (databases): the policy also
+	// applies to each object's own backups, so every database keeps its last
+	// N backups, its dailies and so on, whatever the others did.
+	for _, idx := range objectGroups(inScope) {
+		list := make([]SnapshotInfo, len(idx))
+		for n, i := range idx {
+			list[n] = inScope[i]
 		}
-		for i, s := range inScope {
-			for _, t := range s.Tags {
-				if tagSet[t] {
-					keep[i] = true
-					break
-				}
-			}
+		for n := range applyPolicy(list, policy) {
+			keep[idx[n]] = true
 		}
 	}
-
-	// Apply keep-last.
-	if policy.KeepLast > 0 {
-		for i := 0; i < len(inScope) && i < policy.KeepLast; i++ {
-			keep[i] = true
-		}
-	}
-
-	// Apply time-bucket rules.
-	applyTimeBucket(inScope, keep, policy.KeepHourly, bucketHourly)
-	applyTimeBucket(inScope, keep, policy.KeepDaily, bucketDaily)
-	applyTimeBucket(inScope, keep, policy.KeepWeekly, bucketWeekly)
-	applyTimeBucket(inScope, keep, policy.KeepMonthly, bucketMonthly)
-	applyTimeBucket(inScope, keep, policy.KeepYearly, bucketYearly)
 
 	protectChains(inScope, keep)
 
@@ -121,6 +104,60 @@ func Apply(snapshots []SnapshotInfo, policy Policy, filterHost string, filterPat
 	}
 
 	return result, nil
+}
+
+// applyPolicy returns the indices of the snapshots (sorted newest-first)
+// the policy's rules keep.
+func applyPolicy(snapshots []SnapshotInfo, policy Policy) map[int]bool {
+	keep := make(map[int]bool)
+
+	// Apply keep-tag: unconditionally keep snapshots matching any tag.
+	if len(policy.KeepTags) > 0 {
+		tagSet := make(map[string]bool, len(policy.KeepTags))
+		for _, t := range policy.KeepTags {
+			tagSet[t] = true
+		}
+		for i, s := range snapshots {
+			for _, t := range s.Tags {
+				if tagSet[t] {
+					keep[i] = true
+					break
+				}
+			}
+		}
+	}
+
+	// Apply keep-last.
+	if policy.KeepLast > 0 {
+		for i := 0; i < len(snapshots) && i < policy.KeepLast; i++ {
+			keep[i] = true
+		}
+	}
+
+	// Apply time-bucket rules.
+	applyTimeBucket(snapshots, keep, policy.KeepHourly, bucketHourly)
+	applyTimeBucket(snapshots, keep, policy.KeepDaily, bucketDaily)
+	applyTimeBucket(snapshots, keep, policy.KeepWeekly, bucketWeekly)
+	applyTimeBucket(snapshots, keep, policy.KeepMonthly, bucketMonthly)
+	applyTimeBucket(snapshots, keep, policy.KeepYearly, bucketYearly)
+	return keep
+}
+
+// objectGroups returns, per host, plugin and object, the indices (newest
+// first) of the workload snapshots that hold the object (obj:<object>).
+func objectGroups(inScope []SnapshotInfo) map[string][]int {
+	groups := make(map[string][]int)
+	for i, s := range inScope {
+		p := tagValue(s.Tags, "plugin:")
+		if p == "" {
+			continue
+		}
+		for _, obj := range taggedObjects(s) {
+			key := s.Hostname + "|" + p + "|" + obj
+			groups[key] = append(groups[key], i)
+		}
+	}
+	return groups
 }
 
 // matchesFilter returns true if the snapshot matches the host and path filters.
@@ -191,69 +228,23 @@ func bucketYearly(t time.Time) string {
 
 // protectChains keeps the backups that kept workload backups depend on.
 //
-// Workload snapshots carry "plugin:<id>" and "kind:<kind>" tags, and newer
-// ones an "obj:<object>" tag per object they hold (a database, say), or
-// "objects:none" when every object was left out. Snapshots without object
-// tags (older ones) may hold any object of their host and plugin.
+// Workload snapshots carry "plugin:<id>" and "kind:<kind>" tags, an
+// "obj:<object>" tag per object they hold (a database, say), or
+// "objects:none" when every object was left out. A snapshot without object
+// tags may hold any object of its host and plugin (callers that can should
+// add the tags from the snapshot's contents, as forget does).
 //
-// Two rules:
-//
-//   - A snapshot the policy keeps also keeps, for every object its job
-//     ("job:<id>" tag) backed up since the job's latest full at or before
-//     it, the newest snapshot holding that object: what restores the object
-//     as of that point. Without this, keeping only the newest log backups
-//     would forget the differentials of databases that take no log backups
-//     (SIMPLE recovery). Only the policy's own choices count, or every kept
-//     snapshot would keep an older one; and only the current full cycle, so
-//     that a database dropped from the job is not kept forever.
-//   - A kept differential or log backup of an object keeps the earlier
-//     backups of that object its kind needs (see chainNeeds), back to its
-//     base: a full that is not copy-only ("copy-only" tag). A kept full,
-//     copy-only or not, restores on its own. This rule runs until nothing
-//     changes, since kept backups may hold other objects.
-//
-// inScope is sorted newest first.
+// A kept differential or log backup of an object keeps the earlier backups
+// of that object its kind needs (see chainNeeds), back to its base: a full
+// that is not copy-only ("copy-only" tag). A kept full, copy-only or not,
+// restores on its own. Kept backups may hold other objects, whose chains
+// are kept in turn, until nothing changes. inScope is sorted newest first.
 func protectChains(inScope []SnapshotInfo, keep map[int]bool) {
 	groups := make(map[string][]int) // host|plugin -> indices, newest first
 	for i, s := range inScope {
 		if p := tagValue(s.Tags, "plugin:"); p != "" {
 			key := s.Hostname + "|" + p
 			groups[key] = append(groups[key], i)
-		}
-	}
-	mark := func(i int, changed *bool) {
-		if !keep[i] {
-			keep[i] = true
-			*changed = true
-		}
-	}
-	for _, idx := range groups {
-		var unused bool
-		var heads []int // positions the policy kept, before this rule adds any
-		for pos, i := range idx {
-			if keep[i] {
-				heads = append(heads, pos)
-			}
-		}
-		for _, pos := range heads {
-			i := idx[pos]
-			job := tagValue(inScope[i].Tags, "job:")
-			found := map[string]bool{}
-			for _, older := range idx[pos:] {
-				o := inScope[older]
-				if tagValue(o.Tags, "job:") != job {
-					continue
-				}
-				for _, obj := range taggedObjects(o) {
-					if !found[obj] {
-						found[obj] = true
-						mark(older, &unused)
-					}
-				}
-				if isChainBase(o) {
-					break // the job's latest full: the cycle starts here
-				}
-			}
 		}
 	}
 	for changed := true; changed; {
@@ -267,16 +258,18 @@ func protectChains(inScope []SnapshotInfo, keep map[int]bool) {
 				if kind == "full" {
 					continue
 				}
-				job := tagValue(inScope[i].Tags, "job:")
 				for _, obj := range objectsOf(inScope[i]) {
 					for _, older := range idx[pos+1:] {
 						o := inScope[older]
 						// A snapshot that does not say what it holds keeps
 						// everything back to its base, as before object tags.
-						if !holdsObjectOf(o, obj, job) || (obj != "" && !chainNeeds(kind, o)) {
+						if !holdsObject(o, obj) || (obj != "" && !chainNeeds(kind, o)) {
 							continue
 						}
-						mark(older, &changed)
+						if !keep[older] {
+							keep[older] = true
+							changed = true
+						}
 						if isChainBase(o) {
 							break
 						}
@@ -330,22 +323,14 @@ func objectsOf(s SnapshotInfo) []string {
 	return []string{""}
 }
 
-// holdsObjectOf reports whether s may hold obj of job ("" matches every
-// snapshot that may hold objects). A snapshot without object tags (from
-// before them) holds what its job backed up: another job's older full
-// does not end an object's chain.
-func holdsObjectOf(s SnapshotInfo, obj, job string) bool {
+// holdsObject reports whether s may hold obj ("" matches every snapshot
+// that may hold objects; a snapshot without object tags may hold any).
+func holdsObject(s SnapshotInfo, obj string) bool {
 	objs := objectsOf(s)
-	switch {
-	case len(objs) == 0:
+	if len(objs) == 0 {
 		return false
-	case obj == "":
-		return true
-	case objs[0] == "":
-		other := tagValue(s.Tags, "job:")
-		return job == "" || other == "" || other == job
 	}
-	return hasTag(s.Tags, "obj:"+obj)
+	return obj == "" || objs[0] == "" || hasTag(s.Tags, "obj:"+obj)
 }
 
 func hasTag(tags []string, tag string) bool {

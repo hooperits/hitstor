@@ -135,6 +135,7 @@ var routePolicies = map[string]routePolicy{
 	"POST /api/disaster/recover":             {perms: admin, stepUp: true},
 	"POST /api/bmr/prepare/{agent}":          {perms: admin, stepUp: true},
 	"PUT /api/settings/security":             {perms: admin, stepUp: true},
+	"PUT /api/settings/email":                {perms: admin, stepUp: true}, // where reset links go
 	"POST /api/settings/tls/upload":          {perms: admin, stepUp: true},
 	"POST /api/plugin-packages":              {perms: admin, stepUp: true},
 	"POST /api/agents/{name}/plugins":        {perms: admin, stepUp: true},

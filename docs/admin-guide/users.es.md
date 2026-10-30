@@ -34,7 +34,47 @@ Si un usuario pierde el teléfono y los códigos de recuperación, un administra
 - No hay reglas de composición ni vencimiento periódico, como recomienda NIST SP 800-63B; cambie la contraseña cuando haya un motivo.
 - Las contraseñas se guardan como hashes argon2id.
 
-Los administradores nunca eligen la contraseña de un usuario. Crear un usuario o restablecer una contraseña entrega una **contraseña temporal**: entréguela en persona o por otro canal. Sirve una sola vez: en el siguiente inicio de sesión el usuario elige su propia contraseña y, si es nuevo, configura el autenticador.
+Los administradores nunca eligen la contraseña de un usuario. Con el [correo](#email) configurado, un usuario nuevo recibe un enlace de invitación y elige su contraseña él mismo. Sin correo, crear un usuario o restablecer una contraseña entrega una **contraseña temporal**: entréguela en persona o por otro canal. Sirve una sola vez: en el siguiente inicio de sesión el usuario elige su propia contraseña y, si es nuevo, configura el autenticador.
+
+## Correo { #email }
+
+Con un servidor de correo saliente configurado en **Configuración → Correo**, el dashboard envía dos tipos de correo:
+
+- **Invitación.** Crear un usuario con dirección de correo le envía un enlace para elegir su contraseña; sirve una sola vez y vence a las 72 horas. Nadie, ni siquiera el administrador, ve nunca una contraseña temporal. Si el correo no se puede enviar, el dashboard dice por qué y muestra una contraseña temporal en su lugar.
+- **Restablecimiento de contraseña.** **¿Olvidó su contraseña?** en la página de inicio de sesión pide el nombre de usuario o la dirección de correo y envía un enlace para elegir una nueva contraseña, válido durante una hora. La página responde igual exista o no la cuenta. Un administrador también puede enviar el enlace (o una nueva invitación, a un usuario que nunca inició sesión) desde la página del usuario con **Contraseña → Restablecer**.
+
+Perder un enlace en un buzón no es grave: cada uno sirve una sola vez, un enlace más nuevo reemplaza a los anteriores, y cambiar la contraseña, cambiar la dirección de correo o deshabilitar la cuenta los anula. Un usuario que configuró la verificación en dos pasos también debe escribir un código del autenticador (o un código de recuperación) para elegir una nueva contraseña, así que leer su correo no basta para apoderarse de la cuenta. No se puede pedir otro enlace de restablecimiento para la misma cuenta antes de dos minutos, y las solicitudes desde una misma dirección tienen un límite.
+
+La dirección de **Dirección del panel en los enlaces** encabeza todos los enlaces; el dashboard nunca la toma de la solicitud, así que un encabezado `Host` falsificado no puede desviar los enlaces. Use el nombre con el que se llega al dashboard, por ejemplo `https://backup.example.com:8421`.
+
+La dirección de cada usuario la fija un administrador, en la página del usuario o con `hitstor serve user add --email`; el usuario la ve en **Mi cuenta**. Dos usuarios no pueden compartir una dirección.
+
+**Enviar prueba** envía un correo con la configuración del formulario, antes o después de guardarla, y muestra la respuesta del servidor cuando lo rechaza.
+
+### Un relay interno { #email-relay }
+
+Un relay en la red local que acepta correo de equipos conocidos no necesita credenciales. Elija **Partir de: Relay interno**, escriba el nombre o la dirección del relay y la dirección del remitente, y autorice en el relay la dirección del servidor de HitStor. La seguridad de conexión **Ninguna** envía sin cifrar: úsela solo en una red de confianza. Use **STARTTLS** si el relay lo ofrece; con un certificado autofirmado, marque **Aceptar cualquier certificado del servidor**.
+
+### Microsoft 365 (Exchange Online) { #email-microsoft-365 }
+
+Exchange Online ya no acepta contraseñas para SMTP, así que HitStor inicia sesión como una aplicación registrada con OAuth 2.0 (credenciales de cliente) y envía como un buzón. Un buzón compartido es un buen remitente: no necesita licencia ni tiene contraseña propia.
+
+1. En el centro de administración de Microsoft Entra, en **Registros de aplicaciones → Nuevo registro**, registre una aplicación solo para su organización. Anote su **Id. de aplicación (cliente)** y su **Id. de directorio (inquilino)**.
+2. En **Permisos de API → Agregar un permiso → API que usa mi organización → Office 365 Exchange Online → Permisos de aplicación**, agregue `SMTP.SendAsApp` y luego **Conceder consentimiento de administrador**.
+3. En **Certificados y secretos**, cree un secreto de cliente y copie su valor (se muestra una sola vez). Anote cuándo vence y renuévelo antes.
+4. En Exchange Online PowerShell, registre la entidad de servicio de la aplicación y permítale usar el buzón remitente. El id. de objeto es el de la aplicación en **Aplicaciones empresariales**, no en Registros de aplicaciones:
+
+    ```powershell
+    Connect-ExchangeOnline
+    New-ServicePrincipal -AppId <client-id> -ObjectId <enterprise-app-object-id> -DisplayName "HitStor"
+    Add-MailboxPermission -Identity hitstor@example.com -User <enterprise-app-object-id> -AccessRights FullAccess
+    # Solo si SMTP AUTH está desactivado para la organización o el buzón:
+    Set-CASMailbox -Identity hitstor@example.com -SmtpClientAuthenticationDisabled $false
+    ```
+
+5. En HitStor, elija **Partir de: Microsoft 365** (`smtp.office365.com`, puerto 587, STARTTLS), escriba el id. de inquilino, el id. de cliente y el secreto, el buzón como dirección del remitente, y envíe una prueba.
+
+El servidor necesita llegar a `login.microsoftonline.com:443` (para el token) y a `smtp.office365.com:587`. Un error que empieza por `AADSTS` viene de Microsoft Entra (inquilino, id. de cliente o secreto incorrectos, o un secreto vencido); `535 5.7.3` significa que Exchange rechazó la aplicación para ese buzón (paso 4).
 
 ## Sesiones y bloqueo { #sessions }
 
@@ -67,7 +107,7 @@ El último administrador activo no puede eliminarse, desactivarse ni perder el r
 
 ```bash
 # Crear un administrador; imprime una contraseña temporal
-hitstor serve user add maria --grant admin --display-name "Maria Perez"
+hitstor serve user add maria --grant admin --display-name "Maria Perez" --email maria@example.com
 
 # Un operador de respaldos de dos agentes que además puede consultar todo
 hitstor serve user add ops1 --grant backup_operator=web01,db01 --grant viewer

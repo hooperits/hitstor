@@ -63,6 +63,7 @@ type User struct {
 	ID          string  `json:"id"`
 	Username    string  `json:"username"` // lowercase, unique
 	DisplayName string  `json:"display_name,omitempty"`
+	Email       string  `json:"email,omitempty"` // lowercase, unique; where account emails go
 	Grants      []Grant `json:"grants"`
 	Disabled    bool    `json:"disabled,omitempty"`
 

@@ -280,7 +280,7 @@ func clearSessionCookie(w http.ResponseWriter) {
 // loginPage is the data of the sign-in pages (login.html): the step shown
 // and what it needs.
 type loginPage struct {
-	Mode     string // login, code, enroll, recovery-codes, setup, change-password, open
+	Mode     string // login, code, enroll, recovery-codes, setup, change-password, forgot, reset, link-invalid, open
 	Error    string
 	Username string
 	QR       string // data: URL of the TOTP QR code
@@ -288,9 +288,18 @@ type loginPage struct {
 	Codes    []string
 	Warning  string
 	Notice   string
+
+	// Emailed links (reset): the token, what it is for, and whether the
+	// account must also give a second-factor code.
+	Token    string
+	Purpose  string
+	NeedCode bool
+	// EmailEnabled offers "Forgot your password?".
+	EmailEnabled bool
 }
 
 func (d *Dashboard) renderLogin(w http.ResponseWriter, r *http.Request, p loginPage) {
+	p.EmailEnabled = d.emailConfigured()
 	d.render(w, r, "login", p)
 }
 
@@ -306,6 +315,9 @@ func (d *Dashboard) handleLoginPage(w http.ResponseWriter, r *http.Request) {
 		page := loginPage{Mode: "login"}
 		if r.URL.Query().Get("expired") != "" {
 			page.Notice = d.catalog(r).T("Your session ended. Sign in again to continue.")
+		}
+		if r.URL.Query().Get("changed") != "" {
+			page.Notice = d.catalog(r).T("Your password was changed. Sign in with the new one.")
 		}
 		d.renderLogin(w, r, page)
 	}
@@ -529,7 +541,7 @@ func (d *Dashboard) handleSetupSubmit(w http.ResponseWriter, r *http.Request) {
 		d.renderLogin(w, r, page)
 		return
 	}
-	u, err := d.users.Add(r.FormValue("username"), "", r.FormValue("password"), []users.Grant{{Role: users.RoleAdmin}}, false)
+	u, err := d.users.Add(r.FormValue("username"), "", "", r.FormValue("password"), []users.Grant{{Role: users.RoleAdmin}}, false)
 	if err != nil {
 		page.Error = d.userMessage(r, err)
 		d.renderLogin(w, r, page)

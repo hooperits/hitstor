@@ -3,6 +3,7 @@ package dashboard
 import (
 	"encoding/json"
 	"errors"
+	"io"
 	"net/http"
 	"strconv"
 	"strings"
@@ -16,6 +17,7 @@ import (
 type userJSON struct {
 	Username      string        `json:"username"`
 	DisplayName   string        `json:"display_name,omitempty"`
+	Email         string        `json:"email,omitempty"`
 	Grants        []users.Grant `json:"grants"`
 	Disabled      bool          `json:"disabled"`
 	TOTPEnabled   bool          `json:"totp_enabled"`
@@ -28,7 +30,7 @@ type userJSON struct {
 }
 
 func toUserJSON(u users.User) userJSON {
-	return userJSON{Username: u.Username, DisplayName: u.DisplayName, Grants: u.Grants, Disabled: u.Disabled,
+	return userJSON{Username: u.Username, DisplayName: u.DisplayName, Email: u.Email, Grants: u.Grants, Disabled: u.Disabled,
 		TOTPEnabled: u.TOTPEnabled, RecoveryLeft: len(u.RecoveryCodes), Locked: u.Locked(time.Now()),
 		MustChange: u.MustChangePassword, CreatedAt: u.CreatedAt, LastLoginAt: u.LastLoginAt, PasswordSince: u.PasswordChangedAt}
 }
@@ -91,6 +93,12 @@ func (d *Dashboard) userMessage(r *http.Request, err error) string {
 		return c.T("Wrong code.")
 	case errors.Is(err, users.ErrLocked):
 		return c.T("Too many failed attempts: the account is locked for a few minutes.")
+	case errors.Is(err, users.ErrBadEmail):
+		return c.T("That email address is not valid.")
+	case errors.Is(err, users.ErrEmailTaken):
+		return c.T("Another user has that email address.")
+	case errors.Is(err, users.ErrTooSoon):
+		return c.T("A link was sent moments ago: wait a couple of minutes before sending another.")
 	}
 	return err.Error()
 }
@@ -100,7 +108,7 @@ func (d *Dashboard) userError(w http.ResponseWriter, r *http.Request, err error)
 	switch {
 	case errors.Is(err, users.ErrNoUser):
 		status = http.StatusNotFound
-	case errors.Is(err, users.ErrUserExists), errors.Is(err, users.ErrLastAdmin):
+	case errors.Is(err, users.ErrUserExists), errors.Is(err, users.ErrLastAdmin), errors.Is(err, users.ErrEmailTaken):
 		status = http.StatusConflict
 	case errors.Is(err, users.ErrBadCredentials), errors.Is(err, users.ErrBadCode), errors.Is(err, users.ErrLocked):
 		status = http.StatusForbidden
@@ -368,8 +376,9 @@ func (d *Dashboard) handleUsersPage(w http.ResponseWriter, r *http.Request) {
 		agentNames = append(agentNames, a.Name)
 	}
 	data := d.newPageData("Users and access", "Who can sign in, and what they can do on each agent", "users", map[string]any{
-		"Agents": agentNames,
-		"Roles":  users.Roles,
+		"Agents":       agentNames,
+		"Roles":        users.Roles,
+		"EmailEnabled": d.emailConfigured(),
 	})
 	d.render(w, r, "users", data)
 }
@@ -393,10 +402,11 @@ func (d *Dashboard) handleUserPage(w http.ResponseWriter, r *http.Request) {
 		title = u.Username
 	}
 	data := d.newPageData(title, "", "user", map[string]any{
-		"User":   toUserJSON(u),
-		"Agents": agentNames,
-		"Roles":  users.Roles,
-		"Self":   currentUser(r) != nil && currentUser(r).Username == u.Username,
+		"User":         toUserJSON(u),
+		"Agents":       agentNames,
+		"Roles":        users.Roles,
+		"Self":         currentUser(r) != nil && currentUser(r).Username == u.Username,
+		"EmailEnabled": d.emailConfigured(),
 	})
 	data.TitleRaw = true
 	data.Crumbs = []crumb{{URL: "/users", Label: "Users and access"}}
@@ -426,8 +436,11 @@ func (d *Dashboard) handleAPIUsers(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, out)
 }
 
-// temporaryPassword is shown once to the administrator, who passes it on;
-// the user must change it at first sign-in.
+// handleAPIAddUser creates an account. With email set up and an address,
+// the user gets an invitation link to choose their own password, and the
+// temporary password is never shown. Otherwise (or if the email fails) the
+// administrator sees it once and passes it on; the user must change it at
+// first sign-in.
 func (d *Dashboard) handleAPIAddUser(w http.ResponseWriter, r *http.Request) {
 	if !d.usersReady(w) {
 		return
@@ -435,6 +448,7 @@ func (d *Dashboard) handleAPIAddUser(w http.ResponseWriter, r *http.Request) {
 	var req struct {
 		Username    string        `json:"username"`
 		DisplayName string        `json:"display_name"`
+		Email       string        `json:"email"`
 		Grants      []users.Grant `json:"grants"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -442,15 +456,27 @@ func (d *Dashboard) handleAPIAddUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	pw := users.TemporaryPassword()
-	u, err := d.users.Add(req.Username, req.DisplayName, pw, req.Grants, true)
+	u, err := d.users.Add(req.Username, req.DisplayName, req.Email, pw, req.Grants, true)
 	if err != nil {
 		d.auditEvent(r, "", "user.add", req.Username, false, err.Error())
 		d.userError(w, r, err)
 		return
 	}
 	d.auditEvent(r, "", "user.add", u.Username, true, grantsText(u.Grants))
+	resp := map[string]any{"user": toUserJSON(u)}
+	if u.Email != "" && d.emailConfigured() {
+		err := d.sendAccountLink(r, u.Username, users.TicketInvite)
+		if err == nil {
+			resp["invited"] = true
+			w.WriteHeader(http.StatusCreated)
+			writeJSON(w, resp)
+			return
+		}
+		resp["email_error"] = err.Error()
+	}
+	resp["temporary_password"] = pw
 	w.WriteHeader(http.StatusCreated)
-	writeJSON(w, map[string]any{"user": toUserJSON(u), "temporary_password": pw})
+	writeJSON(w, resp)
 }
 
 func grantsText(gs []users.Grant) string {
@@ -474,6 +500,7 @@ func (d *Dashboard) handleAPIUpdateUser(w http.ResponseWriter, r *http.Request) 
 		Grants      []users.Grant `json:"grants"`
 		Disabled    *bool         `json:"disabled"`
 		DisplayName *string       `json:"display_name"`
+		Email       *string       `json:"email"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "invalid JSON", http.StatusBadRequest)
@@ -493,6 +520,14 @@ func (d *Dashboard) handleAPIUpdateUser(w http.ResponseWriter, r *http.Request) 
 			return
 		}
 		d.auditEvent(r, "", "user.profile", name, true, strings.TrimSpace(*req.DisplayName))
+	}
+	if req.Email != nil {
+		if err := d.users.SetEmail(name, *req.Email); err != nil {
+			d.auditEvent(r, "", "user.email", name, false, err.Error())
+			d.userError(w, r, err)
+			return
+		}
+		d.auditEvent(r, "", "user.email", name, true, strings.ToLower(strings.TrimSpace(*req.Email)))
 	}
 	if req.Disabled != nil {
 		if err := d.users.SetDisabled(name, *req.Disabled); err != nil {
@@ -532,11 +567,26 @@ func (d *Dashboard) handleAPIRemoveUser(w http.ResponseWriter, r *http.Request) 
 	writeJSON(w, map[string]any{"ok": true})
 }
 
+// handleAPIResetUserPassword sets a temporary password shown to the
+// administrator or, with {"send_email": true}, emails the user a link to
+// choose one (an invitation again if they never signed in). The current
+// password keeps working until the link is used.
 func (d *Dashboard) handleAPIResetUserPassword(w http.ResponseWriter, r *http.Request) {
 	if !d.usersReady(w) {
 		return
 	}
 	name := r.PathValue("name")
+	var req struct {
+		SendEmail bool `json:"send_email"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil && !errors.Is(err, io.EOF) {
+		http.Error(w, "invalid JSON", http.StatusBadRequest)
+		return
+	}
+	if req.SendEmail {
+		d.emailUserLink(w, r, name)
+		return
+	}
 	pw := users.TemporaryPassword()
 	if err := d.users.SetPassword(name, pw, true, ""); err != nil {
 		d.auditEvent(r, "", "user.password-reset", name, false, err.Error())
@@ -545,6 +595,37 @@ func (d *Dashboard) handleAPIResetUserPassword(w http.ResponseWriter, r *http.Re
 	}
 	d.auditEvent(r, "", "user.password-reset", name, true, "")
 	writeJSON(w, map[string]any{"temporary_password": pw})
+}
+
+// emailUserLink emails name a link to choose their password.
+func (d *Dashboard) emailUserLink(w http.ResponseWriter, r *http.Request, name string) {
+	u, err := d.users.Get(name)
+	if err != nil {
+		d.userError(w, r, err)
+		return
+	}
+	c := d.catalog(r)
+	switch {
+	case !d.emailConfigured():
+		http.Error(w, c.T("Email is not set up: an administrator sets it up in Settings."), http.StatusConflict)
+		return
+	case u.Email == "":
+		http.Error(w, c.T("This user has no email address."), http.StatusConflict)
+		return
+	}
+	purpose := users.TicketReset
+	if u.LastLoginAt == nil {
+		purpose = users.TicketInvite
+	}
+	if err := d.sendAccountLink(r, u.Username, purpose); err != nil {
+		if errors.Is(err, users.ErrTooSoon) {
+			d.userError(w, r, err)
+			return
+		}
+		http.Error(w, c.Tf("The email could not be sent: {error}", "error", err.Error()), http.StatusBadGateway)
+		return
+	}
+	writeJSON(w, map[string]any{"sent_to": u.Email, "purpose": purpose})
 }
 
 func (d *Dashboard) handleAPIResetUserSecondFactor(w http.ResponseWriter, r *http.Request) {

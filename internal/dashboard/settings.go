@@ -18,6 +18,7 @@ type SettingsView struct {
 	Network         NetworkSettingsView       `json:"network"`
 	Notifications   NotificationsSettingsView `json:"notifications"`
 	Integrations    IntegrationsSettingsView  `json:"integrations"`
+	Email           EmailSettingsView         `json:"email"`
 	RestartRequired bool                      `json:"restart_required"`
 }
 
@@ -177,6 +178,7 @@ func (d *Dashboard) buildSettingsView() (SettingsView, error) {
 			AlertStaleThreshold:  staleThreshold,
 			AlertNotifierPlugins: append([]string(nil), cfg.AlertNotifierPlugins...),
 		},
+		Email: emailSettingsView(cfg.Email),
 		Integrations: IntegrationsSettingsView{
 			GeminiConfigured:    resolveErr == nil && resolved.GeminiAPIKey != "",
 			GeminiAPIKeyHint:    geminiHint,

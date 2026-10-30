@@ -6,6 +6,8 @@
         <div class="set-row"><div class="set-label">{{t "User name"}}</div><div class="set-value"><strong>{{$u.Username}}</strong></div><div class="set-action"></div></div>
         <div class="set-row"><div class="set-label">{{t "Full name"}}</div><div class="set-value" id="acct-name">{{if $u.DisplayName}}{{$u.DisplayName}}{{else}}<span class="text-muted">—</span>{{end}}</div>
             <div class="set-action"><button type="button" class="btn btn-secondary btn-sm" id="acct-edit-name">{{t "Edit"}}</button></div></div>
+        <div class="set-row"><div class="set-label">{{t "Email"}}</div>
+            <div class="set-value">{{if $u.Email}}{{$u.Email}}{{else}}<span class="text-muted">—</span>{{end}}<div class="set-hint">{{t "Password reset links go to this address. An administrator changes it."}}</div></div><div class="set-action"></div></div>
         <div class="set-row"><div class="set-label">{{t "Access"}}</div>
             <div class="set-value">{{range $u.Grants}}<div><span class="role-chip role-chip--{{.Role}}">{{template "role_name" .Role}}</span>
                 <span class="role-scope">{{if or (eq .Role "admin") (not .Agents)}}{{t "all agents"}}{{else}}{{range $i, $a := .Agents}}{{if $i}}, {{end}}{{$a}}{{end}}{{end}}</span></div>{{end}}

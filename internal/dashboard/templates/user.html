@@ -1,7 +1,7 @@
 {{define "content"}}
 {{$u := .Content.User}}
 <div id="user-app" class="user-page" data-username="{{$u.Username}}" data-self="{{if .Content.Self}}1{{end}}"
-     data-agents="{{toJSON .Content.Agents}}" data-roles="{{toJSON .Content.Roles}}" data-user="{{toJSON $u}}">
+     data-agents="{{toJSON .Content.Agents}}" data-roles="{{toJSON .Content.Roles}}" data-user="{{toJSON $u}}" data-email="{{if .Content.EmailEnabled}}1{{end}}">
     <p class="user-meta">{{$u.Username}} · <span id="user-last-login"></span></p>
     <div class="tabs" role="tablist">
         <button type="button" class="tab on" role="tab" data-tab="roles">{{t "Roles and agents"}}</button>
@@ -36,6 +36,8 @@
                 <h2 class="set-title">{{t "Account"}}</h2>
                 <div class="set-row"><div class="set-label">{{t "Full name"}}</div><div class="set-value" id="user-name"></div>
                     <div class="set-action"><button type="button" class="btn btn-secondary btn-sm" id="user-edit-name">{{t "Edit"}}</button></div></div>
+                <div class="set-row"><div class="set-label">{{t "Email"}}</div><div class="set-value" id="user-email"></div>
+                    <div class="set-action"><button type="button" class="btn btn-secondary btn-sm" id="user-edit-email">{{t "Edit"}}</button></div></div>
                 <div class="set-row"><div class="set-label">{{t "Status"}}</div><div class="set-value" id="user-status"></div><div class="set-action"></div></div>
                 <div class="set-row"><div class="set-label">{{t "Password"}}</div><div class="set-value" id="user-password"></div>
                     <div class="set-action"><button type="button" class="btn btn-secondary btn-sm" id="user-reset-password">{{t "Reset"}}</button></div></div>

@@ -100,6 +100,29 @@ Microsoft 365 (`m365_*`), cloud provider (`gcp_project`, `aws_role_arn`,
 `config.yaml` files containing them still load — YAML silently ignores unknown
 keys — but the values are never read. Remove these keys at your convenience.
 
+### Email (`email`)
+
+The outgoing mail server for account emails: invitations to new users and
+password reset links. Secrets are stored encrypted with the repository key.
+Editable from the dashboard **Settings → Email** tab; see
+[Users and access](../admin-guide/users.md#email).
+
+| Key | Type | Description |
+|-----|------|-------------|
+| `host` | string | SMTP server. Empty turns account emails off |
+| `port` | int | Port (default: 587 for `starttls`, 465 for `tls`, 25 for `none`) |
+| `security` | string | `starttls`, `tls` or `none` (plain SMTP, for a relay on a trusted network) |
+| `auth` | string | `none` (the server accepts mail by client address), `password` or `microsoft365` (OAuth 2.0 app) |
+| `username` | string | `password`: user name. `microsoft365`: mailbox to sign in as, if not `from` |
+| `password_encrypted` | string | `password`: encrypted password |
+| `tenant_id` | string | `microsoft365`: directory (tenant) ID |
+| `client_id` | string | `microsoft365`: application (client) ID |
+| `client_secret_encrypted` | string | `microsoft365`: encrypted client secret |
+| `from` | string | Sender address |
+| `from_name` | string | Sender name |
+| `tls_skip_verify` | bool | Accept any server certificate (self-signed relays only) |
+| `dashboard_url` | string | The dashboard's address as people reach it, the base of the links in emails |
+
 ### Sentinel (`sentinel`)
 
 Optional Sentinel telemetry settings (future dashboard editing). Keys mirror `HITSTOR_SENTINEL_*` environment variables.

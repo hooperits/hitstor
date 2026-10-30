@@ -71,10 +71,10 @@ func TestSignInEnrollAndSecondFactor(t *testing.T) {
 		t.Fatal(err)
 	}
 	const pw = "correct horse battery 42"
-	if _, err := s.Add("Carlos", "", pw, []Grant{{Role: RoleAdmin}}, false); err != nil {
+	if _, err := s.Add("Carlos", "", "", pw, []Grant{{Role: RoleAdmin}}, false); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := s.Add("carlos", "", pw, []Grant{{Role: RoleViewer}}, false); !errors.Is(err, ErrUserExists) {
+	if _, err := s.Add("carlos", "", "", pw, []Grant{{Role: RoleViewer}}, false); !errors.Is(err, ErrUserExists) {
 		t.Fatalf("duplicate: %v", err)
 	}
 
@@ -142,7 +142,7 @@ func TestSignInEnrollAndSecondFactor(t *testing.T) {
 func TestLockoutAndSessionTimeouts(t *testing.T) {
 	s, _ := Open(t.TempDir(), testKey)
 	const pw = "correct horse battery 42"
-	s.Add("ana", "", pw, []Grant{{Role: RoleViewer}}, false)
+	s.Add("ana", "", "", pw, []Grant{{Role: RoleViewer}}, false)
 	for range lockAfterFailures {
 		if _, _, err := s.Login("ana", "wrong password here", "", ""); !errors.Is(err, ErrBadCredentials) {
 			t.Fatalf("bad password: %v", err)
@@ -195,7 +195,7 @@ func TestAuditChain(t *testing.T) {
 func TestOnlyUserActivityKeepsSessionsAlive(t *testing.T) {
 	s, _ := Open(t.TempDir(), testKey)
 	const pw = "correct horse battery 42"
-	s.Add("ana", "", pw, []Grant{{Role: RoleViewer}}, false)
+	s.Add("ana", "", "", pw, []Grant{{Role: RoleViewer}}, false)
 	tok, _, _ := s.Login("ana", pw, "", "")
 	idleSince := time.Now().Add(-idleTimeout + time.Minute).UTC()
 	s.mu.Lock()

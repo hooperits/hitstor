@@ -4665,6 +4665,69 @@ body.dr-drawer-open {
     font-weight: 600;
 }
 
+.settings-fieldset {
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+}
+
+.settings-field select,
+.settings-field input[type="email"] {
+    padding: 0.55rem 0.65rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--bg-card);
+    color: var(--text);
+    font: inherit;
+}
+
+.settings-field--check {
+    flex-direction: row;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.settings-row {
+    display: flex;
+    gap: 0.85rem;
+    align-items: flex-start;
+    flex-wrap: wrap;
+}
+
+.settings-row--end {
+    align-items: flex-end;
+}
+
+.settings-field--grow {
+    flex: 1 1 260px;
+}
+
+.settings-field--port {
+    flex: 0 0 110px;
+}
+
+.settings-presets {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.settings-status-line {
+    margin: 0 0 1rem;
+    font-size: 0.9rem;
+}
+
+[data-email-auth] {
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+}
+
+[data-email-auth][hidden] {
+    display: none;
+}
+
 .settings-card {
     margin-top: 1.25rem;
     padding: 1rem;

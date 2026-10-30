@@ -277,8 +277,16 @@
         return div;
     }
 
-    function temporaryPasswordDialog(user, pw, after) {
+    function invitedDialog(user, email, after) {
+        var d = dialog(t('Invitation sent'),
+            '<p>' + esc(t('We emailed {user} at {email} a link to choose their password. It expires in 72 hours; if it does, send a new one from their page.', { user: user, email: email })) + '</p>' +
+            '<div class="dialog-actions"><button type="button" class="btn">' + esc(t('Done')) + '</button></div>');
+        d.q('.dialog-actions .btn').addEventListener('click', function () { d.close(); if (after) after(); });
+    }
+
+    function temporaryPasswordDialog(user, pw, after, emailError) {
         var d = dialog(t('Temporary password'),
+            (emailError ? '<p class="form-error">' + esc(t('The invitation email could not be sent: {error}', { error: emailError })) + '</p>' : '') +
             '<p>' + esc(t('Give this temporary password to {user}. It works once: they choose their own and set up two-step verification at first sign-in.', { user: user })) + '</p>' +
             '<p class="temp-password"><code>' + esc(pw) + '</code></p>' +
             '<div class="dialog-actions"><button type="button" class="btn">' + esc(t('Done')) + '</button></div>');
@@ -430,7 +438,7 @@
         function render() {
             var q = search.value.trim().toLowerCase();
             var list = all.filter(function (u) {
-                if (q && (u.username + ' ' + (u.display_name || '')).toLowerCase().indexOf(q) < 0) return false;
+                if (q && (u.username + ' ' + (u.display_name || '') + ' ' + (u.email || '')).toLowerCase().indexOf(q) < 0) return false;
                 if (roleSel.value && !u.grants.some(function (g) { return g.role === roleSel.value; })) return false;
                 if (statusSel.value && status(u) !== statusSel.value) return false;
                 return true;
@@ -438,7 +446,7 @@
             body.innerHTML = list.map(function (u) {
                 return '<tr class="clickable" data-user="' + esc(u.username) + '" tabindex="0">' +
                     '<td><div class="who"><span class="um-avatar" aria-hidden="true">' + esc(initials(u)) + '</span><div><strong>' + esc(u.username) + '</strong>' +
-                    (u.display_name ? '<div class="set-hint">' + esc(u.display_name) + '</div>' : '') + '</div></div></td>' +
+                    (u.display_name || u.email ? '<div class="set-hint">' + esc([u.display_name, u.email].filter(Boolean).join(' · ')) + '</div>' : '') + '</div></div></td>' +
                     '<td>' + grantsHTML(u.grants) + '</td><td>' + mfaBadge(u) + '</td>' +
                     '<td title="' + esc(when(u.last_login_at)) + '">' + esc(ago(u.last_login_at)) + '</td>' +
                     '<td>' + statusBadge(u) + '</td><td class="col-actions" aria-hidden="true">›</td></tr>';
@@ -452,19 +460,23 @@
         api('GET', '/api/users').then(function (list) { all = list; render(); })
             .catch(function (err) { body.innerHTML = '<tr><td colspan="6" class="form-error">' + esc(err.message) + '</td></tr>'; });
 
+        var emailOn = root.getAttribute('data-email') === '1';
         root.querySelector('#user-add').addEventListener('click', function () {
             var d = formDialog(t('New user'),
                 '<div class="form-group"><label for="fd-user">' + esc(t('User name')) + '</label><input type="text" id="fd-user" required autocomplete="off" pattern="[A-Za-z0-9][A-Za-z0-9._\\-]{1,63}"></div>' +
                 '<div class="form-group"><label for="fd-display">' + esc(t('Full name (optional)')) + '</label><input type="text" id="fd-display" maxlength="100" autocomplete="off"></div>' +
+                '<div class="form-group"><label for="fd-email">' + esc(emailOn ? t('Email') : t('Email (optional)')) + '</label><input type="email" id="fd-email" maxlength="254" autocomplete="off"' + (emailOn ? ' required' : '') + '>' +
+                '<p class="form-hint">' + esc(emailOn ? t('They receive a link to choose their password. Nobody else ever knows it.')
+                    : t('Email is not set up, so you get a temporary password to pass on. The address is used for password reset links once email is set up.')) + '</p></div>' +
                 '<div class="form-group"><label>' + esc(t('Roles')) + '</label><div class="grants"></div>' +
                 '<button type="button" class="btn btn-secondary btn-sm fd-add-grant">+ ' + esc(t('Add role')) + '</button></div>',
                 t('Create user'), function (d) {
-                    return api('POST', '/api/users', { username: d.q('#fd-user').value, display_name: d.q('#fd-display').value, grants: ed.value() })
+                    return api('POST', '/api/users', { username: d.q('#fd-user').value, display_name: d.q('#fd-display').value, email: d.q('#fd-email').value, grants: ed.value() })
                         .then(function (r) {
                             d.close();
-                            temporaryPasswordDialog(r.user.username, r.temporary_password, function () {
-                                location.href = '/users/' + encodeURIComponent(r.user.username);
-                            });
+                            var go = function () { location.href = '/users/' + encodeURIComponent(r.user.username); };
+                            if (r.invited) { invitedDialog(r.user.username, r.user.email, go); return; }
+                            temporaryPasswordDialog(r.user.username, r.temporary_password, go, r.email_error);
                         });
                 });
             var ed = grantsEditor(d.q('.grants'), agents, roles, [{ role: 'backup_operator' }]);
@@ -506,6 +518,7 @@
         function fill() {
             q('#user-last-login').textContent = u.last_login_at ? t('last sign-in {when}', { when: ago(u.last_login_at) }) : t('has not signed in yet');
             q('#user-name').innerHTML = u.display_name ? esc(u.display_name) : '<span class="text-muted">—</span>';
+            q('#user-email').innerHTML = u.email ? esc(u.email) : '<span class="text-muted">—</span>';
             q('#user-status').innerHTML = statusBadge(u);
             q('#user-password').textContent = u.must_change_password ? t('Temporary: must change it') : t('Changed {when}', { when: ago(u.password_changed_at) });
             q('#user-mfa').innerHTML = mfaBadge(u) + (u.totp_enabled ? ' · ' + esc(t('{n} codes', { n: u.recovery_codes_left })) : '');
@@ -543,11 +556,46 @@
                     return api('PUT', '/api/users/' + enc, { display_name: d.q('#fd-name').value }).then(function () { location.reload(); });
                 });
         });
-        q('#user-reset-password').addEventListener('click', function () {
+        q('#user-edit-email').addEventListener('click', function () {
+            formDialog(t('Email'),
+                '<div class="form-group"><label for="fd-email">' + esc(t('Email')) + '</label><input type="email" id="fd-email" maxlength="254" value="' + esc(u.email) + '"></div>' +
+                '<p class="form-hint">' + esc(t('Invitations and password reset links go here. Links already sent stop working.')) + '</p>',
+                t('Save'), function (d) {
+                    return api('PUT', '/api/users/' + enc, { email: d.q('#fd-email').value }).then(function (x) { u = x; fill(); d.close(); });
+                });
+        });
+        function resetWithTemporary() {
             if (!confirm(t('Reset the password of {user}? Their sessions end.', { user: name }))) return;
             api('POST', '/api/users/' + enc + '/password').then(function (r) {
                 temporaryPasswordDialog(name, r.temporary_password, reload);
             }).catch(function (e) { alert(e.message); });
+        }
+        q('#user-reset-password').addEventListener('click', function () {
+            if (root.getAttribute('data-email') !== '1' || !u.email) { resetWithTemporary(); return; }
+            var invite = !u.last_login_at;
+            var d = dialog(t('Reset password'),
+                '<p>' + esc(invite
+                    ? t('{user} has not signed in yet. Email them a new invitation link, or set a temporary password you pass on yourself.', { user: name })
+                    : t('Email {user} a link to choose a new password, or set a temporary password you pass on yourself. With the link, their current password works until they use it.', { user: name })) + '</p>' +
+                '<div class="form-error" hidden></div>' +
+                '<div class="dialog-actions"><button type="button" class="btn btn-secondary rp-temp">' + esc(t('Temporary password')) + '</button>' +
+                '<button type="button" class="btn rp-email">' + esc(invite ? t('Email a new invitation') : t('Email a reset link')) + '</button></div>');
+            d.q('.rp-temp').addEventListener('click', function () { d.close(); resetWithTemporary(); });
+            d.q('.rp-email').addEventListener('click', function () {
+                var b = d.q('.rp-email');
+                b.disabled = true;
+                api('POST', '/api/users/' + enc + '/password', { send_email: true }).then(function (r) {
+                    d.close();
+                    var ok = dialog(t('Email sent'), '<p>' + esc(t('We emailed the link to {email}.', { email: r.sent_to })) + '</p>' +
+                        '<div class="dialog-actions"><button type="button" class="btn">' + esc(t('Done')) + '</button></div>');
+                    ok.q('.dialog-actions .btn').addEventListener('click', function () { ok.close(); reload(); });
+                }).catch(function (e) {
+                    b.disabled = false;
+                    var err = d.q('.form-error');
+                    err.textContent = e.message;
+                    err.hidden = false;
+                });
+            });
         });
         q('#user-reset-mfa').addEventListener('click', function () {
             if (!confirm(t('Reset two-step verification of {user}? They set it up again at next sign-in.', { user: name }))) return;

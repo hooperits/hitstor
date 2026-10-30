@@ -125,6 +125,9 @@ type Config struct {
 	// Sentinel holds Sentinel telemetry integration settings.
 	Sentinel SentinelConfig `yaml:"sentinel,omitempty"`
 
+	// Email is the outgoing mail server for account emails.
+	Email EmailConfig `yaml:"email,omitempty"`
+
 	// Path is the resolved file path (not persisted in YAML).
 	Path string `yaml:"-"`
 	// Exists indicates whether the config file existed on disk.

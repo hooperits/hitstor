@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/mail"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -65,6 +66,7 @@ type storeData struct {
 	Pepper   []byte     `json:"pepper"`
 	Users    []*User    `json:"users"`
 	Sessions []*Session `json:"sessions"`
+	Tickets  []*Ticket  `json:"tickets,omitempty"`
 }
 
 // Store keeps the accounts in an encrypted file. It reloads the file when
@@ -92,6 +94,8 @@ var (
 	ErrNoRoles        = errors.New("give the user at least one role")
 	ErrUnknownRole    = errors.New("unknown role")
 	ErrLongName       = errors.New("display name too long")
+	ErrBadEmail       = errors.New("invalid email address")
+	ErrEmailTaken     = errors.New("another user has that email address")
 )
 
 // Open loads the store in dir, encrypted with key; a missing file is an
@@ -214,6 +218,33 @@ func (s *Store) userByName(name string) *User {
 	return nil
 }
 
+// userByEmail returns the account with email (lowercase), if any.
+func (s *Store) userByEmail(email string) *User {
+	if email == "" {
+		return nil
+	}
+	for _, u := range s.data.Users {
+		if u.Email == email {
+			return u
+		}
+	}
+	return nil
+}
+
+// NormalizeEmail lowercases an email address and checks its form; an empty
+// address is no address.
+func NormalizeEmail(email string) (string, error) {
+	e := strings.ToLower(strings.TrimSpace(email))
+	if e == "" {
+		return "", nil
+	}
+	a, err := mail.ParseAddress(e)
+	if err != nil || a.Address != e || len(e) > 254 || !strings.Contains(e[strings.LastIndexByte(e, '@'):], ".") {
+		return "", ErrBadEmail
+	}
+	return e, nil
+}
+
 func (s *Store) userByID(id string) *User {
 	for _, u := range s.data.Users {
 		if u.ID == id {
@@ -279,10 +310,13 @@ func validGrants(grants []Grant) error {
 }
 
 // Add creates an account. mustChange makes the user pick a new password at
-// first sign-in (for one set by an administrator).
-func (s *Store) Add(name, displayName, password string, grants []Grant, mustChange bool) (User, error) {
+// first sign-in (for one set by an administrator). email is optional.
+func (s *Store) Add(name, displayName, email, password string, grants []Grant, mustChange bool) (User, error) {
 	name, err := NormalizeUsername(name)
 	if err != nil {
+		return User{}, err
+	}
+	if email, err = NormalizeEmail(email); err != nil {
 		return User{}, err
 	}
 	if displayName = strings.TrimSpace(displayName); utf8.RuneCountInString(displayName) > MaxDisplayName {
@@ -303,8 +337,11 @@ func (s *Store) Add(name, displayName, password string, grants []Grant, mustChan
 		if s.userByName(name) != nil {
 			return ErrUserExists
 		}
+		if s.userByEmail(email) != nil {
+			return ErrEmailTaken
+		}
 		now := time.Now().UTC()
-		u := &User{ID: randomID(8), Username: name, DisplayName: displayName, Grants: grants,
+		u := &User{ID: randomID(8), Username: name, DisplayName: displayName, Email: email, Grants: grants,
 			PasswordHash: hash, PasswordChangedAt: now, MustChangePassword: mustChange, CreatedAt: now}
 		s.data.Users = append(s.data.Users, u)
 		out = copyUser(u)
@@ -358,6 +395,7 @@ func (s *Store) SetDisabled(name string, disabled bool) error {
 		u.Disabled = disabled
 		if disabled {
 			s.dropSessions(u.ID, "")
+			s.dropTickets(u.ID)
 		} else {
 			u.FailedLogins, u.LockedUntil = 0, nil
 		}
@@ -376,6 +414,7 @@ func (s *Store) Remove(name string) error {
 			return ErrLastAdmin
 		}
 		s.dropSessions(u.ID, "")
+		s.dropTickets(u.ID)
 		s.data.Users = slices.DeleteFunc(s.data.Users, func(x *User) bool { return x.ID == u.ID })
 		return nil
 	})
@@ -401,6 +440,7 @@ func (s *Store) SetPassword(name, password string, mustChange bool, keepSession 
 		u.PasswordHash, u.PasswordChangedAt, u.MustChangePassword = hash, time.Now().UTC(), mustChange
 		u.FailedLogins, u.LockedUntil = 0, nil
 		s.dropSessions(u.ID, keepSession)
+		s.dropTickets(u.ID) // an emailed link must not undo this password
 		return nil
 	})
 }
@@ -808,6 +848,28 @@ func (s *Store) SetDisplayName(name, display string) error {
 			return ErrNoUser
 		}
 		u.DisplayName = display
+		return nil
+	})
+}
+
+// SetEmail changes the address account emails go to; empty removes it.
+func (s *Store) SetEmail(name, email string) error {
+	email, err := NormalizeEmail(email)
+	if err != nil {
+		return err
+	}
+	return s.update(func() error {
+		u := s.userByName(strings.ToLower(name))
+		if u == nil {
+			return ErrNoUser
+		}
+		if o := s.userByEmail(email); o != nil && o.ID != u.ID {
+			return ErrEmailTaken
+		}
+		if u.Email != email {
+			s.dropTickets(u.ID) // links sent to the old address stop working
+		}
+		u.Email = email
 		return nil
 	})
 }

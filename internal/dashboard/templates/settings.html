@@ -6,6 +6,7 @@
         <button type="button" class="settings-tab" data-tab="network" role="tab">{{t "Network"}}</button>
         <button type="button" class="settings-tab" data-tab="integrations" role="tab">{{t "Integrations"}}</button>
         <button type="button" class="settings-tab" data-tab="notifications" role="tab">{{t "Notifications"}}</button>
+        <button type="button" class="settings-tab" data-tab="email" role="tab">{{t "Email"}}</button>
         <button type="button" class="settings-tab" data-tab="plugins" role="tab">{{t "Plugins"}}</button>
     </nav>
 
@@ -198,6 +199,114 @@
             </label>
             <button type="button" class="btn btn-secondary" id="settings-test-webhook">{{t "Test webhook"}}</button>
             <button type="submit" class="btn btn-primary">{{t "Save Notifications"}}</button>
+        </form>
+    </section>
+
+    <section class="settings-panel hidden" data-panel="email">
+        <h2>{{t "Email"}}</h2>
+        <p class="settings-lead">{{t "The mail server the dashboard uses to send new users their invitation and to send password reset links."}}</p>
+        <p class="settings-status-line" id="settings-email-state" role="status"></p>
+        <form id="settings-email-form" class="settings-form" autocomplete="off">
+            <div class="settings-presets">
+                <span class="settings-hint">{{t "Start from:"}}</span>
+                <button type="button" class="btn btn-secondary btn-sm" data-email-preset="relay">{{t "Internal relay"}}</button>
+                <button type="button" class="btn btn-secondary btn-sm" data-email-preset="microsoft365">Microsoft 365</button>
+            </div>
+            <fieldset class="settings-fieldset">
+                <legend>{{t "Mail server"}}</legend>
+                <div class="settings-row">
+                    <label class="settings-field settings-field--grow">
+                        <span>{{t "Server"}}</span>
+                        <input type="text" id="settings-email-host" placeholder="smtp.example.com" spellcheck="false">
+                        <small class="settings-hint">{{t "Leave it empty to turn email off."}}</small>
+                    </label>
+                    <label class="settings-field settings-field--port">
+                        <span>{{t "Port"}}</span>
+                        <input type="number" id="settings-email-port" min="1" max="65535" placeholder="587">
+                    </label>
+                </div>
+                <label class="settings-field">
+                    <span>{{t "Connection security"}}</span>
+                    <select id="settings-email-security">
+                        <option value="starttls">{{t "STARTTLS (usually port 587)"}}</option>
+                        <option value="tls">{{t "SSL/TLS (usually port 465)"}}</option>
+                        <option value="none">{{t "None: plain SMTP, only for a relay on a trusted network (usually port 25)"}}</option>
+                    </select>
+                </label>
+                <label class="settings-field settings-field--check">
+                    <input type="checkbox" id="settings-email-skip-verify">
+                    <span>{{t "Accept any server certificate (self-signed relays only)"}}</span>
+                </label>
+            </fieldset>
+
+            <fieldset class="settings-fieldset">
+                <legend>{{t "Authentication"}}</legend>
+                <label class="settings-field">
+                    <span>{{t "Sign in to the server with"}}</span>
+                    <select id="settings-email-auth">
+                        <option value="none">{{t "Nothing: the server accepts mail from this host"}}</option>
+                        <option value="password">{{t "User name and password"}}</option>
+                        <option value="microsoft365">{{t "Microsoft 365 app (OAuth 2.0)"}}</option>
+                    </select>
+                </label>
+                <div data-email-auth="password">
+                    <label class="settings-field">
+                        <span>{{t "User name"}}</span>
+                        <input type="text" id="settings-email-username" spellcheck="false" autocomplete="off">
+                    </label>
+                    <label class="settings-field">
+                        <span>{{t "Password"}}</span>
+                        <input type="password" id="settings-email-password" autocomplete="new-password">
+                        <small class="settings-hint" id="settings-email-password-hint"></small>
+                    </label>
+                </div>
+                <div data-email-auth="microsoft365">
+                    <p class="settings-hint">{{t "Exchange Online does not take passwords for SMTP. Register an app in Microsoft Entra ID with the SMTP.SendAsApp application permission, register its service principal in Exchange Online and give it access to the sender mailbox. The guide Users and access explains the steps."}}</p>
+                    <label class="settings-field">
+                        <span>{{t "Directory (tenant) ID"}}</span>
+                        <input type="text" id="settings-email-tenant" spellcheck="false" placeholder="00000000-0000-0000-0000-000000000000">
+                    </label>
+                    <label class="settings-field">
+                        <span>{{t "Application (client) ID"}}</span>
+                        <input type="text" id="settings-email-client" spellcheck="false" placeholder="00000000-0000-0000-0000-000000000000">
+                    </label>
+                    <label class="settings-field">
+                        <span>{{t "Client secret"}}</span>
+                        <input type="password" id="settings-email-secret" autocomplete="new-password">
+                        <small class="settings-hint" id="settings-email-secret-hint"></small>
+                    </label>
+                    <label class="settings-field">
+                        <span>{{t "Mailbox to sign in as (optional)"}}</span>
+                        <input type="text" id="settings-email-oauth-user" spellcheck="false" placeholder="{{t "Same as the sender address"}}">
+                    </label>
+                </div>
+            </fieldset>
+
+            <fieldset class="settings-fieldset">
+                <legend>{{t "Messages"}}</legend>
+                <label class="settings-field">
+                    <span>{{t "Sender address"}}</span>
+                    <input type="email" id="settings-email-from" placeholder="hitstor@example.com" spellcheck="false">
+                </label>
+                <label class="settings-field">
+                    <span>{{t "Sender name (optional)"}}</span>
+                    <input type="text" id="settings-email-from-name" placeholder="HitStor">
+                </label>
+                <label class="settings-field">
+                    <span>{{t "Dashboard address in the links"}}</span>
+                    <input type="url" id="settings-email-dashboard-url" spellcheck="false">
+                    <small class="settings-hint">{{t "How people reach this dashboard, for example https://backup.example.com:8421. Links in emails start with it."}}</small>
+                </label>
+            </fieldset>
+
+            <div class="settings-row settings-row--end">
+                <label class="settings-field settings-field--grow">
+                    <span>{{t "Send a test email to"}}</span>
+                    <input type="email" id="settings-email-test-to" spellcheck="false" placeholder="{{t "Your email address"}}">
+                </label>
+                <button type="button" class="btn btn-secondary" id="settings-email-test">{{t "Send test"}}</button>
+            </div>
+            <button type="submit" class="btn btn-primary">{{t "Save Email"}}</button>
         </form>
     </section>
 

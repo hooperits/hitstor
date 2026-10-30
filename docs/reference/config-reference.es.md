@@ -100,6 +100,29 @@ Las claves de Microsoft 365 (`m365_*`), de proveedores de nube (`gcp_project`, `
 `config.yaml` existentes que las contengan siguen cargándose (YAML ignora en silencio las claves
 desconocidas), pero sus valores nunca se leen. Elimine estas claves cuando le resulte conveniente.
 
+### Correo (`email`) { #email-email }
+
+El servidor de correo saliente para los correos de cuenta: invitaciones a usuarios nuevos y
+enlaces para restablecer contraseñas. Los secretos se almacenan cifrados con la clave del
+repositorio. Se puede editar desde la pestaña **Configuración → Correo** del dashboard; vea
+[Usuarios y acceso](../admin-guide/users.md#email).
+
+| Clave | Tipo | Descripción |
+|-----|------|-------------|
+| `host` | string | Servidor SMTP. Vacío desactiva los correos de cuenta |
+| `port` | int | Puerto (predeterminado: 587 con `starttls`, 465 con `tls`, 25 con `none`) |
+| `security` | string | `starttls`, `tls` o `none` (SMTP sin cifrar, para un relay en una red de confianza) |
+| `auth` | string | `none` (el servidor acepta el correo según la dirección del cliente), `password` o `microsoft365` (aplicación OAuth 2.0) |
+| `username` | string | `password`: nombre de usuario. `microsoft365`: buzón con el que iniciar sesión, si no es `from` |
+| `password_encrypted` | string | `password`: contraseña cifrada |
+| `tenant_id` | string | `microsoft365`: id. de directorio (inquilino) |
+| `client_id` | string | `microsoft365`: id. de aplicación (cliente) |
+| `client_secret_encrypted` | string | `microsoft365`: secreto de cliente cifrado |
+| `from` | string | Dirección del remitente |
+| `from_name` | string | Nombre del remitente |
+| `tls_skip_verify` | bool | Acepta cualquier certificado del servidor (solo relays con certificado autofirmado) |
+| `dashboard_url` | string | La dirección del dashboard tal como se llega a él; los enlaces de los correos empiezan con ella |
+
 ### Sentinel (`sentinel`) { #sentinel-sentinel }
 
 Configuración opcional de telemetría de Sentinel (edición desde el dashboard en el futuro). Las claves reflejan las variables de entorno `HITSTOR_SENTINEL_*`.

@@ -55,7 +55,7 @@ func totpCode(t *testing.T, secret string, at time.Time) string {
 // cookie of the fully signed-in session.
 func signedIn(t *testing.T, store *users.Store, name string, grants ...users.Grant) *http.Cookie {
 	t.Helper()
-	if _, err := store.Add(name, "", testUserPassword, grants, false); err != nil {
+	if _, err := store.Add(name, "", "", testUserPassword, grants, false); err != nil {
 		t.Fatal(err)
 	}
 	token, _, err := store.Login(name, testUserPassword, "127.0.0.1", "test")
@@ -144,7 +144,7 @@ var secretRe = regexp.MustCompile(`class="enroll-secret">([A-Z2-7]+)<`)
 func TestSignInWithAuthenticator(t *testing.T) {
 	dash, store := setupUsersDashboard(t)
 	h := dash.Handler()
-	if _, err := store.Add("ana", "", testUserPassword, []users.Grant{{Role: users.RoleViewer}}, false); err != nil {
+	if _, err := store.Add("ana", "", "", testUserPassword, []users.Grant{{Role: users.RoleViewer}}, false); err != nil {
 		t.Fatal(err)
 	}
 

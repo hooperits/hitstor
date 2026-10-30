@@ -117,13 +117,14 @@ func newServeUserAddCmd() *cobra.Command {
 				return err
 			}
 			display, _ := cmd.Flags().GetString("display-name")
+			email, _ := cmd.Flags().GetString("email")
 			store, audit, done, err := openUsers()
 			if err != nil {
 				return err
 			}
 			defer done()
 			password := users.TemporaryPassword()
-			u, err := store.Add(args[0], display, password, grants, true)
+			u, err := store.Add(args[0], display, email, password, grants, true)
 			if err != nil {
 				return err
 			}
@@ -135,6 +136,7 @@ func newServeUserAddCmd() *cobra.Command {
 	}
 	cmd.Flags().StringArray("grant", nil, `role, or role=agent1,agent2 (repeatable)`)
 	cmd.Flags().String("display-name", "", "full name shown in the dashboard")
+	cmd.Flags().String("email", "", "address for password reset links (the dashboard sends invitations itself)")
 	return cmd
 }
 
@@ -155,7 +157,7 @@ func newServeUserListCmd() *cobra.Command {
 				return nil
 			}
 			tw := tabwriter.NewWriter(os.Stdout, 0, 4, 2, ' ', 0)
-			fmt.Fprintln(tw, "USER\tROLES\tTWO-STEP\tSTATUS\tLAST SIGN-IN")
+			fmt.Fprintln(tw, "USER\tEMAIL\tROLES\tTWO-STEP\tSTATUS\tLAST SIGN-IN")
 			for _, u := range list {
 				twoStep := "pending"
 				if u.TOTPEnabled {
@@ -174,7 +176,11 @@ func newServeUserListCmd() *cobra.Command {
 				if u.LastLoginAt != nil {
 					last = u.LastLoginAt.Local().Format("2006-01-02 15:04")
 				}
-				fmt.Fprintf(tw, "%s\t%s\t%s\t%s\t%s\n", u.Username, grantsSummary(u.Grants), twoStep, status, last)
+				email := u.Email
+				if email == "" {
+					email = "-"
+				}
+				fmt.Fprintf(tw, "%s\t%s\t%s\t%s\t%s\t%s\n", u.Username, email, grantsSummary(u.Grants), twoStep, status, last)
 			}
 			return tw.Flush()
 		},

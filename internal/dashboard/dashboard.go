@@ -1,6 +1,7 @@
 package dashboard
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"html/template"
@@ -14,6 +15,7 @@ import (
 	"github.com/hooperits/hitstor/internal/backend"
 	"github.com/hooperits/hitstor/internal/config"
 	"github.com/hooperits/hitstor/internal/i18n"
+	"github.com/hooperits/hitstor/internal/mailer"
 	"github.com/hooperits/hitstor/internal/repository"
 	"github.com/hooperits/hitstor/internal/server"
 	"github.com/hooperits/hitstor/internal/users"
@@ -28,19 +30,24 @@ type Options struct {
 
 // Dashboard serves the web UI for monitoring and managing HitStor.
 type Dashboard struct {
-	repos            *server.RepoManager
-	repo             *repository.Repository // first repo (convenience)
-	registry         *server.AgentRegistry
-	be               backend.Backend // first repo's backend (convenience)
-	cfg              *config.Config
-	srv              *server.Server
-	opts             Options
-	templates        map[string]map[string]*template.Template // language → page → template
-	mu               sync.RWMutex
-	loginLimits      *loginLimiter
-	legacy           legacySessions
-	users            *users.Store    // nil until SetUsers
-	audit            *users.AuditLog // nil until SetUsers
+	repos       *server.RepoManager
+	repo        *repository.Repository // first repo (convenience)
+	registry    *server.AgentRegistry
+	be          backend.Backend // first repo's backend (convenience)
+	cfg         *config.Config
+	srv         *server.Server
+	opts        Options
+	templates   map[string]map[string]*template.Template // language → page → template
+	mu          sync.RWMutex
+	loginLimits *loginLimiter
+	legacy      legacySessions
+	users       *users.Store    // nil until SetUsers
+	audit       *users.AuditLog // nil until SetUsers
+	resetLimits *loginLimiter   // password reset requests per IP
+	mail        mailState
+
+	// sendMailHook replaces sending email. Tests only.
+	sendMailHook     func(context.Context, mailer.Message) error
 	activeSessionsFn func() int
 	metricsHandler   http.HandlerFunc
 	opMu             sync.RWMutex
@@ -168,6 +175,7 @@ func New(repo *repository.Repository, registry *server.AgentRegistry, be backend
 		opts:             opts,
 		templates:        make(map[string]map[string]*template.Template),
 		loginLimits:      newLoginLimiter(),
+		resetLimits:      newLoginLimiter(),
 		activeSessionsFn: activeSessionsFn,
 		operations:       make(map[string]*operation),
 		sizeCache:        make(map[string]int64),
@@ -270,6 +278,10 @@ func (d *Dashboard) Handler() http.Handler {
 	mux.HandleFunc("POST /login/code", d.handleCodeSubmit)
 	mux.HandleFunc("GET /login/enroll", d.handleEnrollPage)
 	mux.HandleFunc("POST /login/enroll", d.handleEnrollSubmit)
+	mux.HandleFunc("GET /login/forgot", d.handleForgotPage)
+	mux.HandleFunc("POST /login/forgot", d.handleForgotSubmit)
+	mux.HandleFunc("GET /login/reset", d.handleResetPage)
+	mux.HandleFunc("POST /login/reset", d.handleResetSubmit)
 	mux.HandleFunc("GET /setup", d.handleSetupPage)
 	mux.HandleFunc("POST /setup", d.handleSetupSubmit)
 	mux.HandleFunc("POST /logout", d.handleLogout)
@@ -392,6 +404,8 @@ func (d *Dashboard) Handler() http.Handler {
 	mux.Handle("PUT /api/settings/network", d.guard("PUT /api/settings/network", http.HandlerFunc(d.handleAPISettingsNetwork)))
 	mux.Handle("PUT /api/settings/notifications", d.guard("PUT /api/settings/notifications", http.HandlerFunc(d.handleAPISettingsNotifications)))
 	mux.Handle("PUT /api/settings/integrations", d.guard("PUT /api/settings/integrations", http.HandlerFunc(d.handleAPISettingsIntegrations)))
+	mux.Handle("PUT /api/settings/email", d.guard("PUT /api/settings/email", http.HandlerFunc(d.handleAPISettingsEmail)))
+	mux.Handle("POST /api/settings/email/test", d.guard("POST /api/settings/email/test", http.HandlerFunc(d.handleAPISettingsEmailTest)))
 	mux.Handle("POST /api/settings/integrations/import-env", d.guard("POST /api/settings/integrations/import-env", http.HandlerFunc(d.handleAPISettingsImportEnv)))
 	mux.Handle("GET /api/settings/tls/status", d.guard("GET /api/settings/tls/status", http.HandlerFunc(d.handleAPITLSStatus)))
 	mux.Handle("POST /api/settings/tls/upload", d.guard("POST /api/settings/tls/upload", http.HandlerFunc(d.handleAPITLSUpload)))

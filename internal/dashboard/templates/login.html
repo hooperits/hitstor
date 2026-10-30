@@ -48,6 +48,18 @@
                         {{else if eq .Mode "change-password"}}
                         <h2 class="login-card-title">{{t "Choose a new password"}}</h2>
                         <p class="login-card-subtitle">{{t "Your password was set by an administrator: choose your own to continue."}}</p>
+                        {{else if eq .Mode "forgot"}}
+                        <h2 class="login-card-title">{{t "Forgot your password?"}}</h2>
+                        {{if .EmailEnabled}}<p class="login-card-subtitle">{{t "Enter your user name or email address. We email you a link to choose a new password."}}</p>
+                        {{else}}<p class="login-card-subtitle">{{t "Ask an administrator to reset your password: this dashboard does not send email."}}</p>{{end}}
+                        {{else if eq .Mode "reset"}}
+                        {{if eq .Purpose "invite"}}<h2 class="login-card-title">{{t "Welcome to HitStor"}}</h2>
+                        <p class="login-card-subtitle">{{tf "Choose the password of your account {user}. Next you set up two-step verification." "user" .Username}}</p>
+                        {{else}}<h2 class="login-card-title">{{t "Choose a new password"}}</h2>
+                        <p class="login-card-subtitle">{{tf "Choose a new password for the account {user}." "user" .Username}}</p>{{end}}
+                        {{else if eq .Mode "link-invalid"}}
+                        <h2 class="login-card-title">{{t "This link no longer works"}}</h2>
+                        <p class="login-card-subtitle">{{t "Links work once and expire, and a newer link replaces the earlier ones. Ask for a new one."}}</p>
                         {{else if eq .Mode "password"}}
                         <h2 class="login-card-title">{{t "Sign in"}}</h2>
                         <p class="login-card-subtitle">{{t "Enter your dashboard password to continue."}}</p>
@@ -121,6 +133,37 @@
                     <button type="submit" class="login-submit">{{t "Change password"}}</button>
                 </form>
 
+                {{else if eq .Mode "forgot"}}
+                {{if and .EmailEnabled (not .Notice)}}
+                <form method="POST" action="/login/forgot" class="login-form">
+                    <label class="login-label" for="forgot-login">{{t "User name or email address"}}</label>
+                    <input type="text" name="login" id="forgot-login" autocomplete="username" autofocus required maxlength="254">
+                    <button type="submit" class="login-submit">{{t "Email me a link"}}</button>
+                </form>
+                {{end}}
+                <a href="/login" class="login-link">{{t "Back to sign in"}}</a>
+
+                {{else if eq .Mode "reset"}}
+                <form method="POST" action="/login/reset" class="login-form">
+                    <input type="hidden" name="token" value="{{.Token}}">
+                    <input type="hidden" name="username" value="{{.Username}}" autocomplete="username">
+                    <label class="login-label" for="reset-password">{{t "New password"}}</label>
+                    <input type="password" name="password" id="reset-password" autocomplete="new-password" autofocus required minlength="12">
+                    <label class="login-label" for="reset-confirm">{{t "Repeat the password"}}</label>
+                    <input type="password" name="confirm" id="reset-confirm" autocomplete="new-password" required minlength="12">
+                    <p class="login-hint">{{t "At least 12 characters. A phrase of several words is easy to remember and hard to guess."}}</p>
+                    {{if .NeedCode}}
+                    <label class="login-label" for="reset-code">{{t "Code from your authenticator app"}}</label>
+                    <input type="text" name="code" id="reset-code" class="login-code-input" inputmode="numeric" autocomplete="one-time-code" required maxlength="23" placeholder="123456">
+                    <p class="login-hint">{{t "Or one of your recovery codes. If you lost both, ask an administrator to reset your two-step verification."}}</p>
+                    {{end}}
+                    <button type="submit" class="login-submit">{{if eq .Purpose "invite"}}{{t "Save and continue"}}{{else}}{{t "Change password"}}{{end}}</button>
+                </form>
+
+                {{else if eq .Mode "link-invalid"}}
+                {{if .EmailEnabled}}<a href="/login/forgot" class="login-submit login-submit--link">{{t "Ask for a new link"}}</a>{{end}}
+                <a href="/login" class="login-link">{{t "Back to sign in"}}</a>
+
                 {{else}}
                 <form method="POST" action="/login" class="login-form">
                     {{if ne .Mode "password"}}
@@ -134,6 +177,7 @@
                     </div>
                     <button type="submit" class="login-submit">{{t "Sign In"}}</button>
                 </form>
+                {{if and (eq .Mode "login") .EmailEnabled}}<a href="/login/forgot" class="login-link">{{t "Forgot your password?"}}</a>{{end}}
                 {{end}}
             </div>
         </section>

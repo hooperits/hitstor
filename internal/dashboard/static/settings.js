@@ -117,6 +117,8 @@
     setValue('settings-stale-threshold', note.alert_stale_threshold);
     setValue('settings-notifier-plugins', (note.alert_notifier_plugins || []).join(', '));
 
+    populateEmail(data.email || {});
+
     showRestartBanner(!!data.restart_required);
   }
 
@@ -421,6 +423,119 @@
       postJSON('/api/settings/test/gemini', body).then(function (res) {
         showStatus(res.ok ? t('Gemini connection successful.') : (res.error || t('Gemini test failed')), !res.ok);
       }).catch(function (err) { showStatus(err.message, true); });
+    });
+  }
+
+  // --- Email ---
+
+  function emailAuthChanged() {
+    var auth = document.getElementById('settings-email-auth');
+    if (!auth) return;
+    document.querySelectorAll('[data-email-auth]').forEach(function (el) {
+      el.hidden = el.getAttribute('data-email-auth') !== auth.value;
+    });
+  }
+
+  function populateEmail(e) {
+    setValue('settings-email-host', e.host || '');
+    setValue('settings-email-port', e.port || '');
+    setValue('settings-email-security', e.security || 'starttls');
+    setChecked('settings-email-skip-verify', e.tls_skip_verify);
+    setValue('settings-email-auth', e.auth || 'none');
+    setValue('settings-email-username', e.auth === 'password' ? e.username || '' : '');
+    setValue('settings-email-oauth-user', e.auth === 'microsoft365' ? e.username || '' : '');
+    setValue('settings-email-password', '');
+    setValue('settings-email-secret', '');
+    setText('settings-email-password-hint', e.password_set ? t('Saved. Leave it blank to keep it.') : '');
+    setText('settings-email-secret-hint', e.client_secret_set ? t('Saved. Leave it blank to keep it.') : '');
+    setValue('settings-email-tenant', e.tenant_id || '');
+    setValue('settings-email-client', e.client_id || '');
+    setValue('settings-email-from', e.from || '');
+    setValue('settings-email-from-name', e.from_name || '');
+    setValue('settings-email-dashboard-url', e.dashboard_url || '');
+    var url = document.getElementById('settings-email-dashboard-url');
+    if (url) url.placeholder = location.origin;
+    var stateEl = document.getElementById('settings-email-state');
+    if (stateEl) {
+      stateEl.innerHTML = e.configured
+        ? '<span class="badge badge-ok">' + escapeHTML(t('Email on')) + '</span> ' +
+          escapeHTML(t('New users get an invitation by email, and anyone can ask for a password reset link from the sign-in page.'))
+        : '<span class="badge badge-pending">' + escapeHTML(t('Email off')) + '</span> ' +
+          escapeHTML(t('Administrators give new users a temporary password, and reset forgotten passwords themselves.'));
+    }
+    emailAuthChanged();
+  }
+
+  function emailBody() {
+    var auth = document.getElementById('settings-email-auth').value;
+    var val = function (id) { return document.getElementById(id).value.trim(); };
+    return {
+      host: val('settings-email-host'),
+      port: parseInt(val('settings-email-port'), 10) || 0,
+      security: document.getElementById('settings-email-security').value,
+      tls_skip_verify: document.getElementById('settings-email-skip-verify').checked,
+      auth: auth,
+      username: auth === 'microsoft365' ? val('settings-email-oauth-user') : val('settings-email-username'),
+      password: document.getElementById('settings-email-password').value,
+      tenant_id: val('settings-email-tenant'),
+      client_id: val('settings-email-client'),
+      client_secret: val('settings-email-secret'),
+      from: val('settings-email-from'),
+      from_name: val('settings-email-from-name'),
+      dashboard_url: val('settings-email-dashboard-url')
+    };
+  }
+
+  var emailPresets = {
+    relay: { port: 25, security: 'none', auth: 'none' },
+    microsoft365: { host: 'smtp.office365.com', port: 587, security: 'starttls', auth: 'microsoft365' }
+  };
+  document.querySelectorAll('[data-email-preset]').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var p = emailPresets[btn.getAttribute('data-email-preset')];
+      if (p.host) setValue('settings-email-host', p.host);
+      setValue('settings-email-port', p.port);
+      setValue('settings-email-security', p.security);
+      setValue('settings-email-auth', p.auth);
+      setChecked('settings-email-skip-verify', false);
+      emailAuthChanged();
+      document.getElementById(p.host ? 'settings-email-from' : 'settings-email-host').focus();
+    });
+  });
+
+  var emailAuth = document.getElementById('settings-email-auth');
+  if (emailAuth) emailAuth.addEventListener('change', emailAuthChanged);
+
+  var emailSecurity = document.getElementById('settings-email-security');
+  if (emailSecurity) emailSecurity.addEventListener('change', function () {
+    var port = document.getElementById('settings-email-port');
+    var defaults = { none: '25', starttls: '587', tls: '465' };
+    if (!port.value || ['25', '587', '465'].indexOf(port.value) >= 0) port.value = defaults[emailSecurity.value];
+  });
+
+  var emailForm = document.getElementById('settings-email-form');
+  if (emailForm) {
+    emailForm.addEventListener('submit', function (e) {
+      e.preventDefault();
+      putJSON('/api/settings/email', emailBody()).then(function () {
+        showStatus(t('Email settings saved.'));
+        return loadSettings();
+      }).catch(function (err) { showStatus(err.message, true, 0); });
+    });
+  }
+
+  var emailTest = document.getElementById('settings-email-test');
+  if (emailTest) {
+    emailTest.addEventListener('click', function () {
+      var body = emailBody();
+      body.to = document.getElementById('settings-email-test-to').value.trim();
+      emailTest.disabled = true;
+      showStatus(t('Sending...'), false, 0);
+      postJSON('/api/settings/email/test', body).then(function (res) {
+        if (res.ok) showStatus(t('Test email sent to {to}. Check that it arrived.', { to: res.to }), false, 0);
+        else showStatus(t('The test email was not sent: {error}', { error: res.error || '' }), true, 0);
+      }).catch(function (err) { showStatus(err.message, true, 0); })
+        .then(function () { emailTest.disabled = false; });
     });
   }
 

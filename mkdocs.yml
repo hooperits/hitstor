@@ -68,6 +68,7 @@ nav:
     - Agent Discovery: admin-guide/agent-discovery.md
     - Agent Deployment: admin-guide/agent-deployment.md
     - Dashboard: admin-guide/dashboard.md
+    - Users and Access: admin-guide/users.md
     - Server Settings: admin-guide/settings.md
     - Monitoring: admin-guide/monitoring.md
     - Scheduling: admin-guide/scheduling.md
@@ -187,6 +188,7 @@ plugins:
             Agent Deployment: Despliegue de agentes
             Scheduling: Programación
             Dashboard: Dashboard
+            Users and Access: Usuarios y acceso
             Server Settings: Configuración del servidor
             Monitoring: Monitoreo
             Sentinel: Sentinel

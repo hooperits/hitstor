@@ -12,23 +12,13 @@ http://SERVER_IP:8421
 
 Reemplace `SERVER_IP` por el nombre de host o la dirección IP del servidor HitStor. El puerto predeterminado del dashboard es `8421` y se puede cambiar con `--dashboard-port`.
 
-## Protección con contraseña { #password-protection }
+## Inicio de sesión { #signing-in }
 
-El dashboard siempre requiere contraseña. Establézcala con la clave de configuración `serve_dashboard_password`:
+Cada persona inicia sesión con una cuenta personal: usuario, contraseña y un código de una app de autenticación. Los roles deciden qué páginas, agentes y acciones tiene cada uno. Consulte [Usuarios y acceso](users.md).
 
-```yaml
-# /etc/hitstor/config.yaml
-serve_dashboard_password: "DASHBOARD_PASSWORD"
-```
+En un servidor nuevo, o al actualizar desde una versión con una única contraseña de dashboard, el dashboard pide primero crear el administrador confirmando la contraseña compartida del dashboard. Esa contraseña proviene de la clave de configuración `serve_dashboard_password`; si no hay ninguna, `hitstor serve` genera una al iniciar, guarda su hash en el archivo de configuración e imprime el texto plano una sola vez en el registro del servidor (busque `no dashboard password configured`).
 
-Si no hay ninguna contraseña configurada, `hitstor serve` genera una aleatoria al iniciar, guarda su hash en el archivo de configuración e imprime el texto plano una sola vez en el registro del servidor (busque `no dashboard password configured`). Inicie sesión con ella y cámbiela en **Configuración**. Si el servidor no tiene archivo de configuración, se genera una contraseña nueva en cada reinicio.
-
-El dashboard presenta una página de inicio de sesión. La autenticación usa cookies de sesión con las siguientes propiedades de seguridad:
-
-- `HttpOnly`: las cookies no son accesibles desde JavaScript
-- `SameSite=Strict`: las cookies no se envían en solicitudes entre sitios
-
-Las sesiones expiran al cerrar el navegador.
+Las cookies de sesión son `HttpOnly` y `SameSite=Lax`, y los cambios se rechazan cuando el navegador indica que la solicitud viene de otro sitio.
 
 ## Notificaciones de actualización { #update-notifications }
 
@@ -201,15 +191,7 @@ curl -X POST http://localhost:8421/api/agents/web-01/browse \
 curl -s http://localhost:8421/api/agents | jq .
 ```
 
-Si la protección con contraseña del dashboard está habilitada, incluya la cookie de sesión o autentíquese primero:
-
-```bash
-# Autenticarse y guardar la cookie
-curl -c cookies.txt -d "password=DASHBOARD_PASSWORD" http://localhost:8421/login
-
-# Usar la cookie en las solicitudes a la API
-curl -b cookies.txt -s http://localhost:8421/api/stats | jq .
-```
+La API usa la misma sesión que el navegador: una solicitud necesita la cookie de sesión de un usuario que completó la verificación en dos pasos, y solo puede hacer lo que permite el rol de ese usuario. Sin sesión la API responde `401`.
 
 ## Métricas de Prometheus { #prometheus-metrics }
 

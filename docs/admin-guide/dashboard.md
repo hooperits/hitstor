@@ -12,23 +12,13 @@ http://SERVER_IP:8421
 
 Replace `SERVER_IP` with the hostname or IP address of the HitStor server. The default dashboard port is `8421`, configurable with `--dashboard-port`.
 
-## Password Protection
+## Signing In
 
-The dashboard always requires a password. Set it with the `serve_dashboard_password` configuration key:
+Everyone signs in with a personal account: user name, password and a code from an authenticator app. Roles decide which pages, agents and actions each person gets. See [Users and Access](users.md).
 
-```yaml
-# /etc/hitstor/config.yaml
-serve_dashboard_password: "DASHBOARD_PASSWORD"
-```
+On a new server, or after upgrading from a version with a single dashboard password, the dashboard first asks to create the administrator, confirming the shared dashboard password. That password comes from the `serve_dashboard_password` configuration key; if none is configured, `hitstor serve` generates one at startup, stores its hash in the config file and prints the plaintext once in the server log (look for `no dashboard password configured`).
 
-If no password is configured, `hitstor serve` generates a random one at startup, stores its hash in the config file and prints the plaintext once in the server log (look for `no dashboard password configured`). Log in with it and change it under **Settings**. If the server has no config file, a new password is generated on every restart.
-
-The dashboard presents a login page. Authentication uses session cookies with the following security properties:
-
-- `HttpOnly` — cookies are not accessible to JavaScript
-- `SameSite=Strict` — cookies are not sent on cross-site requests
-
-Sessions expire when the browser is closed.
+Session cookies are `HttpOnly` and `SameSite=Lax`, and changes are refused when the browser reports a request from another site.
 
 ## Update Notifications
 
@@ -198,15 +188,7 @@ curl -X POST http://localhost:8421/api/agents/web-01/browse \
 curl -s http://localhost:8421/api/agents | jq .
 ```
 
-If dashboard password protection is enabled, include the session cookie or authenticate first:
-
-```bash
-# Authenticate and save cookie
-curl -c cookies.txt -d "password=DASHBOARD_PASSWORD" http://localhost:8421/login
-
-# Use cookie for API requests
-curl -b cookies.txt -s http://localhost:8421/api/stats | jq .
-```
+The API uses the same session as the browser, so a request needs the session cookie of a user who completed two-step verification, and it can do only what that user's role allows. Without a session the API answers `401`.
 
 ## Prometheus Metrics
 

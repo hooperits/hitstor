@@ -254,7 +254,7 @@ func protectChains(inScope []SnapshotInfo, keep map[int]bool) {
 				if !keep[i] {
 					continue
 				}
-				kind := tagValue(inScope[i].Tags, "kind:")
+				kind := kindOf(inScope[i])
 				if kind == "full" {
 					continue
 				}
@@ -270,7 +270,11 @@ func protectChains(inScope []SnapshotInfo, keep map[int]bool) {
 							keep[older] = true
 							changed = true
 						}
-						if isChainBase(o) {
+						// A full that does not say what it holds (unreadable,
+						// or from before tags) is kept but ends only the walk of
+						// a snapshot that does not say either: a tagged object
+						// goes on to its own base.
+						if isChainBase(o) && (obj == "" || hasTag(o.Tags, "obj:"+obj)) {
 							break
 						}
 					}
@@ -289,15 +293,24 @@ func chainNeeds(kind string, o SnapshotInfo) bool {
 	case "differential":
 		return isChainBase(o)
 	case "log":
-		return isChainBase(o) || tagValue(o.Tags, "kind:") == "log"
+		return isChainBase(o) || kindOf(o) == "log"
 	}
 	return true
+}
+
+// kindOf returns a workload snapshot's backup kind. Jobs made before kinds
+// took fulls, the plugins' default, and tagged none.
+func kindOf(s SnapshotInfo) string {
+	if k := tagValue(s.Tags, "kind:"); k != "" {
+		return k
+	}
+	return "full"
 }
 
 // isChainBase reports whether s is a full workload backup that later ones
 // can build on.
 func isChainBase(s SnapshotInfo) bool {
-	return tagValue(s.Tags, "kind:") == "full" && !hasTag(s.Tags, "copy-only")
+	return kindOf(s) == "full" && !hasTag(s.Tags, "copy-only")
 }
 
 // taggedObjects returns the objects s names in its tags.

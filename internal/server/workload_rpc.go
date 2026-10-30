@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"path"
 	"slices"
@@ -70,12 +71,18 @@ func (s *Server) knownWorkloadItems(job BackupJob) ([]workloadcat.Item, error) {
 	// failure. Failing the call instead would send the plugin back to its
 	// msdb check, which cannot tell a backup HitStor no longer holds. The
 	// catalog caches nothing from a failed read, so the next run retries.
+	// Only the job's repository: retention keeps chains per repository, so
+	// a base held elsewhere could be forgotten under this job's backups.
 	var repos []*repository.Repository
 	for _, mr := range s.repos.List() {
 		repos = append(repos, mr.Repo)
 	}
 	workloadcat.Default.RetainRepos(repos)
-	for _, repo := range repos {
+	mr, err := s.repos.Get(job.RepoName)
+	if err != nil {
+		return nil, fmt.Errorf("repository %s: %w", job.RepoName, err)
+	}
+	for _, repo := range []*repository.Repository{mr.Repo} {
 		ids, err := repo.ListSnapshots()
 		if err != nil {
 			slog.Warn("workload catalog: cannot list snapshots", "error", err)

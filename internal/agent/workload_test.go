@@ -392,8 +392,8 @@ func TestWorkloadObjectTagsFromContents(t *testing.T) {
 		}
 	}
 	snap.Tags = legacy
-	got := workloadcat.Default.ObjectTags(repo, ids[0], snap)
-	if !slices.Contains(got, "obj:inst/a") || !slices.Contains(got, "obj:inst/b") {
+	got, err := workloadcat.Default.ObjectTags(repo, ids[0], snap)
+	if err != nil || !slices.Contains(got, "obj:inst/a") || !slices.Contains(got, "obj:inst/b") {
 		t.Fatalf("tags = %v", got)
 	}
 }

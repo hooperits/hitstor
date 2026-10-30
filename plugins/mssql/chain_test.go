@@ -94,6 +94,13 @@ func TestCheckChainAgainstKnownBackups(t *testing.T) {
 			t.Errorf("%s: got %v, want %q", tt.name, got, tt.want)
 		}
 	}
+	// A held log without any held full (forgotten by hand) restores nothing.
+	logOnly := newKnownBackups(hitstorplugin.BackupRequest{KnownProvided: true, Known: []hitstorplugin.KnownItem{
+		meta(itemMeta{Type: typeLog, FirstLSN: "100", LastLSN: "200"}),
+	}})
+	if got := checkChain("log", "MSSQLSERVER/db", chainState{DatabaseGUID: guid, LastLogLSN: "200", Chain: ours}, logOnly); got == nil || got.Reason != reasonNotHeld {
+		t.Errorf("log without a held full: got %v", got)
+	}
 	// A host that sent its list, even empty, is believed.
 	if got := checkChain("log", "MSSQLSERVER/db", chainState{DatabaseGUID: guid, LastLogLSN: "200", Chain: ours},
 		newKnownBackups(hitstorplugin.BackupRequest{KnownProvided: true})); got == nil || got.Reason != reasonNotHeld {

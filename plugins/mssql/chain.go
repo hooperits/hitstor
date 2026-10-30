@@ -87,10 +87,19 @@ func (k knownBackups) holdsBase(guid, object, baseLSN string) bool {
 // logs and full, not differentials, so only a full restarts a chain.
 func (k knownBackups) holdsChainEnd(guid, object, lsnEnd string) bool {
 	end := lsn(lsnEnd)
+	// A held log continues a chain only if HitStor also holds a full it
+	// builds on (one ended before the log did): a full forgotten by hand
+	// leaves logs no restore can use.
+	baseBefore := false
+	for _, m := range k[knownKey(guid, object)] {
+		if m.Type == typeFull && !m.CopyOnly && lsn(m.LastLSN).Cmp(end) <= 0 {
+			baseBefore = true
+		}
+	}
 	for _, m := range k[knownKey(guid, object)] {
 		switch m.Type {
 		case typeLog:
-			if lsn(m.LastLSN).Cmp(end) == 0 {
+			if lsn(m.LastLSN).Cmp(end) == 0 && baseBefore {
 				return true
 			}
 		case typeFull:

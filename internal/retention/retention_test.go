@@ -518,22 +518,33 @@ func TestApply_CopyOnlyFullsAndLegacyBases(t *testing.T) {
 		t.Fatalf("copy-only fulls: forgotten = %s, want 1,2,3,4", got)
 	}
 
-	// A snapshot without object tags may hold any object, so the first such
-	// full ends a walk, as before tags. forget tags such snapshots from their
-	// contents, so this only applies when that cannot be read.
+	// A full whose contents are unknown (unreadable, or from before tags) may
+	// hold the object: it is kept, but a tagged object's walk goes on to its
+	// own base. forget tags such snapshots from their contents, so this only
+	// applies when they cannot be read.
 	legacy := []SnapshotInfo{
-		snap(1, h(0), "sql01", nil, []string{"plugin:mssql", "kind:full", "job:A"}),
+		snap(1, h(0), "sql01", nil, []string{"plugin:mssql", "kind:full", "obj:I/a", "job:A"}),
 		snap(2, h(1), "sql01", nil, []string{"plugin:mssql", "kind:full", "job:B"}),
-		snap(3, h(2), "sql01", nil, []string{"plugin:mssql", "kind:differential", "obj:I/a", "job:A"}),
+		snap(3, h(2), "sql01", nil, []string{"plugin:mssql", "kind:log", "obj:I/a", "job:A"}),
 	}
 	r, _ = Apply(legacy, Policy{KeepLast: 1}, "sql01", "")
-	if got := forgottenIDs(r); got != "1" {
-		t.Fatalf("legacy bases: forgotten = %s, want 1", got)
+	if got := forgottenIDs(r); got != "" {
+		t.Fatalf("unknown full: forgotten = %s, want none", got)
+	}
+
+	// Jobs made before kinds tagged none: their fulls are bases.
+	kindless := []SnapshotInfo{
+		snap(1, h(0), "sql01", nil, []string{"plugin:mssql", "obj:I/x"}),
+		snap(2, h(1), "sql01", nil, []string{"plugin:mssql", "kind:differential", "obj:I/x"}),
+		snap(3, h(2), "sql01", nil, []string{"plugin:mssql", "kind:differential", "obj:I/x"}),
+	}
+	r, _ = Apply(kindless, Policy{KeepLast: 2}, "sql01", "")
+	if got := forgottenIDs(r); got != "" {
+		t.Fatalf("kindless full: forgotten = %s, want none", got)
 	}
 
 	// Tagged logs taken after the upgrade but before the job's first tagged
-	// full keep the job's untagged logs back to its newest untagged full,
-	// not all history.
+	// full, over untagged history.
 	var hist []SnapshotInfo
 	for d := 0; d < 5; d++ {
 		hist = append(hist,
@@ -541,9 +552,11 @@ func TestApply_CopyOnlyFullsAndLegacyBases(t *testing.T) {
 			snap(byte(10*d+2), h(24*d+1), "sql01", nil, []string{"plugin:mssql", "kind:log", "job:A"}))
 	}
 	hist = append(hist, snap(99, h(24*5), "sql01", nil, []string{"plugin:mssql", "kind:log", "obj:I/a", "job:A"}))
+	// With no tagged base before it, the walk keeps all unknown history:
+	// the safe side, since any of it may be the base. (forget tags it.)
 	r, _ = Apply(hist, Policy{KeepLast: 1}, "sql01", "")
-	if len(r.Keep) != 3 { // #99, the day-4 log and full
-		t.Fatalf("kept %d snapshots, want 3: %v", len(r.Keep), r.Keep)
+	if len(r.Forget) != 0 {
+		t.Fatalf("forgot %d snapshots of unknown contents", len(r.Forget))
 	}
 }
 

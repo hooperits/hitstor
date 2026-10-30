@@ -116,6 +116,17 @@ func (d *Dashboard) newPageData(title, subtitle, active string, content any) pag
 	return pd
 }
 
+// kindRunAt is when a plan kind last ran: its latest error or backup.
+func kindRunAt(k planKindView) time.Time {
+	if k.LastErrorAt != nil && (k.LastBackup == nil || k.LastErrorAt.After(*k.LastBackup)) {
+		return *k.LastErrorAt
+	}
+	if k.LastBackup != nil {
+		return *k.LastBackup
+	}
+	return time.Time{}
+}
+
 func (d *Dashboard) firstRepoName() string {
 	if d.repos == nil {
 		return ""
@@ -277,15 +288,21 @@ func buildJobView(c *i18n.Catalog, j server.BackupJob, sess *server.SessionInfo,
 				v.RunNowKind = kindLabel(c, j.RunNowKind)
 			}
 		}
-		// The alert explains the first kind whose latest run failed, else the
-		// first one that was partial.
+		// The alert explains the most recent run that failed, else the most
+		// recent partial one.
 		for _, partial := range []bool{false, true} {
-			for _, k := range plan {
-				if v.FailedKind != "" || (partial && !k.Partial) || (!partial && !k.Failed) {
+			var pick *planKindView
+			for i, k := range plan {
+				if (partial && !k.Partial) || (!partial && !k.Failed) {
 					continue
 				}
-				v.FailedKind, v.Partial = k.Label, partial
-				v.LastError, v.FullRequired, v.Failures = k.LastError, k.FullRequired, k.Failures
+				if pick == nil || kindRunAt(k).After(kindRunAt(*pick)) {
+					pick = &plan[i]
+				}
+			}
+			if pick != nil && v.FailedKind == "" {
+				v.FailedKind, v.Partial = pick.Label, partial
+				v.LastError, v.FullRequired, v.Failures = pick.LastError, pick.FullRequired, pick.Failures
 			}
 		}
 	}

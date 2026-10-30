@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/hooperits/hitstor/internal/i18n"
 	"github.com/hooperits/hitstor/internal/server"
 )
 
@@ -252,5 +253,24 @@ func TestAPIWorkloadJobPlan(t *testing.T) {
 	v := buildJobView(dash.catalog(httptest.NewRequest("GET", "/", nil)), *j, nil, time.Now())
 	if v.Status != "failed" || len(v.FullRequired) != 1 || v.FullRequired[0].Reason != "no-full" {
 		t.Fatalf("view = %s %+v", v.Status, v.FullRequired)
+	}
+}
+
+// With several kinds partial, the alert explains the most recent run.
+func TestPartialAlertExplainsTheLatestRun(t *testing.T) {
+	now := time.Now()
+	earlier, later := now.Add(-time.Hour), now.Add(-time.Minute)
+	failed := []server.ObjectOutcome{{Object: "MSSQLSERVER/off", Status: "failed", Reason: "offline"}}
+	j := server.BackupJob{
+		ID: "j", Name: "multi", AgentName: "sql01", JobType: server.JobTypeWorkload, Plugin: "mssql",
+		Plan: []server.PlanEntry{{Kind: "full"}, {Kind: "log"}},
+		KindRuns: map[string]server.KindRun{
+			"full": {LastBackup: &earlier, Partial: true, Objects: failed},
+			"log":  {LastBackup: &later, Partial: true, Objects: failed},
+		},
+	}
+	v := buildJobView(i18n.Get("en"), j, nil, now)
+	if v.Status != "partial" || !v.Partial || v.FailedKind != "Transaction log" || len(v.Failures) != 1 {
+		t.Fatalf("view = %s partial=%v kind=%q failures=%+v", v.Status, v.Partial, v.FailedKind, v.Failures)
 	}
 }

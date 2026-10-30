@@ -216,9 +216,10 @@ func (d *Dashboard) protect(next http.Handler) http.Handler {
 			d.denyUnauthenticated(w, r, "/login")
 			return
 		}
-		sess, u, err := d.users.Authenticate(cookie.Value)
+		sess, u, err := d.users.Authenticate(cookie.Value, userActivity(r))
 		if err != nil {
-			d.denyUnauthenticated(w, r, "/login")
+			// A cookie whose session is gone: it timed out or was ended.
+			d.denyUnauthenticated(w, r, "/login?expired=1")
 			return
 		}
 		switch sess.Stage {
@@ -286,6 +287,7 @@ type loginPage struct {
 	Secret   string // TOTP secret, to type in by hand
 	Codes    []string
 	Warning  string
+	Notice   string
 }
 
 func (d *Dashboard) renderLogin(w http.ResponseWriter, r *http.Request, p loginPage) {
@@ -301,7 +303,11 @@ func (d *Dashboard) handleLoginPage(w http.ResponseWriter, r *http.Request) {
 	case authPassword:
 		d.renderLogin(w, r, loginPage{Mode: "password"})
 	default:
-		d.renderLogin(w, r, loginPage{Mode: "login"})
+		page := loginPage{Mode: "login"}
+		if r.URL.Query().Get("expired") != "" {
+			page.Notice = d.catalog(r).T("Your session ended. Sign in again to continue.")
+		}
+		d.renderLogin(w, r, page)
 	}
 }
 
@@ -369,11 +375,27 @@ func (d *Dashboard) pendingSession(r *http.Request) (users.Session, users.User, 
 	if err != nil {
 		return users.Session{}, users.User{}, "", false
 	}
-	sess, u, err := d.users.Authenticate(c.Value)
+	sess, u, err := d.users.Authenticate(c.Value, true)
 	if err != nil {
 		return users.Session{}, users.User{}, "", false
 	}
 	return sess, u, c.Value, true
+}
+
+// userActivity reports whether r is something the user did: opening a
+// page or changing something. Auto-refresh, live progress and other
+// background reads are not, so an unattended open page still times out;
+// the page reports the user's own activity (typing, clicking) with
+// POST /api/session/activity.
+func userActivity(r *http.Request) bool {
+	if r.Method != http.MethodGet && r.Method != http.MethodHead {
+		return true
+	}
+	if mode := r.Header.Get("Sec-Fetch-Mode"); mode != "" {
+		return mode == "navigate"
+	}
+	// Browsers without Fetch Metadata: a plain page load.
+	return r.Header.Get("HX-Request") == "" && strings.Contains(r.Header.Get("Accept"), "text/html")
 }
 
 func (d *Dashboard) handleCodePage(w http.ResponseWriter, r *http.Request) {
@@ -458,7 +480,7 @@ func (d *Dashboard) handleEnrollSubmit(w http.ResponseWriter, r *http.Request) {
 
 func (d *Dashboard) handleLogout(w http.ResponseWriter, r *http.Request) {
 	if c, err := r.Cookie(sessionCookieName); err == nil && d.users != nil {
-		if _, u, err := d.users.Authenticate(c.Value); err == nil {
+		if _, u, err := d.users.Authenticate(c.Value, false); err == nil {
 			d.auditEvent(r, u.Username, "logout", "", true, "")
 		}
 		d.users.Logout(c.Value)

@@ -65,6 +65,78 @@
         });
     };
 
+    // --- Session timeout: auto-refresh does not keep a session alive, so
+    // report the user's own activity and warn before the session ends.
+    function sessionWatch() {
+        var WARN = 120, PING_EVERY = 60000;
+        var deadline = 0, absolute = false, lastPing = Date.now(), warning = null;
+
+        function fmt(sec) {
+            sec = Math.max(0, Math.round(sec));
+            return Math.floor(sec / 60) + ':' + String(sec % 60).padStart(2, '0');
+        }
+        function ended() { location.href = '/login?expired=1'; }
+        function sync(r) {
+            if (r.status === 401) return ended();
+            if (!r.ok) return;
+            return r.json().then(function (s) {
+                if (s.accounts === false) return;
+                deadline = Date.now() + s.expires_in * 1000;
+                absolute = s.absolute;
+                if (warning && deadline - Date.now() > WARN * 1000) closeWarning();
+            });
+        }
+        function check() { return nativeFetch('/api/session').then(sync); }
+        function ping() {
+            lastPing = Date.now();
+            return nativeFetch('/api/session/activity', { method: 'POST' }).then(sync);
+        }
+        function closeWarning() {
+            if (warning) warning.close();
+            warning = null;
+        }
+        function showWarning() {
+            warning = dialog(t('Your session is about to end'),
+                '<p class="session-warning-text"></p>' +
+                '<div class="dialog-actions">' +
+                '<button type="button" class="btn btn-secondary sw-logout">' + esc(t('Sign out')) + '</button>' +
+                (absolute ? '' : '<button type="button" class="btn sw-stay">' + esc(t('Stay signed in')) + '</button>') +
+                '</div>');
+            warning.q('.dialog-close').addEventListener('click', function () { warning = null; });
+            warning.q('.sw-logout').addEventListener('click', function () {
+                nativeFetch('/logout', { method: 'POST' }).then(function () { location.href = '/login'; });
+            });
+            var stay = warning.q('.sw-stay');
+            if (stay) {
+                stay.addEventListener('click', function () { ping().then(closeWarning); });
+                stay.focus();
+            }
+            tick();
+        }
+        function tick() {
+            var left = (deadline - Date.now()) / 1000;
+            if (warning) {
+                warning.q('.session-warning-text').textContent = absolute
+                    ? t('Sessions last at most 12 hours. This one ends in {time}: save your work, then sign in again.', { time: fmt(left) })
+                    : t('Because of inactivity, your session ends in {time}.', { time: fmt(left) });
+            }
+            if (left <= 0) {
+                // Another tab may have kept it alive.
+                check().then(function () { if (deadline <= Date.now()) ended(); });
+            } else if (left <= WARN && !warning) {
+                check().then(function () { if (!warning && deadline - Date.now() <= WARN * 1000) showWarning(); });
+            }
+        }
+        function onActivity() {
+            if (warning || absolute || Date.now() - lastPing < PING_EVERY) return;
+            ping();
+        }
+        ['keydown', 'mousedown', 'wheel', 'touchstart'].forEach(function (ev) {
+            document.addEventListener(ev, onActivity, { passive: true, capture: true });
+        });
+        check().then(function () { setInterval(tick, 1000); });
+    }
+
     function api(method, url, body) {
         var init = { method: method, headers: {} };
         if (body !== undefined) {
@@ -304,6 +376,7 @@
     }
 
     document.addEventListener('DOMContentLoaded', function () {
+        if (document.body.hasAttribute('data-signed-in')) sessionWatch();
         var a = document.getElementById('account-app');
         if (a) account(a);
         var u = document.getElementById('users-app');

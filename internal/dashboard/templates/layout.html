@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="/static/style.css">
     {{template "i18n_head"}}
 </head>
-<body class="dashboard-app">
+<body class="dashboard-app"{{if .Nav.User}} data-signed-in{{end}}>
     <header class="header-bar brand-surface">
         <div class="header-bar-left">
             <button type="button" class="header-menu-btn" id="sidebar-toggle" aria-label="{{t "Open navigation"}}">

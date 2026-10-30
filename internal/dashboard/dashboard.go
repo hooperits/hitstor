@@ -281,6 +281,8 @@ func (d *Dashboard) Handler() http.Handler {
 		"POST /api/account/password":             d.handleAPIAccountPassword,
 		"POST /api/account/recovery-codes":       d.handleAPIAccountRecoveryCodes,
 		"GET /api/account/sessions":              d.handleAPIAccountSessions,
+		"GET /api/session":                       d.handleAPISession,
+		"POST /api/session/activity":             d.handleAPISessionActivity,
 		"DELETE /api/account/sessions/{id}":      d.handleAPIAccountEndSession,
 		"POST /api/reauth":                       d.handleAPIReauth,
 		"GET /users":                             d.handleUsersPage,

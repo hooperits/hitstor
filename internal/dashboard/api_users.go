@@ -233,6 +233,35 @@ func (d *Dashboard) handleAPIAccountEndSession(w http.ResponseWriter, r *http.Re
 }
 
 // handleAPIReauth confirms the signed-in user before a sensitive action.
+// sessionState tells the page when its session ends, so it can warn first.
+// Seconds are counted on the server: the browser's clock may be off.
+type sessionState struct {
+	ExpiresIn int  `json:"expires_in"` // seconds
+	Absolute  bool `json:"absolute"`   // the 12-hour limit: activity cannot extend it
+}
+
+func (d *Dashboard) writeSessionState(w http.ResponseWriter, r *http.Request) {
+	a := authOf(r)
+	if a == nil || a.user == nil {
+		writeJSON(w, map[string]any{"accounts": false})
+		return
+	}
+	at, absolute := a.session.Expires(*a.user)
+	writeJSON(w, sessionState{ExpiresIn: int(time.Until(at).Seconds()), Absolute: absolute})
+}
+
+// handleAPISession reports the session's remaining time; it does not count
+// as activity.
+func (d *Dashboard) handleAPISession(w http.ResponseWriter, r *http.Request) {
+	d.writeSessionState(w, r)
+}
+
+// handleAPISessionActivity records that the user is working on the page
+// (being a POST, protect already counted it) and reports the new limit.
+func (d *Dashboard) handleAPISessionActivity(w http.ResponseWriter, r *http.Request) {
+	d.writeSessionState(w, r)
+}
+
 func (d *Dashboard) handleAPIReauth(w http.ResponseWriter, r *http.Request) {
 	a := authOf(r)
 	if a == nil || a.user == nil || !d.usersReady(w) {

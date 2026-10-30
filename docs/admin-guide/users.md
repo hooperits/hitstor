@@ -38,7 +38,7 @@ Administrators never choose a user's password. Creating a user or resetting a pa
 
 ## Sessions and lockout { #sessions }
 
-- A session ends after 30 minutes without activity (15 for administrators) and after 12 hours in any case.
+- A session ends after 30 minutes without activity (15 for administrators) and after 12 hours in any case. Only what the user does counts as activity: opening pages, typing, clicking. Automatic refreshes do not, so a page left open on an unattended computer still times out. Two minutes before, the dashboard warns and offers to stay signed in.
 - Deleting users, changing roles, resetting passwords, deleting snapshots, pruning, recovering a server and similar changes ask for the password and a code again if the last sign-in was more than 15 minutes ago.
 - After 10 wrong passwords or codes an account is locked for 15 minutes. Repeated failures from one address are also slowed down.
 - **My account** lists the user's open sessions and can end any of them. Administrators can end anybody's sessions under **Users**.

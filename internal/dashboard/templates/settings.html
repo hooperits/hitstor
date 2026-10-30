@@ -65,6 +65,9 @@
 
     <section class="settings-panel hidden" data-panel="security">
         <h2>{{t "Security & TLS"}}</h2>
+        {{if .Content.Accounts}}
+        <p class="settings-lead">{{t "People sign in with personal accounts and two-step verification."}} <a href="/users">{{t "Manage users and roles"}}</a></p>
+        {{else}}
         <form id="settings-security-form" class="settings-form">
             <label class="settings-field">
                 <span>{{t "Dashboard password"}}</span>
@@ -73,6 +76,7 @@
             </label>
             <button type="submit" class="btn btn-primary">{{t "Save Security"}}</button>
         </form>
+        {{end}}
 
         <div class="settings-card" id="settings-tls-status-card">
             <h3>{{t "TLS certificate"}}</h3>

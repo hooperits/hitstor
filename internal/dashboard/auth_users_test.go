@@ -175,7 +175,7 @@ func TestSignInWithAuthenticator(t *testing.T) {
 
 	// Sign out; the next sign-in asks for a code, and a reused one fails.
 	do(t, h, c, "POST", "/logout", nil)
-	if rec := do(t, h, c, "GET", "/agents", nil); rec.Header().Get("Location") != "/login" {
+	if rec := do(t, h, c, "GET", "/agents", nil); rec.Header().Get("Location") != "/login?expired=1" {
 		t.Fatalf("old cookie after logout: %q", rec.Header().Get("Location"))
 	}
 	rec = do(t, h, nil, "POST", "/login", url.Values{"username": {"ana"}, "password": {testUserPassword}})
@@ -304,6 +304,10 @@ func TestAdministratorManagesUsers(t *testing.T) {
 	if rec := do(t, h, c, "GET", "/audit", nil); !strings.Contains(rec.Body.String(), "user.add") {
 		t.Error("audit log does not show the new user")
 	}
+	// The shared dashboard password no longer signs in: Settings stops offering it.
+	if body := do(t, h, c, "GET", "/settings", nil).Body.String(); strings.Contains(body, "settings-dashboard-password") || !strings.Contains(body, `href="/users"`) {
+		t.Error("Settings still offers the shared dashboard password")
+	}
 }
 
 func TestTemporaryPasswordMustBeChanged(t *testing.T) {
@@ -314,7 +318,7 @@ func TestTemporaryPasswordMustBeChanged(t *testing.T) {
 		t.Fatal(err)
 	}
 	// Reset ends the sessions; signing in again lands on the password change.
-	if rec := do(t, h, c, "GET", "/agents", nil); rec.Header().Get("Location") != "/login" {
+	if rec := do(t, h, c, "GET", "/agents", nil); rec.Header().Get("Location") != "/login?expired=1" {
 		t.Fatalf("session survived a password reset: %d %q", rec.Code, rec.Header().Get("Location"))
 	}
 	token, _, err := store.Login("luis", "temporary-password-1", "127.0.0.1", "test")
@@ -337,5 +341,48 @@ func TestTemporaryPasswordMustBeChanged(t *testing.T) {
 	}
 	if rec := do(t, h, c, "GET", "/agents", nil); rec.Code != http.StatusOK {
 		t.Fatalf("GET /agents after the change = %d", rec.Code)
+	}
+}
+
+func TestOnlyUserActivityCounts(t *testing.T) {
+	for _, tc := range []struct {
+		name    string
+		method  string
+		headers map[string]string
+		want    bool
+	}{
+		{"page load", "GET", map[string]string{"Sec-Fetch-Mode": "navigate"}, true},
+		{"auto-refresh", "GET", map[string]string{"Sec-Fetch-Mode": "cors", "HX-Request": "true"}, false},
+		{"live progress", "GET", map[string]string{"Sec-Fetch-Mode": "cors", "Accept": "text/event-stream"}, false},
+		{"change", "POST", map[string]string{"Sec-Fetch-Mode": "cors"}, true},
+		{"old browser page load", "GET", map[string]string{"Accept": "text/html,*/*"}, true},
+		{"old browser auto-refresh", "GET", map[string]string{"Accept": "text/html", "HX-Request": "true"}, false},
+	} {
+		r := httptest.NewRequest(tc.method, "/backups", nil)
+		for k, v := range tc.headers {
+			r.Header.Set(k, v)
+		}
+		if got := userActivity(r); got != tc.want {
+			t.Errorf("%s: userActivity = %v, want %v", tc.name, got, tc.want)
+		}
+	}
+}
+
+func TestSessionStateAndExpiredNotice(t *testing.T) {
+	dash, store := setupUsersDashboard(t)
+	h := dash.Handler()
+	c := signedIn(t, store, "ana", users.Grant{Role: users.RoleViewer})
+	rec := do(t, h, c, "GET", "/api/session", nil)
+	var s sessionState
+	if err := json.Unmarshal(rec.Body.Bytes(), &s); err != nil || s.Absolute || s.ExpiresIn < 29*60 || s.ExpiresIn > 30*60 {
+		t.Fatalf("session state = %+v %v (%s)", s, err, rec.Body.String())
+	}
+	do(t, h, c, "POST", "/logout", nil)
+	rec = do(t, h, c, "GET", "/backups", nil)
+	if loc := rec.Header().Get("Location"); loc != "/login?expired=1" {
+		t.Fatalf("ended session redirects to %q", loc)
+	}
+	if rec := do(t, h, nil, "GET", "/login?expired=1", nil); !strings.Contains(rec.Body.String(), "login-notice") {
+		t.Error("login page does not explain the session ended")
 	}
 }

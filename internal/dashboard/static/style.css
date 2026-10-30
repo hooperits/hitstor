@@ -6335,6 +6335,16 @@ body.dr-drawer-open {
     text-align: center;
 }
 
+.login-notice {
+    color: var(--text);
+    background: var(--primary-soft);
+    border: 1px solid rgba(232, 96, 44, 0.25);
+    border-radius: var(--radius-sm);
+    font-size: 0.85rem;
+    margin-bottom: 0.75rem;
+    padding: 0.65rem 0.75rem;
+}
+
 .login-hint {
     margin: 0;
     font-size: 0.8rem;

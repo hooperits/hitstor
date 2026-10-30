@@ -58,6 +58,7 @@
                     </div>
                 </div>
                 {{if .Error}}<div class="login-error" role="alert">{{.Error}}</div>{{end}}
+                {{if .Notice}}<div class="login-notice" role="status">{{.Notice}}</div>{{end}}
 
                 {{if eq .Mode "code"}}
                 <form method="POST" action="/login/code" class="login-form">

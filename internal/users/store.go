@@ -481,23 +481,41 @@ func (s *Store) sessionByToken(token string) *Session {
 	return nil
 }
 
-// expired reports whether sess is no longer valid at now.
-func (s *Store) expired(sess *Session, u *User, now time.Time) bool {
-	if u == nil || u.Disabled {
-		return true
-	}
-	last := sess.LastSeen
-	if t, ok := s.touched[sess.ID]; ok && t.After(last) {
-		last = t
-	}
+// Expires returns when a signed-in session of u ends unless there is
+// activity first, and whether that is its absolute limit instead (which
+// activity cannot extend).
+func (sess Session) Expires(u User) (at time.Time, absolute bool) {
 	if sess.Stage != StageFull {
-		return now.Sub(sess.Created) > pendingSessionTTL
+		return sess.Created.Add(pendingSessionTTL), true
 	}
 	idle := idleTimeout
 	if u.IsAdmin() {
 		idle = adminIdleTimeout
 	}
-	return now.Sub(last) > idle || now.Sub(sess.Created) > absoluteTimeout
+	at, end := sess.LastSeen.Add(idle), sess.Created.Add(absoluteTimeout)
+	if !end.After(at) {
+		return end, true
+	}
+	return at, false
+}
+
+// lastSeen is sess's last activity, including activity not yet saved.
+func (s *Store) lastSeen(sess *Session) time.Time {
+	if t, ok := s.touched[sess.ID]; ok && t.After(sess.LastSeen) {
+		return t
+	}
+	return sess.LastSeen
+}
+
+// expired reports whether sess is no longer valid at now.
+func (s *Store) expired(sess *Session, u *User, now time.Time) bool {
+	if u == nil || u.Disabled {
+		return true
+	}
+	cur := *sess
+	cur.LastSeen = s.lastSeen(sess)
+	at, _ := cur.Expires(*u)
+	return now.After(at)
 }
 
 func (s *Store) pruneSessions(now time.Time) {
@@ -512,9 +530,12 @@ func (s *Store) dropSessions(userID, keepID string) {
 	})
 }
 
-// Authenticate returns the session and user of token, and records the
-// activity. A session past its stage's lifetime is gone.
-func (s *Store) Authenticate(token string) (Session, User, error) {
+// Authenticate returns the session and user of token; active records the
+// request as the user's activity, which keeps the session from idling out.
+// Background requests (auto-refresh, live progress) must not count, or an
+// unattended open page would never time out. A session past its stage's
+// lifetime is gone.
+func (s *Store) Authenticate(token string, active bool) (Session, User, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.reload(false)
@@ -529,11 +550,15 @@ func (s *Store) Authenticate(token string) (Session, User, error) {
 		s.save()
 		return Session{}, User{}, ErrNoSession
 	}
-	s.touched[sess.ID] = now
-	if now.Sub(sess.LastSeen) > touchEvery {
-		s.save()
+	if active {
+		s.touched[sess.ID] = now
+		if now.Sub(sess.LastSeen) > touchEvery {
+			s.save()
+		}
 	}
-	return *sess, copyUser(u), nil
+	out := *sess
+	out.LastSeen = s.lastSeen(sess)
+	return out, copyUser(u), nil
 }
 
 // verifySecondFactor checks a TOTP code or, failing that, a recovery code,
@@ -748,7 +773,7 @@ func (s *Store) EndSession(name, id string) error {
 // ChangeOwnPassword changes the signed-in user's password after checking
 // the current one; other sessions end.
 func (s *Store) ChangeOwnPassword(token, current, next string) error {
-	sess, u, err := s.Authenticate(token)
+	sess, u, err := s.Authenticate(token, true)
 	if err != nil {
 		return err
 	}

@@ -107,6 +107,8 @@ var routePolicies = map[string]routePolicy{
 	"GET /api/account/sessions":         {perms: view, anyAgent: true},
 	"DELETE /api/account/sessions/{id}": {perms: view, anyAgent: true},
 	"POST /api/reauth":                  {perms: view, anyAgent: true},
+	"GET /api/session":                  {perms: view, anyAgent: true},
+	"POST /api/session/activity":        {perms: view, anyAgent: true},
 
 	// Administrators: sensitive changes ask for a recent sign-in.
 	"GET /users":                             {perms: admin},

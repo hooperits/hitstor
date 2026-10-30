@@ -38,7 +38,7 @@ Los administradores nunca eligen la contraseña de un usuario. Crear un usuario 
 
 ## Sesiones y bloqueo { #sessions }
 
-- Una sesión termina tras 30 minutos sin actividad (15 para administradores) y, en todo caso, a las 12 horas.
+- Una sesión termina tras 30 minutos sin actividad (15 para administradores) y, en todo caso, a las 12 horas. Solo cuenta como actividad lo que hace el usuario: abrir páginas, escribir, hacer clic. Las actualizaciones automáticas no cuentan, así que una página abierta en un equipo desatendido igual expira. Dos minutos antes, el dashboard avisa y ofrece seguir conectado.
 - Eliminar usuarios, cambiar roles, restablecer contraseñas, eliminar snapshots, depurar el repositorio, recuperar un servidor y cambios similares vuelven a pedir la contraseña y un código si el último inicio de sesión fue hace más de 15 minutos.
 - Tras 10 contraseñas o códigos incorrectos la cuenta se bloquea 15 minutos. Los fallos repetidos desde una misma dirección también se frenan.
 - **Mi cuenta** lista las sesiones abiertas del usuario y permite cerrar cualquiera. Los administradores pueden cerrar las sesiones de cualquier usuario en **Usuarios**.

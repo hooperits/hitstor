@@ -83,7 +83,7 @@ func TestSignInEnrollAndSecondFactor(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if sess, _, _ := s.Authenticate(tok); sess.Stage != StageEnroll {
+	if sess, _, _ := s.Authenticate(tok, true); sess.Stage != StageEnroll {
 		t.Fatalf("stage = %s", sess.Stage)
 	}
 	secret, url, png, err := s.BeginEnrollment(tok)
@@ -98,7 +98,7 @@ func TestSignInEnrollAndSecondFactor(t *testing.T) {
 	if err != nil || len(recovery) != recoveryCodeCount {
 		t.Fatalf("finish: %v %v", recovery, err)
 	}
-	if sess, u, _ := s.Authenticate(tok); sess.Stage != StageFull || !u.TOTPEnabled {
+	if sess, u, _ := s.Authenticate(tok, true); sess.Stage != StageFull || !u.TOTPEnabled {
 		t.Fatalf("after enrollment: %+v", sess)
 	}
 
@@ -134,7 +134,7 @@ func TestSignInEnrollAndSecondFactor(t *testing.T) {
 	if err := s2.ResetSecondFactor("carlos"); err != nil {
 		t.Fatal(err)
 	}
-	if _, _, err := s.Authenticate(tok); !errors.Is(err, ErrNoSession) {
+	if _, _, err := s.Authenticate(tok, true); !errors.Is(err, ErrNoSession) {
 		t.Fatalf("session after reset in another process: %v", err)
 	}
 }
@@ -162,7 +162,7 @@ func TestLockoutAndSessionTimeouts(t *testing.T) {
 	sess := s.sessionByToken(tok)
 	sess.Stage, sess.LastSeen, sess.Created = StageFull, time.Now().Add(-idleTimeout-time.Minute), time.Now().Add(-time.Hour)
 	s.mu.Unlock()
-	if _, _, err := s.Authenticate(tok); !errors.Is(err, ErrNoSession) {
+	if _, _, err := s.Authenticate(tok, true); !errors.Is(err, ErrNoSession) {
 		t.Fatalf("idle session: %v", err)
 	}
 }
@@ -189,5 +189,41 @@ func TestAuditChain(t *testing.T) {
 	os.WriteFile(p, []byte(strings.Replace(string(raw), `"user.add"`, `"user.del"`, 1)), 0o600)
 	if _, broken, _ := a.Recent(10); broken != 3 {
 		t.Fatalf("tampering not detected: broken = %d", broken)
+	}
+}
+
+func TestOnlyUserActivityKeepsSessionsAlive(t *testing.T) {
+	s, _ := Open(t.TempDir(), testKey)
+	const pw = "correct horse battery 42"
+	s.Add("ana", "", pw, []Grant{{Role: RoleViewer}}, false)
+	tok, _, _ := s.Login("ana", pw, "", "")
+	idleSince := time.Now().Add(-idleTimeout + time.Minute).UTC()
+	s.mu.Lock()
+	sess := s.sessionByToken(tok)
+	sess.Stage, sess.LastSeen = StageFull, idleSince
+	s.mu.Unlock()
+
+	// Auto-refresh does not count as activity.
+	for range 3 {
+		got, u, err := s.Authenticate(tok, false)
+		if err != nil || !got.LastSeen.Equal(idleSince) {
+			t.Fatalf("background request moved last activity: %v %v", got.LastSeen, err)
+		}
+		if at, absolute := got.Expires(u); absolute || !at.Equal(idleSince.Add(idleTimeout)) {
+			t.Fatalf("expires = %v absolute=%v", at, absolute)
+		}
+	}
+	got, _, _ := s.Authenticate(tok, true)
+	if time.Since(got.LastSeen) > time.Second {
+		t.Fatalf("activity not recorded: %v", got.LastSeen)
+	}
+
+	// Near the absolute limit, activity no longer extends the session.
+	s.mu.Lock()
+	sess.Created = time.Now().Add(-absoluteTimeout + 5*time.Minute)
+	s.mu.Unlock()
+	got, u, _ := s.Authenticate(tok, true)
+	if at, absolute := got.Expires(u); !absolute || !at.Equal(got.Created.Add(absoluteTimeout)) {
+		t.Fatalf("expires = %v absolute=%v, want the absolute limit", at, absolute)
 	}
 }

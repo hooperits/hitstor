@@ -3,6 +3,7 @@ package mailer
 import (
 	"bytes"
 	"crypto/rand"
+	"encoding/base64"
 	"encoding/hex"
 	"errors"
 	"fmt"
@@ -37,19 +38,56 @@ func buildMessage(from, fromName string, msg Message, now time.Time) ([]byte, er
 		writeQP(&b, msg.Text)
 		return b.Bytes(), nil
 	}
+	for _, in := range msg.Inline {
+		if strings.ContainsAny(in.CID+in.ContentType+in.Name, "\r\n\"<>") || in.CID == "" {
+			return nil, errors.New("invalid inline image")
+		}
+	}
+	// multipart/alternative: the text, and the HTML with its images in a
+	// multipart/related.
 	boundary := "hitstor-" + randomHex(12)
 	header("Content-Type", `multipart/alternative; boundary="`+boundary+`"`)
+	b.WriteString("\r\n--" + boundary + "\r\n")
+	header("Content-Type", "text/plain; charset=utf-8")
+	header("Content-Transfer-Encoding", "quoted-printable")
 	b.WriteString("\r\n")
-	for _, part := range []struct{ typ, body string }{{"text/plain", msg.Text}, {"text/html", msg.HTML}} {
-		b.WriteString("--" + boundary + "\r\n")
-		header("Content-Type", part.typ+"; charset=utf-8")
-		header("Content-Transfer-Encoding", "quoted-printable")
+	writeQP(&b, msg.Text)
+	b.WriteString("\r\n--" + boundary + "\r\n")
+	related := ""
+	if len(msg.Inline) > 0 {
+		related = "hitstor-" + randomHex(12)
+		header("Content-Type", `multipart/related; type="text/html"; boundary="`+related+`"`)
+		b.WriteString("\r\n--" + related + "\r\n")
+	}
+	header("Content-Type", "text/html; charset=utf-8")
+	header("Content-Transfer-Encoding", "quoted-printable")
+	b.WriteString("\r\n")
+	writeQP(&b, msg.HTML)
+	b.WriteString("\r\n")
+	for _, in := range msg.Inline {
+		b.WriteString("--" + related + "\r\n")
+		header("Content-Type", in.ContentType)
+		header("Content-Transfer-Encoding", "base64")
+		header("Content-ID", "<"+in.CID+">")
+		header("Content-Disposition", `inline; filename="`+in.Name+`"`)
 		b.WriteString("\r\n")
-		writeQP(&b, part.body)
-		b.WriteString("\r\n")
+		writeBase64(&b, in.Data)
+	}
+	if related != "" {
+		b.WriteString("--" + related + "--\r\n")
 	}
 	b.WriteString("--" + boundary + "--\r\n")
 	return b.Bytes(), nil
+}
+
+// writeBase64 writes data in base64 lines of 76 characters (RFC 2045).
+func writeBase64(b *bytes.Buffer, data []byte) {
+	enc := base64.StdEncoding.EncodeToString(data)
+	for len(enc) > 76 {
+		b.WriteString(enc[:76] + "\r\n")
+		enc = enc[76:]
+	}
+	b.WriteString(enc + "\r\n")
 }
 
 func writeQP(b *bytes.Buffer, s string) {

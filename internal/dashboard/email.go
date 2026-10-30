@@ -7,6 +7,10 @@ import (
 	"errors"
 	"fmt"
 	htmltemplate "html/template"
+	"image"
+	"image/color"
+	_ "image/jpeg" // older icon.png files are JPEG inside
+	"image/png"
 	"log/slog"
 	"net/http"
 	"net/url"
@@ -80,9 +84,65 @@ func (d *Dashboard) sendEmail(ctx context.Context, msg mailer.Message) error {
 
 // --- Messages ---
 
+// emailLogoCID is the Content-ID of the logo in emails' HTML.
+const emailLogoCID = "logo@hitstor"
+
+var (
+	emailLogoOnce sync.Once
+	emailLogoPNG  []byte
+)
+
+// emailLogo is the dashboard's brand icon at 128 pixels (shown at 40), made
+// once from static/icon.png so emails follow the brand without a file of
+// their own. Nil if it cannot be made: emails go without it.
+func emailLogo() []byte {
+	emailLogoOnce.Do(func() {
+		f, err := staticFS.Open("static/icon.png")
+		if err != nil {
+			return
+		}
+		defer f.Close()
+		src, _, err := image.Decode(f)
+		if err != nil {
+			return
+		}
+		var buf bytes.Buffer
+		enc := png.Encoder{CompressionLevel: png.BestCompression}
+		if enc.Encode(&buf, shrink(src, 128)) == nil {
+			emailLogoPNG = buf.Bytes()
+		}
+	})
+	return emailLogoPNG
+}
+
+// shrink scales img down to size×size, each pixel the average of the
+// source pixels it covers (premultiplied, so transparent edges stay clean).
+func shrink(img image.Image, size int) *image.RGBA {
+	b := img.Bounds()
+	dst := image.NewRGBA(image.Rect(0, 0, size, size))
+	for y := 0; y < size; y++ {
+		y0, y1 := b.Min.Y+y*b.Dy()/size, b.Min.Y+(y+1)*b.Dy()/size
+		for x := 0; x < size; x++ {
+			x0, x1 := b.Min.X+x*b.Dx()/size, b.Min.X+(x+1)*b.Dx()/size
+			var r, g, bl, a, n uint64
+			for sy := y0; sy < y1; sy++ {
+				for sx := x0; sx < x1; sx++ {
+					cr, cg, cb, ca := img.At(sx, sy).RGBA()
+					r, g, bl, a, n = r+uint64(cr), g+uint64(cg), bl+uint64(cb), a+uint64(ca), n+1
+				}
+			}
+			if n > 0 {
+				dst.SetRGBA(x, y, color.RGBA{uint8(r / n >> 8), uint8(g / n >> 8), uint8(bl / n >> 8), uint8(a / n >> 8)})
+			}
+		}
+	}
+	return dst
+}
+
 // emailContent is what an email says; renderEmail lays it out as text
 // and as HTML.
 type emailContent struct {
+	Logo       bool // the HTML shows the logo (set by renderEmail)
 	Lang       string
 	Subject    string
 	Paragraphs []string
@@ -97,7 +157,10 @@ var emailHTML = htmltemplate.Must(htmltemplate.New("email").Parse(`<!DOCTYPE htm
 <body style="margin:0;padding:24px 12px;background:#f3f4f6;font-family:'Segoe UI',Arial,sans-serif;color:#1f2937">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:#ffffff;border-radius:8px;overflow:hidden">
-<tr><td style="background:#071018;padding:18px 32px;font-size:22px;font-weight:700;letter-spacing:.5px"><span style="color:#f4f7fb">hit</span><span style="color:#ff7a45">stor</span></td></tr>
+<tr><td style="background:#071018;padding:16px 32px"><table role="presentation" cellpadding="0" cellspacing="0"><tr>
+{{if .Logo}}<td style="padding-right:12px;vertical-align:middle"><img src="cid:logo@hitstor" width="40" height="40" alt="" style="display:block;border:0"></td>{{end}}
+<td style="vertical-align:middle;font-size:26px;font-weight:800;letter-spacing:-.5px"><span style="color:#f4f7fb">hit</span><span style="color:#ff7a45">stor</span></td>
+</tr></table></td></tr>
 <tr><td style="padding:28px 32px 8px">
 {{range .Paragraphs}}<p style="margin:0 0 14px;font-size:15px;line-height:1.55">{{.}}</p>{{end}}
 {{if .Link}}<p style="margin:22px 0"><a href="{{.Link}}" style="background:#cf4f1f;color:#ffffff;text-decoration:none;padding:12px 22px;border-radius:6px;display:inline-block;font-size:15px;font-weight:600">{{.Button}}</a></p>
@@ -107,6 +170,11 @@ var emailHTML = htmltemplate.Must(htmltemplate.New("email").Parse(`<!DOCTYPE htm
 </table></td></tr></table></body></html>`))
 
 func renderEmail(to string, e emailContent) (mailer.Message, error) {
+	var inline []mailer.Inline
+	if logo := emailLogo(); logo != nil {
+		e.Logo = true
+		inline = append(inline, mailer.Inline{CID: emailLogoCID, ContentType: "image/png", Name: "hitstor.png", Data: logo})
+	}
 	var html bytes.Buffer
 	if err := emailHTML.Execute(&html, e); err != nil {
 		return mailer.Message{}, err
@@ -121,7 +189,8 @@ func renderEmail(to string, e emailContent) (mailer.Message, error) {
 	for _, p := range e.Footer {
 		text.WriteString(p + "\n\n")
 	}
-	return mailer.Message{To: []string{to}, Subject: e.Subject, Text: strings.TrimSpace(text.String()) + "\n", HTML: html.String()}, nil
+	return mailer.Message{To: []string{to}, Subject: e.Subject, Text: strings.TrimSpace(text.String()) + "\n", HTML: html.String(),
+		Inline: inline}, nil
 }
 
 // accountLink is the address of a ticket's page.

@@ -74,6 +74,17 @@ type Message struct {
 	Subject string
 	Text    string // plain-text body
 	HTML    string // HTML body, optional
+	// Inline are images the HTML shows with src="cid:<CID>". Mail clients
+	// block remote images by default, but show these.
+	Inline []Inline
+}
+
+// Inline is an image sent inside the message.
+type Inline struct {
+	CID         string // Content-ID, without angle brackets
+	ContentType string // image/png
+	Name        string // file name
+	Data        []byte
 }
 
 // Mailer sends messages with one configuration.

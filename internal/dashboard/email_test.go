@@ -1,8 +1,10 @@
 package dashboard
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
+	"image/png"
 	"net/http"
 	"net/url"
 	"os"
@@ -81,6 +83,12 @@ func TestNewUserGetsInvitation(t *testing.T) {
 		t.Fatalf("invitation: %v\n%s", m.To, m.Text)
 	}
 	token := mailToken(t, m)
+	if len(m.Inline) != 1 || m.Inline[0].CID != emailLogoCID || !strings.Contains(m.HTML, `src="cid:`+emailLogoCID+`"`) {
+		t.Fatal("the email does not show the logo")
+	}
+	if logo, err := png.Decode(bytes.NewReader(m.Inline[0].Data)); err != nil || logo.Bounds().Dx() != 128 {
+		t.Fatalf("logo: %v", err)
+	}
 
 	page := do(t, h, nil, "GET", "/login/reset?token="+token, nil)
 	if page.Code != http.StatusOK || !strings.Contains(page.Body.String(), `name="token"`) || strings.Contains(page.Body.String(), `name="code"`) {

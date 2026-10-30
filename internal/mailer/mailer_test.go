@@ -2,6 +2,7 @@ package mailer
 
 import (
 	"bufio"
+	"bytes"
 	"context"
 	"crypto/ecdsa"
 	"crypto/elliptic"
@@ -398,5 +399,62 @@ func TestConfigValidation(t *testing.T) {
 	}
 	if err := m.Send(context.Background(), Message{To: []string{"a@example.com"}, Subject: "x\r\nBcc: y@example.com"}); err == nil {
 		t.Error("subject with a line break accepted")
+	}
+}
+
+func TestInlineImages(t *testing.T) {
+	img := bytes.Repeat([]byte{0x89, 'P', 'N', 'G', 0, 1, 2, 3}, 40)
+	msg := testMessage()
+	msg.HTML = `<img src="cid:logo@hitstor"><p>Hola</p>`
+	msg.Inline = []Inline{{CID: "logo@hitstor", ContentType: "image/png", Name: "hitstor.png", Data: img}}
+	raw, err := buildMessage("a@example.com", "", msg, time.Now())
+	if err != nil {
+		t.Fatal(err)
+	}
+	m, err := mail.ReadMessage(bytes.NewReader(raw))
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, params, _ := mime.ParseMediaType(m.Header.Get("Content-Type"))
+	alt := multipart.NewReader(m.Body, params["boundary"])
+	if p, _ := alt.NextPart(); !strings.HasPrefix(p.Header.Get("Content-Type"), "text/plain") {
+		t.Fatalf("first part %q", p.Header.Get("Content-Type"))
+	}
+	p, err := alt.NextPart()
+	if err != nil {
+		t.Fatal(err)
+	}
+	mt, params, _ := mime.ParseMediaType(p.Header.Get("Content-Type"))
+	if mt != "multipart/related" {
+		t.Fatalf("second part %q", mt)
+	}
+	rel := multipart.NewReader(p, params["boundary"])
+	html, _ := rel.NextPart()
+	if body, _ := io.ReadAll(html); !strings.Contains(string(body), "cid:logo@hitstor") {
+		t.Fatalf("html %q", body)
+	}
+	ip, err := rel.NextPart()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if ip.Header.Get("Content-Id") != "<logo@hitstor>" || ip.Header.Get("Content-Type") != "image/png" {
+		t.Fatalf("image headers %v", ip.Header)
+	}
+	enc, _ := io.ReadAll(ip)
+	got, err := base64.StdEncoding.DecodeString(strings.ReplaceAll(string(enc), "\r\n", ""))
+	if err != nil || !bytes.Equal(got, img) {
+		t.Fatalf("image data differs: %v", err)
+	}
+	if _, err := rel.NextPart(); err != io.EOF {
+		t.Fatalf("extra part: %v", err)
+	}
+	for _, line := range strings.Split(string(raw), "\r\n") {
+		if len(line) > 998 {
+			t.Fatal("line longer than SMTP allows")
+		}
+	}
+	msg.Inline[0].CID = "x>\r\nBcc: y@example.com"
+	if _, err := buildMessage("a@example.com", "", msg, time.Now()); err == nil {
+		t.Fatal("header injection through the content ID")
 	}
 }

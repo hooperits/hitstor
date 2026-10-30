@@ -301,8 +301,9 @@ func TestAdministratorManagesUsers(t *testing.T) {
 			t.Errorf("GET %s = %d", path, rec.Code)
 		}
 	}
-	if rec := do(t, h, c, "GET", "/audit", nil); !strings.Contains(rec.Body.String(), "user.add") {
-		t.Error("audit log does not show the new user")
+	if rec := do(t, h, c, "GET", "/api/audit?category=users", nil); !strings.Contains(rec.Body.String(), `"action":"user.add"`) ||
+		!strings.Contains(rec.Body.String(), `"target":"pruebas"`) {
+		t.Errorf("audit log does not show the new user: %s", rec.Body.String())
 	}
 	// The shared dashboard password no longer signs in: Settings stops offering it.
 	if body := do(t, h, c, "GET", "/settings", nil).Body.String(); strings.Contains(body, "settings-dashboard-password") || !strings.Contains(body, `href="/users"`) {
@@ -384,5 +385,38 @@ func TestSessionStateAndExpiredNotice(t *testing.T) {
 	}
 	if rec := do(t, h, nil, "GET", "/login?expired=1", nil); !strings.Contains(rec.Body.String(), "login-notice") {
 		t.Error("login page does not explain the session ended")
+	}
+}
+
+func TestPagesHideActionsTheUserCannotTake(t *testing.T) {
+	dash, store := setupUsersDashboard(t)
+	h := dash.Handler()
+	viewer := signedIn(t, store, "auditor", users.Grant{Role: users.RoleViewer})
+	ops := signedIn(t, store, "ops", users.Grant{Role: users.RoleBackupOperator, Agents: []string{"web01"}})
+	admin := signedIn(t, store, "admin", users.Grant{Role: users.RoleAdmin})
+	for _, tc := range []struct {
+		name   string
+		c      *http.Cookie
+		path   string
+		marker string
+		want   bool
+	}{
+		{"viewer: new job", viewer, "/backups", `onclick="HitStorBackupJob.openWizard()"`, false},
+		{"operator: new job", ops, "/backups", `onclick="HitStorBackupJob.openWizard()"`, true},
+		{"operator: add agent", ops, "/agents", `onclick="toggleAgentsAddPanel()"`, false},
+		{"admin: add agent", admin, "/agents", `onclick="toggleAgentsAddPanel()"`, true},
+		{"operator: suspend own agent", ops, "/agents/web01", `onclick="toggleSuspension(`, true},
+		{"operator: remove agent", ops, "/agents/web01", `onclick="removeAgent()"`, false},
+		{"viewer: suspend", viewer, "/agents/web01", `onclick="toggleSuspension(`, false},
+		{"admin: remove agent", admin, "/agents/web01", `onclick="removeAgent()"`, true},
+	} {
+		body := do(t, h, tc.c, "GET", tc.path, nil).Body.String()
+		if got := strings.Contains(body, tc.marker); got != tc.want {
+			t.Errorf("%s: shown = %v, want %v", tc.name, got, tc.want)
+		}
+	}
+	// Everyone gets the user menu; only administrators the Administration section.
+	if body := do(t, h, ops, "GET", "/backups", nil).Body.String(); !strings.Contains(body, `id="user-menu-btn"`) || strings.Contains(body, `href="/users"`) {
+		t.Error("operator: user menu missing or Users shown")
 	}
 }

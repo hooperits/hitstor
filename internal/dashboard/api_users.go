@@ -4,9 +4,11 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
+	"github.com/hooperits/hitstor/internal/i18n"
 	"github.com/hooperits/hitstor/internal/users"
 )
 
@@ -114,7 +116,7 @@ func (d *Dashboard) handleAccountPage(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
 	}
-	data := d.newPageData("My account", "Password, second factor and sessions", "account", map[string]any{
+	data := d.newPageData("My account", "Your profile, security and sessions", "account", map[string]any{
 		"User": toUserJSON(*u),
 	})
 	d.render(w, r, "account", data)
@@ -194,7 +196,41 @@ type sessionJSON struct {
 	LastSeen  time.Time `json:"last_seen"`
 	IP        string    `json:"ip,omitempty"`
 	UserAgent string    `json:"user_agent,omitempty"`
+	Browser   string    `json:"browser"` // "Chrome on Windows"
 	Current   bool      `json:"current"`
+}
+
+// describeBrowser names the browser and system of a User-Agent header.
+func describeBrowser(c *i18n.Catalog, ua string) string {
+	browser := ""
+	for _, b := range []struct{ token, name string }{
+		{"Edg/", "Edge"}, {"OPR/", "Opera"}, {"Firefox/", "Firefox"}, {"Chrome/", "Chrome"},
+		{"Safari/", "Safari"}, {"curl/", "curl"}, {"PowerShell", "PowerShell"},
+	} {
+		if strings.Contains(ua, b.token) {
+			browser = b.name
+			break
+		}
+	}
+	system := ""
+	for _, o := range []struct{ token, name string }{
+		{"Windows", "Windows"}, {"iPhone", "iOS"}, {"iPad", "iOS"}, {"Mac OS X", "macOS"},
+		{"Android", "Android"}, {"Linux", "Linux"},
+	} {
+		if strings.Contains(ua, o.token) {
+			system = o.name
+			break
+		}
+	}
+	switch {
+	case browser != "" && system != "":
+		return c.Tf("{browser} on {system}", "browser", browser, "system", system)
+	case browser != "":
+		return browser
+	case system != "":
+		return system
+	}
+	return c.T("Unknown browser")
 }
 
 func (d *Dashboard) sessionsJSON(r *http.Request, name string) []sessionJSON {
@@ -204,7 +240,8 @@ func (d *Dashboard) sessionsJSON(r *http.Request, name string) []sessionJSON {
 	}
 	out := []sessionJSON{}
 	for _, s := range d.users.Sessions(name) {
-		out = append(out, sessionJSON{ID: s.ID, Created: s.Created, LastSeen: s.LastSeen, IP: s.IP, UserAgent: s.UserAgent, Current: s.ID == cur})
+		out = append(out, sessionJSON{ID: s.ID, Created: s.Created, LastSeen: s.LastSeen, IP: s.IP, UserAgent: s.UserAgent,
+			Browser: describeBrowser(d.catalog(r), s.UserAgent), Current: s.ID == cur})
 	}
 	return out
 }
@@ -229,6 +266,44 @@ func (d *Dashboard) handleAPIAccountEndSession(w http.ResponseWriter, r *http.Re
 		return
 	}
 	d.auditEvent(r, "", "session.end", r.PathValue("id"), true, "")
+	writeJSON(w, map[string]any{"ok": true})
+}
+
+// handleAPIAccountEndOtherSessions signs the user out of every other browser.
+func (d *Dashboard) handleAPIAccountEndOtherSessions(w http.ResponseWriter, r *http.Request) {
+	a := authOf(r)
+	if a == nil || a.user == nil || !d.usersReady(w) {
+		http.Error(w, "no account", http.StatusBadRequest)
+		return
+	}
+	n, err := d.users.EndOtherSessions(a.user.Username, a.session.ID)
+	if err != nil {
+		d.userError(w, r, err)
+		return
+	}
+	d.auditEvent(r, "", "session.end-others", "", true, strconv.Itoa(n))
+	writeJSON(w, map[string]any{"ended": n})
+}
+
+// handleAPIAccountProfile changes the signed-in user's display name.
+func (d *Dashboard) handleAPIAccountProfile(w http.ResponseWriter, r *http.Request) {
+	u := currentUser(r)
+	if u == nil || !d.usersReady(w) {
+		http.Error(w, "no account", http.StatusBadRequest)
+		return
+	}
+	var req struct {
+		DisplayName string `json:"display_name"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "invalid JSON", http.StatusBadRequest)
+		return
+	}
+	if err := d.users.SetDisplayName(u.Username, req.DisplayName); err != nil {
+		d.userError(w, r, err)
+		return
+	}
+	d.auditEvent(r, "", "profile.change", "", true, strings.TrimSpace(req.DisplayName))
 	writeJSON(w, map[string]any{"ok": true})
 }
 
@@ -292,11 +367,52 @@ func (d *Dashboard) handleUsersPage(w http.ResponseWriter, r *http.Request) {
 	for _, a := range d.registry.ListAgents() {
 		agentNames = append(agentNames, a.Name)
 	}
-	data := d.newPageData("Users", "Accounts, roles and the agents they cover", "users", map[string]any{
+	data := d.newPageData("Users and access", "Who can sign in, and what they can do on each agent", "users", map[string]any{
 		"Agents": agentNames,
 		"Roles":  users.Roles,
 	})
 	d.render(w, r, "users", data)
+}
+
+// handleUserPage is an account's page: roles, sessions and activity.
+func (d *Dashboard) handleUserPage(w http.ResponseWriter, r *http.Request) {
+	if !d.usersReady(w) {
+		return
+	}
+	u, err := d.users.Get(r.PathValue("name"))
+	if err != nil {
+		http.NotFound(w, r)
+		return
+	}
+	var agentNames []string
+	for _, a := range d.registry.ListAgents() {
+		agentNames = append(agentNames, a.Name)
+	}
+	title := u.DisplayName
+	if title == "" {
+		title = u.Username
+	}
+	data := d.newPageData(title, "", "user", map[string]any{
+		"User":   toUserJSON(u),
+		"Agents": agentNames,
+		"Roles":  users.Roles,
+		"Self":   currentUser(r) != nil && currentUser(r).Username == u.Username,
+	})
+	data.TitleRaw = true
+	data.Crumbs = []crumb{{URL: "/users", Label: "Users and access"}}
+	d.render(w, r, "user", data)
+}
+
+func (d *Dashboard) handleAPIUser(w http.ResponseWriter, r *http.Request) {
+	if !d.usersReady(w) {
+		return
+	}
+	u, err := d.users.Get(r.PathValue("name"))
+	if err != nil {
+		d.userError(w, r, err)
+		return
+	}
+	writeJSON(w, toUserJSON(u))
 }
 
 func (d *Dashboard) handleAPIUsers(w http.ResponseWriter, r *http.Request) {
@@ -355,8 +471,9 @@ func (d *Dashboard) handleAPIUpdateUser(w http.ResponseWriter, r *http.Request) 
 	}
 	name := r.PathValue("name")
 	var req struct {
-		Grants   []users.Grant `json:"grants"`
-		Disabled *bool         `json:"disabled"`
+		Grants      []users.Grant `json:"grants"`
+		Disabled    *bool         `json:"disabled"`
+		DisplayName *string       `json:"display_name"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "invalid JSON", http.StatusBadRequest)
@@ -369,6 +486,13 @@ func (d *Dashboard) handleAPIUpdateUser(w http.ResponseWriter, r *http.Request) 
 			return
 		}
 		d.auditEvent(r, "", "user.roles", name, true, grantsText(req.Grants))
+	}
+	if req.DisplayName != nil {
+		if err := d.users.SetDisplayName(name, *req.DisplayName); err != nil {
+			d.userError(w, r, err)
+			return
+		}
+		d.auditEvent(r, "", "user.profile", name, true, strings.TrimSpace(*req.DisplayName))
 	}
 	if req.Disabled != nil {
 		if err := d.users.SetDisabled(name, *req.Disabled); err != nil {
@@ -458,11 +582,15 @@ func (d *Dashboard) handleAPIEndUserSession(w http.ResponseWriter, r *http.Reque
 }
 
 func (d *Dashboard) handleAuditPage(w http.ResponseWriter, r *http.Request) {
-	events, brokenAt, err := d.audit.Recent(500)
-	data := d.newPageData("Audit log", "Sign-ins, changes and denied requests", "audit", map[string]any{
-		"Events":   events,
-		"BrokenAt": brokenAt,
-		"Err":      err,
+	var names []string
+	if d.users != nil {
+		for _, u := range d.users.List() {
+			names = append(names, u.Username)
+		}
+	}
+	data := d.newPageData("Audit log", "Who did what, and when", "audit", map[string]any{
+		"Users":      names,
+		"Categories": auditCategories,
 	})
 	d.render(w, r, "audit", data)
 }

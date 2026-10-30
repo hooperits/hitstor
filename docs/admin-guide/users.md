@@ -51,7 +51,15 @@ Accounts are stored next to the agent registry in the first repository, in `user
 
 ## Managing users { #managing-users }
 
-Administrators manage accounts under **Users**: create users, change their roles and agents, disable or remove them, reset passwords or two-step verification, and end sessions. The last active administrator cannot be removed, disabled or lose the role.
+Administrators manage accounts under **Users and access**. The list can be searched and filtered by role and status; a row opens the user's page:
+
+- **Roles and agents**: each role with its explanation, on all agents or on some. *In short* says in plain words what the user can do.
+- **Sessions**: where the user is signed in; any session can be ended.
+- **Activity**: the user's latest entries in the audit log.
+- **Account**: full name, status, and resetting the password or two-step verification.
+- **Danger zone**: disabling the user, or removing them after typing their user name.
+
+The last active administrator cannot be removed, disabled or lose the role.
 
 ### From the server console { #cli }
 
@@ -75,4 +83,4 @@ hitstor serve user remove ops1
 
 ## Audit log { #audit-log }
 
-**Audit** (administrators) lists sign-ins, failed attempts, changes to users and denied requests, with user, address and time. Each entry carries the hash of the previous one, so editing or deleting an entry breaks the chain, and the page says where. The log is `audit.log`, next to `users.json`; changes made with `hitstor serve user` appear as user `console`.
+**Audit log** (administrators) lists sign-ins, failed attempts, changes to users, backups, restores, storage and settings, and denied requests, with user, address and time, in plain sentences. It can be filtered by user, type of action, result and period, and exported to CSV. Each entry carries the hash of the previous one, so editing or deleting an entry breaks the chain, and the page says where. The log is `audit.log`, next to `users.json`; changes made with `hitstor serve user` appear as user `console`.

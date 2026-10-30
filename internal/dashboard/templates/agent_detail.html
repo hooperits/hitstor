@@ -25,14 +25,18 @@
             <p class="agent-detail-subtitle">{{if $a.AgentAddr}}{{$a.AgentAddr}}{{else}}{{t "No address configured"}}{{end}}</p>
         </div>
         <div class="agent-detail-hero__actions">
+            {{if $.Nav.Backup $a.Name}}
             {{if $a.Suspended}}
             <button type="button" class="btn agent-detail-unsuspend-btn" onclick="toggleSuspension(false)">{{t "Unsuspend Agent"}}</button>
             {{else}}
             <button type="button" class="btn agent-detail-suspend-btn" onclick="toggleSuspension(true)">{{t "Suspend Agent"}}</button>
             {{end}}
             <a href="/backups" class="btn btn-secondary">+ {{t "New Backup Job"}}</a>
+            {{end}}
+            {{if $.Nav.Admin}}
             <button type="button" class="btn agent-detail-delete-btn" onclick="removeAgent()">{{t "Remove"}}</button>
             <button type="button" class="btn" onclick="alert(t('To re-register: run {cmd} on the agent, then use the Agents > Add form (it will auto re-register if name exists and preserve jobs).', {cmd: 'sudo hitstor-agent show-id'}))">{{t "Re-register"}}</button>
+            {{end}}
         </div>
     </div>
     <div class="agent-detail-stats">
@@ -114,7 +118,7 @@
     <div class="empty-state empty-state-agents">
         <h3>{{t "No backup jobs"}}</h3>
         <p>{{t "This agent has no scheduled backup jobs yet."}}</p>
-        <a href="/backups" class="btn">{{t "Create backup job"}}</a>
+        {{if $.Nav.Backup $a.Name}}<a href="/backups" class="btn">{{t "Create backup job"}}</a>{{end}}
     </div>
     {{else}}
     <div class="table-wrap agents-jobs-table">

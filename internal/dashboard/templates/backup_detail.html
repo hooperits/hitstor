@@ -27,6 +27,7 @@
             <p class="backup-detail-subtitle">{{$v.SourceLabel}}</p>
         </div>
             <div class="backup-detail-hero__actions">
+            {{if $.Nav.Backup $job.AgentName}}
             {{if $v.Plan}}
             <div class="run-menu" id="run-menu">
                 <button class="btn" id="run-now-btn" type="button" aria-haspopup="menu" aria-expanded="false" onclick="toggleRunMenu()" {{if $job.RunNow}}disabled{{end}}>{{if $job.RunNow}}{{tf "{kind} pending..." "kind" $v.RunNowKind}}{{else}}{{t "Backup Now"}} <span class="run-menu__caret" aria-hidden="true">▾</span>{{end}}</button>
@@ -39,6 +40,7 @@
             {{end}}
             <button class="btn btn-danger" id="cancel-btn" onclick="cancelBackup()" {{if not (or $job.RunNow $v.Running)}}hidden{{end}}>{{t "Cancel Backup"}}</button>
             <button class="btn backup-detail-delete-btn" onclick="deleteJob()">{{t "Delete"}}</button>
+            {{end}}
         </div>
     </div>
     <div class="backup-detail-stats">
@@ -127,7 +129,7 @@
         </ul>
         {{if $v.FullRequired}}<p class="fullreq__hint">{{t "Run a full backup now; the next differential and log backups will build on it."}}</p>{{end}}
     </div>
-    {{if $v.FullRequired}}<button class="btn fullreq__action" type="button" onclick="runNow('full')" {{if $job.RunNow}}disabled{{end}}>{{t "Run full backup now"}}</button>{{end}}
+    {{if and $v.FullRequired ($.Nav.Backup $job.AgentName)}}<button class="btn fullreq__action" type="button" onclick="runNow('full')" {{if $job.RunNow}}disabled{{end}}>{{t "Run full backup now"}}</button>{{end}}
 </section>
 {{else if and $v.LastError (eq $v.Status "failed")}}
 <section class="fullreq fullreq--error" role="alert">
@@ -324,7 +326,7 @@
                     </div>
                     {{if .Excluded}}<div class="plan-row__excluded"><span>{{t "Not included"}}:</span>{{range .Excluded}}<code class="path-chip" title="{{.Message}}{{if .Detail}} ({{.Detail}}){{end}}">{{.Object}}</code>{{end}}</div>{{end}}
                 </div>
-                <button type="button" class="btn btn-secondary plan-row__run" onclick="runNow('{{.Kind}}')" {{if $job.RunNow}}disabled{{end}}>{{t "Run now"}}</button>
+                {{if $.Nav.Backup $job.AgentName}}<button type="button" class="btn btn-secondary plan-row__run" onclick="runNow('{{.Kind}}')" {{if $job.RunNow}}disabled{{end}}>{{t "Run now"}}</button>{{end}}
             </div>
             {{end}}
             <p class="detail-schedule-tile__meta">{{tf "Created {when}" "when" (timeFormat $v.CreatedAt)}}</p>
@@ -337,7 +339,7 @@
             <div class="detail-accordion__body" id="plan-accordion-body">
                 <div id="edit-plan"></div>
                 <div class="detail-accordion__actions">
-                    <button type="button" class="btn" onclick="savePlan()">{{t "Save plan"}}</button>
+                    {{if $.Nav.Backup $job.AgentName}}<button type="button" class="btn" onclick="savePlan()">{{t "Save plan"}}</button>{{end}}
                     <span id="edit-plan-status" class="detail-form-status"></span>
                 </div>
             </div>
@@ -377,7 +379,7 @@
         </div>
         <p style="color:var(--text-muted); font-size:0.8rem; margin:0 0 1rem 0;">{{t "Set to 0 to disable periodic full re-scans."}}{{if $job.LastFullBackup}} {{tf "Last full backup: {when}" "when" (timeAgo $job.LastFullBackup)}}{{end}}</p>
         {{end}}
-        <button type="submit" class="btn">{{t "Save Schedule"}}</button>
+        {{if $.Nav.Backup $job.AgentName}}<button type="submit" class="btn">{{t "Save Schedule"}}</button>{{end}}
         <span id="edit-sched-status" class="detail-form-status"></span>
     </form>
             </div>

@@ -1,0 +1,57 @@
+{{define "content"}}
+{{$u := .Content.User}}
+<div id="user-app" class="user-page" data-username="{{$u.Username}}" data-self="{{if .Content.Self}}1{{end}}"
+     data-agents="{{toJSON .Content.Agents}}" data-roles="{{toJSON .Content.Roles}}" data-user="{{toJSON $u}}">
+    <p class="user-meta">{{$u.Username}} · <span id="user-last-login"></span></p>
+    <div class="tabs" role="tablist">
+        <button type="button" class="tab on" role="tab" data-tab="roles">{{t "Roles and agents"}}</button>
+        <button type="button" class="tab" role="tab" data-tab="sessions">{{t "Sessions"}} <span id="user-sessions-count"></span></button>
+        <button type="button" class="tab" role="tab" data-tab="activity">{{t "Activity"}}</button>
+    </div>
+    <div class="detail-grid">
+        <div>
+            <section class="set-card" data-panel="roles">
+                <h2 class="set-title">{{t "Roles and agents"}}</h2>
+                <div class="grants"></div>
+                <div class="set-foot">
+                    <button type="button" class="btn btn-secondary btn-sm" id="user-add-grant">+ {{t "Add role"}}</button>
+                    <span class="grow"></span>
+                    <span class="form-status" id="user-roles-status" role="status"></span>
+                    <button type="button" class="btn btn-sm" id="user-save-roles">{{t "Save changes"}}</button>
+                </div>
+                <div class="effective" id="user-effective"></div>
+            </section>
+            <section class="set-card" data-panel="sessions" hidden>
+                <h2 class="set-title">{{t "Open sessions"}}</h2>
+                <div id="user-sessions"></div>
+            </section>
+            <section class="set-card" data-panel="activity" hidden>
+                <h2 class="set-title">{{t "Activity"}}</h2>
+                <div class="table-wrap"><table class="audit-table"><tbody id="user-activity"></tbody></table></div>
+                <div class="set-foot"><a href="/audit?user={{$u.Username}}" class="btn btn-secondary btn-sm">{{t "See all in the audit log"}}</a></div>
+            </section>
+        </div>
+        <aside>
+            <section class="set-card">
+                <h2 class="set-title">{{t "Account"}}</h2>
+                <div class="set-row"><div class="set-label">{{t "Full name"}}</div><div class="set-value" id="user-name"></div>
+                    <div class="set-action"><button type="button" class="btn btn-secondary btn-sm" id="user-edit-name">{{t "Edit"}}</button></div></div>
+                <div class="set-row"><div class="set-label">{{t "Status"}}</div><div class="set-value" id="user-status"></div><div class="set-action"></div></div>
+                <div class="set-row"><div class="set-label">{{t "Password"}}</div><div class="set-value" id="user-password"></div>
+                    <div class="set-action"><button type="button" class="btn btn-secondary btn-sm" id="user-reset-password">{{t "Reset"}}</button></div></div>
+                <div class="set-row"><div class="set-label">{{t "Two-step"}}</div><div class="set-value" id="user-mfa"></div>
+                    <div class="set-action"><button type="button" class="btn btn-secondary btn-sm" id="user-reset-mfa">{{t "Reset"}}</button></div></div>
+            </section>
+            {{if not .Content.Self}}
+            <section class="set-card danger-zone">
+                <h2 class="set-title">{{t "Danger zone"}}</h2>
+                <div class="dz-row"><div><strong id="user-toggle-label"></strong><div class="set-hint" id="user-toggle-hint"></div></div>
+                    <button type="button" class="btn btn-secondary btn-sm" id="user-toggle"></button></div>
+                <div class="dz-row"><div><strong>{{t "Remove user"}}</strong><div class="set-hint">{{t "The account and its sessions are deleted. The audit log keeps what it did."}}</div></div>
+                    <button type="button" class="btn btn-danger btn-sm" id="user-remove">{{t "Remove"}}</button></div>
+            </section>
+            {{end}}
+        </aside>
+    </div>
+</div>
+{{end}}

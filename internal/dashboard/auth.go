@@ -535,7 +535,7 @@ func (d *Dashboard) handleSetupSubmit(w http.ResponseWriter, r *http.Request) {
 		d.renderLogin(w, r, page)
 		return
 	}
-	d.auditEvent(r, u.Username, "setup", u.Username, true, "first administrator created")
+	d.auditEvent(r, u.Username, "setup", u.Username, true, "")
 	token, _, err := d.users.Login(u.Username, r.FormValue("password"), ip, r.UserAgent())
 	if err != nil {
 		http.Redirect(w, r, "/login", http.StatusSeeOther)

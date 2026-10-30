@@ -106,39 +106,53 @@ func (a *AuditLog) Append(e AuditEvent) error {
 // Recent returns up to n events, newest first, and whether the whole chain
 // is intact (brokenAt is the 1-based line where it breaks, or 0).
 func (a *AuditLog) Recent(n int) (events []AuditEvent, brokenAt int, err error) {
+	events, _, brokenAt, err = a.Query(nil, 0, n)
+	return events, brokenAt, err
+}
+
+// Query returns the events match accepts (all, if nil), newest first,
+// skipping offset and returning at most limit, with how many matched in
+// all. The whole chain is checked: brokenAt is the 1-based line where it
+// breaks, or 0.
+func (a *AuditLog) Query(match func(AuditEvent) bool, offset, limit int) (page []AuditEvent, total, brokenAt int, err error) {
 	if a == nil {
-		return nil, 0, nil
+		return nil, 0, 0, nil
 	}
 	a.mu.Lock()
 	defer a.mu.Unlock()
 	f, err := os.Open(a.path)
 	if errors.Is(err, os.ErrNotExist) {
-		return nil, 0, nil
+		return nil, 0, 0, nil
 	}
 	if err != nil {
-		return nil, 0, err
+		return nil, 0, 0, err
 	}
 	defer f.Close()
 	sc := bufio.NewScanner(f)
 	sc.Buffer(make([]byte, 64*1024), 1<<20)
+	var matched []AuditEvent
 	prev, line := "", 0
 	for sc.Scan() {
 		line++
 		var e AuditEvent
 		if err := json.Unmarshal(sc.Bytes(), &e); err != nil {
-			return nil, 0, fmt.Errorf("audit log line %d: %w", line, err)
+			return nil, 0, 0, fmt.Errorf("audit log line %d: %w", line, err)
 		}
 		if e.Prev != prev && brokenAt == 0 {
 			brokenAt = line
 		}
 		prev = lineHash(sc.Bytes())
-		events = append(events, e)
-		if len(events) > n {
-			events = events[1:]
+		if match == nil || match(e) {
+			matched = append(matched, e)
 		}
 	}
-	for i, j := 0, len(events)-1; i < j; i, j = i+1, j-1 {
-		events[i], events[j] = events[j], events[i]
+	if err := sc.Err(); err != nil {
+		return nil, 0, 0, err
 	}
-	return events, brokenAt, sc.Err()
+	total = len(matched)
+	// Newest first.
+	for i := total - 1 - offset; i >= 0 && len(page) < limit; i-- {
+		page = append(page, matched[i])
+	}
+	return page, total, brokenAt, nil
 }

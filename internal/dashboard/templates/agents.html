@@ -4,7 +4,7 @@
 
 <div class="agents-toolbar">
     <p class="agents-toolbar-hint">{{if $agents}}{{if eq (len $agents) 1}}{{t "1 registered agent"}}{{else}}{{tf "{n} registered agents" "n" (len $agents)}}{{end}}{{else}}{{t "No agents registered"}}{{end}}{{if $page.ManagedCount}} &middot; {{tf "{n} managed" "n" $page.ManagedCount}}{{end}}</p>
-    <button type="button" class="btn" onclick="toggleAgentsAddPanel()">+ {{t "Add Agent"}}</button>
+    {{if $.Nav.Admin}}<button type="button" class="btn" onclick="toggleAgentsAddPanel()">+ {{t "Add Agent"}}</button>{{end}}
 </div>
 
 {{if $agents}}
@@ -61,7 +61,7 @@
         </span>
         <h3>{{t "No agents registered"}}</h3>
         <p>{{t "Scan your network or connect manually to register backup agents."}}</p>
-        <button type="button" class="btn" onclick="toggleAgentsAddPanel(true)">{{t "Add your first agent"}}</button>
+        {{if $.Nav.Admin}}<button type="button" class="btn" onclick="toggleAgentsAddPanel(true)">{{t "Add your first agent"}}</button>{{end}}
     </div>
     {{else}}
     <div class="table-wrap agents-table" id="agents-table" hx-get="/agents" hx-trigger="every 30s" hx-select=".table-wrap.agents-table" hx-swap="outerHTML">
@@ -101,7 +101,7 @@
                             <a class="action-icon" href="/agents/{{.Name}}" title="{{t "View agent"}}" onclick="event.stopPropagation()">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                             </a>
-                            {{if ne .TypeLabel "server"}}
+                            {{if and $.Nav.Admin (ne .TypeLabel "server")}}
                             <button type="button" class="action-icon action-icon-danger" title="{{t "Remove agent"}}" onclick="event.stopPropagation(); removeAgent('{{.Name}}')">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
                             </button>

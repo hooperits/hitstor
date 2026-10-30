@@ -20,7 +20,7 @@
                     <div style="color: var(--text-muted); font-size: 0.8rem; margin-top: 0.15rem;">{{t "Confidence:"}} <strong style="color: var(--danger);">{{percent .Confidence}}</strong> &bull; {{tf "Detected: {when}" "when" (timeAgo .Time)}}</div>
                 </div>
                 <div>
-                    <button class="btn btn-sm btn-secondary" onclick="resolveAlert('{{.ID}}', '{{.AgentName}}')" style="border-color: rgba(239, 68, 68, 0.4); color: rgb(239, 68, 68); background: rgba(239, 68, 68, 0.03);">{{t "Resolve & Unsuspend"}}</button>
+                    {{if $.Nav.Admin}}<button class="btn btn-sm btn-secondary" onclick="resolveAlert('{{.ID}}', '{{.AgentName}}')" style="border-color: rgba(239, 68, 68, 0.4); color: rgb(239, 68, 68); background: rgba(239, 68, 68, 0.03);">{{t "Resolve & Unsuspend"}}</button>{{end}}
                 </div>
             </div>
             {{end}}

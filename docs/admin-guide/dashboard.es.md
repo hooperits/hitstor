@@ -30,10 +30,15 @@ El banner enlaza a la página de la versión en GitHub. Para deshabilitar las co
 
 ## Diseño { #layout }
 
-El dashboard usa una barra de encabezado fija con el logotipo y la versión de HitStor, una barra lateral con navegación por íconos y un área de contenido principal. La barra lateral agrupa las páginas en dos secciones:
+El dashboard usa una barra de encabezado fija, una barra lateral con navegación por íconos y un área de contenido principal. El encabezado muestra el nombre del repositorio, la versión y, a la derecha, el menú del usuario: **Mi cuenta**, el idioma y **Cerrar sesión**.
 
-- **Monitoreo**: Resumen, Respaldos, Agentes
-- **Administración**: Almacenamiento, Configuración
+La barra lateral agrupa las páginas según lo que se hace con ellas y muestra solo lo que su rol permite:
+
+- **Protección**: Resumen, Respaldos, Restauraciones, Recuperación ante desastres
+- **Infraestructura**: Agentes, Almacenamiento
+- **Administración**: Usuarios y acceso, Auditoría, Registros, Configuración
+
+Los botones de acciones que su rol no permite (por ejemplo, eliminar un agente o ejecutar un trabajo en un agente que no opera) no se muestran.
 
 ## Páginas del dashboard { #dashboard-pages }
 

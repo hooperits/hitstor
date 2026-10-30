@@ -1,29 +1,43 @@
 {{define "content"}}
-<div class="audit-page">
-    {{if .Content.Err}}<div class="alert-banner" role="alert">{{t "The audit log could not be read:"}} {{.Content.Err}}</div>{{end}}
-    {{if .Content.BrokenAt}}<div class="alert-banner" role="alert">{{tf "The audit log was altered: the chain breaks at line {line}." "line" .Content.BrokenAt}}</div>
-    {{else if not .Content.Err}}<p class="audit-intact">{{t "Chain intact: no entry has been changed or removed."}}</p>{{end}}
+<div id="audit-app" class="audit-page">
+    <p id="audit-chain" class="audit-chain" role="status"></p>
+    <div class="toolbar">
+        <label class="search"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="search" name="q" placeholder="{{t "Search"}}" aria-label="{{t "Search"}}"></label>
+        <select name="user" class="toolbar-select" aria-label="{{t "User"}}">
+            <option value="">{{t "All users"}}</option>
+            {{range .Content.Users}}<option value="{{.}}">{{.}}</option>{{end}}
+            <option value="console">console</option>
+        </select>
+        <select name="category" class="toolbar-select" aria-label="{{t "Action"}}">
+            <option value="">{{t "All actions"}}</option>
+            {{range .Content.Categories}}<option value="{{.Key}}">{{t .Label}}</option>{{end}}
+        </select>
+        <select name="result" class="toolbar-select" aria-label="{{t "Result"}}">
+            <option value="">{{t "Any result"}}</option>
+            <option value="ok">{{t "Succeeded"}}</option>
+            <option value="failed">{{t "Failed or denied"}}</option>
+        </select>
+        <select name="days" class="toolbar-select" aria-label="{{t "Period"}}">
+            <option value="1">{{t "Today"}}</option>
+            <option value="7" selected>{{t "Last 7 days"}}</option>
+            <option value="30">{{t "Last 30 days"}}</option>
+            <option value="365">{{t "Last year"}}</option>
+            <option value="">{{t "All time"}}</option>
+        </select>
+        <span class="grow"></span>
+        <a id="audit-export" class="btn btn-secondary" href="/api/audit/export">{{t "Export CSV"}}</a>
+    </div>
     <section class="acct-section acct-section--wide">
         <div class="table-wrap">
             <table class="audit-table">
-                <thead><tr><th>{{t "Time"}}</th><th>{{t "User"}}</th><th>{{t "Address"}}</th><th>{{t "Action"}}</th><th>{{t "Target"}}</th><th>{{t "Result"}}</th><th>{{t "Detail"}}</th></tr></thead>
-                <tbody>
-                {{range .Content.Events}}
-                <tr>
-                    <td class="nowrap">{{timeFormat .Time.Local}}</td>
-                    <td>{{.User}}</td>
-                    <td>{{.IP}}</td>
-                    <td><code>{{.Action}}</code></td>
-                    <td>{{.Target}}</td>
-                    <td>{{if .OK}}<span class="badge badge-ok">{{t "ok"}}</span>{{else}}<span class="badge badge-stale">{{t "denied"}}</span>{{end}}</td>
-                    <td>{{.Detail}}</td>
-                </tr>
-                {{else}}
-                <tr><td colspan="7" class="text-muted">{{t "No events yet."}}</td></tr>
-                {{end}}
-                </tbody>
+                <thead><tr><th></th><th>{{t "When"}}</th><th>{{t "User"}}</th><th>{{t "What they did"}}</th><th>{{t "From"}}</th></tr></thead>
+                <tbody id="audit-body"><tr><td colspan="5" class="text-muted">{{t "Loading..."}}</td></tr></tbody>
             </table>
         </div>
+        <div class="pager"><span id="audit-count"></span>
+            <button type="button" class="btn btn-secondary btn-sm" id="audit-prev">{{t "Previous"}}</button>
+            <button type="button" class="btn btn-secondary btn-sm" id="audit-next">{{t "Next"}}</button></div>
     </section>
 </div>
 {{end}}

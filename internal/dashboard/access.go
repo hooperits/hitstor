@@ -107,11 +107,17 @@ var routePolicies = map[string]routePolicy{
 	"GET /api/account/sessions":         {perms: view, anyAgent: true},
 	"DELETE /api/account/sessions/{id}": {perms: view, anyAgent: true},
 	"POST /api/reauth":                  {perms: view, anyAgent: true},
+	"PUT /api/account/profile":          {perms: view, anyAgent: true},
+	"DELETE /api/account/sessions":      {perms: view, anyAgent: true},
 	"GET /api/session":                  {perms: view, anyAgent: true},
 	"POST /api/session/activity":        {perms: view, anyAgent: true},
 
 	// Administrators: sensitive changes ask for a recent sign-in.
 	"GET /users":                             {perms: admin},
+	"GET /users/{name}":                      {perms: admin},
+	"GET /api/users/{name}":                  {perms: admin},
+	"GET /api/audit":                         {perms: admin},
+	"GET /api/audit/export":                  {perms: admin},
 	"GET /api/users":                         {perms: admin},
 	"GET /api/users/{name}/sessions":         {perms: admin},
 	"GET /audit":                             {perms: admin},
@@ -149,6 +155,9 @@ func policyFor(pattern string) routePolicy {
 // guard is protect plus the route's policy.
 func (d *Dashboard) guard(pattern string, h http.Handler) http.Handler {
 	p := policyFor(pattern)
+	if _, ok := auditedRoutes[pattern]; ok {
+		h = d.audited(pattern, h)
+	}
 	return d.protect(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		a := authOf(r)
 		if a == nil || a.user == nil {
@@ -167,6 +176,21 @@ func (d *Dashboard) guard(pattern string, h http.Handler) http.Handler {
 		}
 		h.ServeHTTP(w, r)
 	}))
+}
+
+// audited records a change made through the API, and whether it worked.
+func (d *Dashboard) audited(pattern string, h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		target := d.auditTarget(r, pattern)
+		rec := &statusRecorder{ResponseWriter: w}
+		h.ServeHTTP(rec, r)
+		ok := rec.status < http.StatusBadRequest
+		detail := ""
+		if !ok {
+			detail = http.StatusText(rec.status)
+		}
+		d.auditEvent(r, "", "api:"+pattern, target, ok, detail)
+	})
 }
 
 func allowed(d *Dashboard, r *http.Request, u *users.User, p routePolicy) bool {

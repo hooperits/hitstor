@@ -201,7 +201,7 @@ func newServeUserGrantCmd() *cobra.Command {
 			if err := store.SetGrants(args[0], grants); err != nil {
 				return err
 			}
-			consoleAudit(audit, "user.grants", args[0], grantsSummary(grants))
+			consoleAudit(audit, "user.roles", args[0], grantsSummary(grants))
 			fmt.Fprintf(os.Stdout, "Roles of %s: %s\n", args[0], grantsSummary(grants))
 			return nil
 		},

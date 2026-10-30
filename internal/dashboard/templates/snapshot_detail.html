@@ -31,6 +31,7 @@
                 </p>
             </div>
             <div class="snapshot-restore-hero__actions">
+                {{if $.Nav.RestoreTo ""}}
                 {{if $workload}}
                 <button type="button" class="btn" id="workload-show-btn" onclick="showWorkloadRestore()">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
@@ -41,6 +42,7 @@
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
                     {{if $workload}}{{t "Restore as files"}}{{else}}{{t "Start Restore"}}{{end}}
                 </button>
+                {{end}}
             </div>
         </div>
 

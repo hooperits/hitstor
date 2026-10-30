@@ -1,5 +1,6 @@
 // User accounts in the dashboard: re-authentication before sensitive
-// actions (any page), the user's own account, and user administration.
+// actions (any page), session timeouts, the user menu, the user's own
+// account, user administration and the audit log.
 (function () {
     'use strict';
 
@@ -149,22 +150,89 @@
         });
     }
 
+    var LANG = document.documentElement.lang || undefined;
+
+    // when is a date and time in the page's language.
     function when(iso) {
-        return iso ? new Date(iso).toLocaleString(document.documentElement.lang || undefined) : '—';
+        if (!iso) return '—';
+        return new Date(iso).toLocaleString(LANG, { dateStyle: 'medium', timeStyle: 'short' });
     }
 
-    var ROLE_LABEL = function (role) {
+    // ago is a time relative to now ("5 minutes ago", "yesterday"), or the
+    // date when it is long past.
+    function ago(iso) {
+        if (!iso) return t('never');
+        var sec = (new Date(iso).getTime() - Date.now()) / 1000;
+        var abs = Math.abs(sec);
+        if (abs > 30 * 86400) return new Date(iso).toLocaleDateString(LANG, { dateStyle: 'medium' });
+        var rtf = new Intl.RelativeTimeFormat(LANG, { numeric: 'auto' });
+        if (abs < 60) return rtf.format(0, 'second');
+        if (abs < 3600) return rtf.format(Math.round(sec / 60), 'minute');
+        if (abs < 86400) return rtf.format(Math.round(sec / 3600), 'hour');
+        return rtf.format(Math.round(sec / 86400), 'day');
+    }
+
+    function relTimes(root) {
+        (root || document).querySelectorAll('time[data-rel]').forEach(function (el) {
+            el.textContent = ago(el.getAttribute('datetime'));
+            el.title = when(el.getAttribute('datetime'));
+        });
+    }
+
+    function roleName(role) {
         return {
             admin: t('Administrator'), backup_operator: t('Backup operator'),
             restore_operator: t('Restore operator'), viewer: t('Viewer')
         }[role] || role;
-    };
+    }
 
-    function grantsText(grants) {
+    function roleHelp(role) {
+        return {
+            admin: t('Everything, on every agent: users, storage, settings, deleting snapshots.'),
+            backup_operator: t('Runs, schedules and edits backup jobs on the agents it is given. Cannot restore.'),
+            restore_operator: t('Browses snapshots and restores on the agents it is given. Cannot change jobs.'),
+            viewer: t('Reads jobs, results and reports. Changes nothing.')
+        }[role] || '';
+    }
+
+    function allAgents(g) { return g.role === 'admin' || !(g.agents && g.agents.length); }
+
+    function grantsHTML(grants) {
         return (grants || []).map(function (g) {
-            var scope = g.role === 'admin' || !(g.agents && g.agents.length) ? t('all agents') : g.agents.join(', ');
-            return '<span class="role-chip role-chip--' + esc(g.role) + '">' + esc(ROLE_LABEL(g.role)) + '</span> <span class="role-scope">' + esc(scope) + '</span>';
-        }).join('<br>');
+            return '<div><span class="role-chip role-chip--' + esc(g.role) + '">' + esc(roleName(g.role)) + '</span> <span class="role-scope">' +
+                esc(allAgents(g) ? t('all agents') : g.agents.join(', ')) + '</span></div>';
+        }).join('');
+    }
+
+    function initials(u) {
+        var words = (u.display_name || '').trim().split(/\s+/).filter(Boolean);
+        if (!words.length) words = u.username.split(/[._-]/).filter(Boolean);
+        var s = words.length > 1 ? words[0][0] + words[words.length - 1][0] : (words[0] || '?').slice(0, 2);
+        return s.toUpperCase();
+    }
+
+    // status is where an account stands: disabled, locked, waiting for its
+    // first sign-in, or active.
+    function status(u) {
+        if (u.disabled) return 'disabled';
+        if (u.locked) return 'locked';
+        if (!u.last_login_at || !u.totp_enabled) return 'pending';
+        return 'active';
+    }
+
+    function statusBadge(u) {
+        return {
+            active: '<span class="badge badge-ok">' + esc(t('Active user')) + '</span>',
+            pending: '<span class="badge badge-pending">' + esc(t('First sign-in pending')) + '</span>',
+            locked: '<span class="badge badge-stale">' + esc(t('Locked')) + '</span>',
+            disabled: '<span class="badge badge-disabled">' + esc(t('Disabled')) + '</span>'
+        }[status(u)];
+    }
+
+    function mfaBadge(u) {
+        return u.totp_enabled
+            ? '<span class="badge badge-ok">' + esc(t('Set up')) + '</span>'
+            : '<span class="badge badge-pending">' + esc(t('Not set up')) + '</span>';
     }
 
     function showCodes(codes) {
@@ -172,215 +240,430 @@
             '<p class="form-hint">' + esc(t('Each code signs you in once if you lose your phone. Your previous codes no longer work.')) + '</p>' +
             '<ol class="recovery-codes">' + codes.map(function (c) { return '<li><code>' + esc(c) + '</code></li>'; }).join('') + '</ol>' +
             '<div class="dialog-actions"><button type="button" class="btn">' + esc(t('Done')) + '</button></div>');
-        d.q('.dialog-actions .btn').addEventListener('click', d.close);
+        d.q('.dialog-actions .btn').addEventListener('click', function () { d.close(); location.reload(); });
+    }
+
+    // formDialog shows fields and calls submit(values) until it resolves.
+    function formDialog(title, fieldsHTML, okLabel, submit) {
+        var d = dialog(title, '<form>' + fieldsHTML +
+            '<div class="form-error" hidden></div>' +
+            '<div class="dialog-actions"><button type="button" class="btn btn-secondary fd-cancel">' + esc(t('Cancel')) + '</button>' +
+            '<button type="submit" class="btn">' + esc(okLabel) + '</button></div></form>');
+        d.q('.fd-cancel').addEventListener('click', d.close);
+        var first = d.q('input, select');
+        if (first) first.focus();
+        d.q('form').addEventListener('submit', function (ev) {
+            ev.preventDefault();
+            var err = d.q('.form-error');
+            err.hidden = true;
+            Promise.resolve().then(function () { return submit(d); }).catch(function (e) {
+                err.textContent = e.message;
+                err.hidden = false;
+            });
+        });
+        return d;
+    }
+
+    function sessionRow(s, endURL, onEnd) {
+        var div = document.createElement('div');
+        div.className = 'sess';
+        div.innerHTML = '<div><strong>' + esc(s.browser) + '</strong>' + (s.current ? ' · ' + esc(t('this browser')) : '') +
+            '<div class="set-hint">' + esc(s.ip || '—') + ' · ' + esc(t('signed in {when}', { when: ago(s.created) })) + ' · ' +
+            esc(s.current ? t('active now') : t('last activity {when}', { when: ago(s.last_seen) })) + '</div></div>' +
+            (s.current ? '<span class="badge badge-ok">' + esc(t('this browser')) + '</span>'
+                : '<button type="button" class="btn btn-secondary btn-sm">' + esc(t('Sign out')) + '</button>');
+        var b = div.querySelector('button');
+        if (b) b.addEventListener('click', function () { api('DELETE', endURL(s.id)).then(onEnd); });
+        return div;
+    }
+
+    function temporaryPasswordDialog(user, pw, after) {
+        var d = dialog(t('Temporary password'),
+            '<p>' + esc(t('Give this temporary password to {user}. It works once: they choose their own and set up two-step verification at first sign-in.', { user: user })) + '</p>' +
+            '<p class="temp-password"><code>' + esc(pw) + '</code></p>' +
+            '<div class="dialog-actions"><button type="button" class="btn">' + esc(t('Done')) + '</button></div>');
+        d.q('.dialog-actions .btn').addEventListener('click', function () { d.close(); if (after) after(); });
     }
 
     // --- My account ---
     function account(root) {
-        var form = root.querySelector('#account-password');
-        form.addEventListener('submit', function (ev) {
-            ev.preventDefault();
-            var status = root.querySelector('#account-password-status');
-            api('POST', '/api/account/password', {
-                current: form.current.value, password: form.password.value, confirm: form.confirm.value
-            }).then(function () {
-                form.reset();
-                status.textContent = t('Password changed. Your other sessions were closed.');
-                status.className = 'form-status text-ok';
-            }).catch(function (err) {
-                status.textContent = err.message;
-                status.className = 'form-status text-critical';
-            });
+        var name = root.getAttribute('data-username');
+        relTimes(root);
+
+        root.querySelector('#acct-edit-name').addEventListener('click', function () {
+            formDialog(t('Full name'),
+                '<div class="form-group"><label for="fd-name">' + esc(t('Full name')) + '</label><input type="text" id="fd-name" maxlength="100" value="' +
+                esc(root.getAttribute('data-display-name')) + '"></div>', t('Save'), function (d) {
+                    return api('PUT', '/api/account/profile', { display_name: d.q('#fd-name').value }).then(function () { location.reload(); });
+                });
         });
+
+        root.querySelector('#acct-change-password').addEventListener('click', function () {
+            formDialog(t('Change password'),
+                '<input type="text" name="username" value="' + esc(name) + '" autocomplete="username" hidden>' +
+                '<div class="form-group"><label for="fd-cur">' + esc(t('Current password')) + '</label><input type="password" id="fd-cur" autocomplete="current-password" required></div>' +
+                '<div class="form-group"><label for="fd-new">' + esc(t('New password')) + '</label><input type="password" id="fd-new" autocomplete="new-password" minlength="12" maxlength="128" required>' +
+                '<p class="form-hint">' + esc(t('At least 12 characters. A phrase of several words is easy to remember and hard to guess.')) + '</p></div>' +
+                '<div class="form-group"><label for="fd-confirm">' + esc(t('Repeat the new password')) + '</label><input type="password" id="fd-confirm" autocomplete="new-password" required></div>',
+                t('Change password'), function (d) {
+                    return api('POST', '/api/account/password', {
+                        current: d.q('#fd-cur').value, password: d.q('#fd-new').value, confirm: d.q('#fd-confirm').value
+                    }).then(function () {
+                        d.close();
+                        var ok = dialog(t('Password changed'), '<p>' + esc(t('Password changed. Your other sessions were closed.')) + '</p>' +
+                            '<div class="dialog-actions"><button type="button" class="btn">' + esc(t('Done')) + '</button></div>');
+                        ok.q('.dialog-actions .btn').addEventListener('click', function () { location.reload(); });
+                    });
+                });
+        });
+
         root.querySelector('#account-codes').addEventListener('click', function () {
+            if (!confirm(t('Generate new recovery codes? The ones you have stop working.'))) return;
             api('POST', '/api/account/recovery-codes').then(function (r) { showCodes(r.codes); })
                 .catch(function (err) { alert(err.message); });
         });
+
+        var box = root.querySelector('#account-sessions');
+        var others = root.querySelector('#acct-end-others');
         function sessions() {
             api('GET', '/api/account/sessions').then(function (list) {
-                root.querySelector('#account-sessions').innerHTML = list.map(function (s) {
-                    return '<tr><td>' + esc(when(s.created)) + '</td><td>' + esc(when(s.last_seen)) + '</td><td>' + esc(s.ip) +
-                        '</td><td class="ua">' + esc(s.user_agent) + '</td><td>' +
-                        (s.current ? '<span class="badge badge-ok">' + esc(t('this browser')) + '</span>'
-                            : '<button type="button" class="btn btn-secondary btn-sm" data-end="' + esc(s.id) + '">' + esc(t('End')) + '</button>') +
-                        '</td></tr>';
-                }).join('');
-                root.querySelectorAll('[data-end]').forEach(function (b) {
-                    b.addEventListener('click', function () {
-                        api('DELETE', '/api/account/sessions/' + encodeURIComponent(b.getAttribute('data-end'))).then(sessions);
-                    });
+                box.innerHTML = '';
+                list.forEach(function (s) {
+                    box.appendChild(sessionRow(s, function (id) { return '/api/account/sessions/' + encodeURIComponent(id); }, sessions));
+                });
+                others.hidden = list.length < 2;
+            });
+        }
+        others.addEventListener('click', function () { api('DELETE', '/api/account/sessions').then(sessions); });
+        sessions();
+    }
+
+    // grantsEditor edits a user's roles as cards: a role, its explanation,
+    // and every agent or some of them.
+    function grantsEditor(el, agents, roles, grants, onChange) {
+        var seq = 0;
+        function card(g) {
+            var id = 'g' + (++seq);
+            var div = document.createElement('div');
+            div.className = 'grant-card';
+            div.innerHTML = '<div class="gc-head"><select class="grant-role" aria-label="' + esc(t('Role')) + '">' + roles.map(function (r) {
+                return '<option value="' + esc(r) + '"' + (r === g.role ? ' selected' : '') + '>' + esc(roleName(r)) + '</option>';
+            }).join('') + '</select><button type="button" class="grant-remove" aria-label="' + esc(t('Remove role')) + '">&times;</button></div>' +
+                '<p class="set-hint gc-help"></p>' +
+                '<div class="seg" role="radiogroup">' +
+                '<label><input type="radio" name="' + id + '" value="all"' + (allAgents(g) ? ' checked' : '') + '> ' + esc(t('All agents')) + '</label>' +
+                '<label><input type="radio" name="' + id + '" value="some"' + (allAgents(g) ? '' : ' checked') + '> ' + esc(t('Some')) + '</label></div>' +
+                '<div class="agent-picks">' + (agents.length ? agents.map(function (a) {
+                    return '<label><input type="checkbox" value="' + esc(a) + '"' + ((g.agents || []).indexOf(a) >= 0 ? ' checked' : '') + '> ' + esc(a) + '</label>';
+                }).join('') : '<span class="set-hint">' + esc(t('No agents registered yet.')) + '</span>') + '</div>';
+            function sync() {
+                var role = div.querySelector('.grant-role').value;
+                var isAdmin = role === 'admin';
+                div.querySelector('.gc-help').textContent = roleHelp(role);
+                if (isAdmin) div.querySelector('input[value=all]').checked = true;
+                div.querySelector('.seg').hidden = isAdmin;
+                var some = div.querySelector('input[value=some]').checked;
+                div.querySelector('.agent-picks').hidden = isAdmin || !some;
+                div.querySelectorAll('.seg label').forEach(function (l) { l.classList.toggle('on', l.querySelector('input').checked); });
+                div.querySelectorAll('.agent-picks label').forEach(function (l) { l.classList.toggle('on', l.querySelector('input').checked); });
+                if (onChange) onChange();
+            }
+            div.addEventListener('change', sync);
+            div.querySelector('.grant-remove').addEventListener('click', function () { div.remove(); if (onChange) onChange(); });
+            el.appendChild(div);
+            sync();
+        }
+        el.innerHTML = '';
+        (grants && grants.length ? grants : [{ role: 'viewer' }]).forEach(card);
+        function value(strict) {
+            var out = [];
+            el.querySelectorAll('.grant-card').forEach(function (div) {
+                var g = { role: div.querySelector('.grant-role').value };
+                if (g.role !== 'admin' && div.querySelector('input[value=some]').checked) {
+                    g.agents = [];
+                    div.querySelectorAll('.agent-picks input:checked').forEach(function (i) { g.agents.push(i.value); });
+                    if (!g.agents.length && strict) throw new Error(t('Choose at least one agent, or All agents.'));
+                }
+                out.push(g);
+            });
+            if (!out.length && strict) throw new Error(t('Give the user at least one role.'));
+            return out;
+        }
+        return { add: function () { card({ role: 'backup_operator' }); }, value: function () { return value(true); }, draft: function () { return value(false); } };
+    }
+
+    // summary says in plain words what a set of roles allows.
+    function summary(grants) {
+        if (grants.some(function (g) { return g.role === 'admin'; })) return t('Can do everything, on every agent.');
+        function scope(roles) {
+            var all = false, set = {};
+            grants.forEach(function (g) {
+                if (roles.indexOf(g.role) < 0) return;
+                if (allAgents(g)) all = true;
+                else g.agents.forEach(function (a) { set[a] = true; });
+            });
+            if (all) return t('all agents');
+            var list = Object.keys(set);
+            return list.length ? list.join(', ') : '';
+        }
+        var parts = [];
+        var sees = scope(['viewer', 'backup_operator', 'restore_operator']);
+        var backs = scope(['backup_operator']);
+        var restores = scope(['restore_operator']);
+        parts.push(sees ? t('Sees: {agents}', { agents: sees }) : t('Sees nothing'));
+        parts.push(backs ? t('Backs up: {agents}', { agents: backs }) : t('Does not back up'));
+        parts.push(restores ? t('Restores: {agents}', { agents: restores }) : t('Does not restore'));
+        parts.push(t('Does not administer'));
+        return parts.join(' · ');
+    }
+
+    // --- Users ---
+    function usersList(root) {
+        var agents = JSON.parse(root.getAttribute('data-agents') || 'null') || [];
+        var roles = JSON.parse(root.getAttribute('data-roles') || 'null') || [];
+        var body = root.querySelector('#users-body');
+        var search = root.querySelector('#users-search');
+        var roleSel = root.querySelector('#users-role');
+        var statusSel = root.querySelector('#users-status');
+        var all = [];
+
+        function render() {
+            var q = search.value.trim().toLowerCase();
+            var list = all.filter(function (u) {
+                if (q && (u.username + ' ' + (u.display_name || '')).toLowerCase().indexOf(q) < 0) return false;
+                if (roleSel.value && !u.grants.some(function (g) { return g.role === roleSel.value; })) return false;
+                if (statusSel.value && status(u) !== statusSel.value) return false;
+                return true;
+            });
+            body.innerHTML = list.map(function (u) {
+                return '<tr class="clickable" data-user="' + esc(u.username) + '" tabindex="0">' +
+                    '<td><div class="who"><span class="um-avatar" aria-hidden="true">' + esc(initials(u)) + '</span><div><strong>' + esc(u.username) + '</strong>' +
+                    (u.display_name ? '<div class="set-hint">' + esc(u.display_name) + '</div>' : '') + '</div></div></td>' +
+                    '<td>' + grantsHTML(u.grants) + '</td><td>' + mfaBadge(u) + '</td>' +
+                    '<td title="' + esc(when(u.last_login_at)) + '">' + esc(ago(u.last_login_at)) + '</td>' +
+                    '<td>' + statusBadge(u) + '</td><td class="col-actions" aria-hidden="true">›</td></tr>';
+            }).join('') || '<tr><td colspan="6" class="text-muted">' + esc(all.length ? t('No user matches the filters.') : t('No users yet.')) + '</td></tr>';
+        }
+        function open(tr) { location.href = '/users/' + encodeURIComponent(tr.getAttribute('data-user')); }
+        body.addEventListener('click', function (ev) { var tr = ev.target.closest('tr[data-user]'); if (tr) open(tr); });
+        body.addEventListener('keydown', function (ev) { var tr = ev.target.closest('tr[data-user]'); if (tr && ev.key === 'Enter') open(tr); });
+        [search, roleSel, statusSel].forEach(function (el) { el.addEventListener('input', render); });
+
+        api('GET', '/api/users').then(function (list) { all = list; render(); })
+            .catch(function (err) { body.innerHTML = '<tr><td colspan="6" class="form-error">' + esc(err.message) + '</td></tr>'; });
+
+        root.querySelector('#user-add').addEventListener('click', function () {
+            var d = formDialog(t('New user'),
+                '<div class="form-group"><label for="fd-user">' + esc(t('User name')) + '</label><input type="text" id="fd-user" required autocomplete="off" pattern="[A-Za-z0-9][A-Za-z0-9._\\-]{1,63}"></div>' +
+                '<div class="form-group"><label for="fd-display">' + esc(t('Full name (optional)')) + '</label><input type="text" id="fd-display" maxlength="100" autocomplete="off"></div>' +
+                '<div class="form-group"><label>' + esc(t('Roles')) + '</label><div class="grants"></div>' +
+                '<button type="button" class="btn btn-secondary btn-sm fd-add-grant">+ ' + esc(t('Add role')) + '</button></div>',
+                t('Create user'), function (d) {
+                    return api('POST', '/api/users', { username: d.q('#fd-user').value, display_name: d.q('#fd-display').value, grants: ed.value() })
+                        .then(function (r) {
+                            d.close();
+                            temporaryPasswordDialog(r.user.username, r.temporary_password, function () {
+                                location.href = '/users/' + encodeURIComponent(r.user.username);
+                            });
+                        });
+                });
+            var ed = grantsEditor(d.q('.grants'), agents, roles, [{ role: 'backup_operator' }]);
+            d.q('.fd-add-grant').addEventListener('click', ed.add);
+        });
+    }
+
+    // --- Audit rows, shared by the audit log and a user's activity ---
+    function auditRows(events, withUser) {
+        var icon = { ok: '<span class="ev ev-ok" title="' + esc(t('Succeeded')) + '">✓</span>', failed: '<span class="ev ev-fail" title="' + esc(t('Failed')) + '">!</span>',
+            denied: '<span class="ev ev-deny" title="' + esc(t('Denied')) + '">⊘</span>' };
+        return events.map(function (e) {
+            var phrase = esc(e.phrase).split('{target}').join('<strong>' + esc(e.target) + '</strong>');
+            return '<tr><td>' + (icon[e.result] || '') + '</td><td class="nowrap" title="' + esc(when(e.time)) + '">' + esc(ago(e.time)) + '</td>' +
+                (withUser ? '<td>' + esc(e.user || '—') + '</td>' : '') +
+                '<td>' + phrase + (e.detail ? '<div class="set-hint">' + esc(e.detail) + '</div>' : '') + '</td>' +
+                '<td>' + esc(e.ip || '—') + '</td></tr>';
+        }).join('');
+    }
+
+    // --- One user ---
+    function userDetail(root) {
+        var name = root.getAttribute('data-username');
+        var enc = encodeURIComponent(name);
+        var self = root.getAttribute('data-self') === '1';
+        var agents = JSON.parse(root.getAttribute('data-agents') || 'null') || [];
+        var roles = JSON.parse(root.getAttribute('data-roles') || 'null') || [];
+        var u = JSON.parse(root.getAttribute('data-user'));
+        var q = function (s) { return root.querySelector(s); };
+
+        root.querySelectorAll('.tab').forEach(function (tab) {
+            tab.addEventListener('click', function () {
+                root.querySelectorAll('.tab').forEach(function (x) { x.classList.toggle('on', x === tab); });
+                root.querySelectorAll('[data-panel]').forEach(function (p) { p.hidden = p.getAttribute('data-panel') !== tab.getAttribute('data-tab'); });
+                if (tab.getAttribute('data-tab') === 'activity') activity();
+            });
+        });
+
+        function fill() {
+            q('#user-last-login').textContent = u.last_login_at ? t('last sign-in {when}', { when: ago(u.last_login_at) }) : t('has not signed in yet');
+            q('#user-name').innerHTML = u.display_name ? esc(u.display_name) : '<span class="text-muted">—</span>';
+            q('#user-status').innerHTML = statusBadge(u);
+            q('#user-password').textContent = u.must_change_password ? t('Temporary: must change it') : t('Changed {when}', { when: ago(u.password_changed_at) });
+            q('#user-mfa').innerHTML = mfaBadge(u) + (u.totp_enabled ? ' · ' + esc(t('{n} codes', { n: u.recovery_codes_left })) : '');
+            var toggle = q('#user-toggle');
+            if (toggle) {
+                q('#user-toggle-label').textContent = u.disabled ? t('Enable') : t('Disable');
+                q('#user-toggle-hint').textContent = u.disabled ? t('They can sign in again.') : t('They cannot sign in; the account is kept.');
+                toggle.textContent = u.disabled ? t('Enable') : t('Disable');
+            }
+        }
+        function reload() { return api('GET', '/api/users/' + enc).then(function (x) { u = x; fill(); }); }
+        fill();
+
+        var effective = q('#user-effective');
+        var ed = grantsEditor(q('.grants'), agents, roles, u.grants, function () {
+            if (ed) effective.innerHTML = '<strong>' + esc(t('In short:')) + '</strong> ' + esc(summary(ed.draft()));
+        });
+        effective.innerHTML = '<strong>' + esc(t('In short:')) + '</strong> ' + esc(summary(ed.draft()));
+        q('#user-add-grant').addEventListener('click', ed.add);
+        q('#user-save-roles').addEventListener('click', function () {
+            var st = q('#user-roles-status');
+            try {
+                var grants = ed.value();
+            } catch (e) { st.textContent = e.message; st.className = 'form-status text-critical'; return; }
+            api('PUT', '/api/users/' + enc, { grants: grants }).then(function (x) {
+                u = x; fill();
+                st.textContent = t('Saved.'); st.className = 'form-status text-ok';
+            }).catch(function (e) { st.textContent = e.message; st.className = 'form-status text-critical'; });
+        });
+
+        q('#user-edit-name').addEventListener('click', function () {
+            formDialog(t('Full name'),
+                '<div class="form-group"><label for="fd-name">' + esc(t('Full name')) + '</label><input type="text" id="fd-name" maxlength="100" value="' + esc(u.display_name) + '"></div>',
+                t('Save'), function (d) {
+                    return api('PUT', '/api/users/' + enc, { display_name: d.q('#fd-name').value }).then(function () { location.reload(); });
+                });
+        });
+        q('#user-reset-password').addEventListener('click', function () {
+            if (!confirm(t('Reset the password of {user}? Their sessions end.', { user: name }))) return;
+            api('POST', '/api/users/' + enc + '/password').then(function (r) {
+                temporaryPasswordDialog(name, r.temporary_password, reload);
+            }).catch(function (e) { alert(e.message); });
+        });
+        q('#user-reset-mfa').addEventListener('click', function () {
+            if (!confirm(t('Reset two-step verification of {user}? They set it up again at next sign-in.', { user: name }))) return;
+            api('DELETE', '/api/users/' + enc + '/second-factor').then(reload).catch(function (e) { alert(e.message); });
+        });
+        var toggle = q('#user-toggle');
+        if (toggle) toggle.addEventListener('click', function () {
+            api('PUT', '/api/users/' + enc, { disabled: !u.disabled }).then(function (x) { u = x; fill(); }).catch(function (e) { alert(e.message); });
+        });
+        var remove = q('#user-remove');
+        if (remove) remove.addEventListener('click', function () {
+            var d = formDialog(t('Remove user'),
+                '<p>' + esc(t('This deletes the account of {user} and ends their sessions. It cannot be undone.', { user: name })) + '</p>' +
+                '<div class="form-group"><label for="fd-confirm-name">' + esc(t('Type {user} to confirm', { user: name })) + '</label>' +
+                '<input type="text" id="fd-confirm-name" autocomplete="off"></div>',
+                t('Remove'), function () {
+                    return api('DELETE', '/api/users/' + enc).then(function () { location.href = '/users'; });
+                });
+            var ok = d.q('button[type=submit]');
+            ok.className = 'btn btn-danger';
+            ok.disabled = true;
+            d.q('#fd-confirm-name').addEventListener('input', function (ev) { ok.disabled = ev.target.value !== name; });
+        });
+
+        var sessBox = q('#user-sessions');
+        function sessions() {
+            api('GET', '/api/users/' + enc + '/sessions').then(function (list) {
+                q('#user-sessions-count').textContent = list.length ? '(' + list.length + ')' : '';
+                sessBox.innerHTML = list.length ? '' : '<p class="set-hint">' + esc(t('No open sessions.')) + '</p>';
+                list.forEach(function (s) {
+                    s.current = false;
+                    sessBox.appendChild(sessionRow(s, function (id) { return '/api/users/' + enc + '/sessions/' + encodeURIComponent(id); }, sessions));
                 });
             });
         }
         sessions();
+
+        var loaded = false;
+        function activity() {
+            if (loaded) return;
+            loaded = true;
+            api('GET', '/api/audit?user=' + enc + '&days=').then(function (r) {
+                q('#user-activity').innerHTML = auditRows(r.events.slice(0, 20), false) ||
+                    '<tr><td class="text-muted">' + esc(t('No activity yet.')) + '</td></tr>';
+            });
+        }
+        if (self) q('#user-save-roles').title = t('You cannot remove your own administrator role if you are the last one.');
     }
 
-    // --- Users (administrators) ---
-    function usersAdmin(root) {
-        var agents = JSON.parse(root.getAttribute('data-agents') || 'null') || [];
-        var roles = JSON.parse(root.getAttribute('data-roles') || 'null') || [];
-        var body = root.querySelector('#users-body');
+    // --- Audit log ---
+    function auditLog(root) {
+        var page = 1, total = 0, size = 50;
+        var fields = root.querySelectorAll('.toolbar [name]');
+        var params = new URLSearchParams(location.search);
+        fields.forEach(function (f) { if (params.has(f.name)) f.value = params.get(f.name); });
 
+        function query() {
+            var p = new URLSearchParams();
+            fields.forEach(function (f) { if (f.value) p.set(f.name, f.value); });
+            if (!root.querySelector('[name=days]').value) p.set('days', '');
+            return p;
+        }
         function load() {
-            api('GET', '/api/users').then(function (list) {
-                body.innerHTML = list.map(function (u) {
-                    var status = u.disabled ? '<span class="badge badge-disabled">' + esc(t('disabled')) + '</span>'
-                        : u.locked ? '<span class="badge badge-stale">' + esc(t('locked')) + '</span>'
-                            : '<span class="badge badge-ok">' + esc(t('active')) + '</span>';
-                    var mfa = u.totp_enabled ? '<span class="badge badge-ok">' + esc(t('on')) + '</span> <span class="role-scope">' +
-                        esc(t('{n} recovery codes', { n: u.recovery_codes_left })) + '</span>'
-                        : '<span class="badge badge-stale">' + esc(t('pending')) + '</span>';
-                    return '<tr><td><strong>' + esc(u.username) + '</strong>' + (u.display_name ? '<br><span class="role-scope">' + esc(u.display_name) + '</span>' : '') +
-                        (u.must_change_password ? '<br><span class="role-scope">' + esc(t('must change password')) + '</span>' : '') + '</td>' +
-                        '<td>' + grantsText(u.grants) + '</td><td>' + mfa + '</td><td>' + esc(when(u.last_login_at)) + '</td><td>' + status + '</td>' +
-                        '<td class="col-actions"><button type="button" class="btn btn-secondary btn-sm" data-user="' + esc(u.username) + '">' + esc(t('Manage')) + '</button></td></tr>';
-                }).join('') || '<tr><td colspan="6" class="text-muted">' + esc(t('No users yet.')) + '</td></tr>';
-                body.querySelectorAll('[data-user]').forEach(function (b) {
-                    var u = list.filter(function (x) { return x.username === b.getAttribute('data-user'); })[0];
-                    b.addEventListener('click', function () { manage(u); });
-                });
-            }).catch(function (err) { body.innerHTML = '<tr><td colspan="6" class="form-error">' + esc(err.message) + '</td></tr>'; });
-        }
-
-        // grantsEditor renders rows of (role, agents) into el.
-        function grantsEditor(el, grants) {
-            function row(g) {
-                var div = document.createElement('div');
-                div.className = 'grant-row';
-                div.innerHTML = '<select class="grant-role">' + roles.map(function (r) {
-                    return '<option value="' + esc(r) + '"' + (r === g.role ? ' selected' : '') + '>' + esc(ROLE_LABEL(r)) + '</option>';
-                }).join('') + '</select>' +
-                    '<div class="grant-scope"><label class="grant-all"><input type="checkbox" class="grant-all-box"' + (!(g.agents && g.agents.length) ? ' checked' : '') + '> ' + esc(t('All agents')) + '</label>' +
-                    '<div class="grant-agents">' + agents.map(function (a) {
-                        return '<label><input type="checkbox" value="' + esc(a) + '"' + ((g.agents || []).indexOf(a) >= 0 ? ' checked' : '') + '> ' + esc(a) + '</label>';
-                    }).join('') + '</div></div>' +
-                    '<button type="button" class="grant-remove" aria-label="' + esc(t('Remove role')) + '">&times;</button>';
-                function sync() {
-                    var isAdmin = div.querySelector('.grant-role').value === 'admin';
-                    var all = div.querySelector('.grant-all-box');
-                    if (isAdmin) all.checked = true;
-                    all.disabled = isAdmin;
-                    div.querySelector('.grant-agents').hidden = all.checked;
-                }
-                div.querySelector('.grant-role').addEventListener('change', sync);
-                div.querySelector('.grant-all-box').addEventListener('change', sync);
-                div.querySelector('.grant-remove').addEventListener('click', function () { div.remove(); });
-                sync();
-                el.appendChild(div);
-            }
-            el.innerHTML = '';
-            (grants && grants.length ? grants : [{ role: 'viewer' }]).forEach(row);
-            return {
-                add: function () { row({ role: 'backup_operator', agents: [] }); },
-                value: function () {
-                    var out = [];
-                    el.querySelectorAll('.grant-row').forEach(function (div) {
-                        var role = div.querySelector('.grant-role').value;
-                        var g = { role: role };
-                        if (role !== 'admin' && !div.querySelector('.grant-all-box').checked) {
-                            g.agents = [];
-                            div.querySelectorAll('.grant-agents input:checked').forEach(function (i) { g.agents.push(i.value); });
-                            if (!g.agents.length) throw new Error(t('Choose at least one agent, or All agents.'));
-                        }
-                        out.push(g);
-                    });
-                    if (!out.length) throw new Error(t('Give the user at least one role.'));
-                    return out;
-                }
-            };
-        }
-
-        function showPassword(d, user, pw) {
-            d.q('.dialog-body').innerHTML = '<p>' + esc(t('Give this temporary password to {user}. It works once: they choose their own and set up two-step verification at first sign-in.', { user: user })) + '</p>' +
-                '<p class="temp-password"><code>' + esc(pw) + '</code></p>' +
-                '<div class="dialog-actions"><button type="button" class="btn">' + esc(t('Done')) + '</button></div>';
-            d.q('.dialog-actions .btn').addEventListener('click', function () { d.close(); load(); });
-        }
-
-        root.querySelector('#user-add').addEventListener('click', function () {
-            var d = dialog(t('New user'),
-                '<form class="user-form">' +
-                '<div class="form-group"><label>' + esc(t('User name')) + '</label><input type="text" class="u-name" required autocomplete="off" pattern="[A-Za-z0-9][A-Za-z0-9._\\-]{1,63}"></div>' +
-                '<div class="form-group"><label>' + esc(t('Full name (optional)')) + '</label><input type="text" class="u-display" autocomplete="off"></div>' +
-                '<div class="form-group"><label>' + esc(t('Roles')) + '</label><div class="grants"></div>' +
-                '<button type="button" class="btn btn-secondary btn-sm u-add-grant">' + esc(t('Add another role')) + '</button></div>' +
-                '<div class="form-error" style="display:none"></div>' +
-                '<div class="dialog-actions"><button type="button" class="btn btn-secondary u-cancel">' + esc(t('Cancel')) + '</button>' +
-                '<button type="submit" class="btn">' + esc(t('Create user')) + '</button></div></form>');
-            var ed = grantsEditor(d.q('.grants'), [{ role: 'backup_operator', agents: [] }]);
-            d.q('.u-add-grant').addEventListener('click', ed.add);
-            d.q('.u-cancel').addEventListener('click', d.close);
-            d.q('form').addEventListener('submit', function (ev) {
-                ev.preventDefault();
-                var errEl = d.q('.form-error');
-                var grants;
-                try { grants = ed.value(); } catch (err) { errEl.textContent = err.message; errEl.style.display = 'block'; return; }
-                api('POST', '/api/users', { username: d.q('.u-name').value, display_name: d.q('.u-display').value, grants: grants })
-                    .then(function (r) { showPassword(d, r.user.username, r.temporary_password); })
-                    .catch(function (err) { errEl.textContent = err.message; errEl.style.display = 'block'; });
+            var p = query();
+            root.querySelector('#audit-export').href = '/api/audit/export?' + p.toString();
+            history.replaceState(null, '', '/audit?' + p.toString());
+            p.set('page', page);
+            api('GET', '/api/audit?' + p.toString()).then(function (r) {
+                total = r.total; size = r.page_size;
+                var chain = root.querySelector('#audit-chain');
+                chain.className = 'audit-chain ' + (r.broken_at ? 'broken' : 'intact');
+                chain.textContent = r.broken_at
+                    ? t('The audit log was altered: the chain breaks at line {line}.', { line: r.broken_at })
+                    : '✓ ' + t('Chain intact: no entry has been changed or removed.');
+                root.querySelector('#audit-body').innerHTML = auditRows(r.events, true) ||
+                    '<tr><td colspan="5" class="text-muted">' + esc(t('No events match the filters.')) + '</td></tr>';
+                var from = total ? (page - 1) * size + 1 : 0;
+                root.querySelector('#audit-count').textContent = t('{from}–{to} of {total}', { from: from, to: Math.min(page * size, total), total: total });
+                root.querySelector('#audit-prev').disabled = page <= 1;
+                root.querySelector('#audit-next').disabled = page * size >= total;
+            }).catch(function (e) {
+                root.querySelector('#audit-body').innerHTML = '<tr><td colspan="5" class="form-error">' + esc(e.message) + '</td></tr>';
             });
+        }
+        var timer;
+        fields.forEach(function (f) {
+            f.addEventListener('input', function () { clearTimeout(timer); timer = setTimeout(function () { page = 1; load(); }, f.type === 'search' ? 300 : 0); });
         });
-
-        function manage(u) {
-            var enc = encodeURIComponent(u.username);
-            var d = dialog(t('User {user}', { user: u.username }),
-                '<div class="form-group"><label>' + esc(t('Roles')) + '</label><div class="grants"></div>' +
-                '<button type="button" class="btn btn-secondary btn-sm u-add-grant">' + esc(t('Add another role')) + '</button> ' +
-                '<button type="button" class="btn btn-sm u-save">' + esc(t('Save roles')) + '</button></div>' +
-                '<div class="user-actions">' +
-                '<button type="button" class="btn btn-secondary u-reset-pw">' + esc(t('Reset password')) + '</button>' +
-                '<button type="button" class="btn btn-secondary u-reset-mfa">' + esc(t('Reset two-step verification')) + '</button>' +
-                '<button type="button" class="btn btn-secondary u-toggle">' + esc(u.disabled ? t('Enable') : t('Disable')) + '</button>' +
-                '<button type="button" class="btn btn-danger u-remove">' + esc(t('Remove')) + '</button></div>' +
-                '<h3 class="user-sessions-title">' + esc(t('Signed-in sessions')) + '</h3><div class="u-sessions text-muted">' + esc(t('Loading...')) + '</div>' +
-                '<div class="form-error" style="display:none"></div>');
-            var errEl = d.q('.form-error');
-            var fail = function (err) { errEl.textContent = err.message; errEl.style.display = 'block'; };
-            var ed = grantsEditor(d.q('.grants'), u.grants);
-            d.q('.u-add-grant').addEventListener('click', ed.add);
-            d.q('.u-save').addEventListener('click', function () {
-                var grants;
-                try { grants = ed.value(); } catch (err) { return fail(err); }
-                api('PUT', '/api/users/' + enc, { grants: grants }).then(function () { d.close(); load(); }).catch(fail);
-            });
-            d.q('.u-reset-pw').addEventListener('click', function () {
-                if (!confirm(t('Reset the password of {user}? Their sessions end.', { user: u.username }))) return;
-                api('POST', '/api/users/' + enc + '/password').then(function (r) { showPassword(d, u.username, r.temporary_password); }).catch(fail);
-            });
-            d.q('.u-reset-mfa').addEventListener('click', function () {
-                if (!confirm(t('Reset two-step verification of {user}? They set it up again at next sign-in.', { user: u.username }))) return;
-                api('DELETE', '/api/users/' + enc + '/second-factor').then(function () { d.close(); load(); }).catch(fail);
-            });
-            d.q('.u-toggle').addEventListener('click', function () {
-                api('PUT', '/api/users/' + enc, { disabled: !u.disabled }).then(function () { d.close(); load(); }).catch(fail);
-            });
-            d.q('.u-remove').addEventListener('click', function () {
-                if (!confirm(t('Remove the user {user}? This cannot be undone.', { user: u.username }))) return;
-                api('DELETE', '/api/users/' + enc).then(function () { d.close(); load(); }).catch(fail);
-            });
-            api('GET', '/api/users/' + enc + '/sessions').then(function (list) {
-                var box = d.q('.u-sessions');
-                if (!list.length) { box.textContent = t('No open sessions.'); return; }
-                box.innerHTML = '<ul class="user-sessions">' + list.map(function (s) {
-                    return '<li>' + esc(when(s.last_seen)) + ' · ' + esc(s.ip) + ' <button type="button" class="btn btn-secondary btn-sm" data-end="' + esc(s.id) + '">' + esc(t('End')) + '</button></li>';
-                }).join('') + '</ul>';
-                box.querySelectorAll('[data-end]').forEach(function (b) {
-                    b.addEventListener('click', function () {
-                        api('DELETE', '/api/users/' + enc + '/sessions/' + encodeURIComponent(b.getAttribute('data-end'))).then(function () { b.parentNode.remove(); }).catch(fail);
-                    });
-                });
-            }).catch(fail);
-        }
-
+        root.querySelector('#audit-prev').addEventListener('click', function () { page--; load(); });
+        root.querySelector('#audit-next').addEventListener('click', function () { page++; load(); });
         load();
+    }
+
+    // --- The user menu in the header ---
+    function userMenu() {
+        var btn = document.getElementById('user-menu-btn');
+        var pop = document.getElementById('user-menu-pop');
+        if (!btn || !pop) return;
+        function set(open) {
+            pop.hidden = !open;
+            btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+            btn.classList.toggle('open', open);
+        }
+        btn.addEventListener('click', function (ev) { ev.stopPropagation(); set(pop.hidden); });
+        document.addEventListener('click', function (ev) { if (!pop.hidden && !pop.contains(ev.target)) set(false); });
+        document.addEventListener('keydown', function (ev) { if (ev.key === 'Escape' && !pop.hidden) { set(false); btn.focus(); } });
     }
 
     document.addEventListener('DOMContentLoaded', function () {
         if (document.body.hasAttribute('data-signed-in')) sessionWatch();
-        var a = document.getElementById('account-app');
-        if (a) account(a);
-        var u = document.getElementById('users-app');
-        if (u) usersAdmin(u);
+        userMenu();
+        var el;
+        if ((el = document.getElementById('account-app'))) account(el);
+        if ((el = document.getElementById('users-app'))) usersList(el);
+        if ((el = document.getElementById('user-app'))) userDetail(el);
+        if ((el = document.getElementById('audit-app'))) auditLog(el);
         var copy = document.getElementById('copy-codes');
         if (copy) copy.addEventListener('click', function () {
             var codes = Array.prototype.map.call(document.querySelectorAll('.recovery-codes code'), function (c) { return c.textContent; });

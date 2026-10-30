@@ -51,7 +51,15 @@ Las cuentas se guardan junto al registro de agentes en el primer repositorio, en
 
 ## Administrar usuarios { #managing-users }
 
-Los administradores gestionan las cuentas en **Usuarios**: crear usuarios, cambiar sus roles y agentes, desactivarlos o eliminarlos, restablecer contraseñas o la verificación en dos pasos y cerrar sesiones. El último administrador activo no puede eliminarse, desactivarse ni perder el rol.
+Los administradores gestionan las cuentas en **Usuarios y acceso**. La lista se puede buscar y filtrar por rol y estado; cada fila abre la ficha del usuario:
+
+- **Roles y agentes**: cada rol con su explicación, en todos los agentes o en algunos. *En resumen* dice en lenguaje llano qué puede hacer el usuario.
+- **Sesiones**: dónde tiene la sesión iniciada; se puede cerrar cualquiera.
+- **Actividad**: sus últimas entradas en la auditoría.
+- **Cuenta**: nombre completo, estado, y restablecer la contraseña o la verificación en dos pasos.
+- **Zona de peligro**: desactivar al usuario, o eliminarlo escribiendo su nombre de usuario.
+
+El último administrador activo no puede eliminarse, desactivarse ni perder el rol.
 
 ### Desde la consola del servidor { #cli }
 
@@ -75,4 +83,4 @@ hitstor serve user remove ops1
 
 ## Auditoría { #audit-log }
 
-**Auditoría** (administradores) lista los inicios de sesión, intentos fallidos, cambios de usuarios y solicitudes denegadas, con usuario, dirección y hora. Cada entrada lleva el hash de la anterior, de modo que editar o borrar una entrada rompe la cadena y la página indica dónde. El registro es `audit.log`, junto a `users.json`; los cambios hechos con `hitstor serve user` aparecen con el usuario `console`.
+**Auditoría** (administradores) lista los inicios de sesión, intentos fallidos, cambios de usuarios, respaldos, restauraciones, almacenamiento y configuración, y las solicitudes denegadas, con usuario, dirección y hora, en frases legibles. Se puede filtrar por usuario, tipo de acción, resultado y período, y exportar a CSV. Cada entrada lleva el hash de la anterior, de modo que editar o borrar una entrada rompe la cadena y la página indica dónde. El registro es `audit.log`, junto a `users.json`; los cambios hechos con `hitstor serve user` aparecen con el usuario `console`.

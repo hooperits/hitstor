@@ -93,6 +93,17 @@ func usedMessages(t *testing.T) map[string][]string {
 			}
 		}
 	}
+	// Audit phrases and filters live in tables.
+	for _, r := range auditedRoutes {
+		add(r.phrase, "audit_view.go")
+	}
+	for _, a := range auditActions {
+		add(a.ok, "audit_view.go")
+		add(a.failed, "audit_view.go")
+	}
+	for _, c := range auditCategories {
+		add(c.Label, "audit_view.go")
+	}
 	goFiles, _ := filepath.Glob("*.go")
 	for _, f := range goFiles {
 		if strings.HasSuffix(f, "_test.go") {

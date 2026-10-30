@@ -4,7 +4,7 @@
 
 <div class="backups-toolbar">
     <p class="backups-toolbar-hint">{{if $jobs}}{{if eq (len $jobs) 1}}{{t "1 scheduled job"}}{{else}}{{tf "{n} scheduled jobs" "n" (len $jobs)}}{{end}}{{else}}{{t "No jobs configured"}}{{end}}</p>
-    <button class="btn" onclick="HitStorBackupJob.openWizard()">+ {{t "New Backup Job"}}</button>
+    {{if $.Nav.Backup ""}}<button class="btn" onclick="HitStorBackupJob.openWizard()">+ {{t "New Backup Job"}}</button>{{end}}
 </div>
 
 
@@ -15,7 +15,7 @@
     </span>
     <h3>{{t "No backup jobs yet"}}</h3>
     <p>{{t "Create a job to schedule filesystem backups on Linux or Windows agents."}}</p>
-    <button class="btn" onclick="HitStorBackupJob.openWizard()">{{t "Create your first job"}}</button>
+    {{if $.Nav.Backup ""}}<button class="btn" onclick="HitStorBackupJob.openWizard()">{{t "Create your first job"}}</button>{{end}}
 </div>
 {{else}}
 <section class="stats-section backups-stats">
@@ -127,9 +127,11 @@
                         {{end}}
                     </td>
                     <td class="col-actions" onclick="event.stopPropagation()">
+                        {{if $.Nav.Backup .AgentName}}
                         <button class="action-icon action-icon-run" title="{{t "Backup Now"}}" onclick="runBackupNow('{{.ID}}', this)" {{if eq .Status "pending"}}disabled{{end}}>
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
                         </button>
+                        {{end}}
                     </td>
                 </tr>
                 {{end}}

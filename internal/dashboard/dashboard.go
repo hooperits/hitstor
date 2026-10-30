@@ -175,7 +175,7 @@ func New(repo *repository.Repository, registry *server.AgentRegistry, be backend
 
 	// Parse page templates (each page + layout) once per language, with the
 	// translation helpers bound to that language's catalog.
-	pages := []string{"overview", "backups", "backup_detail", "restores", "disaster", "agents", "agent_detail", "snapshot_detail", "storage", "storage_detail", "logs", "settings", "account", "users", "audit"}
+	pages := []string{"overview", "backups", "backup_detail", "restores", "disaster", "agents", "agent_detail", "snapshot_detail", "storage", "storage_detail", "logs", "settings", "account", "users", "user", "audit"}
 	for _, lang := range i18n.Languages() {
 		funcMap := template.FuncMap{}
 		for k, v := range baseFuncs {
@@ -295,6 +295,12 @@ func (d *Dashboard) Handler() http.Handler {
 		"GET /api/users/{name}/sessions":         d.handleAPIUserSessions,
 		"DELETE /api/users/{name}/sessions/{id}": d.handleAPIEndUserSession,
 		"GET /audit":                             d.handleAuditPage,
+		"GET /api/audit":                         d.handleAPIAudit,
+		"GET /api/audit/export":                  d.handleAPIAuditExport,
+		"GET /users/{name}":                      d.handleUserPage,
+		"GET /api/users/{name}":                  d.handleAPIUser,
+		"PUT /api/account/profile":               d.handleAPIAccountProfile,
+		"DELETE /api/account/sessions":           d.handleAPIAccountEndOtherSessions,
 	} {
 		mux.Handle(pattern, d.guard(pattern, h))
 	}

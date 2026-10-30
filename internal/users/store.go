@@ -15,6 +15,7 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"unicode/utf8"
 
 	"github.com/hooperits/hitstor/internal/crypto"
 )
@@ -90,6 +91,7 @@ var (
 	ErrBadUsername    = errors.New("user name must be 2-64 characters: letters, digits, '.', '_' or '-'")
 	ErrNoRoles        = errors.New("give the user at least one role")
 	ErrUnknownRole    = errors.New("unknown role")
+	ErrLongName       = errors.New("display name too long")
 )
 
 // Open loads the store in dir, encrypted with key; a missing file is an
@@ -282,6 +284,9 @@ func (s *Store) Add(name, displayName, password string, grants []Grant, mustChan
 	name, err := NormalizeUsername(name)
 	if err != nil {
 		return User{}, err
+	}
+	if displayName = strings.TrimSpace(displayName); utf8.RuneCountInString(displayName) > MaxDisplayName {
+		return User{}, ErrLongName
 	}
 	if err := CheckPassword(password, name); err != nil {
 		return User{}, err
@@ -751,6 +756,7 @@ func (s *Store) Sessions(name string) []Session {
 		if sess.UserID == u.ID && sess.Stage == StageFull && !s.expired(sess, u, now) {
 			c := *sess
 			c.TokenHash, c.PendingSecret = "", ""
+			c.LastSeen = s.lastSeen(sess)
 			out = append(out, c)
 		}
 	}
@@ -766,6 +772,42 @@ func (s *Store) EndSession(name, id string) error {
 			return ErrNoUser
 		}
 		s.data.Sessions = slices.DeleteFunc(s.data.Sessions, func(x *Session) bool { return x.UserID == u.ID && x.ID == id })
+		return nil
+	})
+}
+
+// EndOtherSessions signs a user out everywhere except the session keepID,
+// and returns how many sessions ended.
+func (s *Store) EndOtherSessions(name, keepID string) (int, error) {
+	n := 0
+	err := s.update(func() error {
+		u := s.userByName(strings.ToLower(name))
+		if u == nil {
+			return ErrNoUser
+		}
+		before := len(s.data.Sessions)
+		s.dropSessions(u.ID, keepID)
+		n = before - len(s.data.Sessions)
+		return nil
+	})
+	return n, err
+}
+
+// MaxDisplayName is the longest display name accepted, in characters.
+const MaxDisplayName = 100
+
+// SetDisplayName changes the name shown for a user.
+func (s *Store) SetDisplayName(name, display string) error {
+	display = strings.TrimSpace(display)
+	if utf8.RuneCountInString(display) > MaxDisplayName {
+		return ErrLongName
+	}
+	return s.update(func() error {
+		u := s.userByName(strings.ToLower(name))
+		if u == nil {
+			return ErrNoUser
+		}
+		u.DisplayName = display
 		return nil
 	})
 }

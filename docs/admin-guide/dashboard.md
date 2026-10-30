@@ -30,10 +30,15 @@ The banner links to the release page on GitHub. To disable automatic checks, set
 
 ## Layout
 
-The dashboard uses a fixed header bar with the HitStor logo and version, a sidebar with icon navigation, and a main content area. The sidebar groups pages into two sections:
+The dashboard uses a fixed header bar, a sidebar with icon navigation, and a main content area. The header shows the repository name, the version and, on the right, the user menu: **My account**, the language and **Sign out**.
 
-- **Monitoring** — Overview, Backups, Agents
-- **Management** — Storage, Settings
+The sidebar groups pages by what you do with them, and shows only what your role allows:
+
+- **Protection** — Overview, Backups, Restores, Disaster Recovery
+- **Infrastructure** — Agents, Storage
+- **Administration** — Users and access, Audit log, Logs, Settings
+
+Buttons for actions your role does not allow (for example removing an agent, or running a job on an agent you do not operate) are not shown.
 
 ## Dashboard Pages
 

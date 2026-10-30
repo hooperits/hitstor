@@ -21,3 +21,5 @@ window.t = function (msg, params) {
 </form>{{end}}
 
 {{define "page_title"}}{{if .TitleRaw}}{{.Title}}{{else}}{{tf .Title "id" .TitleID}}{{end}}{{end}}
+
+{{define "role_name"}}{{if eq . "admin"}}{{t "Administrator"}}{{else if eq . "backup_operator"}}{{t "Backup operator"}}{{else if eq . "restore_operator"}}{{t "Restore operator"}}{{else if eq . "viewer"}}{{t "Viewer"}}{{else}}{{.}}{{end}}{{end}}

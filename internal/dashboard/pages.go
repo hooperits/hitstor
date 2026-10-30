@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"strings"
 	"time"
+	"unicode"
 
 	"github.com/hooperits/hitstor/internal/cron"
 	"github.com/hooperits/hitstor/internal/i18n"
@@ -19,6 +20,7 @@ type pageData struct {
 	Subtitle        string
 	Version         string
 	RepoID          string
+	RepoName        string // first repository, shown in the header
 	Active          string // current nav item
 	Content         any
 	HasAuth         bool
@@ -26,15 +28,62 @@ type pageData struct {
 	LatestVersion   string
 	UpdateURL       string
 	Nav             navAccess // what the signed-in user may open
+	Crumbs          []crumb   // where the page sits, above its title
+}
+
+// crumb is a step of the breadcrumb trail; Label is a message key.
+type crumb struct {
+	URL   string
+	Label string
 }
 
 // navAccess decides which sections the layout shows. Without accounts,
 // everything.
 type navAccess struct {
-	User    string // signed-in user name, "" without accounts
-	All     bool   // reads that span agents: overview, storage, logs
-	Restore bool
-	Admin   bool
+	User     string // signed-in user name, "" without accounts
+	Name     string // display name, if set
+	Initials string // for the avatar
+	Grants   []users.Grant
+	All      bool // reads that span agents: overview, storage, logs
+	Restore  bool
+	Admin    bool
+	user     *users.User
+}
+
+// Backup reports whether the user may run and change backups of agent
+// ("" for any agent). Pages hide the actions a user cannot take.
+func (n navAccess) Backup(agent string) bool { return n.can(users.PermBackup, agent) }
+
+// RestoreTo reports whether the user may restore on agent ("" for any).
+func (n navAccess) RestoreTo(agent string) bool { return n.can(users.PermRestore, agent) }
+
+func (n navAccess) can(p users.Permission, agent string) bool {
+	return n.user == nil || n.user.Can(p, agent)
+}
+
+// initials returns up to two letters for an avatar: of the display name's
+// first and last words, or else of the user name.
+func initials(name, username string) string {
+	words := strings.Fields(name)
+	if len(words) == 0 {
+		words = strings.FieldsFunc(username, func(r rune) bool { return r == '.' || r == '_' || r == '-' })
+	}
+	var out []rune
+	for i, w := range words {
+		if i != 0 && i != len(words)-1 {
+			continue
+		}
+		for _, r := range w {
+			out = append(out, unicode.ToUpper(r))
+			break
+		}
+	}
+	if len(out) == 1 {
+		if rs := []rune(words[0]); len(rs) > 1 {
+			out = append(out, unicode.ToUpper(rs[1]))
+		}
+	}
+	return string(out)
 }
 
 func navFor(r *http.Request) navAccess {
@@ -42,7 +91,8 @@ func navFor(r *http.Request) navAccess {
 	if u == nil {
 		return navAccess{All: true, Restore: true, Admin: true}
 	}
-	return navAccess{User: u.Username, All: u.CanAll(users.PermView), Restore: u.Can(users.PermRestore, ""), Admin: u.CanAll(users.PermAdmin)}
+	return navAccess{User: u.Username, Name: u.DisplayName, Initials: initials(u.DisplayName, u.Username), Grants: u.Grants,
+		All: u.CanAll(users.PermView), Restore: u.Can(users.PermRestore, ""), Admin: u.CanAll(users.PermAdmin), user: u}
 }
 
 func (d *Dashboard) newPageData(title, subtitle, active string, content any) pageData {
@@ -51,6 +101,7 @@ func (d *Dashboard) newPageData(title, subtitle, active string, content any) pag
 		Subtitle: subtitle,
 		Version:  d.opts.Version,
 		RepoID:   d.opts.RepoID,
+		RepoName: d.firstRepoName(),
 		Active:   active,
 		Content:  content,
 		HasAuth:  d.opts.Password != "",
@@ -63,6 +114,16 @@ func (d *Dashboard) newPageData(title, subtitle, active string, content any) pag
 		}
 	}
 	return pd
+}
+
+func (d *Dashboard) firstRepoName() string {
+	if d.repos == nil {
+		return ""
+	}
+	if list := d.repos.List(); len(list) > 0 {
+		return list[0].Name
+	}
+	return ""
 }
 
 type jobView struct {

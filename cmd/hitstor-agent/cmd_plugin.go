@@ -378,6 +378,13 @@ plugin's connection settings and output on this host.`,
 			if err != nil && len(items) == 0 {
 				return err
 			}
+			if len(items) == 0 {
+				for _, r := range out.Results {
+					if r.Status == hitstorplugin.ObjectFailed {
+						return fmt.Errorf("no object could be backed up")
+					}
+				}
+			}
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "error after %d item(s): %v\n", len(items), err)
 			}

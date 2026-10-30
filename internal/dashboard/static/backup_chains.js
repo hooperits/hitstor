@@ -28,7 +28,7 @@
     }
 
     function chain(c) {
-        var rest = c.differentials.concat(c.logs).sort(function (a, b) { return new Date(b.at) - new Date(a.at); });
+        var rest = (c.differentials || []).concat(c.logs || []).sort(function (a, b) { return new Date(b.at) - new Date(a.at); });
         var tags = '';
         if (c.current) tags += '<span class="chain__tag chain__tag--current">' + esc(t('current chain')) + '</span>';
         if (c.full.copy_only) tags += '<span class="chain__tag">' + esc(t('copy only')) + '</span>';

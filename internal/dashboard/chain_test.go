@@ -53,6 +53,23 @@ func TestBuildChains(t *testing.T) {
 	}
 }
 
+// A chain of only a full backup still lists its (empty) differentials and
+// logs: the page reads them as arrays.
+func TestChainWithOnlyAFullHasEmptyLists(t *testing.T) {
+	items := []workloadPoint{chainItem(t, "full", time.Now(), chainMeta{Type: "D", FirstLSN: "1", LastLSN: "2", CheckpointLSN: "1"})}
+	raw, err := json.Marshal(buildChains(i18n.Get("en"), "MSSQLSERVER/db", items))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var got struct {
+		Chains []map[string]json.RawMessage `json:"chains"`
+	}
+	json.Unmarshal(raw, &got)
+	if len(got.Chains) != 1 || string(got.Chains[0]["differentials"]) != "[]" || string(got.Chains[0]["logs"]) != "[]" {
+		t.Errorf("chain JSON = %s", raw)
+	}
+}
+
 func TestParseFullRequired(t *testing.T) {
 	c := i18n.Get("en")
 	msg := `MSSQLSERVER/db: full backup required: MSSQLSERVER/a (no-full); MSSQLSERVER/b (external-full: full of 2026-10-06 20:00 UTC by NT AUTHORITY\SYSTEM to E:\BackupBD\b.bak)`

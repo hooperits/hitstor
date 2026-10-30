@@ -94,7 +94,7 @@ func buildChains(c *i18n.Catalog, object string, items []workloadPoint) database
 		switch m.Type {
 		case "D":
 			cp.Kind = "full"
-			fulls = append(fulls, &backupChain{Full: cp})
+			fulls = append(fulls, &backupChain{Full: cp, Diffs: []chainPoint{}, Logs: []chainPoint{}})
 		case "I":
 			cp.Kind = "differential"
 			diffs = append(diffs, cp)

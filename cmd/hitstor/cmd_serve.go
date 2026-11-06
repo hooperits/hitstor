@@ -486,7 +486,7 @@ func newServeAgentAddCmd() *cobra.Command {
 }
 
 func runServeAgentAdd(cmd *cobra.Command, args []string) error {
-	repo, be, err := openRepository()
+	repo, be, err := openControlRepository()
 	if err != nil {
 		return err
 	}
@@ -631,7 +631,7 @@ func runServeAgentList(cmd *cobra.Command, args []string) error {
 	}
 
 	// Single repo path (existing)
-	repo, be, err := openRepository()
+	repo, be, err := openControlRepository()
 	if err != nil {
 		return err
 	}
@@ -704,7 +704,7 @@ func newServeAgentRemoveCmd() *cobra.Command {
 }
 
 func runServeAgentRemove(cmd *cobra.Command, args []string) error {
-	repo, be, err := openRepository()
+	repo, be, err := openControlRepository()
 	if err != nil {
 		return err
 	}
@@ -758,7 +758,7 @@ func runServeAgentReRegister(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("token must be 64 hex characters")
 	}
 
-	repo, be, err := openRepository()
+	repo, be, err := openControlRepository()
 	if err != nil {
 		return err
 	}
@@ -807,7 +807,7 @@ func runServeAgentAssignRepo(cmd *cobra.Command, args []string) error {
 	agentName := args[0]
 	repoName := args[1]
 
-	repo, be, err := openRepository()
+	repo, be, err := openControlRepository()
 	if err != nil {
 		return err
 	}
@@ -865,4 +865,32 @@ func resolveAdvertiseAddr(port int) string {
 	detected := fmt.Sprintf("%s:%d", addr.IP.String(), port)
 	slog.Info("auto-detected advertise address", "addr", detected)
 	return detected
+}
+
+// controlRepoName returns the repository where `hitstor serve` keeps the agent
+// registry and the dashboard users: the first configured repository by name
+// (the server sorts its repositories the same way).
+func controlRepoName() string {
+	name := ""
+	for _, rc := range loadedConfig.Repositories {
+		if name == "" || rc.Name < name {
+			name = rc.Name
+		}
+	}
+	return name
+}
+
+// openControlRepository opens the repository that `serve agent` and
+// `serve user` manage. Without --repo or --repo-name it picks the server's
+// own (see controlRepoName), so the commands work in multi-repo configs; a
+// different --repo-name is allowed but the running server will not see it.
+func openControlRepository() (*repository.Repository, backend.Backend, error) {
+	control := controlRepoName()
+	switch {
+	case repoNameFlag == "" && repoFlag == "" && control != "":
+		repoNameFlag = control
+	case repoNameFlag != "" && control != "" && repoNameFlag != control:
+		fmt.Fprintf(os.Stderr, "Warning: the server keeps agents and users in repository %q; changes to %q are not used by `hitstor serve`.\n", control, repoNameFlag)
+	}
+	return openRepository()
 }

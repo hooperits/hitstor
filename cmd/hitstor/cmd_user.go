@@ -40,7 +40,7 @@ chooses their own and sets up an authenticator app at the next sign-in.`,
 
 // openUsers opens the users file and audit log next to the agent registry.
 func openUsers() (*users.Store, *users.AuditLog, func(), error) {
-	repo, be, err := openRepository()
+	repo, be, err := openControlRepository()
 	if err != nil {
 		return nil, nil, nil, err
 	}

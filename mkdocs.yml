@@ -6,22 +6,22 @@ repo_name: hooperits/hitstor
 
 theme:
   name: material
-  logo: assets/logo.png
+  logo: assets/icon.svg
   favicon: assets/favicon.png
   icon:
     repo: fontawesome/brands/github
   palette:
     - media: "(prefers-color-scheme: light)"
       scheme: default
-      primary: indigo
-      accent: indigo
+      primary: custom
+      accent: custom
       toggle:
         icon: material/brightness-7
         name: Switch to dark mode
     - media: "(prefers-color-scheme: dark)"
       scheme: slate
-      primary: indigo
-      accent: indigo
+      primary: custom
+      accent: custom
       toggle:
         icon: material/brightness-4
         name: Switch to light mode
@@ -127,8 +127,15 @@ nav:
     - Release Process: dev-guide/release-process.md
     - Translations: dev-guide/translations.md
 
+extra_css:
+  - stylesheets/extra.css
+
 markdown_extensions:
   - admonition
+  - md_in_html
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
   - pymdownx.details
   - pymdownx.superfences
   - pymdownx.tabbed:

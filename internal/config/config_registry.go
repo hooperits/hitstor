@@ -266,7 +266,7 @@ var Registry = []KeyDef{
 	{
 		Name:        "update_check",
 		Type:        String,
-		Default:     "true",
+		Default:     "false",
 		Description: "Enable automatic version checks (true/false)",
 	},
 	{

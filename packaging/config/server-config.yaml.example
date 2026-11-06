@@ -63,7 +63,7 @@
 # Hook plugins to load (comma-separated names).
 # hook_plugins: []
 
-# Automatic version check (default: true).
+# Automatic version check (default: false).
 # update_check: true
 
 # Custom update check URL (empty = GitHub Releases API).

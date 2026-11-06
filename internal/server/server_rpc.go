@@ -390,12 +390,12 @@ func (s *Server) FinalizeBackup(ctx context.Context, req *pb.FinalizeBackupReque
 	}
 
 	// Active Ransomware Sentinel check.
-	go s.runSentinelCheck(session, resp)
+	s.goBackground(func() { s.runSentinelCheck(session, resp) })
 
 	// Automated restore verification (filesystem excellence).
 	if session.JobID != "" && resp.SnapshotId != "" {
 		jobID, repoName, snapID := session.JobID, session.RepoName, resp.SnapshotId
-		go s.runRestoreVerify(jobID, repoName, snapID)
+		s.goBackground(func() { s.runRestoreVerify(jobID, repoName, snapID) })
 	}
 
 	s.cleanupSession(session.ID)

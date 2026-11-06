@@ -7,6 +7,7 @@ import (
 	"net"
 	"sync"
 	"sync/atomic"
+	"time"
 
 	"github.com/hooperits/hitstor/internal/hook"
 	pb "github.com/hooperits/hitstor/internal/proto/hitstor/v1"
@@ -66,6 +67,10 @@ type Server struct {
 	hooks []hook.Hook
 
 	sentinel *sentinel.Sentinel
+
+	// background tracks post-backup work (sentinel check, restore
+	// verification) so Stop can let it finish before returning.
+	background sync.WaitGroup
 }
 
 // New creates a new backup server.
@@ -163,6 +168,34 @@ func (s *Server) Stop() {
 	if s.grpcServer != nil {
 		slog.Info("server shutting down")
 		s.grpcServer.GracefulStop()
+	}
+	s.waitBackground(backgroundStopTimeout)
+}
+
+// backgroundStopTimeout bounds how long Stop waits for post-backup work, so a
+// long restore verification cannot hold up a service shutdown.
+const backgroundStopTimeout = 15 * time.Second
+
+// goBackground runs fn in a goroutine that Stop waits for.
+func (s *Server) goBackground(fn func()) {
+	s.background.Add(1)
+	go func() {
+		defer s.background.Done()
+		fn()
+	}()
+}
+
+// waitBackground waits up to timeout for post-backup work to finish.
+func (s *Server) waitBackground(timeout time.Duration) {
+	done := make(chan struct{})
+	go func() {
+		s.background.Wait()
+		close(done)
+	}()
+	select {
+	case <-done:
+	case <-time.After(timeout):
+		slog.Warn("server stopped before post-backup checks finished", "waited", timeout)
 	}
 }
 

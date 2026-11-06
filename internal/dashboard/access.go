@@ -121,6 +121,9 @@ var routePolicies = map[string]routePolicy{
 	"GET /api/users":                         {perms: admin},
 	"GET /api/users/{name}/sessions":         {perms: admin},
 	"GET /audit":                             {perms: admin},
+	"GET /reports":                           {perms: admin},
+	"GET /api/reports":                       {perms: admin},
+	"GET /api/reports/pdf":                   {perms: admin}, // reports cover every agent
 	"GET /settings":                          {perms: admin},
 	"GET /api/settings":                      {perms: admin},
 	"POST /api/users":                        {perms: admin, stepUp: true},

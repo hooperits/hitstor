@@ -13,6 +13,7 @@ import (
 	"github.com/hooperits/hitstor/internal/plugin"
 	pb "github.com/hooperits/hitstor/internal/proto/hitstor/v1"
 	"github.com/hooperits/hitstor/internal/repository"
+	"github.com/hooperits/hitstor/internal/runlog"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -327,6 +328,7 @@ func (s *Server) FinalizeBackup(ctx context.Context, req *pb.FinalizeBackupReque
 	session.Tags = append(session.Tags, workloadObjectTags(session.Paths, req.Files)...)
 	resp, err := session.Finalize(req.Files, req.SystemProfile)
 	if err != nil {
+		s.recordRun(session, nil, nil, fmt.Sprintf("finalize failed: %v", err))
 		s.backupsFailed.Add(1)
 		s.notifyBackupFailed(session.AgentName, session.Hostname,
 			fmt.Sprintf("finalize failed: %v", err),
@@ -353,6 +355,7 @@ func (s *Server) FinalizeBackup(ctx context.Context, req *pb.FinalizeBackupReque
 	}
 
 	s.backupsCompleted.Add(1)
+	s.recordRun(session, resp, outcomesFromProto(req.ObjectResults), "")
 
 	slog.Info("backup completed",
 		"agent", session.AgentName,
@@ -656,9 +659,16 @@ func (s *Server) ReportJobFailure(ctx context.Context, req *pb.ReportJobFailureR
 	if job.AgentName != agentName {
 		return nil, status.Error(codes.PermissionDenied, "job does not belong to this agent")
 	}
-	if err := s.registry.RecordKindFailure(req.JobId, s.failedKind(*job), req.Error, time.Now(), outcomesFromProto(req.ObjectResults)); err != nil {
+	kind := s.failedKind(*job)
+	outcomes := outcomesFromProto(req.ObjectResults)
+	if err := s.registry.RecordKindFailure(req.JobId, kind, req.Error, time.Now(), outcomes); err != nil {
 		return nil, status.Errorf(codes.Internal, "record job failure: %v", err)
 	}
+	if job.JobType == JobTypeWorkload {
+		kind = workloadKind(*job, kind)
+	}
+	s.appendRun(runlog.Run{JobID: job.ID, JobName: job.Name, Agent: agentName, Repo: job.RepoName, Plugin: job.Plugin,
+		Kind: kind, Result: runlog.ResultFailed, Error: req.Error, FailedObjects: failedObjectList(outcomes)})
 	dropped := s.CancelSessionByJobID(req.JobId)
 	slog.Warn("backup job failed on agent", "agent", agentName, "job", job.Name, "job_id", req.JobId,
 		"session_dropped", dropped, "error", req.Error)

@@ -123,6 +123,24 @@ repositorio. Se puede editar desde la pestaña **Configuración → Correo** del
 | `tls_skip_verify` | bool | Acepta cualquier certificado del servidor (solo relays con certificado autofirmado) |
 | `dashboard_url` | string | La dirección del dashboard tal como se llega a él; los enlaces de los correos empiezan con ella |
 
+### Reportes (`reports`) { #reports-reports }
+
+Los reportes enviados por correo según una programación, en una lista. Se pueden editar en **Administración → Reportes**; vea [Reportes](../admin-guide/reports.md).
+
+| Clave | Tipo | Descripción |
+|-----|------|-------------|
+| `id` | string | Identificador |
+| `name` | string | Nombre que se muestra en la lista y en el asunto del correo |
+| `type` | string | `summary` (resumen de protección) o `daily` (estado diario de respaldos) |
+| `period` | string | `summary`: `week` o `month` (últimos 7 o 30 días) |
+| `cron` | string | Cuándo enviarlo (expresión cron) |
+| `timezone` | string | Zona horaria de la programación y de las fechas del reporte |
+| `recipients` | lista | Direcciones de correo |
+| `agents` | lista | Agentes que abarca; vacía: todos |
+| `language` | string | `en` o `es`; vacío: el idioma predeterminado del dashboard |
+| `enabled` | bool | Enviarlo según la programación |
+| `created`, `last_sent`, `last_error` | | Los mantiene el servidor |
+
 ### Sentinel (`sentinel`) { #sentinel-sentinel }
 
 Configuración opcional de telemetría de Sentinel (edición desde el dashboard en el futuro). Las claves reflejan las variables de entorno `HITSTOR_SENTINEL_*`.

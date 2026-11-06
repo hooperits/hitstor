@@ -105,6 +105,8 @@ func usedMessages(t *testing.T) map[string][]string {
 		add(c.Label, "audit_view.go")
 	}
 	goFiles, _ := filepath.Glob("*.go")
+	reportFiles, _ := filepath.Glob("../report/*.go") // the PDF reports the dashboard sends
+	goFiles = append(goFiles, reportFiles...)
 	for _, f := range goFiles {
 		if strings.HasSuffix(f, "_test.go") {
 			continue

@@ -45,6 +45,7 @@ type Dashboard struct {
 	audit       *users.AuditLog // nil until SetUsers
 	resetLimits *loginLimiter   // password reset requests per IP
 	mail        mailState
+	reports     reportsState
 
 	// sendMailHook replaces sending email. Tests only.
 	sendMailHook     func(context.Context, mailer.Message) error
@@ -183,7 +184,7 @@ func New(repo *repository.Repository, registry *server.AgentRegistry, be backend
 
 	// Parse page templates (each page + layout) once per language, with the
 	// translation helpers bound to that language's catalog.
-	pages := []string{"overview", "backups", "backup_detail", "restores", "disaster", "agents", "agent_detail", "snapshot_detail", "storage", "storage_detail", "logs", "settings", "account", "users", "user", "audit"}
+	pages := []string{"overview", "backups", "backup_detail", "restores", "disaster", "agents", "agent_detail", "snapshot_detail", "storage", "storage_detail", "logs", "settings", "account", "users", "user", "audit", "reports"}
 	for _, lang := range i18n.Languages() {
 		funcMap := template.FuncMap{}
 		for k, v := range baseFuncs {
@@ -404,6 +405,18 @@ func (d *Dashboard) Handler() http.Handler {
 	mux.Handle("PUT /api/settings/network", d.guard("PUT /api/settings/network", http.HandlerFunc(d.handleAPISettingsNetwork)))
 	mux.Handle("PUT /api/settings/notifications", d.guard("PUT /api/settings/notifications", http.HandlerFunc(d.handleAPISettingsNotifications)))
 	mux.Handle("PUT /api/settings/integrations", d.guard("PUT /api/settings/integrations", http.HandlerFunc(d.handleAPISettingsIntegrations)))
+	// Reports.
+	for pattern, h := range map[string]http.HandlerFunc{
+		"GET /reports":                d.handleReportsPage,
+		"GET /api/reports":            d.handleAPIReports,
+		"POST /api/reports":           d.handleAPICreateReport,
+		"PUT /api/reports/{id}":       d.handleAPIUpdateReport,
+		"DELETE /api/reports/{id}":    d.handleAPIDeleteReport,
+		"POST /api/reports/{id}/send": d.handleAPISendReport,
+		"GET /api/reports/pdf":        d.handleAPIReportPDF,
+	} {
+		mux.Handle(pattern, d.guard(pattern, h))
+	}
 	mux.Handle("PUT /api/settings/email", d.guard("PUT /api/settings/email", http.HandlerFunc(d.handleAPISettingsEmail)))
 	mux.Handle("POST /api/settings/email/test", d.guard("POST /api/settings/email/test", http.HandlerFunc(d.handleAPISettingsEmailTest)))
 	mux.Handle("POST /api/settings/integrations/import-env", d.guard("POST /api/settings/integrations/import-env", http.HandlerFunc(d.handleAPISettingsImportEnv)))

@@ -458,3 +458,45 @@ func TestInlineImages(t *testing.T) {
 		t.Fatal("header injection through the content ID")
 	}
 }
+
+func TestAttachments(t *testing.T) {
+	msg := testMessage()
+	msg.Inline = []Inline{{CID: "logo@hitstor", ContentType: "image/png", Name: "hitstor.png", Data: []byte("png")}}
+	pdf := bytes.Repeat([]byte("%PDF-1.4 report "), 100)
+	msg.Attachments = []Attachment{{Name: "report.pdf", ContentType: "application/pdf", Data: pdf}}
+	raw, err := buildMessage("a@example.com", "", msg, time.Now())
+	if err != nil {
+		t.Fatal(err)
+	}
+	m, err := mail.ReadMessage(bytes.NewReader(raw))
+	if err != nil {
+		t.Fatal(err)
+	}
+	mt, params, _ := mime.ParseMediaType(m.Header.Get("Content-Type"))
+	if mt != "multipart/mixed" {
+		t.Fatalf("top level %q", mt)
+	}
+	mr := multipart.NewReader(m.Body, params["boundary"])
+	body, _ := mr.NextPart()
+	if bt, _, _ := mime.ParseMediaType(body.Header.Get("Content-Type")); bt != "multipart/alternative" {
+		t.Fatalf("body %q", bt)
+	}
+	att, err := mr.NextPart()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if att.FileName() != "report.pdf" || att.Header.Get("Content-Type") != `application/pdf; name="report.pdf"` {
+		t.Fatalf("attachment headers %v", att.Header)
+	}
+	enc, _ := io.ReadAll(att)
+	if got, _ := base64.StdEncoding.DecodeString(strings.ReplaceAll(string(enc), "\r\n", "")); !bytes.Equal(got, pdf) {
+		t.Fatal("attachment data differs")
+	}
+	if _, err := mr.NextPart(); err != io.EOF {
+		t.Fatalf("extra part: %v", err)
+	}
+	msg.Attachments[0].Name = "x\r\nBcc: y@example.com"
+	if _, err := buildMessage("a@example.com", "", msg, time.Now()); err == nil {
+		t.Fatal("header injection through the file name")
+	}
+}

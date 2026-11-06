@@ -1,0 +1,57 @@
+{{define "content"}}
+<div id="reports-app" class="reports-page" data-agents="{{toJSON .Content.Agents}}" data-types="{{toJSON .Content.Types}}"
+     data-email="{{if .Content.EmailEnabled}}1{{end}}" data-lang="{{lang}}">
+    {{if not .Content.EmailEnabled}}
+    <div class="dr-banner dr-banner-warn" role="status">
+        {{t "Email is not set up, so reports can be downloaded but not sent."}} <a href="/settings?tab=email">{{t "Set up email"}}</a>
+    </div>
+    {{end}}
+
+    <section class="rp-section">
+        <h2 class="rp-heading">{{t "Download a report"}}</h2>
+        <p class="rp-lead">{{t "A report as it would be sent right now, for every agent."}}</p>
+        <div class="rp-types">
+            {{range .Content.Types}}
+            <article class="rp-type" data-type="{{.type}}">
+                <div class="rp-type-icon" aria-hidden="true">
+                    {{if eq .type "daily"}}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M8 15l2 2 4-4"/></svg>
+                    {{else}}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>{{end}}
+                </div>
+                <div class="rp-type-body">
+                    <h3>{{.title}}</h3>
+                    <p>{{.description}}</p>
+                    <div class="rp-type-actions">
+                        {{if eq .type "summary"}}
+                        <select class="toolbar-select rp-period" aria-label="{{t "Period"}}">
+                            <option value="week">{{t "Last 7 days"}}</option>
+                            <option value="month">{{t "Last 30 days"}}</option>
+                        </select>
+                        {{end}}
+                        <a class="btn btn-secondary btn-sm rp-view" target="_blank" rel="noopener">{{t "View"}}</a>
+                        <a class="btn btn-sm rp-download">{{t "Download PDF"}}</a>
+                    </div>
+                </div>
+            </article>
+            {{end}}
+        </div>
+    </section>
+
+    <section class="rp-section">
+        <div class="rp-section-head">
+            <div>
+                <h2 class="rp-heading">{{t "Scheduled reports"}}</h2>
+                <p class="rp-lead">{{t "Each one goes by email, with the PDF attached, to its own recipients."}}</p>
+            </div>
+            <button type="button" class="btn" id="rp-new">+ {{t "New scheduled report"}}</button>
+        </div>
+        <div class="table-wrap">
+            <table class="rp-table">
+                <thead><tr><th>{{t "Report"}}</th><th>{{t "When"}}</th><th>{{t "Recipients"}}</th><th>{{t "Last sent"}}</th><th></th></tr></thead>
+                <tbody id="rp-body"><tr><td colspan="5" class="text-muted">{{t "Loading..."}}</td></tr></tbody>
+            </table>
+        </div>
+    </section>
+</div>
+<script src="/static/schedule.js"></script>
+<script src="/static/reports.js"></script>
+{{end}}

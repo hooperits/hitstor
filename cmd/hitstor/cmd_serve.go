@@ -26,6 +26,7 @@ import (
 	"github.com/hooperits/hitstor/internal/notifier/webhook"
 	hitstorplugin "github.com/hooperits/hitstor/internal/plugin"
 	"github.com/hooperits/hitstor/internal/repository"
+	"github.com/hooperits/hitstor/internal/runlog"
 	"github.com/hooperits/hitstor/internal/sentinel"
 	"github.com/hooperits/hitstor/internal/server"
 	"github.com/hooperits/hitstor/internal/ui"
@@ -109,6 +110,7 @@ func runServe(cmd *cobra.Command, args []string) error {
 	var registry *server.AgentRegistry
 	var accounts *users.Store
 	var audit *users.AuditLog
+	var runs *runlog.Log
 
 	if setupMode {
 		slog.Info("no repositories configured, starting in setup mode (dashboard only)")
@@ -130,6 +132,8 @@ func runServe(cmd *cobra.Command, args []string) error {
 		if audit, err = users.OpenAuditLog(basePath); err != nil {
 			return fmt.Errorf("open audit log: %w", err)
 		}
+		// The history of backup runs, for reports.
+		runs = runlog.Open(basePath, firstRepo.Repo.Key().EncryptKey)
 	}
 
 	encKey, hasKey := repos.EncryptKey()
@@ -195,6 +199,9 @@ func runServe(cmd *cobra.Command, args []string) error {
 
 	alertCtx, alertCancel := context.WithCancel(context.Background())
 	defer alertCancel()
+	if runs != nil {
+		srv.SetRunLog(runs)
+	}
 
 	var alert *alerting.Alerter
 
@@ -279,6 +286,10 @@ func runServe(cmd *cobra.Command, args []string) error {
 	dash.SetServer(srv)
 	dash.SetServerGRPCAddr(resolveAdvertiseAddr(servePortFlag))
 	dash.SetRestoreManager(dashboard.NewRestoreManager())
+	if runs != nil {
+		dash.SetRunLog(runs)
+		go dash.RunReportScheduler(alertCtx)
+	}
 
 	// Mount Prometheus metrics endpoint (only with repos).
 	if firstRepo != nil {

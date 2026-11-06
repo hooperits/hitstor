@@ -123,6 +123,24 @@ Editable from the dashboard **Settings → Email** tab; see
 | `tls_skip_verify` | bool | Accept any server certificate (self-signed relays only) |
 | `dashboard_url` | string | The dashboard's address as people reach it, the base of the links in emails |
 
+### Reports (`reports`) { #reports-reports }
+
+The reports emailed on a schedule, a list. Editable from **Administration → Reports**; see [Reports](../admin-guide/reports.md).
+
+| Key | Type | Description |
+|-----|------|-------------|
+| `id` | string | Identifier |
+| `name` | string | Name shown in the list and the email subject |
+| `type` | string | `summary` (protection summary) or `daily` (daily backup status) |
+| `period` | string | `summary`: `week` or `month` (last 7 or 30 days) |
+| `cron` | string | When to send it (cron expression) |
+| `timezone` | string | Time zone of the schedule and of the dates in the report |
+| `recipients` | list | Email addresses |
+| `agents` | list | Agents covered; empty: every agent |
+| `language` | string | `en` or `es`; empty: the dashboard's default |
+| `enabled` | bool | Send it on schedule |
+| `created`, `last_sent`, `last_error` | | Kept by the server |
+
 ### Sentinel (`sentinel`)
 
 Optional Sentinel telemetry settings (future dashboard editing). Keys mirror `HITSTOR_SENTINEL_*` environment variables.

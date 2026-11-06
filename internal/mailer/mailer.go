@@ -77,6 +77,15 @@ type Message struct {
 	// Inline are images the HTML shows with src="cid:<CID>". Mail clients
 	// block remote images by default, but show these.
 	Inline []Inline
+	// Attachments are files sent with the message.
+	Attachments []Attachment
+}
+
+// Attachment is a file sent with a message.
+type Attachment struct {
+	Name        string // file name, ASCII
+	ContentType string // application/pdf
+	Data        []byte
 }
 
 // Inline is an image sent inside the message.

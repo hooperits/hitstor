@@ -128,6 +128,9 @@ type Config struct {
 	// Email is the outgoing mail server for account emails.
 	Email EmailConfig `yaml:"email,omitempty"`
 
+	// Reports are the reports emailed on a schedule.
+	Reports []ReportConfig `yaml:"reports,omitempty"`
+
 	// Path is the resolved file path (not persisted in YAML).
 	Path string `yaml:"-"`
 	// Exists indicates whether the config file existed on disk.

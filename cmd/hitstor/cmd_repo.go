@@ -177,7 +177,11 @@ func runRepoCreate(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	password := passwordFlag
+	// The subcommand's own --password shadows the global flag, so read it here.
+	password, _ := cmd.Flags().GetString("password")
+	if password == "" {
+		password = passwordFlag
+	}
 	if password == "" {
 		p, err := getPassword()
 		if err != nil {

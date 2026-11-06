@@ -57,6 +57,8 @@
       
     
     
+      <link rel="stylesheet" href="../../stylesheets/extra.css">
+    
     <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
@@ -73,7 +75,7 @@
     
     
     
-    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="custom">
   
     
     <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
@@ -98,7 +100,7 @@
   <nav class="md-header__inner md-grid" aria-label="Header">
     <a href="../.." title="HitStor Documentation" class="md-header__button md-logo" aria-label="HitStor Documentation" data-md-component="logo">
       
-  <img src="../../assets/logo.png" alt="logo">
+  <img src="../../assets/icon.svg" alt="logo">
 
     </a>
     <label class="md-header__button md-icon" for="__drawer">
@@ -128,7 +130,7 @@
     
     
     
-    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="custom"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
     
       <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
@@ -138,7 +140,7 @@
     
     
     
-    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="custom" data-md-color-accent="custom"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
     
       <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
@@ -393,7 +395,7 @@
   <label class="md-nav__title" for="__drawer">
     <a href="../.." title="HitStor Documentation" class="md-nav__button md-logo" aria-label="HitStor Documentation" data-md-component="logo">
       
-  <img src="../../assets/logo.png" alt="logo">
+  <img src="../../assets/icon.svg" alt="logo">
 
     </a>
     HitStor Documentation
@@ -1087,6 +1089,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user-guide/sql-server/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SQL Server
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -1324,10 +1354,49 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#backup-plans" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Workload Jobs and Backup Plans
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Workload Jobs and Backup Plans">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#results-per-object" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Results per object
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#scheduling" class="md-nav__link">
     <span class="md-ellipsis">
       
         Scheduling
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#retention" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Retention
       
     </span>
   </a>
@@ -1464,6 +1533,62 @@
     
   
     Dashboard
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../users/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Users and Access
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reports/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reports
   
 
     
@@ -2585,6 +2710,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../reference/agent-commands/plugin/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    plugin
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../reference/agent-commands/service/" class="md-nav__link">
         
   
@@ -2934,6 +3087,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../dev-guide/plugin-architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Plugin Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../dev-guide/dev-environment/" class="md-nav__link">
         
   
@@ -3179,10 +3360,49 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#backup-plans" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Workload Jobs and Backup Plans
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Workload Jobs and Backup Plans">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#results-per-object" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Results per object
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#scheduling" class="md-nav__link">
     <span class="md-ellipsis">
       
         Scheduling
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#retention" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Retention
       
     </span>
   </a>
@@ -3232,7 +3452,8 @@
 
 
 <h1 id="backup-jobs">Backup Jobs<a class="headerlink" href="#backup-jobs" title="Permanent link">&para;</a></h1>
-<p>The dashboard <strong>Backups</strong> page (<code>/backups</code>) is the central place to define what gets backed up and when. Each backup job has a <code>job_type</code> that determines how data is collected.</p>
+<p>The dashboard <strong>Backups</strong> page (<code>/backups</code>) is the central place to define what gets backed up and when. Each backup job backs up <strong>one source of one machine</strong> and has a <code>job_type</code> that determines how data is collected. <strong>+ New Backup Job</strong> opens the wizard described in <a href="../dashboard/#backups">Dashboard → Backups</a>.</p>
+<p><img alt="New backup job: choose what to back up" class="screenshot" src="../../assets/screenshots/en/backup-wizard-selection.webp" /></p>
 <h2 id="job-types">Job Types<a class="headerlink" href="#job-types" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -3245,32 +3466,63 @@
 <tbody>
 <tr>
 <td><code>files</code></td>
-<td>Agent filesystem scan via built-in plugin (hitstor-scanner-builtin, shipped with agent) or custom scanner plugin</td>
+<td>Agent filesystem scan via built-in plugin (hitstor-scanner-builtin, shipped with agent) or a custom scanner plugin (<code>fs_scanner_plugin</code>)</td>
 <td>Remote agent</td>
+</tr>
+<tr>
+<td><code>workload</code></td>
+<td>An installed <a href="../../user-guide/plugins/">workload plugin</a>, for example <a href="../../user-guide/sql-server/">SQL Server</a></td>
+<td>Remote agent (on the application host)</td>
 </tr>
 </tbody>
 </table>
-<p><code>files</code> is the only supported job type. SaaS, database, and cloud-VM job types
-were permanently removed in v2.0.0 — see the <a href="../roadmap/#permanently-removed-v200">Roadmap</a>.
-Legacy jobs of those types are loaded but disabled on startup.</p>
+<p>SaaS, built-in database, and cloud-VM job types were removed before the first
+public release (v0.1.0) — see the <a href="../roadmap/#permanently-removed">Roadmap</a>.
+Legacy jobs of those types are loaded, but their schedules are disabled on startup.</p>
 <h2 id="filesystem-jobs">Filesystem Jobs<a class="headerlink" href="#filesystem-jobs" title="Permanent link">&para;</a></h2>
 <p>The default job type. The server assigns paths and schedule to an agent; the agent scans, chunks, and uploads new data.</p>
+<p><img alt="Backup job details" class="screenshot" src="../../assets/screenshots/en/backup-job.webp" /></p>
 <ul>
-<li>Configure paths via the job detail page or agent browse UI</li>
-<li>Enable <strong>VSS</strong> on Windows agents for consistent snapshots</li>
-<li>Set <strong>full rescan interval</strong> (days) to guard against silent corruption</li>
-<li>Use <strong>Force full backup</strong> from the dashboard when needed</li>
+<li>Choose the folders in the wizard's selection tree; on the job page, <strong>Edit selection</strong> changes them</li>
+<li>Enable <strong>Consistent snapshot</strong> to read from a volume snapshot (VSS on Windows, LVM or btrfs on Linux)</li>
+<li>Set <strong>Full re-scan every</strong> N days to guard against silent corruption (0 disables it)</li>
+<li><strong>Backup Now</strong> asks whether to force a full re-scan or run an incremental backup</li>
 </ul>
+<h2 id="backup-plans">Workload Jobs and Backup Plans<a class="headerlink" href="#backup-plans" title="Permanent link">&para;</a></h2>
+<p>A workload job backs up the objects checked in the selection tree (for SQL Server, an instance or some of its databases) with a <strong>backup plan</strong>: each backup kind the plugin offers has its own schedule, and differential and log backups build on the job's own fulls. The wizard proposes:</p>
+<table>
+<thead>
+<tr>
+<th>Kind</th>
+<th>Default schedule</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Full</td>
+<td>Sundays at 01:00, on</td>
+</tr>
+<tr>
+<td>Differential</td>
+<td>Monday to Saturday at 01:00, on</td>
+</tr>
+<tr>
+<td>Log</td>
+<td>Every 15 minutes, off</td>
+</tr>
+</tbody>
+</table>
+<p>Each kind can be switched off (on demand only). The server hands the agent the kind that is due next; when a full and a differential fall at the same time, the full runs and covers the differential. On the job page, <strong>Edit plan</strong> changes the plan, each kind's row has its own <strong>Run now</strong>, and <strong>Backup Now</strong> asks which kind to run.</p>
+<h3 id="results-per-object">Results per object<a class="headerlink" href="#results-per-object" title="Permanent link">&para;</a></h3>
+<p>Each run reports on every object of the selection. The job page shows, per backup kind, the objects that were left out or failed and why; a run that stored some objects and failed others is marked <strong>partial</strong>. For SQL Server the page also shows each database's <strong>backup chain</strong>, and offers <strong>Run full backup now</strong> when a differential or log backup needs a new full. See <a href="../../user-guide/sql-server/#back-up">SQL Server</a>.</p>
 <h2 id="scheduling">Scheduling<a class="headerlink" href="#scheduling" title="Permanent link">&para;</a></h2>
-<p>Each job supports:</p>
-<ul>
-<li><strong>Interval</strong> — every N hours</li>
-<li><strong>Cron</strong> — 5-field cron with IANA timezone</li>
-<li><strong>Visual schedule builder</strong> — daily / weekly / monthly presets</li>
-</ul>
-<p>The agent daemon polls <code>GetSchedule</code> every 5 minutes (default). "Backup Now" sends a <code>WakeUp</code> RPC for immediate pickup.</p>
+<p>Schedules are cron expressions with an IANA time zone, built with the schedule picker (every day, days of the week or month, every N minutes or hours) or typed as a 5-field expression. Jobs created before the picker may still run every N hours after their last backup; saving a new schedule replaces that with a cron expression. See <a href="../scheduling/">Scheduling</a>.</p>
+<p><img alt="New backup job: repository and schedule" class="screenshot" src="../../assets/screenshots/en/backup-wizard-schedule.webp" /></p>
+<p>The agent daemon polls <code>GetSchedule</code> every 5 minutes (default, <code>--poll-interval</code>). "Backup Now" also sends a <code>WakeUp</code> RPC to dashboard-managed agents for immediate pickup.</p>
+<h2 id="retention">Retention<a class="headerlink" href="#retention" title="Permanent link">&para;</a></h2>
+<p>Jobs do not delete old snapshots. Apply a retention policy with <code>hitstor forget --keep-*</code> (add <code>--prune</code> to reclaim the space); for workload snapshots the policy keeps whole backup chains. See <a href="../../user-guide/retention/">Retention</a>.</p>
 <h2 id="cancel-running-backups">Cancel Running Backups<a class="headerlink" href="#cancel-running-backups" title="Permanent link">&para;</a></h2>
-<p><code>POST /api/backups/{id}/cancel</code> aborts an active session. Stale sessions (no activity for 10+ minutes) show a warning badge on the dashboard.</p>
+<p><code>POST /api/backups/{id}/cancel</code> aborts an active session. Sessions with no activity for 10+ minutes show a <strong>stalled</strong> badge on the dashboard.</p>
 <h2 id="api">API<a class="headerlink" href="#api" title="Permanent link">&para;</a></h2>
 <p>See <a href="../../reference/dashboard-api/#backup-jobs">Dashboard HTTP API — Backup Jobs</a>.</p>
 

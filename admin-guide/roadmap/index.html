@@ -57,6 +57,8 @@
       
     
     
+      <link rel="stylesheet" href="../../stylesheets/extra.css">
+    
     <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
@@ -73,7 +75,7 @@
     
     
     
-    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="custom">
   
     
     <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
@@ -98,7 +100,7 @@
   <nav class="md-header__inner md-grid" aria-label="Header">
     <a href="../.." title="HitStor Documentation" class="md-header__button md-logo" aria-label="HitStor Documentation" data-md-component="logo">
       
-  <img src="../../assets/logo.png" alt="logo">
+  <img src="../../assets/icon.svg" alt="logo">
 
     </a>
     <label class="md-header__button md-icon" for="__drawer">
@@ -128,7 +130,7 @@
     
     
     
-    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="custom"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
     
       <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
@@ -138,7 +140,7 @@
     
     
     
-    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="custom" data-md-color-accent="custom"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
     
       <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
@@ -393,7 +395,7 @@
   <label class="md-nav__title" for="__drawer">
     <a href="../.." title="HitStor Documentation" class="md-nav__button md-logo" aria-label="HitStor Documentation" data-md-component="logo">
       
-  <img src="../../assets/logo.png" alt="logo">
+  <img src="../../assets/icon.svg" alt="logo">
 
     </a>
     HitStor Documentation
@@ -1087,6 +1089,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user-guide/sql-server/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SQL Server
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -1382,6 +1412,62 @@
   
   
     <li class="md-nav__item">
+      <a href="../users/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Users and Access
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reports/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reports
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../settings/" class="md-nav__link">
         
   
@@ -1615,10 +1701,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#bare-metal-restore-in-design" class="md-nav__link">
+  <a href="#bare-metal-restore" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Bare-metal restore (in design)
+        Bare-metal restore
       
     </span>
   </a>
@@ -1626,10 +1712,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#permanently-removed-v200" class="md-nav__link">
+  <a href="#permanently-removed" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Permanently removed (v2.0.0)
+        Permanently removed
       
     </span>
   </a>
@@ -2607,6 +2693,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../reference/agent-commands/plugin/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    plugin
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../reference/agent-commands/service/" class="md-nav__link">
         
   
@@ -2956,6 +3070,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../dev-guide/plugin-architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Plugin Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../dev-guide/dev-environment/" class="md-nav__link">
         
   
@@ -3212,10 +3354,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#bare-metal-restore-in-design" class="md-nav__link">
+  <a href="#bare-metal-restore" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Bare-metal restore (in design)
+        Bare-metal restore
       
     </span>
   </a>
@@ -3223,10 +3365,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#permanently-removed-v200" class="md-nav__link">
+  <a href="#permanently-removed" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Permanently removed (v2.0.0)
+        Permanently removed
       
     </span>
   </a>
@@ -3276,10 +3418,11 @@
 
 
 <h1 id="roadmap">Roadmap<a class="headerlink" href="#roadmap" title="Permanent link">&para;</a></h1>
-<p>HitStor is a <strong>filesystem backup and restore product for Windows and Linux</strong>, and
-the roadmap exists to make it excellent at exactly that. Work that does not
-improve backing up and restoring files fast, safely, and verifiably is out of
-scope by default.</p>
+<p>HitStor is a <strong>backup and restore product for Windows and Linux</strong>: filesystems
+in the core, and applications through installable
+<a href="../../dev-guide/plugin-architecture/">workload plugins</a>. The roadmap exists to
+make it excellent at that. Work that does not improve backing up and restoring
+data fast, safely, and verifiably is out of scope by default.</p>
 <h2 id="shipped">Shipped<a class="headerlink" href="#shipped" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -3302,12 +3445,24 @@ scope by default.</p>
 <td>Jobs, agents, storage, restores, progress via SSE</td>
 </tr>
 <tr>
+<td>Users, roles and two-step verification</td>
+<td>Personal accounts with roles scoped to agents, mandatory TOTP, hash-chained audit log</td>
+</tr>
+<tr>
+<td>Email</td>
+<td>Invitations and password-reset links over SMTP or Microsoft 365 (OAuth 2.0)</td>
+</tr>
+<tr>
+<td>Scheduled PDF reports</td>
+<td>Protection summary and daily backup status, emailed on a schedule or downloaded</td>
+</tr>
+<tr>
 <td>Incremental backups &amp; synthetic full</td>
 <td>Parent-snapshot reuse, periodic full rescan</td>
 </tr>
 <tr>
 <td>Advanced scheduling</td>
-<td>Interval, 5-field cron, timezone-aware with DST handling</td>
+<td>5-field cron with <code>L</code>, <code>D#N</code> and <code>DL</code>, schedule builder, timezone-aware with DST handling</td>
 </tr>
 <tr>
 <td>Agent auto-discovery</td>
@@ -3330,12 +3485,28 @@ scope by default.</p>
 <td>Multi-job full-system restore onto a rebuilt host</td>
 </tr>
 <tr>
+<td><a href="../../user-guide/bare-metal-restore/">Bare-metal restore (Linux)</a></td>
+<td>ReaR rescue media built per host, extended attributes and system profile captured with <code>--bare-metal</code></td>
+</tr>
+<tr>
 <td>Benchmarks</td>
 <td>Reproducible backup/restore harness, optional restic comparison</td>
 </tr>
 <tr>
 <td>Ransomware Sentinel</td>
 <td>Gemini telemetry over filesystem snapshots (optional)</td>
+</tr>
+<tr>
+<td>Workload plugins</td>
+<td>Signed <code>.hpk</code> packages installed per agent, locally or from the dashboard; backup and point-in-time restore through the agent; chain-aware retention</td>
+</tr>
+<tr>
+<td>Backup plans</td>
+<td>Workload jobs schedule full, differential, and log backups of one selection separately; results per database</td>
+</tr>
+<tr>
+<td><a href="../../user-guide/sql-server/">SQL Server</a></td>
+<td><code>mssql</code> plugin over VDI: full, differential, and log backups; point-in-time restore</td>
 </tr>
 </tbody>
 </table>
@@ -3349,8 +3520,8 @@ scope by default.</p>
 </thead>
 <tbody>
 <tr>
-<td><strong>Bare-metal restore</strong></td>
-<td>Bootable recovery media plus the metadata needed to rebuild a bootable system — see below</td>
+<td><strong>Windows bare-metal restore</strong></td>
+<td>WinPE recovery media, NTFS security descriptors, and BCD rebuild — see below</td>
 </tr>
 </tbody>
 </table>
@@ -3373,31 +3544,34 @@ scope by default.</p>
 </tr>
 </tbody>
 </table>
-<h2 id="bare-metal-restore-in-design">Bare-metal restore (in design)<a class="headerlink" href="#bare-metal-restore-in-design" title="Permanent link">&para;</a></h2>
-<p>Today's <a href="../../user-guide/disaster-recovery/">disaster recovery</a> wizard restores
-files onto a host that <strong>already boots</strong> and already runs a registered agent.
-True bare-metal restore additionally requires:</p>
+<h2 id="bare-metal-restore">Bare-metal restore<a class="headerlink" href="#bare-metal-restore" title="Permanent link">&para;</a></h2>
+<p><a href="../../user-guide/bare-metal-restore/">Bare-metal restore</a> rebuilds a Linux host
+from a blank disk. Relax-and-Recover (ReaR) builds bootable rescue media on each
+host, recreates the disk layout, and reinstalls the bootloader; HitStor restores
+the files. Backups taken with <code>--bare-metal</code> also capture extended attributes
+(SELinux contexts, file capabilities, POSIX ACLs) and the system profile
+(partition table, filesystem UUIDs, LVM, <code>/etc/fstab</code>).</p>
+<p>Windows is the remaining part. It needs:</p>
 <ol>
-<li><strong>Boot media</strong> — a bootable Linux/WinPE image carrying the agent, so a machine
-   with a blank disk can be recovered.</li>
-<li><strong>Richer file metadata</strong> — Windows security descriptors and POSIX
-   ACLs/xattrs (including SELinux contexts), which the current snapshot format
-   does not capture.</li>
-<li><strong>Disk layout capture</strong> — partition table, filesystem UUIDs, and LVM
-   configuration, so partitions can be recreated and <code>/etc/fstab</code> still resolves.</li>
-<li><strong>Bootloader reconstruction</strong> — GRUB/EFI on Linux and BCD on Windows.</li>
+<li><strong>Boot media</strong> — a WinPE image carrying the agent.</li>
+<li><strong>Richer file metadata</strong> — Windows security descriptors, which the current
+   snapshot format does not capture.</li>
+<li><strong>Bootloader reconstruction</strong> — BCD on Windows.</li>
 </ol>
 <p>Restoring files alone onto a blank disk produces an <strong>unbootable</strong> system, so
 these land together rather than as independent features.</p>
-<h2 id="permanently-removed-v200">Permanently removed (v2.0.0)<a class="headerlink" href="#permanently-removed-v200" title="Permanent link">&para;</a></h2>
-<p>These are <strong>not</strong> deferred — they were removed from the product and are not
-planned to return:</p>
+<h2 id="permanently-removed">Permanently removed<a class="headerlink" href="#permanently-removed" title="Permanent link">&para;</a></h2>
+<p>These were removed from the product before the first public release (v0.1.0)
+and are not planned to return in their original form:</p>
 <ul>
 <li>Microsoft 365 and Google Workspace backup</li>
-<li>Database backup (PostgreSQL, MySQL, MariaDB, SQL Server, Oracle)</li>
+<li>The built-in database integrations (PostgreSQL, MySQL, MariaDB, SQL Server, Oracle)</li>
 <li>Cloud VM agentless backup (GCP, AWS, Azure) and VMware/vSphere</li>
 <li>The workload collector plugin type that served them</li>
 </ul>
+<p>Database backup now comes back as installable
+<a href="../../dev-guide/plugin-architecture/">workload plugins</a> that run on the
+database host, starting with <a href="../../user-guide/sql-server/">SQL Server</a>.</p>
 <p>Existing <code>config.yaml</code> files containing <code>collector_plugins</code> or the related
 integration keys still load; those keys are simply ignored (unknown fields).</p>
 <h2 id="also-not-on-the-roadmap">Also not on the roadmap<a class="headerlink" href="#also-not-on-the-roadmap" title="Permanent link">&para;</a></h2>

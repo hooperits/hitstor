@@ -57,6 +57,8 @@
       
     
     
+      <link rel="stylesheet" href="../../stylesheets/extra.css">
+    
     <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
@@ -73,7 +75,7 @@
     
     
     
-    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="custom">
   
     
     <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
@@ -98,7 +100,7 @@
   <nav class="md-header__inner md-grid" aria-label="Header">
     <a href="../.." title="HitStor Documentation" class="md-header__button md-logo" aria-label="HitStor Documentation" data-md-component="logo">
       
-  <img src="../../assets/logo.png" alt="logo">
+  <img src="../../assets/icon.svg" alt="logo">
 
     </a>
     <label class="md-header__button md-icon" for="__drawer">
@@ -128,7 +130,7 @@
     
     
     
-    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="custom"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
     
       <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
@@ -138,7 +140,7 @@
     
     
     
-    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="custom" data-md-color-accent="custom"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
     
       <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
@@ -393,7 +395,7 @@
   <label class="md-nav__title" for="__drawer">
     <a href="../.." title="HitStor Documentation" class="md-nav__button md-logo" aria-label="HitStor Documentation" data-md-component="logo">
       
-  <img src="../../assets/logo.png" alt="logo">
+  <img src="../../assets/icon.svg" alt="logo">
 
     </a>
     HitStor Documentation
@@ -1087,6 +1089,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user-guide/sql-server/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SQL Server
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -1382,6 +1412,62 @@
   
   
     <li class="md-nav__item">
+      <a href="../users/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Users and Access
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reports/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reports
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../settings/" class="md-nav__link">
         
   
@@ -1622,10 +1708,10 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#repository-not-initialized" class="md-nav__link">
+  <a href="#repository-not-found" class="md-nav__link">
     <span class="md-ellipsis">
       
-        "repository not initialized"
+        "Repository not found"
       
     </span>
   </a>
@@ -1636,7 +1722,7 @@
   <a href="#incorrect-password" class="md-nav__link">
     <span class="md-ellipsis">
       
-        "incorrect password"
+        "Incorrect password"
       
     </span>
   </a>
@@ -1644,10 +1730,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#lock-repository-repository-is-locked" class="md-nav__link">
+  <a href="#repository-is-locked-by-another-process" class="md-nav__link">
     <span class="md-ellipsis">
       
-        "lock repository: repository is locked"
+        "repository is locked by another process"
       
     </span>
   </a>
@@ -1676,6 +1762,17 @@
     <span class="md-ellipsis">
       
         "TLS connection error"
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#peer-certificate-fingerprint-does-not-match-pinned" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        "peer certificate fingerprint ... does not match pinned"
       
     </span>
   </a>
@@ -2875,6 +2972,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../reference/agent-commands/plugin/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    plugin
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../reference/agent-commands/service/" class="md-nav__link">
         
   
@@ -3224,6 +3349,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../dev-guide/plugin-architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Plugin Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../dev-guide/dev-environment/" class="md-nav__link">
         
   
@@ -3459,10 +3612,10 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#repository-not-initialized" class="md-nav__link">
+  <a href="#repository-not-found" class="md-nav__link">
     <span class="md-ellipsis">
       
-        "repository not initialized"
+        "Repository not found"
       
     </span>
   </a>
@@ -3473,7 +3626,7 @@
   <a href="#incorrect-password" class="md-nav__link">
     <span class="md-ellipsis">
       
-        "incorrect password"
+        "Incorrect password"
       
     </span>
   </a>
@@ -3481,10 +3634,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#lock-repository-repository-is-locked" class="md-nav__link">
+  <a href="#repository-is-locked-by-another-process" class="md-nav__link">
     <span class="md-ellipsis">
       
-        "lock repository: repository is locked"
+        "repository is locked by another process"
       
     </span>
   </a>
@@ -3513,6 +3666,17 @@
     <span class="md-ellipsis">
       
         "TLS connection error"
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#peer-certificate-fingerprint-does-not-match-pinned" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        "peer certificate fingerprint ... does not match pinned"
       
     </span>
   </a>
@@ -3814,13 +3978,15 @@
 <h1 id="troubleshooting">Troubleshooting<a class="headerlink" href="#troubleshooting" title="Permanent link">&para;</a></h1>
 <p>This page covers common HitStor issues, their causes, and solutions. For each problem, the error message is shown as it appears in logs or terminal output.</p>
 <h2 id="repository-errors">Repository Errors<a class="headerlink" href="#repository-errors" title="Permanent link">&para;</a></h2>
-<h3 id="repository-not-initialized">"repository not initialized"<a class="headerlink" href="#repository-not-initialized" title="Permanent link">&para;</a></h3>
+<h3 id="repository-not-found">"Repository not found"<a class="headerlink" href="#repository-not-found" title="Permanent link">&para;</a></h3>
+<p>The full message is <code>Repository not found at PATH</code>.</p>
 <p><strong>Cause:</strong> The repository directory does not exist or has not been initialized with <code>hitstor init</code>.</p>
 <p><strong>Solution:</strong> Initialize the repository before starting the server or running backups:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>hitstor<span class="w"> </span>init<span class="w"> </span>--repo<span class="w"> </span>/var/lib/hitstor/repo<span class="w"> </span>--password<span class="w"> </span><span class="s2">"REPO_PASSWORD"</span>
 </code></pre></div>
-<p>If the directory exists but appears empty or corrupted, check that the path is correct and that the <code>keys/</code>, <code>data/</code>, <code>index/</code>, and <code>snapshots/</code> subdirectories are present.</p>
-<h3 id="incorrect-password">"incorrect password"<a class="headerlink" href="#incorrect-password" title="Permanent link">&para;</a></h3>
+<p>If the directory exists but appears empty or corrupted, check that the path is correct and that the <code>config</code> file and the <code>keys/</code> subdirectory are present (<code>data/</code>, <code>index/</code> and <code>snapshots/</code> appear after the first backup).</p>
+<h3 id="incorrect-password">"Incorrect password"<a class="headerlink" href="#incorrect-password" title="Permanent link">&para;</a></h3>
+<p>The underlying error is <code>wrong password or corrupted key file</code>.</p>
 <p><strong>Cause:</strong> The password provided does not match the password used when the repository was initialized.</p>
 <p><strong>Solution:</strong></p>
 <ol>
@@ -3844,7 +4010,7 @@
 <p>Ensure there are no extra spaces, quotes, or escape characters in the password value.</p>
 </li>
 </ol>
-<h3 id="lock-repository-repository-is-locked">"lock repository: repository is locked"<a class="headerlink" href="#lock-repository-repository-is-locked" title="Permanent link">&para;</a></h3>
+<h3 id="repository-is-locked-by-another-process">"repository is locked by another process"<a class="headerlink" href="#repository-is-locked-by-another-process" title="Permanent link">&para;</a></h3>
 <p><strong>Cause:</strong> Another HitStor process is currently using the repository, or a previous process terminated without releasing the lock.</p>
 <p><strong>Solution:</strong></p>
 <ol>
@@ -3854,8 +4020,8 @@
 </code></pre></div>
 </li>
 <li>
-<p>If no other process is running, the lock is stale. Remove it:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>hitstor<span class="w"> </span>unlock<span class="w"> </span>--repo<span class="w"> </span>/var/lib/hitstor/repo<span class="w"> </span>--password<span class="w"> </span><span class="s2">"REPO_PASSWORD"</span>
+<p>If no other process is running, the lock is stale. Run the command again with <code>--break-lock</code>, which removes stale locks before the operation:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>hitstor<span class="w"> </span>check<span class="w"> </span>--repo<span class="w"> </span>/var/lib/hitstor/repo<span class="w"> </span>--break-lock
 </code></pre></div>
 </li>
 <li>
@@ -3866,9 +4032,9 @@
 <h3 id="tls-connection-error">"TLS connection error"<a class="headerlink" href="#tls-connection-error" title="Permanent link">&para;</a></h3>
 <p><strong>Cause:</strong> The agent cannot verify the server's TLS certificate. The most common causes are:</p>
 <ol>
-<li>The agent does not have the server certificate (missing <code>--ca-cert</code>)</li>
-<li>The certificate does not include the server IP in its SANs</li>
-<li>The server binary is an old version that generates certificates for <code>127.0.0.1</code> only</li>
+<li>The agent is configured with a CA certificate (<code>--ca-cert</code>, <code>agent_ca_cert</code>, <code>HITSTOR_AGENT_CA_CERT</code>) that did not sign the server's certificate</li>
+<li>The certificate does not include the address the agent connects to in its SANs (for example, the server got a new IP after the certificate was generated)</li>
+<li>The server certificate changed since the agent pinned it (see <a href="#peer-certificate-fingerprint-does-not-match-pinned">below</a>)</li>
 </ol>
 <p><strong>Diagnosis:</strong> Check which IPs the certificate includes:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>openssl<span class="w"> </span>x509<span class="w"> </span>-in<span class="w"> </span>/var/lib/hitstor/repo/server.crt<span class="w"> </span>-noout<span class="w"> </span>-text<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>-A1<span class="w"> </span><span class="s2">"Subject Alternative Name"</span>
@@ -3895,7 +4061,7 @@
 </li>
 <li>
 <p>Copy the certificate to the agent and configure it:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>scp<span class="w"> </span>hits@SERVER_IP:/var/lib/hitstor/repo/server.crt<span class="w"> </span>/etc/hitstor/server.crt
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>scp<span class="w"> </span>USER@SERVER_IP:/var/lib/hitstor/repo/server.crt<span class="w"> </span>/etc/hitstor/server.crt
 <a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>hitstor-agent<span class="w"> </span>--ca-cert<span class="w"> </span>/etc/hitstor/server.crt<span class="w"> </span>ping
 </code></pre></div>
 <p>Or via config:</p>
@@ -3903,13 +4069,16 @@
 </code></pre></div>
 </li>
 </ol>
+<h3 id="peer-certificate-fingerprint-does-not-match-pinned">"peer certificate fingerprint ... does not match pinned"<a class="headerlink" href="#peer-certificate-fingerprint-does-not-match-pinned" title="Permanent link">&para;</a></h3>
+<p><strong>Cause:</strong> The agent pinned the server's certificate on its first connection, and the server now presents a different one (regenerated or replaced certificate, or a reinstalled server).</p>
+<p><strong>Solution:</strong> If the change was intended, delete the pin on the agent and connect again: <code>/etc/hitstor/server-fingerprint</code> on Linux, <code>C:\ProgramData\HitStor\server-fingerprint</code> on Windows. Otherwise, investigate a possible man-in-the-middle. See <a href="../tls-certificates/#without-a-ca-certificate-certificate-pinning">TLS Certificates</a>.</p>
 <h3 id="certificate-signed-by-unknown-authority">"certificate signed by unknown authority"<a class="headerlink" href="#certificate-signed-by-unknown-authority" title="Permanent link">&para;</a></h3>
 <p><strong>Cause:</strong> The agent does not trust the TLS certificate presented by the server. This is common with self-signed certificates or private CAs.</p>
 <p><strong>Solution:</strong> Configure the agent to trust the server's certificate:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>hitstor-agent<span class="w"> </span>--ca-cert<span class="w"> </span>/etc/hitstor/server.crt<span class="w"> </span>ping
 </code></pre></div>
 <p>Or permanently via config file:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="c1"># ~/.config/hitstor/config.yaml</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="c1"># /etc/hitstor/agent-config.yaml</span>
 <a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="nt">agent_ca_cert</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/etc/hitstor/server.crt</span>
 </code></pre></div>
 <p>For self-signed certificates (the default), copy the server's <code>server.crt</code> from the repo directory. See <a href="../tls-certificates/">TLS Certificates</a> for details.</p>
@@ -3922,10 +4091,10 @@
 <h3 id="tls-private-key-does-not-match-public-key">"tls: private key does not match public key"<a class="headerlink" href="#tls-private-key-does-not-match-public-key" title="Permanent link">&para;</a></h3>
 <p><strong>Cause:</strong> The certificate file and key file do not correspond to each other.</p>
 <p><strong>Solution:</strong> Verify the files match:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>openssl<span class="w"> </span>x509<span class="w"> </span>-noout<span class="w"> </span>-modulus<span class="w"> </span>-in<span class="w"> </span>server.crt<span class="w"> </span><span class="p">|</span><span class="w"> </span>md5sum
-<a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a>openssl<span class="w"> </span>rsa<span class="w"> </span>-noout<span class="w"> </span>-modulus<span class="w"> </span>-in<span class="w"> </span>server.key<span class="w"> </span><span class="p">|</span><span class="w"> </span>md5sum
+<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>openssl<span class="w"> </span>x509<span class="w"> </span>-noout<span class="w"> </span>-pubkey<span class="w"> </span>-in<span class="w"> </span>server.crt<span class="w"> </span><span class="p">|</span><span class="w"> </span>openssl<span class="w"> </span>sha256
+<a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a>openssl<span class="w"> </span>pkey<span class="w"> </span>-pubout<span class="w"> </span>-in<span class="w"> </span>server.key<span class="w"> </span><span class="p">|</span><span class="w"> </span>openssl<span class="w"> </span>sha256
 </code></pre></div>
-<p>If the checksums differ, the files are mismatched. Regenerate or re-pair them.</p>
+<p>This works for RSA and ECDSA keys (the auto-generated certificate uses ECDSA). If the checksums differ, the files are mismatched. Regenerate or re-pair them.</p>
 <h2 id="connection-errors">Connection Errors<a class="headerlink" href="#connection-errors" title="Permanent link">&para;</a></h2>
 <h3 id="connection-refused">"connection refused"<a class="headerlink" href="#connection-refused" title="Permanent link">&para;</a></h3>
 <p><strong>Cause:</strong> The server is not running, or a firewall is blocking the port.</p>
@@ -3953,16 +4122,19 @@
 </li>
 </ol>
 <h3 id="agent-not-appearing-in-dashboard">Agent Not Appearing in Dashboard<a class="headerlink" href="#agent-not-appearing-in-dashboard" title="Permanent link">&para;</a></h3>
-<p><strong>Cause:</strong> The agent has not successfully connected to the server or completed a backup.</p>
+<p><strong>Cause:</strong> The agent was not registered, or the registration did not reach it.</p>
 <p><strong>Solution:</strong></p>
 <ol>
 <li>
+<p>Register it from <strong>Agents → + Add Agent</strong> (see <a href="../agent-management/">Agent Management</a>). The server must reach the agent on port 8422.</p>
+</li>
+<li>
 <p>Check the agent can reach the server:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a>hitstor-agent<span class="w"> </span>ping
+<div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a>sudo<span class="w"> </span>sh<span class="w"> </span>-c<span class="w"> </span><span class="s1">'set -a; . /etc/hitstor/agent.env; hitstor-agent ping'</span>
 </code></pre></div>
 </li>
 <li>
-<p>Verify the API key is correct in <code>/etc/hitstor/agent.env</code>.</p>
+<p>Verify <code>HITSTOR_AGENT_SERVER</code> and <code>HITSTOR_AGENT_API_KEY</code> in <code>/etc/hitstor/agent.env</code>.</p>
 </li>
 <li>
 <p>Check agent logs for errors:</p>
@@ -3970,7 +4142,7 @@
 </code></pre></div>
 </li>
 <li>
-<p>Ensure the agent name matches what was registered with <code>hitstor serve agent add</code>.</p>
+<p>For a CLI-registered agent, ensure the agent name matches what was registered with <code>hitstor serve agent add</code>.</p>
 </li>
 </ol>
 <h2 id="alert-issues">Alert Issues<a class="headerlink" href="#alert-issues" title="Permanent link">&para;</a></h2>
@@ -4015,7 +4187,7 @@
 <p>If the operation appears stuck, restart the server. The in-memory maintenance lock is released when the process exits.</p>
 </li>
 <li>
-<p>If you need to run a maintenance operation urgently, use the "Force" option from the dashboard, which aborts active backup sessions and acquires the lock.</p>
+<p>If you need to run a maintenance operation urgently, the API accepts <code>"force": true</code> in the body of <code>POST /api/repos/{name}/check</code> and <code>POST /api/repos/{name}/prune</code>; it aborts active backup sessions and acquires the lock. The dashboard has no button for it.</p>
 </li>
 </ol>
 <h3 id="acquire-lock">"acquire lock: ..."<a class="headerlink" href="#acquire-lock" title="Permanent link">&para;</a></h3>
@@ -4060,11 +4232,11 @@
 <p>The <code>--read-data</code> flag significantly increases check duration but verifies that all data can be decrypted and matches its expected checksums.</p>
 <h3 id="check-output">Check Output<a class="headerlink" href="#check-output" title="Permanent link">&para;</a></h3>
 <p>A healthy repository produces:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-30-1" name="__codelineno-30-1" href="#__codelineno-30-1"></a>check: no errors found
+<div class="highlight"><pre><span></span><code><a id="__codelineno-30-1" name="__codelineno-30-1" href="#__codelineno-30-1"></a>no errors found
 </code></pre></div>
 <p>If errors are found, the output lists affected pack files or snapshots. Contact support or consult the repository recovery documentation.</p>
 <h2 id="log-analysis">Log Analysis<a class="headerlink" href="#log-analysis" title="Permanent link">&para;</a></h2>
-<p>HitStor uses Go's <code>slog</code> package for structured JSON logging. Log entries include fields for timestamp, level, message, and contextual data.</p>
+<p>HitStor uses Go's <code>slog</code> package for structured logging. Log entries include fields for timestamp, level, message, and contextual data. They are text lines (<code>key=value</code>) by default; run the server with <code>--json</code> (see <a href="../server-setup/#log-output">Server Setup → Log Output</a>) for JSON lines that the <code>jq</code> examples below expect. The dashboard's <strong>Logs</strong> page shows the same entries, filterable and exportable.</p>
 <h3 id="viewing-logs">Viewing Logs<a class="headerlink" href="#viewing-logs" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-31-1" name="__codelineno-31-1" href="#__codelineno-31-1"></a><span class="c1"># Follow server logs</span>
 <a id="__codelineno-31-2" name="__codelineno-31-2" href="#__codelineno-31-2"></a>sudo<span class="w"> </span>journalctl<span class="w"> </span>-u<span class="w"> </span>hitstor-server<span class="w"> </span>-f
@@ -4073,7 +4245,7 @@
 <a id="__codelineno-31-5" name="__codelineno-31-5" href="#__codelineno-31-5"></a>sudo<span class="w"> </span>journalctl<span class="w"> </span>-u<span class="w"> </span>hitstor-agent<span class="w"> </span>-f
 </code></pre></div>
 <h3 id="filtering-with-jq">Filtering with jq<a class="headerlink" href="#filtering-with-jq" title="Permanent link">&para;</a></h3>
-<p>Parse and filter structured JSON logs:</p>
+<p>Parse and filter JSON logs (server started with <code>--json</code>):</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-32-1" name="__codelineno-32-1" href="#__codelineno-32-1"></a><span class="c1"># Show only errors</span>
 <a id="__codelineno-32-2" name="__codelineno-32-2" href="#__codelineno-32-2"></a>sudo<span class="w"> </span>journalctl<span class="w"> </span>-u<span class="w"> </span>hitstor-server<span class="w"> </span>-o<span class="w"> </span>cat<span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span><span class="s1">'select(.level == "ERROR")'</span>
 <a id="__codelineno-32-3" name="__codelineno-32-3" href="#__codelineno-32-3"></a>

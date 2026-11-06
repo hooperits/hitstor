@@ -57,6 +57,8 @@
       
     
     
+      <link rel="stylesheet" href="../../../stylesheets/extra.css">
+    
     <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
@@ -73,7 +75,7 @@
     
     
     
-    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="custom">
   
     
     <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
@@ -98,7 +100,7 @@
   <nav class="md-header__inner md-grid" aria-label="Cabecera">
     <a href="../../" title="Documentación de HitStor" class="md-header__button md-logo" aria-label="Documentación de HitStor" data-md-component="logo">
       
-  <img src="../../../assets/logo.png" alt="logo">
+  <img src="../../../assets/icon.svg" alt="logo">
 
     </a>
     <label class="md-header__button md-icon" for="__drawer">
@@ -128,7 +130,7 @@
     
     
     
-    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="custom"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
     
       <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
@@ -138,7 +140,7 @@
     
     
     
-    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="custom" data-md-color-accent="custom"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
     
       <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
@@ -393,7 +395,7 @@
   <label class="md-nav__title" for="__drawer">
     <a href="../../" title="Documentación de HitStor" class="md-nav__button md-logo" aria-label="Documentación de HitStor" data-md-component="logo">
       
-  <img src="../../../assets/logo.png" alt="logo">
+  <img src="../../../assets/icon.svg" alt="logo">
 
     </a>
     Documentación de HitStor
@@ -1087,6 +1089,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user-guide/sql-server/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SQL Server
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -1406,34 +1436,6 @@
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Instalar con el instalador .run (recomendado)">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#dashboard-managed-recommended" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Administrado desde el dashboard (recomendado)
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#legacy-manual" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Heredado (manual)
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
 </li>
         
           <li class="md-nav__item">
@@ -1471,10 +1473,10 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#dashboard-managed-agent" class="md-nav__link">
+  <a href="#dashboard-managed-agent-recommended" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Agente administrado desde el dashboard
+        Agente administrado desde el dashboard (recomendado)
       
     </span>
   </a>
@@ -1482,10 +1484,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#legacy-agent" class="md-nav__link">
+  <a href="#manual-cli-registration" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Agente heredado
+        Registro manual (CLI)
       
     </span>
   </a>
@@ -1520,10 +1522,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#test-the-connection-legacy-mode" class="md-nav__link">
+  <a href="#test-the-connection" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Probar la conexión (modo heredado)
+        Probar la conexión
       
     </span>
   </a>
@@ -1576,10 +1578,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#timer-mode" class="md-nav__link">
+  <a href="#timer-unit" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Modo timer
+        Unidad timer
       
     </span>
   </a>
@@ -1642,7 +1644,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#test-the-connection" class="md-nav__link">
+  <a href="#test-the-connection_1" class="md-nav__link">
     <span class="md-ellipsis">
       
         Probar la conexión
@@ -1664,10 +1666,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#register-as-a-windows-service" class="md-nav__link">
+  <a href="#manage-the-windows-service" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Registrar como servicio de Windows
+        Administrar el servicio de Windows
       
     </span>
   </a>
@@ -1725,6 +1727,62 @@
     
   
     Dashboard
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../users/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Usuarios y acceso
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reports/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reportes
   
 
     
@@ -2846,6 +2904,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../reference/agent-commands/plugin/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    plugin
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../reference/agent-commands/service/" class="md-nav__link">
         
   
@@ -3195,6 +3281,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../dev-guide/plugin-architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Arquitectura de plugins
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../dev-guide/dev-environment/" class="md-nav__link">
         
   
@@ -3438,34 +3552,6 @@
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Instalar con el instalador .run (recomendado)">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#dashboard-managed-recommended" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Administrado desde el dashboard (recomendado)
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#legacy-manual" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Heredado (manual)
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
 </li>
         
           <li class="md-nav__item">
@@ -3503,10 +3589,10 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#dashboard-managed-agent" class="md-nav__link">
+  <a href="#dashboard-managed-agent-recommended" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Agente administrado desde el dashboard
+        Agente administrado desde el dashboard (recomendado)
       
     </span>
   </a>
@@ -3514,10 +3600,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#legacy-agent" class="md-nav__link">
+  <a href="#manual-cli-registration" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Agente heredado
+        Registro manual (CLI)
       
     </span>
   </a>
@@ -3552,10 +3638,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#test-the-connection-legacy-mode" class="md-nav__link">
+  <a href="#test-the-connection" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Probar la conexión (modo heredado)
+        Probar la conexión
       
     </span>
   </a>
@@ -3608,10 +3694,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#timer-mode" class="md-nav__link">
+  <a href="#timer-unit" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Modo timer
+        Unidad timer
       
     </span>
   </a>
@@ -3674,7 +3760,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#test-the-connection" class="md-nav__link">
+  <a href="#test-the-connection_1" class="md-nav__link">
     <span class="md-ellipsis">
       
         Probar la conexión
@@ -3696,10 +3782,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#register-as-a-windows-service" class="md-nav__link">
+  <a href="#manage-the-windows-service" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Registrar como servicio de Windows
+        Administrar el servicio de Windows
       
     </span>
   </a>
@@ -3760,68 +3846,41 @@
 <p>El instalador <code>.run</code> incluye un asistente interactivo que configura el agente e inicia el servicio automáticamente:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>sudo<span class="w"> </span>./hitstor-agent-X.Y.Z-linux-amd64.run
 </code></pre></div>
-<p>El asistente ofrece dos modos de configuración:</p>
-<h4 id="dashboard-managed-recommended">Administrado desde el dashboard (recomendado)<a class="headerlink" href="#dashboard-managed-recommended" title="Permanent link">&para;</a></h4>
-<p>El agente genera un token y espera el registro desde el dashboard del servidor. No se necesita la dirección del servidor ni una clave de API al momento de la instalación.</p>
-<p>El asistente solicita:</p>
-<ol>
-<li><strong>Modo de configuración</strong>: seleccione <code>1</code> para administrado desde el dashboard</li>
-<li><strong>Puerto de escucha</strong>: puerto gRPC para las conexiones del servidor (predeterminado: 8422)</li>
-<li><strong>Rutas de respaldo</strong>: opcionales; pueden configurarse más adelante desde el dashboard</li>
-</ol>
-<p>Al terminar la instalación, el asistente muestra el <strong>token del agente</strong> e instrucciones para agregar el agente desde el dashboard.</p>
-<h4 id="legacy-manual">Heredado (manual)<a class="headerlink" href="#legacy-manual" title="Permanent link">&para;</a></h4>
-<p>El agente se configura con la dirección del servidor y una clave de API al momento de la instalación. Use este modo si registró el agente con <code>hitstor serve agent add</code>.</p>
-<p>El asistente solicita:</p>
-<ol>
-<li><strong>Modo de configuración</strong>: seleccione <code>2</code> para heredado</li>
-<li><strong>Dirección del servidor</strong>: <code>host:port</code> del servidor HitStor</li>
-<li><strong>Clave de API</strong>: clave hexadecimal de 64 caracteres obtenida con <code>hitstor serve agent add &lt;name&gt;</code> (entrada oculta)</li>
-<li><strong>Prueba de conexión</strong>: verifica la conectividad antes de continuar</li>
-<li><strong>Rutas de respaldo</strong>: directorios a respaldar, separados por comas (predeterminado: <code>/etc,/home</code>)</li>
-</ol>
+<p>El asistente pide un solo valor, el <strong>puerto de escucha</strong> (puerto gRPC que usa el servidor para administrar el agente; predeterminado <code>8422</code>). Luego instala el binario y las unidades de systemd, escribe <code>/etc/hitstor/agent.env</code>, inicia el servicio <code>hitstor-agent</code> y muestra el <strong>token del agente</strong> con las instrucciones para agregarlo desde el dashboard. No se necesita la dirección del servidor ni una clave de API al instalar: el servidor las envía cuando usted registra el agente.</p>
 <h3 id="non-interactive-install">Instalación no interactiva<a class="headerlink" href="#non-interactive-install" title="Permanent link">&para;</a></h3>
-<p>Para automatizar, use <code>--no-wizard</code> con variables de entorno.</p>
-<p><strong>Modo administrado desde el dashboard</strong> (predeterminado cuando no se definen las variables de servidor y clave):</p>
+<p>Para automatizar, use <code>--no-wizard</code>; el único ajuste es el puerto de escucha:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>sudo<span class="w"> </span><span class="nv">HITSTOR_AGENT_LISTEN_PORT</span><span class="o">=</span><span class="m">8422</span><span class="w"> </span><span class="se">\</span>
 <a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">     </span>./hitstor-agent-X.Y.Z-linux-amd64.run<span class="w"> </span>--no-wizard
-</code></pre></div>
-<p><strong>Modo heredado</strong> (se activa al definir el servidor y la clave de API):</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>sudo<span class="w"> </span><span class="nv">HITSTOR_AGENT_SERVER</span><span class="o">=</span>backup.example.com:8420<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">     </span><span class="nv">HITSTOR_AGENT_API_KEY</span><span class="o">=</span>&lt;<span class="m">64</span>-char-hex-key&gt;<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">     </span><span class="nv">HITSTOR_AGENT_PATHS</span><span class="o">=</span>/etc,/home<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="w">     </span>./hitstor-agent-X.Y.Z-linux-amd64.run<span class="w"> </span>--no-wizard
 </code></pre></div>
 <p>Consulte <a href="../../installation/linux-installer/">Instalación rápida en Linux</a> para ver todos los detalles.</p>
 <h3 id="install-from-package">Instalar desde un paquete<a class="headerlink" href="#install-from-package" title="Permanent link">&para;</a></h3>
 <p>Como alternativa, instale el agente desde un paquete deb o rpm:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="c1"># Debian / Ubuntu</span>
-<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>sudo<span class="w"> </span>apt<span class="w"> </span>install<span class="w"> </span>./hitstor-agent_1.0.0_amd64.deb
-<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>
-<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="c1"># RHEL / Fedora / AlmaLinux</span>
-<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>sudo<span class="w"> </span>rpm<span class="w"> </span>-i<span class="w"> </span>hitstor-agent-1.0.0.x86_64.rpm
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="c1"># Debian / Ubuntu</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>sudo<span class="w"> </span>apt<span class="w"> </span>install<span class="w"> </span>./hitstor-agent_X.Y.Z_amd64.deb
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="c1"># RHEL / Fedora / AlmaLinux</span>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>sudo<span class="w"> </span>rpm<span class="w"> </span>-i<span class="w"> </span>hitstor-agent-X.Y.Z-1.x86_64.rpm
 </code></pre></div>
-<p>Consulte <a href="../../installation/">Instalación</a> para conocer otros métodos de instalación.</p>
+<p>El paquete no inicia el agente. Habilítelo con <code>sudo systemctl enable --now hitstor-agent</code>; el token se genera en el primer inicio. Consulte <a href="../../installation/">Instalación</a> para conocer otros métodos de instalación.</p>
 <h3 id="configure-the-agent">Configurar el agente<a class="headerlink" href="#configure-the-agent" title="Permanent link">&para;</a></h3>
-<p>La configuración depende del modo de configuración elegido.</p>
-<h4 id="dashboard-managed-agent">Agente administrado desde el dashboard<a class="headerlink" href="#dashboard-managed-agent" title="Permanent link">&para;</a></h4>
-<p>El agente lee su puerto de escucha desde <code>/etc/hitstor/agent.env</code>:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="c1"># /etc/hitstor/agent.env</span>
-<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="nv">HITSTOR_AGENT_LISTEN_PORT</span><span class="o">=</span><span class="m">8422</span>
+<h4 id="dashboard-managed-agent-recommended">Agente administrado desde el dashboard (recomendado)<a class="headerlink" href="#dashboard-managed-agent-recommended" title="Permanent link">&para;</a></h4>
+<p>El agente lee su puerto de escucha de <code>/etc/hitstor/agent.env</code>:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="c1"># /etc/hitstor/agent.env</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="nv">HITSTOR_AGENT_LISTEN_PORT</span><span class="o">=</span><span class="m">8422</span>
 </code></pre></div>
-<p>Cuando el servidor registra el agente desde el dashboard, escribe automáticamente la dirección del servidor y la clave de API en este archivo. El token del agente se guarda en <code>/etc/hitstor/agent-token</code>.</p>
+<p>Cuando el servidor registra el agente desde el dashboard, el agente reescribe este archivo con la dirección del servidor y la clave de API (<code>HITSTOR_AGENT_SERVER</code>, <code>HITSTOR_AGENT_API_KEY</code>). El token del agente se guarda en <code>/etc/hitstor/agent-token</code>.</p>
 <p>Para ver el token del agente:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>sudo<span class="w"> </span>hitstor-agent<span class="w"> </span>show-id
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>sudo<span class="w"> </span>hitstor-agent<span class="w"> </span>show-id
 </code></pre></div>
-<h4 id="legacy-agent">Agente heredado<a class="headerlink" href="#legacy-agent" title="Permanent link">&para;</a></h4>
-<p>El agente lee la dirección del servidor y la clave de API desde <code>/etc/hitstor/agent.env</code>:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="c1"># /etc/hitstor/agent.env</span>
-<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="nv">HITSTOR_AGENT_SERVER</span><span class="o">=</span>backup.example.com:8420
-<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="nv">HITSTOR_AGENT_API_KEY</span><span class="o">=</span>a3f8c1d9e4b7...6f2a0e5d
+<h4 id="manual-cli-registration">Registro manual (CLI)<a class="headerlink" href="#manual-cli-registration" title="Permanent link">&para;</a></h4>
+<p>Si registró el agente en el servidor con <code>hitstor serve agent add &lt;name&gt;</code>, escriba usted mismo la dirección del servidor y la clave de API impresa en <code>/etc/hitstor/agent.env</code> y luego reinicie el servicio:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="c1"># /etc/hitstor/agent.env</span>
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="nv">HITSTOR_AGENT_SERVER</span><span class="o">=</span>backup.example.com:8420
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="nv">HITSTOR_AGENT_API_KEY</span><span class="o">=</span>a3f8c1d9e4b7...6f2a0e5d
 </code></pre></div>
-<p>Ajuste los permisos del archivo para que solo root pueda leer la clave:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>sudo<span class="w"> </span>chmod<span class="w"> </span><span class="m">0600</span><span class="w"> </span>/etc/hitstor/agent.env
-<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>sudo<span class="w"> </span>chown<span class="w"> </span>root:root<span class="w"> </span>/etc/hitstor/agent.env
+<p>Defina los permisos del archivo para que solo root pueda leer la clave:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>sudo<span class="w"> </span>chmod<span class="w"> </span><span class="m">0600</span><span class="w"> </span>/etc/hitstor/agent.env
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>sudo<span class="w"> </span>chown<span class="w"> </span>root:root<span class="w"> </span>/etc/hitstor/agent.env
 </code></pre></div>
 <h3 id="environment-variables">Variables de entorno<a class="headerlink" href="#environment-variables" title="Permanent link">&para;</a></h3>
 <table>
@@ -3838,114 +3897,111 @@
 </tr>
 <tr>
 <td><code>HITSTOR_AGENT_SERVER</code></td>
-<td>Dirección del servidor en formato <code>host:port</code> (modo heredado)</td>
+<td>Dirección del servidor en formato <code>host:port</code> (se escribe al registrar)</td>
 </tr>
 <tr>
 <td><code>HITSTOR_AGENT_API_KEY</code></td>
-<td>Clave de API hexadecimal de 64 caracteres (modo heredado)</td>
+<td>Clave de API hexadecimal de 64 caracteres (se escribe al registrar)</td>
 </tr>
 <tr>
 <td><code>HITSTOR_AGENT_CA_CERT</code></td>
-<td>Ruta al certificado de la CA para la verificación TLS</td>
+<td>Ruta al certificado de la CA para la verificación TLS (opcional; sin ella, el agente fija el certificado del servidor en el primer uso)</td>
 </tr>
 </tbody>
 </table>
+<p>El daemon y el servicio de Windows leen <code>agent.env</code> por su cuenta; los comandos puntuales como <code>hitstor-agent ping</code> o <code>backup</code> leen estas variables del entorno, de <code>--server</code>/<code>--api-key</code>/<code>--ca-cert</code>, o de <code>agent_server</code>/<code>agent_api_key</code>/<code>agent_ca_cert</code> en el archivo indicado con <code>--config</code>.</p>
 <h3 id="retrieve-the-agent-token">Obtener el token del agente<a class="headerlink" href="#retrieve-the-agent-token" title="Permanent link">&para;</a></h3>
-<p>Los agentes administrados desde el dashboard generan un token durante la instalación. Para mostrarlo:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>sudo<span class="w"> </span>hitstor-agent<span class="w"> </span>show-id
+<p>Los agentes administrados desde el dashboard generan un token en su primer inicio. Para mostrarlo:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>sudo<span class="w"> </span>hitstor-agent<span class="w"> </span>show-id
 </code></pre></div>
 <p>El token se guarda en <code>/etc/hitstor/agent-token</code> con modo <code>0600</code>.</p>
-<h3 id="test-the-connection-legacy-mode">Probar la conexión (modo heredado)<a class="headerlink" href="#test-the-connection-legacy-mode" title="Permanent link">&para;</a></h3>
-<p>En los agentes heredados, verifique que el agente pueda comunicarse con el servidor:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>hitstor-agent<span class="w"> </span>ping
+<h3 id="test-the-connection">Probar la conexión<a class="headerlink" href="#test-the-connection" title="Permanent link">&para;</a></h3>
+<p>Una vez registrado el agente, verifique que pueda conectarse al servidor (las variables provienen de <code>agent.env</code>):</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>sudo<span class="w"> </span>sh<span class="w"> </span>-c<span class="w"> </span><span class="s1">'set -a; . /etc/hitstor/agent.env; hitstor-agent ping'</span>
 </code></pre></div>
 <p>Salida esperada:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>Server: backup.example.com:8420
-<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>Status: connected
-<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>Agent:  web-server-01
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>Server: backup.example.com:8420
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>Version: X.Y.Z
+<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>Repo ID: 03b9cb33...
 </code></pre></div>
 <p>Si falla, consulte <a href="../troubleshooting/">Solución de problemas</a> para ver los problemas de conexión más comunes.</p>
 <h3 id="run-a-manual-backup">Ejecutar un respaldo manual<a class="headerlink" href="#run-a-manual-backup" title="Permanent link">&para;</a></h3>
-<p>Cree un respaldo de uno o más directorios:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>hitstor-agent<span class="w"> </span>backup<span class="w"> </span>/etc<span class="w"> </span>/home<span class="w"> </span>/var/lib
+<p>Cree un respaldo de uno o varios directorios:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>sudo<span class="w"> </span>sh<span class="w"> </span>-c<span class="w"> </span><span class="s1">'set -a; . /etc/hitstor/agent.env; hitstor-agent backup /etc /home /var/lib'</span>
 </code></pre></div>
 <p>El agente envía los datos al servidor por gRPC. El progreso se muestra en la terminal.</p>
 <h3 id="daemon-mode">Modo daemon<a class="headerlink" href="#daemon-mode" title="Permanent link">&para;</a></h3>
-<p>En modo daemon, el agente se ejecuta de forma continua y cumple dos funciones:</p>
+<p>En modo daemon, el agente se ejecuta de forma continua con dos funciones:</p>
 <ol>
-<li><strong>Servidor de administración</strong>: escucha en el puerto 8422 los comandos gRPC del servidor HitStor (registro, exploración del sistema de archivos, configuración)</li>
-<li><strong>Consulta de respaldos</strong>: consulta periódicamente al servidor su programación de respaldos y ejecuta los respaldos automáticamente</li>
+<li><strong>Servidor de administración</strong>: escucha en el puerto 8422 los comandos gRPC del servidor HitStor (registro, exploración del sistema de archivos y de los plugins, instalación de plugins, restauraciones, activación inmediata)</li>
+<li><strong>Consulta de respaldos</strong>: consulta al servidor su programación de respaldo y ejecuta los respaldos automáticamente</li>
 </ol>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>hitstor-agent<span class="w"> </span>daemon
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>hitstor-agent<span class="w"> </span>daemon
 </code></pre></div>
-<p>Si el agente aún no está registrado (modo administrado desde el dashboard), el daemon espera el registro desde el dashboard y comienza a respaldar una vez registrado.</p>
+<p>Si el agente aún no está registrado, el daemon espera el registro desde el dashboard y luego ejecuta las tareas de respaldo creadas para él.</p>
 <h3 id="systemd-integration">Integración con systemd<a class="headerlink" href="#systemd-integration" title="Permanent link">&para;</a></h3>
 <p>El paquete del agente incluye dos unidades de systemd:</p>
 <h4 id="daemon-mode-recommended">Modo daemon (recomendado)<a class="headerlink" href="#daemon-mode-recommended" title="Permanent link">&para;</a></h4>
 <p>Habilite el servicio daemon persistente:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>sudo<span class="w"> </span>systemctl<span class="w"> </span><span class="nb">enable</span><span class="w"> </span>hitstor-agent
-<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>sudo<span class="w"> </span>systemctl<span class="w"> </span>start<span class="w"> </span>hitstor-agent
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>sudo<span class="w"> </span>systemctl<span class="w"> </span><span class="nb">enable</span><span class="w"> </span>hitstor-agent
+<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>sudo<span class="w"> </span>systemctl<span class="w"> </span>start<span class="w"> </span>hitstor-agent
 </code></pre></div>
-<p>Esto inicia <code>hitstor-agent daemon</code> como un servicio de larga duración. El agente escucha comandos de administración y consulta al servidor para obtener actualizaciones de la programación.</p>
-<h4 id="timer-mode">Modo timer<a class="headerlink" href="#timer-mode" title="Permanent link">&para;</a></h4>
-<p>Para una ejecución al estilo cron, use en su lugar el timer de systemd:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>sudo<span class="w"> </span>systemctl<span class="w"> </span><span class="nb">enable</span><span class="w"> </span>hitstor-agent.timer
-<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a>sudo<span class="w"> </span>systemctl<span class="w"> </span>start<span class="w"> </span>hitstor-agent.timer
-</code></pre></div>
-<p>El timer ejecuta <code>hitstor-agent backup</code> en el intervalo configurado. Edite el timer para personalizar la programación:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>sudo<span class="w"> </span>systemctl<span class="w"> </span>edit<span class="w"> </span>hitstor-agent.timer
-</code></pre></div>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="k">[Timer]</span>
-<a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a><span class="na">OnCalendar</span><span class="o">=</span><span class="s">*-*-* 02:00:00</span>
-</code></pre></div>
-<p>Consulte <a href="../scheduling/">Programación</a> para obtener más detalles sobre la configuración del timer.</p>
+<p>Esto inicia <code>hitstor-agent daemon</code> como un servicio de larga duración. El agente escucha los comandos de administración y consulta al servidor si hay cambios en la programación.</p>
+<h4 id="timer-unit">Unidad timer<a class="headerlink" href="#timer-unit" title="Permanent link">&para;</a></h4>
+<p>El paquete también incluye <code>hitstor-agent.timer</code> (diario a las 02:00). Este activa <code>hitstor-agent.service</code>, el mismo daemon, en lugar de ejecutar un respaldo puntual, así que no aporta nada si el daemon está habilitado. Para respaldos puntuales programados por el sistema operativo, consulte <a href="../scheduling/#systemd-timer-alternative">Programación → Temporizador de systemd</a>.</p>
 <h4 id="check-agent-status">Verificar el estado del agente<a class="headerlink" href="#check-agent-status" title="Permanent link">&para;</a></h4>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a>sudo<span class="w"> </span>systemctl<span class="w"> </span>status<span class="w"> </span>hitstor-agent
-<a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a>sudo<span class="w"> </span>journalctl<span class="w"> </span>-u<span class="w"> </span>hitstor-agent<span class="w"> </span>-f
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>sudo<span class="w"> </span>systemctl<span class="w"> </span>status<span class="w"> </span>hitstor-agent
+<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>sudo<span class="w"> </span>journalctl<span class="w"> </span>-u<span class="w"> </span>hitstor-agent<span class="w"> </span>-f
 </code></pre></div>
 <h2 id="windows-agent">Agente para Windows<a class="headerlink" href="#windows-agent" title="Permanent link">&para;</a></h2>
 <h3 id="install-the-agent">Instalar el agente<a class="headerlink" href="#install-the-agent" title="Permanent link">&para;</a></h3>
-<p>Descargue el instalador para Windows desde la página de versiones (releases) de HitStor y ejecútelo. El instalador coloca el binario <code>hitstor-agent.exe</code> en <code>C:\Program Files\HitStor\</code> y lo agrega al PATH del sistema.</p>
+<p>Descargue el instalador del agente para Windows (<code>hitstor-agent-X.Y.Z-windows-amd64-setup.exe</code>) desde la página de versiones de HitStor y ejecútelo como administrador. El instalador:</p>
+<ul>
+<li>Pide el <strong>puerto de escucha</strong> (predeterminado <code>8422</code>)</li>
+<li>Instala <code>hitstor-agent.exe</code> y agrega su carpeta al PATH del sistema</li>
+<li>Escribe <code>C:\ProgramData\HitStor\agent.env</code> y <code>agent-config.yaml</code>, legibles solo por SYSTEM y Administradores</li>
+<li>Agrega una regla del Firewall de Windows para el puerto de escucha</li>
+<li>Registra e inicia el servicio de Windows <code>HitStorAgent</code> ("HitStor Backup Agent"), que ejecuta el daemon</li>
+<li>Muestra el <strong>token del agente</strong></li>
+</ul>
+<p>Luego agregue el agente desde el dashboard (<strong>Agentes → + Agregar agente</strong>) con su dirección IP y su token. Consulte <a href="../../installation/windows-agent/">Instalación del agente en Windows</a>.</p>
 <h3 id="configure-the-agent_1">Configurar el agente<a class="headerlink" href="#configure-the-agent_1" title="Permanent link">&para;</a></h3>
-<p>Cree o edite el archivo de configuración en <code>C:\ProgramData\HitStor\config.yaml</code>:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a><span class="c1"># C:\ProgramData\HitStor\config.yaml</span>
-<a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a><span class="nt">agent_server</span><span class="p">:</span><span class="w"> </span><span class="s">"backup.example.com:8420"</span>
-<a id="__codelineno-18-3" name="__codelineno-18-3" href="#__codelineno-18-3"></a><span class="nt">agent_api_key</span><span class="p">:</span><span class="w"> </span><span class="s">"a3f8c1d9e4b7...6f2a0e5d"</span>
-<a id="__codelineno-18-4" name="__codelineno-18-4" href="#__codelineno-18-4"></a>
-<a id="__codelineno-18-5" name="__codelineno-18-5" href="#__codelineno-18-5"></a><span class="c1"># Opcional: certificado de la CA para la verificación TLS</span>
-<a id="__codelineno-18-6" name="__codelineno-18-6" href="#__codelineno-18-6"></a><span class="c1"># agent_ca_cert: "C:\\ProgramData\\HitStor\\ca.crt"</span>
+<p>El registro desde el dashboard escribe la dirección del servidor y la clave de API en <code>C:\ProgramData\HitStor\agent.env</code>, que el servicio lee. Para un agente registrado con <code>hitstor serve agent add</code>, escriba usted mismo ese archivo:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="c1"># C:\ProgramData\HitStor\agent.env</span>
+<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a><span class="na">HITSTOR_AGENT_SERVER</span><span class="o">=</span><span class="s">backup.example.com:8420</span>
+<a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a><span class="na">HITSTOR_AGENT_API_KEY</span><span class="o">=</span><span class="s">a3f8c1d9e4b7...6f2a0e5d</span>
+<a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a><span class="c1"># Opcional: certificado de la CA para la verificación TLS</span>
+<a id="__codelineno-14-5" name="__codelineno-14-5" href="#__codelineno-14-5"></a><span class="c1"># HITSTOR_AGENT_CA_CERT=C:\ProgramData\HitStor\ca.crt</span>
 </code></pre></div>
-<h3 id="test-the-connection">Probar la conexión<a class="headerlink" href="#test-the-connection" title="Permanent link">&para;</a></h3>
-<p>Abra una ventana de Símbolo del sistema o de PowerShell:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a><span class="n">hitstor-agent</span> <span class="n">ping</span>
+<p>Luego reinicie el servicio (<code>hitstor-agent service stop</code>, <code>hitstor-agent service start</code>).</p>
+<h3 id="test-the-connection_1">Probar la conexión<a class="headerlink" href="#test-the-connection_1" title="Permanent link">&para;</a></h3>
+<p>Abra una ventana de PowerShell con privilegios elevados e indique el servidor y la clave (la línea de comandos no lee <code>agent.env</code>):</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="n">hitstor-agent</span> <span class="n">ping</span> <span class="p">-</span><span class="n">-server</span> <span class="n">backup</span><span class="p">.</span><span class="n">example</span><span class="p">.</span><span class="n">com</span><span class="p">:</span><span class="n">8420</span> <span class="p">-</span><span class="n">-api-key</span> <span class="n">KEY</span>
 </code></pre></div>
 <h3 id="run-a-manual-backup_1">Ejecutar un respaldo manual<a class="headerlink" href="#run-a-manual-backup_1" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a><span class="n">hitstor-agent</span> <span class="n">backup</span> <span class="n">C</span><span class="p">:\</span><span class="n">Users</span> <span class="n">C</span><span class="p">:\</span><span class="n">Data</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="n">hitstor-agent</span> <span class="n">backup</span> <span class="p">-</span><span class="n">-server</span> <span class="n">backup</span><span class="p">.</span><span class="n">example</span><span class="p">.</span><span class="n">com</span><span class="p">:</span><span class="n">8420</span> <span class="p">-</span><span class="n">-api-key</span> <span class="n">KEY</span> <span class="n">C</span><span class="p">:\</span><span class="n">Users</span> <span class="n">C</span><span class="p">:\</span><span class="n">Data</span>
 </code></pre></div>
-<h3 id="register-as-a-windows-service">Registrar como servicio de Windows<a class="headerlink" href="#register-as-a-windows-service" title="Permanent link">&para;</a></h3>
-<p>Para ejecutar el agente en segundo plano como servicio de Windows:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a><span class="n">hitstor-agent</span> <span class="n">service</span> <span class="n">install</span>
-<a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a><span class="n">hitstor-agent</span> <span class="n">service</span> <span class="nb">start</span>
-</code></pre></div>
-<p>Esto registra <code>hitstor-agent daemon</code> como un servicio de Windows que se inicia automáticamente al arrancar el equipo.</p>
-<p>Administre el servicio:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a><span class="n">hitstor-agent</span> <span class="n">service</span> <span class="n">stop</span>
-<a id="__codelineno-22-2" name="__codelineno-22-2" href="#__codelineno-22-2"></a><span class="n">hitstor-agent</span> <span class="n">service</span> <span class="n">uninstall</span>
+<h3 id="manage-the-windows-service">Administrar el servicio de Windows<a class="headerlink" href="#manage-the-windows-service" title="Permanent link">&para;</a></h3>
+<p>El instalador registra el servicio. Para administrarlo manualmente:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="n">hitstor-agent</span> <span class="n">service</span> <span class="n">install</span>
+<a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a><span class="n">hitstor-agent</span> <span class="n">service</span> <span class="nb">start</span>
+<a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a><span class="n">hitstor-agent</span> <span class="n">service</span> <span class="n">stop</span>
+<a id="__codelineno-17-4" name="__codelineno-17-4" href="#__codelineno-17-4"></a><span class="n">hitstor-agent</span> <span class="n">service</span> <span class="n">uninstall</span>
 </code></pre></div>
 <p>También puede administrar el servicio desde la consola de Servicios de Windows (<code>services.msc</code>).</p>
 <h2 id="deploying-to-multiple-machines">Despliegue en múltiples equipos<a class="headerlink" href="#deploying-to-multiple-machines" title="Permanent link">&para;</a></h2>
 <p>Para despliegues a gran escala, use herramientas de gestión de configuración (Ansible, Puppet, Chef o similares) para:</p>
 <ol>
-<li>Instalar el paquete <code>hitstor-agent</code></li>
+<li>Instalar el paquete <code>hitstor-agent</code> y habilitar el servicio <code>hitstor-agent</code></li>
 <li>El agente genera automáticamente un token en su primer inicio</li>
 <li>Recopilar los tokens de los agentes (con <code>hitstor-agent show-id</code>) y agregar los agentes desde el dashboard</li>
-<li>Configurar las rutas de respaldo desde el explorador del sistema de archivos del dashboard</li>
+<li>Crear tareas de respaldo para ellos en el dashboard (<strong>Respaldos → + Nueva tarea de respaldo</strong>)</li>
 </ol>
 <p>Como alternativa, para despliegues heredados:</p>
 <ol>
 <li>Registre cada agente en el servidor con <code>hitstor serve agent add</code></li>
-<li>Despliegue <code>/etc/hitstor/agent.env</code> con la clave de API específica de cada equipo</li>
-<li>Despliegue el archivo del certificado de la CA si usa certificados autofirmados</li>
+<li>Despliegue <code>/etc/hitstor/agent.env</code> con la dirección del servidor y la clave de API específica de cada equipo</li>
+<li>Despliegue el archivo del certificado de la CA si no quiere que el agente fije el certificado del servidor en el primer uso (consulte <a href="../tls-certificates/#agent-ca-certificate">Certificados TLS</a>)</li>
 <li>Habilite e inicie el servicio systemd <code>hitstor-agent</code></li>
 </ol>
 <h2 id="next-steps">Próximos pasos<a class="headerlink" href="#next-steps" title="Permanent link">&para;</a></h2>

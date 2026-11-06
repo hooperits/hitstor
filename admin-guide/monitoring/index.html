@@ -57,6 +57,8 @@
       
     
     
+      <link rel="stylesheet" href="../../stylesheets/extra.css">
+    
     <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
@@ -73,7 +75,7 @@
     
     
     
-    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="custom">
   
     
     <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
@@ -98,7 +100,7 @@
   <nav class="md-header__inner md-grid" aria-label="Header">
     <a href="../.." title="HitStor Documentation" class="md-header__button md-logo" aria-label="HitStor Documentation" data-md-component="logo">
       
-  <img src="../../assets/logo.png" alt="logo">
+  <img src="../../assets/icon.svg" alt="logo">
 
     </a>
     <label class="md-header__button md-icon" for="__drawer">
@@ -128,7 +130,7 @@
     
     
     
-    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="custom"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
     
       <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
@@ -138,7 +140,7 @@
     
     
     
-    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="custom" data-md-color-accent="custom"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
     
       <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
@@ -393,7 +395,7 @@
   <label class="md-nav__title" for="__drawer">
     <a href="../.." title="HitStor Documentation" class="md-nav__button md-logo" aria-label="HitStor Documentation" data-md-component="logo">
       
-  <img src="../../assets/logo.png" alt="logo">
+  <img src="../../assets/icon.svg" alt="logo">
 
     </a>
     HitStor Documentation
@@ -1087,6 +1089,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user-guide/sql-server/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SQL Server
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -1382,6 +1412,62 @@
   
   
     <li class="md-nav__item">
+      <a href="../users/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Users and Access
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reports/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reports
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../settings/" class="md-nav__link">
         
   
@@ -1494,10 +1580,10 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#gauges" class="md-nav__link">
+  <a href="#repository-and-agent-gauges" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Gauges
+        Repository and Agent Gauges
       
     </span>
   </a>
@@ -1516,10 +1602,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#per-agent-metric" class="md-nav__link">
+  <a href="#per-agent-metrics" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Per-Agent Metric
+        Per-Agent Metrics
       
     </span>
   </a>
@@ -1609,6 +1695,17 @@
     <span class="md-ellipsis">
       
         agent_stale
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#threat_detected" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        threat_detected
       
     </span>
   </a>
@@ -2719,6 +2816,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../reference/agent-commands/plugin/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    plugin
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../reference/agent-commands/service/" class="md-nav__link">
         
   
@@ -3068,6 +3193,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../dev-guide/plugin-architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Plugin Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../dev-guide/dev-environment/" class="md-nav__link">
         
   
@@ -3315,10 +3468,10 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#gauges" class="md-nav__link">
+  <a href="#repository-and-agent-gauges" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Gauges
+        Repository and Agent Gauges
       
     </span>
   </a>
@@ -3337,10 +3490,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#per-agent-metric" class="md-nav__link">
+  <a href="#per-agent-metrics" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Per-Agent Metric
+        Per-Agent Metrics
       
     </span>
   </a>
@@ -3436,6 +3589,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#threat_detected" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        threat_detected
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -3503,12 +3667,11 @@
 <p>HitStor provides Prometheus metrics and webhook alerting to integrate with existing monitoring infrastructure.</p>
 <h2 id="prometheus-metrics">Prometheus Metrics<a class="headerlink" href="#prometheus-metrics" title="Permanent link">&para;</a></h2>
 <p>The server exposes a Prometheus-compatible metrics endpoint at:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>http://SERVER_IP:8421/metrics
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>https://SERVER_IP:8421/metrics
 </code></pre></div>
-<p>This endpoint is unauthenticated, allowing Prometheus to scrape without credential configuration. Restrict access at the network level if needed.</p>
+<p>This endpoint is unauthenticated, allowing Prometheus to scrape without credential configuration. Restrict access at the network level if needed. It exists once the server has a repository; repository metrics describe the server's first repository.</p>
 <h3 id="available-metrics">Available Metrics<a class="headerlink" href="#available-metrics" title="Permanent link">&para;</a></h3>
-<p>HitStor exports 14 metrics: 9 gauges, 4 counters, and 1 per-agent metric.</p>
-<h4 id="gauges">Gauges<a class="headerlink" href="#gauges" title="Permanent link">&para;</a></h4>
+<h4 id="repository-and-agent-gauges">Repository and Agent Gauges<a class="headerlink" href="#repository-and-agent-gauges" title="Permanent link">&para;</a></h4>
 <table>
 <thead>
 <tr>
@@ -3519,53 +3682,54 @@
 </thead>
 <tbody>
 <tr>
-<td><code>hitstor_agents_total</code></td>
-<td>gauge</td>
-<td>Total number of registered agents</td>
-</tr>
-<tr>
-<td><code>hitstor_agents_active</code></td>
-<td>gauge</td>
-<td>Number of agents with recent backups</td>
-</tr>
-<tr>
-<td><code>hitstor_agents_stale</code></td>
-<td>gauge</td>
-<td>Number of agents past the stale threshold</td>
-</tr>
-<tr>
 <td><code>hitstor_snapshots_total</code></td>
 <td>gauge</td>
-<td>Total number of snapshots in the repository</td>
-</tr>
-<tr>
-<td><code>hitstor_storage_bytes</code></td>
-<td>gauge</td>
-<td>Total repository size in bytes</td>
-</tr>
-<tr>
-<td><code>hitstor_storage_raw_bytes</code></td>
-<td>gauge</td>
-<td>Total size of original (pre-dedup) data in bytes</td>
-</tr>
-<tr>
-<td><code>hitstor_dedup_ratio</code></td>
-<td>gauge</td>
-<td>Deduplication ratio (raw / stored)</td>
+<td>Total snapshots in the repository</td>
 </tr>
 <tr>
 <td><code>hitstor_packs_total</code></td>
 <td>gauge</td>
-<td>Number of pack files in the repository</td>
+<td>Total pack files in the repository</td>
 </tr>
 <tr>
-<td><code>hitstor_uptime_seconds</code></td>
+<td><code>hitstor_indexes_total</code></td>
 <td>gauge</td>
-<td>Server uptime in seconds</td>
+<td>Total index files in the repository</td>
+</tr>
+<tr>
+<td><code>hitstor_repository_size_bytes</code></td>
+<td>gauge</td>
+<td>Total repository size in bytes</td>
+</tr>
+<tr>
+<td><code>hitstor_active_sessions</code></td>
+<td>gauge</td>
+<td>Current active backup sessions</td>
+</tr>
+<tr>
+<td><code>hitstor_registered_agents</code></td>
+<td>gauge</td>
+<td>Total registered agents</td>
+</tr>
+<tr>
+<td><code>hitstor_agents_ok</code></td>
+<td>gauge</td>
+<td>Agents with a backup in the last 25 hours</td>
+</tr>
+<tr>
+<td><code>hitstor_agents_stale</code></td>
+<td>gauge</td>
+<td>Agents whose last backup is older than 25 hours</td>
+</tr>
+<tr>
+<td><code>hitstor_agents_never</code></td>
+<td>gauge</td>
+<td>Agents that have never backed up</td>
 </tr>
 </tbody>
 </table>
 <h4 id="counters">Counters<a class="headerlink" href="#counters" title="Permanent link">&para;</a></h4>
+<p>Counters reset when the server restarts.</p>
 <table>
 <thead>
 <tr>
@@ -3576,28 +3740,48 @@
 </thead>
 <tbody>
 <tr>
-<td><code>hitstor_backups_total</code></td>
+<td><code>hitstor_backups_completed_total</code></td>
 <td>counter</td>
-<td>Total number of completed backups since server start</td>
+<td>Successful backups</td>
 </tr>
 <tr>
 <td><code>hitstor_backups_failed_total</code></td>
 <td>counter</td>
-<td>Total number of failed backups since server start</td>
-</tr>
-<tr>
-<td><code>hitstor_restores_total</code></td>
-<td>counter</td>
-<td>Total number of completed restores since server start</td>
+<td>Failed or aborted backup sessions</td>
 </tr>
 <tr>
 <td><code>hitstor_bytes_received_total</code></td>
 <td>counter</td>
-<td>Total bytes received from agents since server start</td>
+<td>Bytes received from agents</td>
+</tr>
+<tr>
+<td><code>hitstor_chunks_received_total</code></td>
+<td>counter</td>
+<td>Chunks received from agents</td>
+</tr>
+<tr>
+<td><code>hitstor_checks_total</code></td>
+<td>counter</td>
+<td>Integrity checks run from the dashboard</td>
+</tr>
+<tr>
+<td><code>hitstor_check_errors_total</code></td>
+<td>counter</td>
+<td>Errors found by those checks</td>
+</tr>
+<tr>
+<td><code>hitstor_prunes_total</code></td>
+<td>counter</td>
+<td>Prune operations run from the dashboard</td>
+</tr>
+<tr>
+<td><code>hitstor_prune_freed_bytes_total</code></td>
+<td>counter</td>
+<td>Bytes freed by those prunes</td>
 </tr>
 </tbody>
 </table>
-<h4 id="per-agent-metric">Per-Agent Metric<a class="headerlink" href="#per-agent-metric" title="Permanent link">&para;</a></h4>
+<h4 id="per-agent-metrics">Per-Agent Metrics<a class="headerlink" href="#per-agent-metrics" title="Permanent link">&para;</a></h4>
 <table>
 <thead>
 <tr>
@@ -3609,10 +3793,22 @@
 </thead>
 <tbody>
 <tr>
-<td><code>hitstor_agent_last_backup_timestamp</code></td>
+<td><code>hitstor_agent_last_backup_timestamp_seconds</code></td>
 <td>gauge</td>
 <td><code>agent</code></td>
-<td>Unix timestamp of the agent's last successful backup</td>
+<td>Unix timestamp of the agent's last successful backup (0 if never)</td>
+</tr>
+<tr>
+<td><code>hitstor_agent_schedule_enabled</code></td>
+<td>gauge</td>
+<td><code>agent</code></td>
+<td>Legacy per-agent schedule flag (1/0); backup jobs keep their own schedules</td>
+</tr>
+<tr>
+<td><code>hitstor_agent_schedule_interval_hours</code></td>
+<td>gauge</td>
+<td><code>agent</code></td>
+<td>Legacy per-agent interval in hours</td>
 </tr>
 </tbody>
 </table>
@@ -3621,17 +3817,23 @@
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="nt">scrape_configs</span><span class="p">:</span>
 <a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">job_name</span><span class="p">:</span><span class="w"> </span><span class="s">"hitstor"</span>
 <a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">    </span><span class="nt">scrape_interval</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">30s</span>
-<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="w">    </span><span class="nt">static_configs</span><span class="p">:</span>
-<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">targets</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">"backup.example.com:8421"</span><span class="p p-Indicator">]</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="w">    </span><span class="nt">scheme</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">https</span>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="w">    </span><span class="nt">tls_config</span><span class="p">:</span>
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="w">      </span><span class="nt">ca_file</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/etc/prometheus/hitstor-server.crt</span><span class="w">  </span><span class="c1"># the server's certificate or CA</span>
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="w">    </span><span class="nt">static_configs</span><span class="p">:</span>
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">targets</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">"backup.example.com:8421"</span><span class="p p-Indicator">]</span>
 </code></pre></div>
 <p>For multiple HitStor servers:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="nt">scrape_configs</span><span class="p">:</span>
 <a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">job_name</span><span class="p">:</span><span class="w"> </span><span class="s">"hitstor"</span>
 <a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">    </span><span class="nt">scrape_interval</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">30s</span>
-<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="w">    </span><span class="nt">static_configs</span><span class="p">:</span>
-<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">targets</span><span class="p">:</span>
-<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">"backup-01.example.com:8421"</span>
-<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">"backup-02.example.com:8421"</span>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="w">    </span><span class="nt">scheme</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">https</span>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="w">    </span><span class="nt">tls_config</span><span class="p">:</span>
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="w">      </span><span class="nt">ca_file</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/etc/prometheus/hitstor-ca.crt</span>
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="w">    </span><span class="nt">static_configs</span><span class="p">:</span>
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">targets</span><span class="p">:</span>
+<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">"backup-01.example.com:8421"</span>
+<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">"backup-02.example.com:8421"</span>
 </code></pre></div>
 <h3 id="grafana-dashboard">Grafana Dashboard<a class="headerlink" href="#grafana-dashboard" title="Permanent link">&para;</a></h3>
 <p>To build a Grafana dashboard for HitStor:</p>
@@ -3650,8 +3852,8 @@
 </thead>
 <tbody>
 <tr>
-<td>Active Agents</td>
-<td><code>hitstor_agents_active</code></td>
+<td>Healthy Agents</td>
+<td><code>hitstor_agents_ok</code></td>
 <td>Stat</td>
 </tr>
 <tr>
@@ -3666,17 +3868,17 @@
 </tr>
 <tr>
 <td>Storage Used</td>
-<td><code>hitstor_storage_bytes</code></td>
+<td><code>hitstor_repository_size_bytes</code></td>
 <td>Stat (unit: bytes)</td>
 </tr>
 <tr>
-<td>Dedup Ratio</td>
-<td><code>hitstor_dedup_ratio</code></td>
+<td>Running Backups</td>
+<td><code>hitstor_active_sessions</code></td>
 <td>Stat</td>
 </tr>
 <tr>
 <td>Backup Rate</td>
-<td><code>rate(hitstor_backups_total[1h])</code></td>
+<td><code>rate(hitstor_backups_completed_total[1h])</code></td>
 <td>Time series</td>
 </tr>
 <tr>
@@ -3691,7 +3893,7 @@
 </tr>
 <tr>
 <td>Last Backup per Agent</td>
-<td><code>hitstor_agent_last_backup_timestamp</code></td>
+<td><code>hitstor_agent_last_backup_timestamp_seconds</code></td>
 <td>Table</td>
 </tr>
 </tbody>
@@ -3700,7 +3902,7 @@
 <li>Set up Grafana alerts on <code>hitstor_agents_stale &gt; 0</code> and <code>rate(hitstor_backups_failed_total[1h]) &gt; 0</code>.</li>
 </ol>
 <h2 id="webhook-alerting">Webhook Alerting<a class="headerlink" href="#webhook-alerting" title="Permanent link">&para;</a></h2>
-<p>HitStor can send webhook notifications when backup failures or stale agents are detected.</p>
+<p>HitStor can send webhook notifications when backup sessions fail, agents go stale, or Sentinel detects a threat. Each event is a JSON <code>POST</code> with <code>Content-Type: application/json</code>.</p>
 <h3 id="configuration">Configuration<a class="headerlink" href="#configuration" title="Permanent link">&para;</a></h3>
 <p>Set the webhook URL in the config file:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="c1"># /etc/hitstor/config.yaml</span>
@@ -3729,31 +3931,42 @@
 <td>25</td>
 <td>Hours without a backup before an agent is considered stale</td>
 </tr>
+<tr>
+<td><code>alert_notifier_plugins</code></td>
+<td>list</td>
+<td>(none)</td>
+<td><a href="#notifier-plugins">Notifier plugins</a> to load</td>
+</tr>
 </tbody>
 </table>
+<p>These keys can also be set under <strong>Settings → Notifications</strong>, which can send a test event. They are read at startup: restart the server after changing them.</p>
 <h3 id="alert-events">Alert Events<a class="headerlink" href="#alert-events" title="Permanent link">&para;</a></h3>
-<p>HitStor sends alerts for two event types:</p>
+<p>Every event has the same fields: <code>event</code>, <code>server</code> (always <code>hitstor</code>), <code>timestamp</code>, <code>agent</code>, <code>hostname</code> (when known), <code>message</code>, and <code>details</code>.</p>
 <h4 id="backup_failed"><code>backup_failed</code><a class="headerlink" href="#backup_failed" title="Permanent link">&para;</a></h4>
-<p>Sent immediately when a backup fails.</p>
+<p>Sent immediately when a backup session fails on the server: the agent disconnects during the upload, or the snapshot cannot be finalized. Failures the agent reports before uploading (for example, a database that cannot be read) show on the job page and in <a href="../reports/">reports</a>, but do not send a webhook.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="p">{</span>
 <a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">  </span><span class="nt">"event"</span><span class="p">:</span><span class="w"> </span><span class="s2">"backup_failed"</span><span class="p">,</span>
-<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="w">  </span><span class="nt">"agent"</span><span class="p">:</span><span class="w"> </span><span class="s2">"web-server-01"</span><span class="p">,</span>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="w">  </span><span class="nt">"server"</span><span class="p">:</span><span class="w"> </span><span class="s2">"hitstor"</span><span class="p">,</span>
 <a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="w">  </span><span class="nt">"timestamp"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2026-02-21T03:05:00Z"</span><span class="p">,</span>
-<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="w">  </span><span class="nt">"error"</span><span class="p">:</span><span class="w"> </span><span class="s2">"connection reset by peer"</span><span class="p">,</span>
-<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="w">  </span><span class="nt">"server"</span><span class="p">:</span><span class="w"> </span><span class="s2">"backup.example.com"</span>
-<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="p">}</span>
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="w">  </span><span class="nt">"agent"</span><span class="p">:</span><span class="w"> </span><span class="s2">"web-server-01"</span><span class="p">,</span>
+<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="w">  </span><span class="nt">"hostname"</span><span class="p">:</span><span class="w"> </span><span class="s2">"web-server-01"</span><span class="p">,</span>
+<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="w">  </span><span class="nt">"message"</span><span class="p">:</span><span class="w"> </span><span class="s2">"backup failed: agent disconnected during upload"</span><span class="p">,</span>
+<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="w">  </span><span class="nt">"details"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">"session_id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"3f9a..."</span><span class="p">,</span><span class="w"> </span><span class="nt">"chunks_received"</span><span class="p">:</span><span class="w"> </span><span class="mi">1520</span><span class="p">}</span>
+<a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a><span class="p">}</span>
 </code></pre></div>
 <h4 id="agent_stale"><code>agent_stale</code><a class="headerlink" href="#agent_stale" title="Permanent link">&para;</a></h4>
-<p>Sent when an agent has not completed a backup within the stale threshold.</p>
+<p>Sent when an agent has not completed a backup within the stale threshold. The server checks every 5 minutes; agents that have never backed up are not reported.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="p">{</span>
 <a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="w">  </span><span class="nt">"event"</span><span class="p">:</span><span class="w"> </span><span class="s2">"agent_stale"</span><span class="p">,</span>
-<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="w">  </span><span class="nt">"agent"</span><span class="p">:</span><span class="w"> </span><span class="s2">"staging-app"</span><span class="p">,</span>
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="w">  </span><span class="nt">"server"</span><span class="p">:</span><span class="w"> </span><span class="s2">"hitstor"</span><span class="p">,</span>
 <a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="w">  </span><span class="nt">"timestamp"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2026-02-21T14:00:00Z"</span><span class="p">,</span>
-<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="w">  </span><span class="nt">"last_backup"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2026-02-19T12:30:00Z"</span><span class="p">,</span>
-<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a><span class="w">  </span><span class="nt">"threshold_hours"</span><span class="p">:</span><span class="w"> </span><span class="mi">25</span><span class="p">,</span>
-<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a><span class="w">  </span><span class="nt">"server"</span><span class="p">:</span><span class="w"> </span><span class="s2">"backup.example.com"</span>
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="w">  </span><span class="nt">"agent"</span><span class="p">:</span><span class="w"> </span><span class="s2">"staging-app"</span><span class="p">,</span>
+<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a><span class="w">  </span><span class="nt">"message"</span><span class="p">:</span><span class="w"> </span><span class="s2">"no backup in 2d1h (threshold: 1d1h)"</span><span class="p">,</span>
+<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a><span class="w">  </span><span class="nt">"details"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">"last_backup"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2026-02-19T12:30:00Z"</span><span class="p">,</span><span class="w"> </span><span class="nt">"threshold_hours"</span><span class="p">:</span><span class="w"> </span><span class="mi">25</span><span class="p">}</span>
 <a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a><span class="p">}</span>
 </code></pre></div>
+<h4 id="threat_detected"><code>threat_detected</code><a class="headerlink" href="#threat_detected" title="Permanent link">&para;</a></h4>
+<p>Sent by <a href="../sentinel/">Ransomware Sentinel</a> when it reports a threat at or above its confidence threshold.</p>
 <h3 id="cooldown-and-recovery">Cooldown and Recovery<a class="headerlink" href="#cooldown-and-recovery" title="Permanent link">&para;</a></h3>
 <p>To avoid alert fatigue, HitStor applies cooldown logic:</p>
 <ul>
@@ -3765,11 +3978,12 @@
 <p>For custom notification delivery (Slack, PagerDuty, email, etc.), use notifier plugins instead of or in addition to the webhook.</p>
 <p>Configure notifier plugins in the config file:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="c1"># /etc/hitstor/config.yaml</span>
-<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="nt">alert_notifier_plugins</span><span class="p">:</span>
-<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/usr/lib/hitstor/plugins/slack-notifier</span>
-<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/usr/lib/hitstor/plugins/pagerduty-notifier</span>
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="nt">plugin_dir</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/usr/lib/hitstor/plugins</span>
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="nt">alert_notifier_plugins</span><span class="p">:</span>
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">slack</span>
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">pagerduty</span>
 </code></pre></div>
-<p>Notifier plugins receive the same JSON payload as the webhook and can transform it for their target system. See the <a href="../../user-guide/plugins/">Plugins</a> documentation for details on writing and installing plugins.</p>
+<p>Each name maps to a binary <code>hitstor-notifier-&lt;name&gt;</code>, looked up in <code>plugin_dir</code> and then in <code>PATH</code>. Notifier plugins receive the same events as the webhook (over the plugin gRPC interface) and can transform them for their target system. See the <a href="../../user-guide/plugins/">Plugins</a> documentation for details on writing and installing plugins.</p>
 <h2 id="next-steps">Next Steps<a class="headerlink" href="#next-steps" title="Permanent link">&para;</a></h2>
 <ul>
 <li><a href="../dashboard/">Dashboard</a> -- view metrics and agent status in the web UI</li>

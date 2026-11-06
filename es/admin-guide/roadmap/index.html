@@ -57,6 +57,8 @@
       
     
     
+      <link rel="stylesheet" href="../../../stylesheets/extra.css">
+    
     <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
@@ -73,7 +75,7 @@
     
     
     
-    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="custom">
   
     
     <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
@@ -98,7 +100,7 @@
   <nav class="md-header__inner md-grid" aria-label="Cabecera">
     <a href="../../" title="Documentación de HitStor" class="md-header__button md-logo" aria-label="Documentación de HitStor" data-md-component="logo">
       
-  <img src="../../../assets/logo.png" alt="logo">
+  <img src="../../../assets/icon.svg" alt="logo">
 
     </a>
     <label class="md-header__button md-icon" for="__drawer">
@@ -128,7 +130,7 @@
     
     
     
-    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="custom"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
     
       <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
@@ -138,7 +140,7 @@
     
     
     
-    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="custom" data-md-color-accent="custom"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
     
       <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
@@ -393,7 +395,7 @@
   <label class="md-nav__title" for="__drawer">
     <a href="../../" title="Documentación de HitStor" class="md-nav__button md-logo" aria-label="Documentación de HitStor" data-md-component="logo">
       
-  <img src="../../../assets/logo.png" alt="logo">
+  <img src="../../../assets/icon.svg" alt="logo">
 
     </a>
     Documentación de HitStor
@@ -1087,6 +1089,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user-guide/sql-server/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SQL Server
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -1382,6 +1412,62 @@
   
   
     <li class="md-nav__item">
+      <a href="../users/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Usuarios y acceso
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reports/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reportes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../settings/" class="md-nav__link">
         
   
@@ -1615,10 +1701,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#bare-metal-restore-in-design" class="md-nav__link">
+  <a href="#bare-metal-restore" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Restauración bare-metal (en diseño)
+        Restauración bare-metal
       
     </span>
   </a>
@@ -1626,10 +1712,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#permanently-removed-v200" class="md-nav__link">
+  <a href="#permanently-removed" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Eliminado de forma permanente (v2.0.0)
+        Eliminado de forma permanente
       
     </span>
   </a>
@@ -2607,6 +2693,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../reference/agent-commands/plugin/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    plugin
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../reference/agent-commands/service/" class="md-nav__link">
         
   
@@ -2956,6 +3070,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../dev-guide/plugin-architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Arquitectura de plugins
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../dev-guide/dev-environment/" class="md-nav__link">
         
   
@@ -3212,10 +3354,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#bare-metal-restore-in-design" class="md-nav__link">
+  <a href="#bare-metal-restore" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Restauración bare-metal (en diseño)
+        Restauración bare-metal
       
     </span>
   </a>
@@ -3223,10 +3365,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#permanently-removed-v200" class="md-nav__link">
+  <a href="#permanently-removed" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Eliminado de forma permanente (v2.0.0)
+        Eliminado de forma permanente
       
     </span>
   </a>
@@ -3276,10 +3418,12 @@
 
 
 <h1 id="hoja-de-ruta">Hoja de ruta<a class="headerlink" href="#hoja-de-ruta" title="Permanent link">&para;</a></h1>
-<p>HitStor es un <strong>producto de respaldo y restauración de sistemas de archivos para Windows y Linux</strong>,
-y la hoja de ruta existe para que sea excelente exactamente en eso. Por defecto, queda fuera
-del alcance todo trabajo que no mejore la capacidad de respaldar y restaurar archivos de forma
-rápida, segura y verificable.</p>
+<p>HitStor es un <strong>producto de respaldo y restauración para Windows y Linux</strong>: sistemas de
+archivos en el núcleo y aplicaciones mediante
+<a href="../../dev-guide/plugin-architecture/">plugins de carga de trabajo</a> instalables. La hoja de
+ruta existe para que sea excelente en eso. Por defecto, queda fuera del alcance todo trabajo
+que no mejore la capacidad de respaldar y restaurar datos de forma rápida, segura y
+verificable.</p>
 <h2 id="shipped">Entregado<a class="headerlink" href="#shipped" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -3302,12 +3446,24 @@ rápida, segura y verificable.</p>
 <td>Tareas, agentes, almacenamiento, restauraciones, progreso vía SSE</td>
 </tr>
 <tr>
+<td>Usuarios, roles y verificación en dos pasos</td>
+<td>Cuentas personales con roles limitados por agente, TOTP obligatorio, registro de auditoría encadenado por hash</td>
+</tr>
+<tr>
+<td>Correo</td>
+<td>Invitaciones y enlaces para restablecer la contraseña por SMTP o Microsoft 365 (OAuth 2.0)</td>
+</tr>
+<tr>
+<td>Reportes PDF programados</td>
+<td>Resumen de protección y estado diario de los respaldos, enviados por correo según una programación o descargados</td>
+</tr>
+<tr>
 <td>Respaldos incrementales y full sintético</td>
 <td>Reutilización de la instantánea (snapshot) padre, reescaneo completo periódico</td>
 </tr>
 <tr>
 <td>Programación avanzada</td>
-<td>Intervalo, cron de 5 campos, con zona horaria y manejo del horario de verano (DST)</td>
+<td>Cron de 5 campos con <code>L</code>, <code>D#N</code> y <code>DL</code>, constructor de programación, con zona horaria y manejo del horario de verano (DST)</td>
 </tr>
 <tr>
 <td>Descubrimiento automático de agentes</td>
@@ -3330,12 +3486,28 @@ rápida, segura y verificable.</p>
 <td>Restauración completa del sistema con varias tareas sobre un host reconstruido</td>
 </tr>
 <tr>
+<td><a href="../../user-guide/bare-metal-restore/">Restauración bare-metal (Linux)</a></td>
+<td>Medios de rescate de ReaR generados en cada host; atributos extendidos y perfil del sistema capturados con <code>--bare-metal</code></td>
+</tr>
+<tr>
 <td>Benchmarks</td>
 <td>Arnés reproducible de respaldo/restauración, comparación opcional con restic</td>
 </tr>
 <tr>
 <td>Ransomware Sentinel</td>
 <td>Telemetría de Gemini sobre instantáneas del sistema de archivos (opcional)</td>
+</tr>
+<tr>
+<td>Plugins de carga de trabajo</td>
+<td>Paquetes <code>.hpk</code> firmados que se instalan por agente, localmente o desde el dashboard; respaldo y restauración a un punto en el tiempo a través del agente; retención que respeta las cadenas de respaldo</td>
+</tr>
+<tr>
+<td>Planes de respaldo</td>
+<td>Las tareas de carga de trabajo programan por separado los respaldos completos, diferenciales y de log de una misma selección; resultados por base de datos</td>
+</tr>
+<tr>
+<td><a href="../../user-guide/sql-server/">SQL Server</a></td>
+<td>Plugin <code>mssql</code> sobre VDI: respaldos completos, diferenciales y de log; restauración a un punto en el tiempo</td>
 </tr>
 </tbody>
 </table>
@@ -3349,8 +3521,8 @@ rápida, segura y verificable.</p>
 </thead>
 <tbody>
 <tr>
-<td><strong>Restauración bare-metal</strong></td>
-<td>Medios de recuperación arrancables más los metadatos necesarios para reconstruir un sistema arrancable; vea más abajo</td>
+<td><strong>Restauración bare-metal en Windows</strong></td>
+<td>Medios de recuperación WinPE, descriptores de seguridad de NTFS y reconstrucción de BCD; vea más abajo</td>
 </tr>
 </tbody>
 </table>
@@ -3373,31 +3545,35 @@ rápida, segura y verificable.</p>
 </tr>
 </tbody>
 </table>
-<h2 id="bare-metal-restore-in-design">Restauración bare-metal (en diseño)<a class="headerlink" href="#bare-metal-restore-in-design" title="Permanent link">&para;</a></h2>
-<p>El asistente actual de <a href="../../user-guide/disaster-recovery/">recuperación ante desastres</a>
-restaura archivos en un host que <strong>ya arranca</strong> y que ya ejecuta un agente registrado.
-Una verdadera restauración bare-metal requiere además:</p>
+<h2 id="bare-metal-restore">Restauración bare-metal<a class="headerlink" href="#bare-metal-restore" title="Permanent link">&para;</a></h2>
+<p>La <a href="../../user-guide/bare-metal-restore/">restauración bare-metal</a> reconstruye un host
+Linux a partir de un disco vacío. Relax-and-Recover (ReaR) genera medios de rescate
+arrancables en cada host, recrea el diseño de disco y reinstala el cargador de arranque;
+HitStor restaura los archivos. Los respaldos hechos con <code>--bare-metal</code> capturan además
+los atributos extendidos (contextos de SELinux, capacidades de archivo, ACL POSIX) y el
+perfil del sistema (tabla de particiones, UUID de los sistemas de archivos, LVM,
+<code>/etc/fstab</code>).</p>
+<p>Falta Windows, que requiere:</p>
 <ol>
-<li><strong>Medios de arranque</strong>: una imagen arrancable de Linux/WinPE que incluya el agente, para
-   poder recuperar una máquina con el disco vacío.</li>
-<li><strong>Metadatos de archivo más completos</strong>: descriptores de seguridad de Windows y
-   ACL/xattrs POSIX (incluidos los contextos de SELinux), que el formato actual de
-   instantáneas no captura.</li>
-<li><strong>Captura del diseño de disco</strong>: tabla de particiones, UUID de los sistemas de archivos y
-   configuración de LVM, para poder recrear las particiones y que <code>/etc/fstab</code> siga resolviendo.</li>
-<li><strong>Reconstrucción del cargador de arranque</strong>: GRUB/EFI en Linux y BCD en Windows.</li>
+<li><strong>Medios de arranque</strong>: una imagen WinPE que incluya el agente.</li>
+<li><strong>Metadatos de archivo más completos</strong>: descriptores de seguridad de Windows, que el
+   formato actual de instantáneas no captura.</li>
+<li><strong>Reconstrucción del cargador de arranque</strong>: BCD en Windows.</li>
 </ol>
 <p>Restaurar solo los archivos en un disco vacío produce un sistema <strong>que no arranca</strong>, por lo
 que estas piezas se entregarán juntas y no como funcionalidades independientes.</p>
-<h2 id="permanently-removed-v200">Eliminado de forma permanente (v2.0.0)<a class="headerlink" href="#permanently-removed-v200" title="Permanent link">&para;</a></h2>
-<p>Estos elementos <strong>no</strong> están pospuestos: se eliminaron del producto y no está previsto
-que regresen:</p>
+<h2 id="permanently-removed">Eliminado de forma permanente<a class="headerlink" href="#permanently-removed" title="Permanent link">&para;</a></h2>
+<p>Estos elementos se eliminaron del producto antes de la primera versión pública (v0.1.0)
+y no está previsto que regresen en su forma original:</p>
 <ul>
 <li>Respaldo de Microsoft 365 y Google Workspace</li>
-<li>Respaldo de bases de datos (PostgreSQL, MySQL, MariaDB, SQL Server, Oracle)</li>
+<li>Las integraciones de bases de datos incorporadas (PostgreSQL, MySQL, MariaDB, SQL Server, Oracle)</li>
 <li>Respaldo sin agente de VM en la nube (GCP, AWS, Azure) y VMware/vSphere</li>
 <li>El tipo de plugin recolector de cargas de trabajo (workload collector) que los atendía</li>
 </ul>
+<p>El respaldo de bases de datos regresa ahora como
+<a href="../../dev-guide/plugin-architecture/">plugins de carga de trabajo</a> instalables que se ejecutan
+en el servidor de la base de datos, empezando por <a href="../../user-guide/sql-server/">SQL Server</a>.</p>
 <p>Los archivos <code>config.yaml</code> existentes que contengan <code>collector_plugins</code> o las claves de
 integración relacionadas siguen cargándose; esas claves simplemente se ignoran (campos desconocidos).</p>
 <h2 id="also-not-on-the-roadmap">Tampoco está en la hoja de ruta<a class="headerlink" href="#also-not-on-the-roadmap" title="Permanent link">&para;</a></h2>

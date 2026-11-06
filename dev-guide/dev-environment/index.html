@@ -13,7 +13,7 @@
         <link rel="canonical" href="https://hooperits.github.io/hitstor/dev-guide/dev-environment/">
       
       
-        <link rel="prev" href="../codebase-overview/">
+        <link rel="prev" href="../plugin-architecture/">
       
       
         <link rel="next" href="../build-and-packaging/">
@@ -57,6 +57,8 @@
       
     
     
+      <link rel="stylesheet" href="../../stylesheets/extra.css">
+    
     <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
@@ -73,7 +75,7 @@
     
     
     
-    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="custom">
   
     
     <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
@@ -98,7 +100,7 @@
   <nav class="md-header__inner md-grid" aria-label="Header">
     <a href="../.." title="HitStor Documentation" class="md-header__button md-logo" aria-label="HitStor Documentation" data-md-component="logo">
       
-  <img src="../../assets/logo.png" alt="logo">
+  <img src="../../assets/icon.svg" alt="logo">
 
     </a>
     <label class="md-header__button md-icon" for="__drawer">
@@ -128,7 +130,7 @@
     
     
     
-    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="custom"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
     
       <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
@@ -138,7 +140,7 @@
     
     
     
-    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="custom" data-md-color-accent="custom"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
     
       <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
@@ -393,7 +395,7 @@
   <label class="md-nav__title" for="__drawer">
     <a href="../.." title="HitStor Documentation" class="md-nav__button md-logo" aria-label="HitStor Documentation" data-md-component="logo">
       
-  <img src="../../assets/logo.png" alt="logo">
+  <img src="../../assets/icon.svg" alt="logo">
 
     </a>
     HitStor Documentation
@@ -1087,6 +1089,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user-guide/sql-server/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SQL Server
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -1359,6 +1389,62 @@
     
   
     Dashboard
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../admin-guide/users/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Users and Access
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../admin-guide/reports/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reports
   
 
     
@@ -2480,6 +2566,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../reference/agent-commands/plugin/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    plugin
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../reference/agent-commands/service/" class="md-nav__link">
         
   
@@ -2812,6 +2926,34 @@
     
   
     Codebase Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plugin-architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Plugin Architecture
   
 
     
@@ -3386,12 +3528,13 @@
 <p>Install the Protocol Buffers compiler:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>sudo<span class="w"> </span>apt<span class="w"> </span>install<span class="w"> </span>-y<span class="w"> </span>protobuf-compiler
 <a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>protoc<span class="w"> </span>--version
-<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>libprotoc<span class="w"> </span><span class="m">27</span>.3
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>libprotoc<span class="w"> </span><span class="m">3</span>.21.12
 </code></pre></div>
 <h3 id="go-plugins">Go Plugins<a class="headerlink" href="#go-plugins" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>go<span class="w"> </span>install<span class="w"> </span>google.golang.org/protobuf/cmd/protoc-gen-go@latest
 <a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>go<span class="w"> </span>install<span class="w"> </span>google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
 </code></pre></div>
+<p>The checked-in <code>.pb.go</code> files were generated with <code>protoc</code> 3.21.12, <code>protoc-gen-go</code> v1.36.11 and <code>protoc-gen-go-grpc</code> v1.6.2 (see the header of each generated file); use the same versions to keep regeneration diffs small.</p>
 <p>Verify both are on your <code>PATH</code>:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>which<span class="w"> </span>protoc-gen-go
 <a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>/home/user/gopath/bin/protoc-gen-go
@@ -3402,18 +3545,20 @@
 <h2 id="packaging-tools">Packaging Tools<a class="headerlink" href="#packaging-tools" title="Permanent link">&para;</a></h2>
 <h3 id="nfpm-linux-packages">nfpm (Linux Packages)<a class="headerlink" href="#nfpm-linux-packages" title="Permanent link">&para;</a></h3>
 <p><a href="https://nfpm.goreleaser.com/">nfpm</a> builds <code>.deb</code> and <code>.rpm</code> packages from YAML configuration files.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>go<span class="w"> </span>install<span class="w"> </span>github.com/goreleaser/nfpm/v2/cmd/nfpm@latest
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>go<span class="w"> </span>install<span class="w"> </span>github.com/goreleaser/nfpm/v2/cmd/nfpm@v2.44.0
 <a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>nfpm<span class="w"> </span>--version
 </code></pre></div>
+<p>The release workflow pins nfpm v2.44.0.</p>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
 <p><code>go install</code> places the binary in <code>$GOPATH/bin</code>, <strong>not</strong> <code>$(go env GOROOT)/bin</code>. Make sure <code>$GOPATH/bin</code> is on your <code>PATH</code>.</p>
 </div>
 <h3 id="nsis-makensis-windows-packages">NSIS / makensis (Windows Packages)<a class="headerlink" href="#nsis-makensis-windows-packages" title="Permanent link">&para;</a></h3>
 <p>Required only when building Windows <code>.exe</code> installers.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>sudo<span class="w"> </span>apt<span class="w"> </span>install<span class="w"> </span>-y<span class="w"> </span>nsis
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>sudo<span class="w"> </span>apt<span class="w"> </span>install<span class="w"> </span>-y<span class="w"> </span>nsis<span class="w"> </span>python3-pil
 <a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>makensis<span class="w"> </span>-VERSION
 </code></pre></div>
+<p>The Windows targets first run <code>make render-windows-icon</code> (<code>scripts/render-windows-icon.sh</code>), which uses Python with Pillow (<code>python3-pil</code>) to generate <code>packaging/nsis/hitstor.ico</code> from <code>assets/icon.png</code>.</p>
 <h2 id="docker">Docker<a class="headerlink" href="#docker" title="Permanent link">&para;</a></h2>
 <p>Required only when building container images.</p>
 <p>Install Docker Engine following the <a href="https://docs.docker.com/engine/install/ubuntu/">official documentation</a>.</p>
@@ -3421,10 +3566,10 @@
 </code></pre></div>
 <h2 id="documentation-tools">Documentation Tools<a class="headerlink" href="#documentation-tools" title="Permanent link">&para;</a></h2>
 <p><a href="https://www.mkdocs.org/">MkDocs</a> with the <a href="https://squidfunk.github.io/mkdocs-material/">Material</a> theme generates the documentation site.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>pip<span class="w"> </span>install<span class="w"> </span>mkdocs-material
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>pip<span class="w"> </span>install<span class="w"> </span>-r<span class="w"> </span>requirements-docs.txt
 <a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>mkdocs<span class="w"> </span>--version
 </code></pre></div>
-<p>This also installs all required Markdown extensions (admonitions, tabbed, superfences, etc.).</p>
+<p><code>requirements-docs.txt</code> pins MkDocs, Material, and <a href="https://ultrabug.github.io/mkdocs-static-i18n/">mkdocs-static-i18n</a> (the English/Spanish site). Material brings the Markdown extensions the site uses (admonitions, tabbed, superfences, etc.).</p>
 <h2 id="summary">Summary<a class="headerlink" href="#summary" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -3464,6 +3609,11 @@
 <td><code>makensis</code></td>
 <td>Windows installers</td>
 <td><code>makensis -VERSION</code></td>
+</tr>
+<tr>
+<td><code>python3</code> + Pillow</td>
+<td>Windows installer icon</td>
+<td><code>python3 -c 'import PIL'</code></td>
 </tr>
 <tr>
 <td><code>docker</code></td>

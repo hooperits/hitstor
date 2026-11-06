@@ -55,6 +55,8 @@
       
     
     
+      <link rel="stylesheet" href="../stylesheets/extra.css">
+    
     <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
@@ -71,7 +73,7 @@
     
     
     
-    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="custom">
   
     
     <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
@@ -96,7 +98,7 @@
   <nav class="md-header__inner md-grid" aria-label="Cabecera">
     <a href="./" title="Documentación de HitStor" class="md-header__button md-logo" aria-label="Documentación de HitStor" data-md-component="logo">
       
-  <img src="../assets/logo.png" alt="logo">
+  <img src="../assets/icon.svg" alt="logo">
 
     </a>
     <label class="md-header__button md-icon" for="__drawer">
@@ -126,7 +128,7 @@
     
     
     
-    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="custom"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
     
       <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
@@ -136,7 +138,7 @@
     
     
     
-    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="custom" data-md-color-accent="custom"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
     
       <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
@@ -378,7 +380,9 @@
           
             
               
-              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" hidden>
                 <div class="md-sidebar__scrollwrap">
                   <div class="md-sidebar__inner">
                     
@@ -391,7 +395,7 @@
   <label class="md-nav__title" for="__drawer">
     <a href="./" title="Documentación de HitStor" class="md-nav__button md-logo" aria-label="Documentación de HitStor" data-md-component="logo">
       
-  <img src="../assets/logo.png" alt="logo">
+  <img src="../assets/icon.svg" alt="logo">
 
     </a>
     Documentación de HitStor
@@ -478,10 +482,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#overview" class="md-nav__link">
+  <a href="#features" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Resumen
+        Características
       
     </span>
   </a>
@@ -489,10 +493,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#key-features" class="md-nav__link">
+  <a href="#a-look-at-the-dashboard" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Características principales
+        Un vistazo al dashboard
       
     </span>
   </a>
@@ -500,10 +504,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#quick-start" class="md-nav__link">
+  <a href="#where-to-start" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Inicio rápido
+        Por dónde empezar
       
     </span>
   </a>
@@ -1176,6 +1180,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="user-guide/sql-server/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SQL Server
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -1448,6 +1480,62 @@
     
   
     Dashboard
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="admin-guide/users/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Usuarios y acceso
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="admin-guide/reports/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reportes
   
 
     
@@ -2569,6 +2657,34 @@
   
   
     <li class="md-nav__item">
+      <a href="reference/agent-commands/plugin/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    plugin
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="reference/agent-commands/service/" class="md-nav__link">
         
   
@@ -2918,6 +3034,34 @@
   
   
     <li class="md-nav__item">
+      <a href="dev-guide/plugin-architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Arquitectura de plugins
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="dev-guide/dev-environment/" class="md-nav__link">
         
   
@@ -3122,6 +3266,8 @@
             
             
               
+                
+              
               <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
                 <div class="md-sidebar__scrollwrap">
                   <div class="md-sidebar__inner">
@@ -3141,10 +3287,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#overview" class="md-nav__link">
+  <a href="#features" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Resumen
+        Características
       
     </span>
   </a>
@@ -3152,10 +3298,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#key-features" class="md-nav__link">
+  <a href="#a-look-at-the-dashboard" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Características principales
+        Un vistazo al dashboard
       
     </span>
   </a>
@@ -3163,10 +3309,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#quick-start" class="md-nav__link">
+  <a href="#where-to-start" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Inicio rápido
+        Por dónde empezar
       
     </span>
   </a>
@@ -3198,72 +3344,182 @@
               <article class="md-content__inner md-typeset">
                 
                   
+  
+
 
 
   
   
 
 
-<h1 id="hitstor">HitStor<a class="headerlink" href="#hitstor" title="Permanent link">&para;</a></h1>
-<p>Herramienta de respaldo cifrada y con deduplicación, escrita en Go.</p>
-<h2 id="overview">Resumen<a class="headerlink" href="#overview" title="Permanent link">&para;</a></h2>
-<p>HitStor ofrece respaldos seguros y eficientes con cifrado del lado del cliente, deduplicación definida por contenido y compresión. Admite backends de almacenamiento locales y compatibles con S3, agentes de respaldo remotos sobre gRPC/TLS, un dashboard web y una arquitectura de plugins extensible.</p>
-<h2 id="key-features">Características principales<a class="headerlink" href="#key-features" title="Permanent link">&para;</a></h2>
+<h1 class="md-visually-hidden" id="hitstor">HitStor<a class="headerlink" href="#hitstor" title="Permanent link">&para;</a></h1>
+<div class="hero">
+<p><img alt="HitStor" class="hero-logo" src="../assets/logo.png#only-light" />
+<img alt="HitStor" class="hero-logo" src="../assets/logo-dark.png#only-dark" /></p>
+<p class="tagline">Respaldos cifrados y deduplicados para Windows y Linux: servidor, agentes y dashboard web.</p>
+<p><a class="md-button md-button--primary" href="installation/quickstart/">Inicio rápido</a>
+<a class="md-button" href="https://github.com/hooperits/hitstor/releases/latest">Descargas</a>
+<a class="md-button" href="https://github.com/hooperits/hitstor/blob/master/CHANGELOG.md">Novedades de la 0.2.0</a></p>
+</div>
+<p><img alt="Dashboard de HitStor con las tareas de respaldo programadas" class="screenshot" src="../assets/screenshots/es/backups.webp" /></p>
+<p>HitStor respalda archivos y aplicaciones de sus equipos Windows y Linux en un
+repositorio que usted controla: un disco local o cualquier bucket compatible
+con S3. Un <strong>servidor</strong> central programa el trabajo, los <strong>agentes</strong> de cada
+equipo hacen los respaldos y las restauraciones, y un <strong>dashboard web</strong> le
+permite a su equipo operarlo todo desde el navegador. Los datos se deduplican
+entre todos los equipos, se comprimen con Zstd y se cifran con AES-256-GCM antes
+de escribirse.</p>
+<h2 id="features">Características<a class="headerlink" href="#features" title="Permanent link">&para;</a></h2>
+<div class="grid cards">
 <ul>
-<li><strong>Cifrado del lado del cliente</strong>: AES-256-GCM con derivación de claves scrypt</li>
-<li><strong>Deduplicación definida por contenido</strong>: división en fragmentos (chunks) con FastCDC (256 KiB–4 MiB)</li>
-<li><strong>Compresión</strong>: compresión Zstd por fragmento antes del cifrado</li>
-<li><strong>Servidor de respaldo remoto</strong>: servidor gRPC con TLS y autenticación por clave de API</li>
-<li><strong>Dashboard web</strong>: tareas de respaldo, agentes, almacenamiento, restauración y flujos de DR</li>
-<li><strong>Restauración bare-metal</strong>: medios de recuperación basados en ReaR para hosts Linux</li>
-<li><strong>Arquitectura de plugins</strong>: almacenamiento, notificadores, hooks y escáneres de sistemas de archivos (go-plugin gRPC)</li>
-<li><strong>E/S en paralelo</strong>: pools de workers para respaldos y restauraciones más rápidos</li>
-<li><strong>Un único binario estático</strong>: despliegue sin dependencias con <code>CGO_ENABLED=0</code></li>
+<li>
+<p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 17a2 2 0 0 1-2-2c0-1.11.89-2 2-2a2 2 0 0 1 2 2 2 2 0 0 1-2 2m6 3V10H6v10zm0-12a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V10c0-1.11.89-2 2-2h1V6a5 5 0 0 1 5-5 5 5 0 0 1 5 5v2zm-6-5a3 3 0 0 0-3 3v2h6V6a3 3 0 0 0-3-3"/></svg></span> <strong>Cifrado y deduplicación</strong></p>
+<hr />
+<p>Fragmentación FastCDC (256 KiB–4 MiB), deduplicación entre equipos,
+compresión Zstd y AES-256-GCM. Repositorios locales y compatibles con S3.</p>
+<p><a href="reference/internals/"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13.22 19.03a.75.75 0 0 1 0-1.06L18.19 13H3.75a.75.75 0 0 1 0-1.5h14.44l-4.97-4.97a.749.749 0 0 1 .326-1.275.75.75 0 0 1 .734.215l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0"/></svg></span> Cómo funciona</a></p>
+</li>
+<li>
+<p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 19h1a1 1 0 0 1 1 1h7v2h-7a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1H2v-2h7a1 1 0 0 1 1-1h1v-2H4a1 1 0 0 1-1-1v-4a1 1 0 0 1 1-1h16a1 1 0 0 1 1 1v4a1 1 0 0 1-1 1h-7zM4 3h16a1 1 0 0 1 1 1v4a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1m5 4h1V5H9zm0 8h1v-2H9zM5 5v2h2V5zm0 8v2h2v-2z"/></svg></span> <strong>Servidor y agentes</strong></p>
+<hr />
+<p>Un servidor y agentes para Linux (amd64, arm64) y Windows que corren como
+servicios, se comunican por gRPC sobre TLS y solo envían datos nuevos.</p>
+<p><a href="admin-guide/agent-deployment/"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13.22 19.03a.75.75 0 0 1 0-1.06L18.19 13H3.75a.75.75 0 0 1 0-1.5h14.44l-4.97-4.97a.749.749 0 0 1 .326-1.275.75.75 0 0 1 .734.215l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0"/></svg></span> Desplegar agentes</a></p>
+</li>
+<li>
+<p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M15 13h1.5v2.82l2.44 1.41-.75 1.3L15 16.69zm4-5H5v11h4.67c-.43-.91-.67-1.93-.67-3a7 7 0 0 1 7-7c1.07 0 2.09.24 3 .67zM5 21a2 2 0 0 1-2-2V5c0-1.11.89-2 2-2h1V1h2v2h8V1h2v2h1a2 2 0 0 1 2 2v6.1c1.24 1.26 2 2.99 2 4.9a7 7 0 0 1-7 7c-1.91 0-3.64-.76-4.9-2zm11-9.85A4.85 4.85 0 0 0 11.15 16c0 2.68 2.17 4.85 4.85 4.85A4.85 4.85 0 0 0 20.85 16c0-2.68-2.17-4.85-4.85-4.85"/></svg></span> <strong>Respaldos programados y verificados</strong></p>
+<hr />
+<p>Programación cron con zonas horarias, instantáneas consistentes (VSS, LVM,
+btrfs) y una verificación de restauración automática después de cada
+respaldo.</p>
+<p><a href="admin-guide/backup-jobs/"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13.22 19.03a.75.75 0 0 1 0-1.06L18.19 13H3.75a.75.75 0 0 1 0-1.5h14.44l-4.97-4.97a.749.749 0 0 1 .326-1.275.75.75 0 0 1 .734.215l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0"/></svg></span> Tareas de respaldo</a></p>
+</li>
+<li>
+<p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 3a9 9 0 0 0-9 9H0l4 4 4-4H5a7 7 0 0 1 7-7 7 7 0 0 1 7 7 7 7 0 0 1-7 7c-1.5 0-2.91-.5-4.06-1.3L6.5 19.14A9.1 9.1 0 0 0 12 21a9 9 0 0 0 9-9 9 9 0 0 0-9-9m2 9a2 2 0 0 0-2-2 2 2 0 0 0-2 2 2 2 0 0 0 2 2 2 2 0 0 0 2-2"/></svg></span> <strong>Restauración y recuperación ante desastres</strong></p>
+<hr />
+<p>Explore instantáneas, restaure archivos donde los necesite o reconstruya un
+equipo completo con el asistente de recuperación ante desastres.</p>
+<p><a href="user-guide/restore/"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13.22 19.03a.75.75 0 0 1 0-1.06L18.19 13H3.75a.75.75 0 0 1 0-1.5h14.44l-4.97-4.97a.749.749 0 0 1 .326-1.275.75.75 0 0 1 .734.215l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0"/></svg></span> Restauración</a></p>
+</li>
+<li>
+<p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 14c-2.42 0-4.7-.6-6-1.55V9.64c1.47.83 3.61 1.36 6 1.36s4.53-.53 6-1.36v2.44c.33-.05.66-.08 1-.08s.67.03 1 .08V7c0-2.21-3.58-4-8-4S4 4.79 4 7v10c0 2.21 3.59 4 8 4h.29a7.4 7.4 0 0 1-.29-2c-3.87 0-6-1.5-6-2v-2.23c1.61.78 3.72 1.23 6 1.23.24 0 .47 0 .7-.03.4-.83.95-1.56 1.62-2.16-.74.12-1.52.19-2.32.19m0-9c3.87 0 6 1.5 6 2s-2.13 2-6 2-6-1.5-6-2 2.13-2 6-2m10.7 14.6v-1l1.1-.8c.1-.1.2-.2.1-.3l-1-1.7c0-.1-.2-.1-.3-.1l-1.2.5c-.3-.2-.6-.4-.9-.5l-.2-1.3c0-.1-.1-.2-.2-.2h-2c-.2 0-.3.1-.3.2l-.2 1.3c-.3.2-.5.3-.8.5l-1.2-.5c-.1 0-.2 0-.3.1l-1 1.7c0 .1 0 .2.1.3l1.1.8v1l-1.1.8c-.1.1-.2.2-.1.3l1 1.7c.1.1.2.1.3.1l1.2-.5c.2.2.5.4.8.5l.2 1.3c.1.1.2.2.3.2h2c.1 0 .2-.1.2-.2l.2-1.3c.3-.2.5-.3.8-.5l1.2.4c.1 0 .2 0 .3-.1l1-1.7c.1-.1.1-.2 0-.2zm-3.7.9c-.8 0-1.5-.7-1.5-1.5s.7-1.5 1.5-1.5 1.5.7 1.5 1.5-.7 1.5-1.5 1.5"/></svg></span> <strong>SQL Server y plugins</strong></p>
+<hr />
+<p>Plugins de carga de trabajo firmados e instalados por agente. El plugin de
+SQL Server hace respaldos completos, diferenciales y de log mediante VDI,
+con restauración a un punto en el tiempo.</p>
+<p><a href="user-guide/sql-server/"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13.22 19.03a.75.75 0 0 1 0-1.06L18.19 13H3.75a.75.75 0 0 1 0-1.5h14.44l-4.97-4.97a.749.749 0 0 1 .326-1.275.75.75 0 0 1 .734.215l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0"/></svg></span> SQL Server</a></p>
+</li>
+<li>
+<p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4m0-6a2 2 0 1 1 0 4c-1.11 0-2-.89-2-2s.9-2 2-2m2 14H2v-3c0-2.67 5.33-4 8-4 1 0 2.38.19 3.71.56-.3.56-.48 1.18-.5 1.83-.98-.29-2.1-.49-3.21-.49-2.97 0-6.1 1.46-6.1 2.1v1.1H12V20m8.8-3v-1.5c0-1.4-1.4-2.5-2.8-2.5s-2.8 1.1-2.8 2.5V17c-.6 0-1.2.6-1.2 1.2v3.5c0 .7.6 1.3 1.2 1.3h5.5c.7 0 1.3-.6 1.3-1.2v-3.5c0-.7-.6-1.3-1.2-1.3m-1.3 0h-3v-1.5c0-.8.7-1.3 1.5-1.3s1.5.5 1.5 1.3z"/></svg></span> <strong>Usuarios, roles y auditoría</strong></p>
+<hr />
+<p>Cuentas con roles por agente, verificación en dos pasos obligatoria y un
+registro de auditoría a prueba de alteraciones.</p>
+<p><a href="admin-guide/users/"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13.22 19.03a.75.75 0 0 1 0-1.06L18.19 13H3.75a.75.75 0 0 1 0-1.5h14.44l-4.97-4.97a.749.749 0 0 1 .326-1.275.75.75 0 0 1 .734.215l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0"/></svg></span> Usuarios y acceso</a></p>
+</li>
+<li>
+<p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8zm4 18H6V4h7v5h5zm-9-7v6H7v-6zm6 2v4h2v-4zm-4-4v8h2v-8z"/></svg></span> <strong>Reportes PDF por correo</strong></p>
+<hr />
+<p>Resúmenes de protección y reportes de estado diario, enviados por correo
+según una programación mediante SMTP o Microsoft 365.</p>
+<p><a href="admin-guide/reports/"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13.22 19.03a.75.75 0 0 1 0-1.06L18.19 13H3.75a.75.75 0 0 1 0-1.5h14.44l-4.97-4.97a.749.749 0 0 1 .326-1.275.75.75 0 0 1 .734.215l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0"/></svg></span> Reportes</a></p>
+</li>
+<li>
+<p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 16.5c0 .38-.21.71-.53.88l-7.9 4.44c-.16.12-.36.18-.57.18s-.41-.06-.57-.18l-7.9-4.44A.99.99 0 0 1 3 16.5v-9c0-.38.21-.71.53-.88l7.9-4.44c.16-.12.36-.18.57-.18s.41.06.57.18l7.9 4.44c.32.17.53.5.53.88zM12 4.15l-1.89 1.07L16 8.61l1.96-1.11zM6.04 7.5 12 10.85l1.96-1.1-5.88-3.4zM5 15.91l6 3.38v-6.71L5 9.21zm14 0v-6.7l-6 3.37v6.71z"/></svg></span> <strong>Fácil de instalar</strong></p>
+<hr />
+<p>Instaladores de Windows, paquetes <code>.deb</code>/<code>.rpm</code>, instaladores
+autoextraíbles para Linux y una imagen de Docker. Dashboard en inglés y
+español.</p>
+<p><a href="installation/"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13.22 19.03a.75.75 0 0 1 0-1.06L18.19 13H3.75a.75.75 0 0 1 0-1.5h14.44l-4.97-4.97a.749.749 0 0 1 .326-1.275.75.75 0 0 1 .734.215l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0"/></svg></span> Instalación</a></p>
+</li>
 </ul>
-<h2 id="quick-start">Inicio rápido<a class="headerlink" href="#quick-start" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="c1"># Instalar (deb para Linux)</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>sudo<span class="w"> </span>dpkg<span class="w"> </span>-i<span class="w"> </span>hitstor_0.1.0_amd64.deb
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="c1"># Inicializar un repositorio</span>
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>hitstor<span class="w"> </span>init<span class="w"> </span>--repo<span class="w"> </span>/var/lib/hitstor/repo<span class="w"> </span>--password<span class="w"> </span><span class="s2">"secret"</span>
-<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>
-<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="c1"># Crear un respaldo</span>
-<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>hitstor<span class="w"> </span>backup<span class="w"> </span>--repo<span class="w"> </span>/var/lib/hitstor/repo<span class="w"> </span>--password<span class="w"> </span><span class="s2">"secret"</span><span class="w"> </span>/data
-<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>
-<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="c1"># Listar instantáneas</span>
-<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>hitstor<span class="w"> </span>snapshots<span class="w"> </span>--repo<span class="w"> </span>/var/lib/hitstor/repo<span class="w"> </span>--password<span class="w"> </span><span class="s2">"secret"</span>
-<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>
-<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a><span class="c1"># Restaurar</span>
-<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>hitstor<span class="w"> </span>restore<span class="w"> </span>--repo<span class="w"> </span>/var/lib/hitstor/repo<span class="w"> </span>--password<span class="w"> </span><span class="s2">"secret"</span><span class="w"> </span>latest<span class="w"> </span>/restore
-</code></pre></div>
+</div>
+<h2 id="a-look-at-the-dashboard">Un vistazo al dashboard<a class="headerlink" href="#a-look-at-the-dashboard" title="Permanent link">&para;</a></h2>
+<div class="tabbed-set tabbed-alternate" data-tabs="1:5"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><input id="__tabbed_1_3" name="__tabbed_1" type="radio" /><input id="__tabbed_1_4" name="__tabbed_1" type="radio" /><input id="__tabbed_1_5" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Nueva tarea de respaldo</label><label for="__tabbed_1_2">Restauración</label><label for="__tabbed_1_3">Usuarios y acceso</label><label for="__tabbed_1_4">Reportes</label><label for="__tabbed_1_5">Almacenamiento</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<p><img alt="Elegir carpetas en un árbol de equipos" class="screenshot" src="../assets/screenshots/es/backup-wizard-selection.webp" /></p>
+</div>
+<div class="tabbed-block">
+<p><img alt="Elegir archivos de una instantánea y el destino" class="screenshot" src="../assets/screenshots/es/restore.webp" /></p>
+</div>
+<div class="tabbed-block">
+<p><img alt="Roles por agente y verificación en dos pasos" class="screenshot" src="../assets/screenshots/es/users.webp" /></p>
+</div>
+<div class="tabbed-block">
+<p><img alt="Reportes PDF programados" class="screenshot" src="../assets/screenshots/es/reports.webp" /></p>
+</div>
+<div class="tabbed-block">
+<p><img alt="Repositorios, deduplicación y uso" class="screenshot" src="../assets/screenshots/es/storage.webp" /></p>
+</div>
+</div>
+</div>
+<h2 id="where-to-start">Por dónde empezar<a class="headerlink" href="#where-to-start" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Quiero…</th>
+<th>Lea</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Probar HitStor en pocos minutos</td>
+<td><a href="installation/quickstart/">Inicio rápido</a></td>
+</tr>
+<tr>
+<td>Instalar el servidor en Windows</td>
+<td><a href="installation/windows-server/">Windows Server</a></td>
+</tr>
+<tr>
+<td>Instalar el servidor en Linux</td>
+<td><a href="installation/linux-installer/">Instalación rápida en Linux</a> o <a href="installation/linux-packages/">Paquetes de Linux</a></td>
+</tr>
+<tr>
+<td>Proteger un equipo</td>
+<td><a href="installation/windows-agent/">Agente de Windows</a> · <a href="admin-guide/agent-deployment/">Despliegue de agentes</a></td>
+</tr>
+<tr>
+<td>Respaldar SQL Server</td>
+<td><a href="user-guide/sql-server/">SQL Server</a></td>
+</tr>
+<tr>
+<td>Dar acceso a mi equipo</td>
+<td><a href="admin-guide/users/">Usuarios y acceso</a></td>
+</tr>
+<tr>
+<td>Actualizar desde la 0.1</td>
+<td><a href="installation/upgrading/">Actualización</a></td>
+</tr>
+</tbody>
+</table>
 <h2 id="documentation-sections">Secciones de la documentación<a class="headerlink" href="#documentation-sections" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
 <tr>
 <th>Sección</th>
-<th>Descripción</th>
+<th>Qué encontrará</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td><a href="installation/">Instalación</a></td>
-<td>Instale HitStor mediante paquetes, código fuente, Docker o instaladores de Windows</td>
+<td>Docker, paquetes e instaladores de Linux, servidor y agente de Windows, actualizaciones</td>
 </tr>
 <tr>
 <td><a href="user-guide/">Guía del usuario</a></td>
-<td>Aprenda a respaldar, restaurar, gestionar instantáneas (snapshots) y configurar la retención</td>
+<td>Respaldos, restauraciones, instantáneas, retención, plugins, SQL Server, recuperación ante desastres</td>
 </tr>
 <tr>
 <td><a href="admin-guide/">Administración</a></td>
-<td>Servidores, tareas de respaldo, agentes, descubrimiento, DR, monitoreo</td>
+<td>Puesta en marcha, TLS, usuarios y acceso, tareas, programación, reportes, monitoreo, seguridad</td>
 </tr>
 <tr>
 <td><a href="reference/">Referencia</a></td>
-<td>Comandos, configuración, API gRPC, API HTTP del dashboard, funcionamiento interno</td>
+<td>Comandos, configuración, variables de entorno, APIs gRPC y HTTP del dashboard, funcionamiento interno</td>
 </tr>
 <tr>
 <td><a href="dev-guide/">Guía de desarrollo</a></td>
-<td>Visión general del código, compilación, pruebas y publicación de versiones</td>
+<td>Organización del código, arquitectura de plugins, compilación y empaquetado, pruebas, versiones</td>
 </tr>
 </tbody>
 </table>
@@ -3274,8 +3530,13 @@
 
 
 
+  
+  
 
 
+
+
+  
 
 
 

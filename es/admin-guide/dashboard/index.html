@@ -16,7 +16,7 @@
         <link rel="prev" href="../agent-deployment/">
       
       
-        <link rel="next" href="../settings/">
+        <link rel="next" href="../users/">
       
       
         
@@ -57,6 +57,8 @@
       
     
     
+      <link rel="stylesheet" href="../../../stylesheets/extra.css">
+    
     <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
@@ -73,7 +75,7 @@
     
     
     
-    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="custom">
   
     
     <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
@@ -98,7 +100,7 @@
   <nav class="md-header__inner md-grid" aria-label="Cabecera">
     <a href="../../" title="Documentación de HitStor" class="md-header__button md-logo" aria-label="Documentación de HitStor" data-md-component="logo">
       
-  <img src="../../../assets/logo.png" alt="logo">
+  <img src="../../../assets/icon.svg" alt="logo">
 
     </a>
     <label class="md-header__button md-icon" for="__drawer">
@@ -128,7 +130,7 @@
     
     
     
-    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="custom"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
     
       <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
@@ -138,7 +140,7 @@
     
     
     
-    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="custom" data-md-color-accent="custom"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
     
       <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
@@ -393,7 +395,7 @@
   <label class="md-nav__title" for="__drawer">
     <a href="../../" title="Documentación de HitStor" class="md-nav__button md-logo" aria-label="Documentación de HitStor" data-md-component="logo">
       
-  <img src="../../../assets/logo.png" alt="logo">
+  <img src="../../../assets/icon.svg" alt="logo">
 
     </a>
     Documentación de HitStor
@@ -1087,6 +1089,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user-guide/sql-server/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SQL Server
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -1425,10 +1455,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#password-protection" class="md-nav__link">
+  <a href="#signing-in" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Protección con contraseña
+        Inicio de sesión
       
     </span>
   </a>
@@ -1481,6 +1511,39 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#backups" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Respaldos
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#restores" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Restauraciones
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#disaster-recovery" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Recuperación ante desastres
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#agents" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1500,34 +1563,6 @@
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Detalle del agente">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#filesystem-tree-browser" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Explorador en árbol del sistema de archivos
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#snapshots" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Instantáneas
-      
-    </span>
-  </a>
-  
 </li>
         
           <li class="md-nav__item">
@@ -1542,10 +1577,54 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#users-and-access-audit-log" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Usuarios y acceso, Auditoría
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#reports" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Reportes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#logs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Registros
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#settings" class="md-nav__link">
     <span class="md-ellipsis">
       
         Configuración
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#my-account" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Mi cuenta
       
     </span>
   </a>
@@ -1655,6 +1734,62 @@
   
 </nav>
       
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../users/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Usuarios y acceso
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reports/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reportes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
     </li>
   
 
@@ -2768,6 +2903,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../reference/agent-commands/plugin/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    plugin
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../reference/agent-commands/service/" class="md-nav__link">
         
   
@@ -3117,6 +3280,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../dev-guide/plugin-architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Arquitectura de plugins
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../dev-guide/dev-environment/" class="md-nav__link">
         
   
@@ -3351,10 +3542,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#password-protection" class="md-nav__link">
+  <a href="#signing-in" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Protección con contraseña
+        Inicio de sesión
       
     </span>
   </a>
@@ -3407,6 +3598,39 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#backups" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Respaldos
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#restores" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Restauraciones
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#disaster-recovery" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Recuperación ante desastres
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#agents" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3426,34 +3650,6 @@
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Detalle del agente">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#filesystem-tree-browser" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Explorador en árbol del sistema de archivos
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#snapshots" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Instantáneas
-      
-    </span>
-  </a>
-  
 </li>
         
           <li class="md-nav__item">
@@ -3468,10 +3664,54 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#users-and-access-audit-log" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Usuarios y acceso, Auditoría
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#reports" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Reportes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#logs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Registros
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#settings" class="md-nav__link">
     <span class="md-ellipsis">
       
         Configuración
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#my-account" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Mi cuenta
       
     </span>
   </a>
@@ -3598,73 +3838,102 @@
 
 
 <h1 id="dashboard-web">Dashboard web<a class="headerlink" href="#dashboard-web" title="Permanent link">&para;</a></h1>
-<p>HitStor incluye un dashboard web integrado para monitorear la infraestructura de respaldo, administrar agentes, explorar sistemas de archivos remotos y configurar programaciones. El dashboard lo sirve el mismo proceso <code>hitstor serve</code> que atiende las conexiones gRPC.</p>
+<p>HitStor incluye un dashboard web integrado para monitorear la infraestructura de respaldo, administrar agentes y tareas de respaldo, restaurar datos y configurar el servidor. El dashboard lo sirve el mismo proceso <code>hitstor serve</code> que atiende las conexiones gRPC.</p>
 <h2 id="accessing-the-dashboard">Acceso al dashboard<a class="headerlink" href="#accessing-the-dashboard" title="Permanent link">&para;</a></h2>
 <p>El dashboard está disponible en:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>http://SERVER_IP:8421
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>https://SERVER_IP:8421
 </code></pre></div>
 <p>Reemplace <code>SERVER_IP</code> por el nombre de host o la dirección IP del servidor HitStor. El puerto predeterminado del dashboard es <code>8421</code> y se puede cambiar con <code>--dashboard-port</code>.</p>
-<h2 id="password-protection">Protección con contraseña<a class="headerlink" href="#password-protection" title="Permanent link">&para;</a></h2>
-<p>El dashboard siempre requiere contraseña. Establézcala con la clave de configuración <code>serve_dashboard_password</code>:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="c1"># /etc/hitstor/config.yaml</span>
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="nt">serve_dashboard_password</span><span class="p">:</span><span class="w"> </span><span class="s">"DASHBOARD_PASSWORD"</span>
-</code></pre></div>
-<p>Si no hay ninguna contraseña configurada, <code>hitstor serve</code> genera una aleatoria al iniciar, guarda su hash en el archivo de configuración e imprime el texto plano una sola vez en el registro del servidor (busque <code>no dashboard password configured</code>). Inicie sesión con ella y cámbiela en <strong>Configuración</strong>. Si el servidor no tiene archivo de configuración, se genera una contraseña nueva en cada reinicio.</p>
-<p>El dashboard presenta una página de inicio de sesión. La autenticación usa cookies de sesión con las siguientes propiedades de seguridad:</p>
-<ul>
-<li><code>HttpOnly</code>: las cookies no son accesibles desde JavaScript</li>
-<li><code>SameSite=Strict</code>: las cookies no se envían en solicitudes entre sitios</li>
-</ul>
-<p>Las sesiones expiran al cerrar el navegador.</p>
+<p>Cuando el servidor ya tiene un repositorio, el dashboard usa HTTPS con el mismo certificado que el puerto gRPC (consulte <a href="../tls-certificates/">Certificados TLS</a>); con el certificado autofirmado predeterminado, el navegador muestra una advertencia hasta que usted lo acepte. Un listener HTTP sin cifrar en el puerto siguiente (<code>8422</code> con el puerto predeterminado del dashboard) redirige a HTTPS; no se inicia si ese puerto ya está en uso, por ejemplo por un agente en la misma máquina. Mientras no exista ningún repositorio, el servidor está en modo de configuración inicial y sirve el dashboard por HTTP sin cifrar.</p>
+<h2 id="signing-in">Inicio de sesión<a class="headerlink" href="#signing-in" title="Permanent link">&para;</a></h2>
+<p>Cada persona inicia sesión con una cuenta personal: usuario, contraseña y un código de una app de autenticación. Los roles deciden qué páginas, agentes y acciones tiene cada uno. Consulte <a href="../users/">Usuarios y acceso</a>.</p>
+<p>En un servidor nuevo, o al actualizar desde una versión con una única contraseña de dashboard, el dashboard pide primero crear el administrador confirmando la contraseña compartida del dashboard. Esa contraseña proviene de la clave de configuración <code>serve_dashboard_password</code>; si no hay ninguna, <code>hitstor serve</code> genera una al iniciar, guarda su hash en el archivo de configuración e imprime el texto plano una sola vez en el registro del servidor (busque <code>no dashboard password configured</code>). Una vez que existe el primer administrador, la contraseña compartida ya no permite iniciar sesión.</p>
+<p>Las cookies de sesión son <code>HttpOnly</code> y <code>SameSite=Lax</code>, y los cambios se rechazan cuando el navegador indica que la solicitud viene de otro sitio.</p>
 <h2 id="update-notifications">Notificaciones de actualización<a class="headerlink" href="#update-notifications" title="Permanent link">&para;</a></h2>
-<p>Cuando <code>update_check: true</code> está definido en la configuración (valor predeterminado), el servidor busca nuevas versiones mediante la API de GitHub Releases cada 24 horas. Si hay una versión más reciente, aparece un banner de notificación en la parte superior de cada página del dashboard:</p>
+<p>Cuando <code>update_check: true</code> está definido en la configuración (o <strong>Buscar actualizaciones automáticamente</strong> está habilitado en <strong>Configuración → General</strong>), el servidor busca nuevas versiones mediante la API de GitHub Releases (o <code>update_url</code>) al iniciar y cada 24 horas. Las comprobaciones están desactivadas mientras no se habiliten. Si hay una versión más reciente, aparece un banner de notificación en la parte superior de cada página del dashboard:</p>
 <blockquote>
 <p><strong>HitStor v1.1.0 está disponible (actual: v1.0.0).</strong> <a href="#">Ver versión</a></p>
 </blockquote>
-<p>El banner enlaza a la página de la versión en GitHub. Para deshabilitar las comprobaciones automáticas, defina <code>update_check: false</code> en <code>/etc/hitstor/config.yaml</code>. También puede comprobarlo manualmente desde la CLI con <code>hitstor version --check</code>.</p>
+<p>El banner enlaza a la página de la versión en GitHub. También puede comprobarlo manualmente desde la CLI con <code>hitstor version --check</code>.</p>
 <h2 id="layout">Diseño<a class="headerlink" href="#layout" title="Permanent link">&para;</a></h2>
-<p>El dashboard usa una barra de encabezado fija con el logotipo y la versión de HitStor, una barra lateral con navegación por íconos y un área de contenido principal. La barra lateral agrupa las páginas en dos secciones:</p>
+<p>El dashboard usa una barra de encabezado fija, una barra lateral con navegación por íconos y un área de contenido principal. El encabezado muestra el nombre del repositorio, la versión y, a la derecha, el menú del usuario: <strong>Mi cuenta</strong>, el idioma y <strong>Cerrar sesión</strong>.</p>
+<p>La barra lateral agrupa las páginas según lo que se hace con ellas y muestra solo lo que su rol permite:</p>
 <ul>
-<li><strong>Monitoreo</strong>: Resumen, Respaldos, Agentes</li>
-<li><strong>Administración</strong>: Almacenamiento, Configuración</li>
+<li><strong>Protección</strong>: Resumen, Respaldos, Restauraciones, Recuperación ante desastres</li>
+<li><strong>Infraestructura</strong>: Agentes, Almacenamiento</li>
+<li><strong>Administración</strong>: Usuarios y acceso, Auditoría, Reportes, Registros, Configuración</li>
 </ul>
+<p>Los botones de acciones que su rol no permite (por ejemplo, eliminar un agente o ejecutar una tarea en un agente que no opera) no se muestran.</p>
 <h2 id="dashboard-pages">Páginas del dashboard<a class="headerlink" href="#dashboard-pages" title="Permanent link">&para;</a></h2>
 <h3 id="overview">Resumen<a class="headerlink" href="#overview" title="Permanent link">&para;</a></h3>
 <p>La página principal muestra un resumen de la infraestructura de respaldo:</p>
+<p><img alt="Página Resumen" class="screenshot" src="../../../assets/screenshots/es/overview.webp" /></p>
 <ul>
-<li>Número total de agentes, instantáneas (snapshots) y hora del último respaldo</li>
+<li>Número de agentes e instantáneas (snapshots), respaldos en ejecución, hora del último respaldo y uso del almacenamiento</li>
 <li>Desglose del estado de los agentes (OK, inactivo, nunca respaldado)</li>
-<li>Accesos rápidos a las páginas Agentes, Instantáneas y Almacenamiento</li>
+<li>Alertas activas de Ransomware Sentinel, con <strong>Resolver y reactivar</strong></li>
+<li>Accesos rápidos a las páginas Agentes y Almacenamiento</li>
 </ul>
-<h3 id="agents">Agentes<a class="headerlink" href="#agents" title="Permanent link">&para;</a></h3>
-<p>Lista todos los agentes registrados con su estado actual, tipo (administrado o CLI), hora del último respaldo y fecha de creación. Haga clic en el nombre de un agente para ver su página de detalle.</p>
-<p><strong>Agregar un agente desde el dashboard:</strong></p>
+<h3 id="backups">Respaldos<a class="headerlink" href="#backups" title="Permanent link">&para;</a></h3>
+<p>Lista las tareas de respaldo con su agente, última ejecución, verificación de
+restauración y estado. <strong>+ Nueva tarea de respaldo</strong> abre un asistente de tres
+pasos inspirado en las tareas de las herramientas de respaldo empresariales:</p>
+<p><img alt="Página Respaldos" class="screenshot" src="../../../assets/screenshots/es/backups.webp" /></p>
 <ol>
-<li>Use <strong>Descubrimiento de red</strong> para escanear subredes, o <strong>Entrada manual</strong> para un <code>host:port</code> específico</li>
-<li>Ingrese el nombre del agente, <code>agent_addr</code> y el token (ingreso manual)</li>
-<li>Confirme el registro</li>
+<li><strong>Selección.</strong> Un árbol muestra cada máquina registrada con su estado y su
+   sistema operativo. Al expandir una máquina aparecen sus orígenes: el
+   <strong>Sistema de archivos</strong> y cada plugin instalado (por ejemplo <strong>Microsoft
+   SQL Server</strong>, con sus instancias y bases de datos). Marque lo que desea
+   respaldar; marcar un contenedor (una carpeta, una instancia) respalda todo
+   lo que contiene, incluido lo que se agregue después. Una tarea respalda
+   <strong>un solo origen de una máquina</strong>: al marcar algo, los demás orígenes se
+   bloquean hasta vaciar la selección. El panel lateral muestra la selección
+   y las opciones del origen: patrones de exclusión e instantáneas
+   consistentes para un sistema de archivos, las opciones del plugin para un
+   plugin.</li>
+<li><strong>Destino y programación.</strong> El repositorio y cuándo se ejecuta. Un
+   sistema de archivos recibe una sola programación, cada noche a las 02:00
+   de forma predeterminada. Un origen de plugin recibe un <strong>plan de
+   respaldo</strong> con una programación por tipo de respaldo: completos semanales
+   y diferenciales diarios activados, respaldos de log cada 15 minutos
+   desactivados (consulte <a href="../backup-jobs/#backup-plans">Tareas de respaldo</a>).</li>
+<li><strong>Revisar.</strong> Un resumen de la tarea, con la programación en palabras y su
+   próxima ejecución, y un nombre sugerido.</li>
 </ol>
-<p>El servidor se conecta al agente mediante AgentService (puerto 8422), verifica el token y envía la clave de API y la dirección del servidor. Consulte <a href="../agent-management/">Administración de agentes</a> y <a href="../agent-discovery/">Descubrimiento de agentes</a>.</p>
+<p>Las máquinas sin conexión o suspendidas aparecen en el árbol pero no se pueden
+expandir. En la página de una tarea, <strong>Editar selección</strong> abre el mismo árbol
+para la máquina y el origen de esa tarea, con la selección actual marcada; ahí
+también se cambian las opciones del origen. <strong>Editar programación</strong> (archivos)
+o <strong>Editar plan</strong> (plugins) cambia cuándo se ejecuta. Para respaldar otro
+origen, cree otra tarea.</p>
+<h3 id="restores">Restauraciones<a class="headerlink" href="#restores" title="Permanent link">&para;</a></h3>
+<p>Restaura archivos desde las instantáneas de un agente protegido, en el mismo agente o en otro, y restaura respaldos de plugins (por ejemplo, una base de datos de SQL Server a un punto en el tiempo) con <strong>Restaurar desde un respaldo con plugin</strong>. Las restauraciones activas muestran su progreso. Consulte <a href="../../user-guide/restore/">Restauración</a>.</p>
+<p><img alt="Página Restauraciones: instantáneas de un agente" class="screenshot" src="../../../assets/screenshots/es/restore-snapshots.webp" /></p>
+<h3 id="disaster-recovery">Recuperación ante desastres<a class="headerlink" href="#disaster-recovery" title="Permanent link">&para;</a></h3>
+<p>Recuperación guiada del sistema completo de un agente protegido en un host reconstruido y, en <strong>Bare-metal</strong>, medios de recuperación y tokens de recuperación de un solo uso para hosts Linux. Consulte <a href="../../user-guide/disaster-recovery/">Recuperación ante desastres</a> y <a href="../../user-guide/bare-metal-restore/">Restauración bare-metal</a>.</p>
+<h3 id="agents">Agentes<a class="headerlink" href="#agents" title="Permanent link">&para;</a></h3>
+<p>Lista todos los agentes registrados con su estado actual, tipo (administrado o CLI), número de tareas y hora del último respaldo. Haga clic en el nombre de un agente para ver su página de detalle.</p>
+<p><img alt="Página Agentes" class="screenshot" src="../../../assets/screenshots/es/agents.webp" /></p>
+<p><strong>Agregar un agente desde el dashboard</strong> (administradores):</p>
+<ol>
+<li>Haga clic en <strong>+ Agregar agente</strong> y use <strong>Escaneo de red</strong> para escanear una subred local, o <strong>Entrada manual</strong> para conectarse a un agente por su dirección IP</li>
+<li>En <strong>Registrar agente</strong>, ingrese el nombre del agente y el token (<code>hitstor-agent show-id</code> en la máquina del agente)</li>
+<li>Haga clic en <strong>Registrar agente</strong></li>
+</ol>
+<p>El servidor se conecta al agente mediante AgentService (puerto 8422), verifica el token y envía la clave de API y la dirección del servidor. Consulte <a href="../agent-management/">Gestión de agentes</a> y <a href="../agent-discovery/">Descubrimiento de agentes</a>.</p>
 <h3 id="agent-detail">Detalle del agente<a class="headerlink" href="#agent-detail" title="Permanent link">&para;</a></h3>
 <p>Muestra información detallada de un agente:</p>
 <ul>
-<li><strong>Repositorio de destino</strong>: seleccione en qué repositorio respalda este agente</li>
-<li><strong>Programación de respaldo</strong>: habilite o deshabilite los respaldos programados y defina el intervalo en horas</li>
-<li><strong>Rutas de respaldo</strong> (solo agentes administrados): explorador en árbol del sistema de archivos para seleccionar los directorios que se respaldarán</li>
-<li><strong>Historial de instantáneas</strong>: tabla con los ID de instantánea, marcas de tiempo, cantidad de archivos, tamaños y duraciones</li>
+<li>Estado, tipo, dirección, último respaldo, número de tareas y de tareas en buen estado</li>
+<li><strong>Suspender agente</strong> / <strong>Reactivar agente</strong>, <strong>+ Nueva tarea de respaldo</strong>, <strong>Eliminar</strong> y <strong>Volver a registrar</strong>, según lo que permita su rol</li>
+<li><strong>Estado en vivo</strong> (agentes administrados): nombre de host, sistema operativo, versión y otra información consultada al agente</li>
+<li><strong>Plugins</strong> (agentes administrados): plugins de carga de trabajo instalados, instalación de un paquete de plugin y configuración de las credenciales del plugin</li>
+<li><strong>Tareas de respaldo</strong>: las tareas del agente con su programación, repositorio, última ejecución y estado</li>
 </ul>
-<h4 id="filesystem-tree-browser">Explorador en árbol del sistema de archivos<a class="headerlink" href="#filesystem-tree-browser" title="Permanent link">&para;</a></h4>
-<p>Para los agentes administrados desde el dashboard, la sección Rutas de respaldo muestra en vivo el árbol del sistema de archivos de la máquina del agente. El servidor se conecta al agente por gRPC para listar los directorios en tiempo real.</p>
-<ul>
-<li>Haga clic en el ícono de flecha para expandir un directorio y cargar su contenido</li>
-<li>Marque los directorios que desea incluir en los respaldos</li>
-<li>Haga clic en <strong>Guardar rutas de respaldo</strong> para enviar la configuración al agente</li>
-</ul>
-<p>Los directorios que el proceso del agente no puede leer aparecen atenuados.</p>
-<h3 id="snapshots">Instantáneas<a class="headerlink" href="#snapshots" title="Permanent link">&para;</a></h3>
-<p>Lista todas las instantáneas de todos los agentes. Permite filtrar por nombre de agente. Cada entrada muestra el ID de la instantánea, el agente, la marca de tiempo, las rutas, la cantidad de archivos y el tamaño total.</p>
+<p>Lo que respalda una tarea (carpetas, bases de datos) se elige en el árbol de selección de la tarea, no en la página del agente.</p>
 <h3 id="storage">Almacenamiento<a class="headerlink" href="#storage" title="Permanent link">&para;</a></h3>
 <p>La página Almacenamiento ofrece administración completa de repositorios:</p>
+<p><img alt="Página Almacenamiento" class="screenshot" src="../../../assets/screenshots/es/storage.webp" /></p>
 <ul>
 <li><strong>Lista de repositorios</strong>: muestra todos los repositorios configurados (locales y S3) con insignias de estado, barras de uso de disco, cantidad de instantáneas y estadísticas de paquetes e índices</li>
 <li><strong>Crear repositorio</strong>: inicializa un nuevo repositorio local o compatible con S3 directamente desde el dashboard. Los repositorios locales muestran el espacio en disco disponible y detectan repositorios existentes en la ruta indicada</li>
@@ -3673,21 +3942,27 @@
 <li><strong>Verificación de integridad</strong>: ejecuta <code>hitstor check</code> sobre un repositorio con progreso en tiempo real mediante Server-Sent Events. Los resultados muestran si pasó o falló y los errores encontrados</li>
 <li><strong>Depurar (prune)</strong>: libera espacio eliminando datos no referenciados, con un diálogo de confirmación y progreso en vivo. Muestra los paquetes eliminados, los bytes liberados y los índices reescritos</li>
 <li><strong>Gráfico de crecimiento</strong>: visualiza el crecimiento del almacenamiento a lo largo del tiempo con un rango de fechas configurable (30 días, 90 días, 6 meses, 1 año, todo) y granularidad (diaria, semanal)</li>
-<li><strong>Detalle de instantánea</strong>: explore el contenido de una instantánea y restaure archivos individuales o rutas completas. Consulte <a href="../../user-guide/restore/">Restauración</a>.</li>
+<li><strong>Instantáneas</strong>: la página de cada repositorio lista sus instantáneas; la página de una instantánea permite explorar su contenido y restaurar archivos individuales o rutas completas. Consulte <a href="../../user-guide/restore/">Restauración</a>. (<code>/snapshots</code> redirige aquí).</li>
 </ul>
+<h3 id="users-and-access-audit-log">Usuarios y acceso, Auditoría<a class="headerlink" href="#users-and-access-audit-log" title="Permanent link">&para;</a></h3>
+<p>Cuentas, roles, sesiones y el registro de auditoría a prueba de manipulaciones (administradores). Consulte <a href="../users/">Usuarios y acceso</a>.</p>
+<h3 id="reports">Reportes<a class="headerlink" href="#reports" title="Permanent link">&para;</a></h3>
+<p>Reportes PDF programados y descargas a pedido (administradores). Consulte <a href="../reports/">Reportes</a>.</p>
+<h3 id="logs">Registros<a class="headerlink" href="#logs" title="Permanent link">&para;</a></h3>
+<p>Entradas de registro del servidor y de los agentes, con filtros y exportación. La retención del registro en memoria y del archivo de registro rotativo opcional se define en <strong>Configuración → General</strong>.</p>
 <h3 id="settings">Configuración<a class="headerlink" href="#settings" title="Permanent link">&para;</a></h3>
-<p>Punto central de la configuración del servidor: rendimiento general, TLS, puertos de red, <strong>Integraciones</strong> (Gemini) y notificaciones. Consulte <a href="../settings/">Configuración del servidor</a>.</p>
+<p>Punto central de la configuración del servidor (administradores): rendimiento general, TLS, puertos de red, <strong>Integraciones</strong> (Gemini), notificaciones, correo y paquetes de plugins. Consulte <a href="../settings/">Configuración del servidor</a>.</p>
+<h3 id="my-account">Mi cuenta<a class="headerlink" href="#my-account" title="Permanent link">&para;</a></h3>
+<p>El perfil de cada usuario, su contraseña, la verificación en dos pasos, los códigos de recuperación, el idioma y las sesiones abiertas. Consulte <a href="../users/#two-step-verification">Usuarios y acceso</a>.</p>
 <h2 id="schedule-management">Administración de programaciones<a class="headerlink" href="#schedule-management" title="Permanent link">&para;</a></h2>
-<p>El dashboard permite a los administradores configurar la programación de respaldos de cada agente sin iniciar sesión en la línea de comandos del servidor.</p>
-<p>Desde la página Detalle del agente:</p>
-<ol>
-<li>Active o desactive la programación del agente</li>
-<li>Defina el intervalo de respaldo en horas (por ejemplo, cada 24 horas)</li>
-<li>Haga clic en <strong>Guardar programación</strong></li>
-</ol>
-<p>Los agentes que se ejecutan en modo daemon (<code>hitstor-agent daemon</code>) consultan al servidor si hay cambios en la programación y ejecutan los respaldos en consecuencia.</p>
+<p>Las programaciones pertenecen a las tareas de respaldo, no a los agentes. Las definen los usuarios con el rol de operador de respaldos (o los administradores):</p>
+<ul>
+<li>En el asistente <strong>Nueva tarea de respaldo</strong> (paso 2)</li>
+<li>En la página de una tarea, con <strong>Editar programación</strong> (tareas de sistema de archivos) o <strong>Editar plan</strong> (tareas de carga de trabajo)</li>
+</ul>
+<p>Los agentes que se ejecutan en modo daemon (<code>hitstor-agent daemon</code>) consultan al servidor si hay cambios en la programación y ejecutan los respaldos en consecuencia. Consulte <a href="../scheduling/">Programación</a>.</p>
 <h2 id="json-api">API JSON<a class="headerlink" href="#json-api" title="Permanent link">&para;</a></h2>
-<p>El dashboard expone una API JSON para acceso programático. Todos los endpoints devuelven respuestas JSON.</p>
+<p>El dashboard expone una API JSON para acceso programático. Todos los endpoints devuelven respuestas JSON. La tabla siguiente lista los endpoints de agentes y almacenamiento; consulte la referencia de la <a href="../../reference/dashboard-api/">API HTTP del dashboard</a> para tareas, restauraciones, configuración y el resto.</p>
 <h3 id="endpoints">Endpoints<a class="headerlink" href="#endpoints" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
@@ -3706,22 +3981,32 @@
 <tr>
 <td><code>POST</code></td>
 <td><code>/api/agents</code></td>
-<td>Agrega un agente administrado desde el dashboard (nombre, dirección, token)</td>
+<td>Agrega un agente administrado desde el dashboard (nombre, dirección del agente, token)</td>
 </tr>
 <tr>
 <td><code>DELETE</code></td>
 <td><code>/api/agents/{name}</code></td>
-<td>Elimina un agente</td>
+<td>Elimina un agente (<code>?keep_jobs=true</code> conserva sus tareas)</td>
+</tr>
+<tr>
+<td><code>POST</code></td>
+<td><code>/api/agents/{name}/suspend</code></td>
+<td>Suspende un agente</td>
+</tr>
+<tr>
+<td><code>POST</code></td>
+<td><code>/api/agents/{name}/unsuspend</code></td>
+<td>Reactiva un agente suspendido</td>
 </tr>
 <tr>
 <td><code>POST</code></td>
 <td><code>/api/agents/{name}/schedule</code></td>
-<td>Actualiza la programación de respaldo del agente</td>
+<td>Programación heredada por intervalo a nivel de agente (las tareas tienen su propia programación)</td>
 </tr>
 <tr>
 <td><code>POST</code></td>
 <td><code>/api/agents/{name}/repo</code></td>
-<td>Define el repositorio de destino del agente</td>
+<td>Repositorio de destino heredado a nivel de agente (las tareas tienen su propio repositorio)</td>
 </tr>
 <tr>
 <td><code>POST</code></td>
@@ -3805,35 +4090,32 @@
 </tr>
 </tbody>
 </table>
+<p>La API usa la misma sesión que el navegador: una solicitud necesita la cookie de sesión (<code>hitstor_session</code>) de un usuario que completó la verificación en dos pasos, y solo puede hacer lo que permite el rol de ese usuario. Sin sesión la API responde <code>401</code>. En los ejemplos siguientes, <code>SESSION</code> es el valor de esa cookie y <code>-k</code> acepta el certificado autofirmado predeterminado.</p>
 <h3 id="example-add-an-agent">Ejemplo: agregar un agente<a class="headerlink" href="#example-add-an-agent" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>http://localhost:8421/api/agents<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">  </span>-H<span class="w"> </span><span class="s1">'Content-Type: application/json'</span><span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">  </span>-d<span class="w"> </span><span class="s1">'{"name":"web-01","address":"192.168.1.50:8422","token":"a3f8c1d9e4b7..."}'</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>curl<span class="w"> </span>-k<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>https://localhost:8421/api/agents<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">  </span>-b<span class="w"> </span><span class="s2">"hitstor_session=SESSION"</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">  </span>-H<span class="w"> </span><span class="s1">'Content-Type: application/json'</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="w">  </span>-d<span class="w"> </span><span class="s1">'{"name":"web-01","agent_addr":"192.168.1.50:8422","token":"a3f8c1d9e4b7..."}'</span>
 </code></pre></div>
 <h3 id="example-browse-agent-filesystem">Ejemplo: explorar el sistema de archivos del agente<a class="headerlink" href="#example-browse-agent-filesystem" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>http://localhost:8421/api/agents/web-01/browse<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">  </span>-H<span class="w"> </span><span class="s1">'Content-Type: application/json'</span><span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">  </span>-d<span class="w"> </span><span class="s1">'{"path":"/home"}'</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>curl<span class="w"> </span>-k<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>https://localhost:8421/api/agents/web-01/browse<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">  </span>-b<span class="w"> </span><span class="s2">"hitstor_session=SESSION"</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">  </span>-H<span class="w"> </span><span class="s1">'Content-Type: application/json'</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="w">  </span>-d<span class="w"> </span><span class="s1">'{"path":"/home"}'</span>
 </code></pre></div>
 <h3 id="example-list-agents">Ejemplo: listar agentes<a class="headerlink" href="#example-list-agents" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>curl<span class="w"> </span>-s<span class="w"> </span>http://localhost:8421/api/agents<span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span>.
-</code></pre></div>
-<p>Si la protección con contraseña del dashboard está habilitada, incluya la cookie de sesión o autentíquese primero:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="c1"># Autenticarse y guardar la cookie</span>
-<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>curl<span class="w"> </span>-c<span class="w"> </span>cookies.txt<span class="w"> </span>-d<span class="w"> </span><span class="s2">"password=DASHBOARD_PASSWORD"</span><span class="w"> </span>http://localhost:8421/login
-<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>
-<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="c1"># Usar la cookie en las solicitudes a la API</span>
-<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>curl<span class="w"> </span>-b<span class="w"> </span>cookies.txt<span class="w"> </span>-s<span class="w"> </span>http://localhost:8421/api/stats<span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span>.
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>curl<span class="w"> </span>-sk<span class="w"> </span>-b<span class="w"> </span><span class="s2">"hitstor_session=SESSION"</span><span class="w"> </span>https://localhost:8421/api/agents<span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span>.
 </code></pre></div>
 <h2 id="prometheus-metrics">Métricas de Prometheus<a class="headerlink" href="#prometheus-metrics" title="Permanent link">&para;</a></h2>
-<p>El dashboard expone un endpoint de métricas compatible con Prometheus:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>http://SERVER_IP:8421/metrics
+<p>El dashboard expone un endpoint de métricas compatible con Prometheus cuando el servidor ya tiene un repositorio:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>https://SERVER_IP:8421/metrics
 </code></pre></div>
-<p>Este endpoint <strong>no requiere autenticación</strong> (es accesible sin la contraseña del dashboard) para que Prometheus pueda recolectar métricas sin gestionar credenciales. Si esto le preocupa, restrinja el acceso a nivel de red.</p>
+<p>Este endpoint <strong>no requiere autenticación</strong> (es accesible sin iniciar sesión) para que Prometheus pueda recolectar métricas sin gestionar credenciales. Si esto le preocupa, restrinja el acceso a nivel de red.</p>
 <p>Consulte <a href="../monitoring/">Monitoreo</a> para ver la lista completa de métricas y la configuración de Prometheus.</p>
 <h2 id="next-steps">Próximos pasos<a class="headerlink" href="#next-steps" title="Permanent link">&para;</a></h2>
 <ul>
-<li><a href="../agent-management/">Administración de agentes</a>: registrar y administrar agentes</li>
+<li><a href="../agent-management/">Gestión de agentes</a>: registrar y administrar agentes</li>
+<li><a href="../backup-jobs/">Tareas de respaldo</a>: tareas de sistema de archivos y de carga de trabajo, planes de respaldo</li>
 <li><a href="../monitoring/">Monitoreo</a>: configurar la recolección de Prometheus y las alertas</li>
 <li><a href="../scheduling/">Programación</a>: opciones detalladas de configuración de la programación</li>
 <li><a href="../security/">Seguridad</a>: autenticación y endurecimiento del dashboard</li>

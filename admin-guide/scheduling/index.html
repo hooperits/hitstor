@@ -57,6 +57,8 @@
       
     
     
+      <link rel="stylesheet" href="../../stylesheets/extra.css">
+    
     <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
@@ -73,7 +75,7 @@
     
     
     
-    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="custom">
   
     
     <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
@@ -98,7 +100,7 @@
   <nav class="md-header__inner md-grid" aria-label="Header">
     <a href="../.." title="HitStor Documentation" class="md-header__button md-logo" aria-label="HitStor Documentation" data-md-component="logo">
       
-  <img src="../../assets/logo.png" alt="logo">
+  <img src="../../assets/icon.svg" alt="logo">
 
     </a>
     <label class="md-header__button md-icon" for="__drawer">
@@ -128,7 +130,7 @@
     
     
     
-    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="custom"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
     
       <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
@@ -138,7 +140,7 @@
     
     
     
-    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="custom" data-md-color-accent="custom"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
     
       <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
@@ -393,7 +395,7 @@
   <label class="md-nav__title" for="__drawer">
     <a href="../.." title="HitStor Documentation" class="md-nav__button md-logo" aria-label="HitStor Documentation" data-md-component="logo">
       
-  <img src="../../assets/logo.png" alt="logo">
+  <img src="../../assets/icon.svg" alt="logo">
 
     </a>
     HitStor Documentation
@@ -1087,6 +1089,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user-guide/sql-server/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SQL Server
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -1382,6 +1412,62 @@
   
   
     <li class="md-nav__item">
+      <a href="../users/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Users and Access
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reports/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reports
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../settings/" class="md-nav__link">
         
   
@@ -1533,10 +1619,21 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#interval-mode" class="md-nav__link">
+  <a href="#interval-mode-legacy" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Interval Mode
+        Interval Mode (legacy)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#plugin-jobs-schedule-picker" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Schedule Picker
       
     </span>
   </a>
@@ -1636,6 +1733,17 @@
   
     <nav class="md-nav" aria-label="Systemd Timer (Alternative)">
       <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#create-the-units" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Create the Units
+      
+    </span>
+  </a>
+  
+</li>
         
           <li class="md-nav__item">
   <a href="#enable-the-timer" class="md-nav__link">
@@ -2752,6 +2860,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../reference/agent-commands/plugin/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    plugin
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../reference/agent-commands/service/" class="md-nav__link">
         
   
@@ -3101,6 +3237,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../dev-guide/plugin-architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Plugin Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../dev-guide/dev-environment/" class="md-nav__link">
         
   
@@ -3359,10 +3523,21 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#interval-mode" class="md-nav__link">
+  <a href="#interval-mode-legacy" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Interval Mode
+        Interval Mode (legacy)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#plugin-jobs-schedule-picker" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Schedule Picker
       
     </span>
   </a>
@@ -3462,6 +3637,17 @@
   
     <nav class="md-nav" aria-label="Systemd Timer (Alternative)">
       <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#create-the-units" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Create the Units
+      
+    </span>
+  </a>
+  
+</li>
         
           <li class="md-nav__item">
   <a href="#enable-the-timer" class="md-nav__link">
@@ -3571,25 +3757,66 @@
 <p>The recommended approach is server-managed scheduling, where backup schedules are configured centrally and agents poll the server for their next run time.</p>
 <h3 id="configure-from-the-dashboard">Configure from the Dashboard<a class="headerlink" href="#configure-from-the-dashboard" title="Permanent link">&para;</a></h3>
 <ol>
-<li>Open the <a href="../dashboard/">Dashboard</a> at <code>http://SERVER_IP:8421</code>.</li>
-<li>Navigate to <strong>Backups</strong> and click <strong>+ New Backup Job</strong> (or open an existing job).</li>
-<li>Choose a schedule mode:<ul>
-<li><strong>Interval</strong>: Run every N hours (simple, no timezone awareness).</li>
-<li><strong>Cron Expression</strong>: Use standard 5-field cron syntax for precise scheduling with timezone support.</li>
-</ul>
-</li>
-<li>If using Cron mode, enter the expression and select a timezone. The dashboard validates the expression and shows a human-readable description with the next 3 run times.</li>
-<li>Save the configuration.</li>
+<li>Open the <a href="../dashboard/">Dashboard</a> at <code>https://SERVER_IP:8421</code>.</li>
+<li>Navigate to <strong>Backups</strong> and click <strong>+ New Backup Job</strong>. Step 2 of the wizard sets the
+   schedule with the schedule picker (see <a href="#plugin-jobs-schedule-picker">Schedule Picker</a>); a plugin
+   source gets a <a href="../backup-jobs/#backup-plans">backup plan</a>, one schedule per backup kind.</li>
+<li>To change the schedule of an existing job, open it and expand <strong>Edit schedule</strong> (or <strong>Edit plan</strong>
+   for a workload job). It uses the same picker; <strong>Edit as cron expression</strong> switches to the raw expression.</li>
+<li>The dashboard validates the expression and shows it in words with its next runs.</li>
+<li>Click <strong>Save Schedule</strong> (or <strong>Save plan</strong>).</li>
 </ol>
-<p>The server stores schedule configuration in the agent registry. Agents running in daemon mode pick up changes automatically.</p>
+<p>The server stores each job's schedule with the job, in the agent registry. Agents running in daemon mode pick up changes automatically.</p>
 <h3 id="schedule-modes">Schedule Modes<a class="headerlink" href="#schedule-modes" title="Permanent link">&para;</a></h3>
-<h4 id="interval-mode">Interval Mode<a class="headerlink" href="#interval-mode" title="Permanent link">&para;</a></h4>
-<p>The simplest scheduling option. Set the number of hours between backups:</p>
+<h4 id="interval-mode-legacy">Interval Mode (legacy)<a class="headerlink" href="#interval-mode-legacy" title="Permanent link">&para;</a></h4>
+<p>Jobs created before cron schedules (or through the API with <code>schedule_hours</code>) run every N hours:</p>
 <ul>
-<li><strong>How it works</strong>: <code>next_run = last_backup + interval_hours</code></li>
+<li><strong>How it works</strong>: <code>next_run = last_backup + interval_hours</code>; after a failed run, the next try is 15 minutes later</li>
 <li><strong>Timezone</strong>: Not applicable (relative to last backup time)</li>
-<li><strong>Best for</strong>: Simple setups where exact run times don't matter</li>
 </ul>
+<p>The dashboard no longer creates interval jobs. Saving a new schedule on such a job replaces the interval with a cron expression; the picker starts from the nearest equivalent.</p>
+<h4 id="plugin-jobs-schedule-picker">Schedule Picker<a class="headerlink" href="#plugin-jobs-schedule-picker" title="Permanent link">&para;</a></h4>
+<p>Backup jobs, of files or of a plugin, set their
+schedule with a picker modeled on the schedule sets of enterprise backup
+tools, and store the result as a cron expression:</p>
+<table>
+<thead>
+<tr>
+<th>Option</th>
+<th>Settings</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>On demand only</strong></td>
+<td>The job runs only with <strong>Backup Now</strong></td>
+</tr>
+<tr>
+<td><strong>Repeating → Every day</strong></td>
+<td>Start time</td>
+</tr>
+<tr>
+<td><strong>Repeating → Days of week</strong></td>
+<td>Weekdays, and optionally weeks of the month (1st to 5th, Last); start time</td>
+</tr>
+<tr>
+<td><strong>Repeating → Days of month</strong></td>
+<td>Days 1 to 31 and <strong>Last day</strong>; start time. Days a month does not have are skipped</td>
+</tr>
+<tr>
+<td><strong>Repeating → Every…</strong></td>
+<td>Every 5 to 30 minutes, or every 1 to 12 hours at a given minute; optionally only between two hours and only Monday to Friday</td>
+</tr>
+</tbody>
+</table>
+<p>Each schedule takes a time zone (the browser's by default for a new job;
+<strong>Server local</strong> uses the server's). The picker shows the schedule in words
+and its next runs, and <strong>Edit as cron expression</strong> switches to the raw
+expression. A new filesystem job starts from every day at 2:00 AM. In a backup
+plan each kind starts from its usual schedule: fulls on Sundays at 1:00 AM,
+differentials Monday to Saturday at 1:00 AM (both on), and log backups every
+15 minutes (off until you switch them on). In a plan, a kind is either
+repeating or off (on demand only).</p>
 <h4 id="cron-expression-mode">Cron Expression Mode<a class="headerlink" href="#cron-expression-mode" title="Permanent link">&para;</a></h4>
 <p>Standard 5-field cron syntax for precise, timezone-aware scheduling:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>┌───────────── minute (0-59)
@@ -3640,8 +3867,24 @@
 <td><code>0-30/10</code></td>
 <td>0, 10, 20, 30</td>
 </tr>
+<tr>
+<td>Last day of month</td>
+<td><code>L</code> (day of month)</td>
+<td>The last day of each month</td>
+</tr>
+<tr>
+<td>Nth weekday</td>
+<td><code>0#1</code> (day of week)</td>
+<td>The first Sunday of the month (<code>#1</code> to <code>#5</code>)</td>
+</tr>
+<tr>
+<td>Last weekday</td>
+<td><code>5L</code> (day of week)</td>
+<td>The last Friday of the month</td>
+</tr>
 </tbody>
 </table>
+<p>Names (<code>MON</code>, <code>JAN</code>), <code>7</code> for Sunday, and macros such as <code>@daily</code> are not accepted. When both day of month and day of week are restricted, a day matching <strong>either</strong> runs, as in standard cron (<code>0 2 1 * 1</code> runs on the 1st and on every Monday).</p>
 <p><strong>Common examples</strong>:</p>
 <table>
 <thead>
@@ -3675,14 +3918,22 @@
 <td><code>*/15 * * * *</code></td>
 <td>Every 15 minutes</td>
 </tr>
+<tr>
+<td><code>0 23 L * *</code></td>
+<td>Last day of each month at 11:00 PM</td>
+</tr>
+<tr>
+<td><code>0 2 * * 0#1</code></td>
+<td>First Sunday of each month at 2:00 AM</td>
+</tr>
 </tbody>
 </table>
 <p><strong>Timezone handling</strong>:</p>
 <ul>
 <li>Select a timezone from the dropdown (IANA format, e.g. <code>America/New_York</code>).</li>
-<li>If no timezone is selected, the server's local timezone is used.</li>
+<li>If no timezone is selected (<strong>Server local</strong>), the server's local timezone is used. An unknown timezone falls back to UTC.</li>
 <li>Cron expressions are evaluated in the selected timezone, handling DST transitions automatically:<ul>
-<li><strong>Spring forward</strong>: If a scheduled time falls in the skipped hour, the backup runs at the next valid time.</li>
+<li><strong>Spring forward</strong>: If a scheduled time falls in the skipped hour, that day's run is skipped; the next run is the next matching day.</li>
 <li><strong>Fall back</strong>: If a scheduled time falls in the repeated hour, the backup runs on the first occurrence.</li>
 </ul>
 </li>
@@ -3690,7 +3941,7 @@
 <h3 id="how-it-works">How It Works<a class="headerlink" href="#how-it-works" title="Permanent link">&para;</a></h3>
 <ol>
 <li>The agent calls the <code>GetSchedule</code> RPC on the server.</li>
-<li>The server evaluates the schedule (cron expression or interval) and responds with the next run time (<code>next_run</code>).</li>
+<li>The server evaluates the schedule (cron expression, backup plan or interval) and responds with the next run time (<code>next_run</code>). For a backup plan it also says which backup kind is due.</li>
 <li>The agent sleeps until <code>next_run</code>, then executes the backup.</li>
 <li>After the backup completes, the agent calls <code>GetSchedule</code> again for the next run.</li>
 </ol>
@@ -3700,8 +3951,9 @@
 <ul>
 <li>On the next poll, the server detects that <code>now &gt; next_run</code> and signals the agent to run immediately.</li>
 <li>After the catch-up backup, the schedule advances to the next future occurrence (no double-runs).</li>
-<li>This works for both interval and cron modes.</li>
+<li>This works for interval, cron and backup-plan schedules.</li>
 </ul>
+<p>A failed run is not retried on every poll: a cron or plan schedule waits for its next slot, and an interval job retries after 15 minutes.</p>
 <h2 id="agent-daemon-mode">Agent Daemon Mode<a class="headerlink" href="#agent-daemon-mode" title="Permanent link">&para;</a></h2>
 <p>Daemon mode is the client-side component of server-managed scheduling. Start the agent in daemon mode:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>hitstor-agent<span class="w"> </span>daemon
@@ -3709,7 +3961,7 @@
 <p>In daemon mode, the agent:</p>
 <ul>
 <li>Runs as a long-lived process</li>
-<li>Polls the server for its backup schedule via the <code>GetSchedule</code> RPC (default: every 5 minutes)</li>
+<li>Polls the server for its backup schedule via the <code>GetSchedule</code> RPC (default: every 5 minutes; <code>--poll-interval</code>, minimum 1 minute)</li>
 <li>Executes backups when <code>now &gt;= next_run_unix</code> for any enabled job</li>
 <li>Reports backup results back to the server</li>
 <li>Handles transient connection failures with automatic retry</li>
@@ -3719,27 +3971,54 @@
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>sudo<span class="w"> </span>systemctl<span class="w"> </span><span class="nb">enable</span><span class="w"> </span>hitstor-agent
 <a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>sudo<span class="w"> </span>systemctl<span class="w"> </span>start<span class="w"> </span>hitstor-agent
 </code></pre></div>
-<p>The service unit runs <code>hitstor-agent daemon</code> with restart-on-failure.</p>
+<p>The service unit runs <code>hitstor-agent daemon --config /etc/hitstor/agent-config.yaml</code> with restart-on-failure.</p>
 <h3 id="windows-service">Windows Service<a class="headerlink" href="#windows-service" title="Permanent link">&para;</a></h3>
 <p>Register the daemon as a Windows Service:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="n">hitstor-agent</span> <span class="n">service</span> <span class="n">install</span>
 <a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="n">hitstor-agent</span> <span class="n">service</span> <span class="nb">start</span>
 </code></pre></div>
-<p>The service starts automatically on boot. See <a href="../agent-deployment/">Agent Deployment</a> for full Windows setup instructions.</p>
+<p>The Windows installer already does this. The service starts automatically on boot. See <a href="../agent-deployment/">Agent Deployment</a> for full Windows setup instructions.</p>
 <h2 id="systemd-timer-alternative">Systemd Timer (Alternative)<a class="headerlink" href="#systemd-timer-alternative" title="Permanent link">&para;</a></h2>
-<p>If you prefer cron-style scheduling managed at the OS level rather than server-managed scheduling, use a systemd timer.</p>
+<p>If you prefer cron-style scheduling managed at the OS level rather than server-managed scheduling, use a systemd timer that runs a one-shot <code>hitstor-agent backup</code>.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The agent package also installs a <code>hitstor-agent.timer</code> (daily at 02:00). It activates <code>hitstor-agent.service</code>, which runs the <strong>daemon</strong>, not a single backup: with the daemon already enabled the timer has no effect. Use your own units, as below, for one-shot backups.</p>
+</div>
+<h3 id="create-the-units">Create the Units<a class="headerlink" href="#create-the-units" title="Permanent link">&para;</a></h3>
+<p>The agent must already be able to reach the server: <code>/etc/hitstor/agent.env</code> holds <code>HITSTOR_AGENT_SERVER</code> and <code>HITSTOR_AGENT_API_KEY</code> once the agent is registered.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="c1"># /etc/systemd/system/hitstor-backup.service</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="k">[Unit]</span>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="na">Description</span><span class="o">=</span><span class="s">HitStor one-shot backup</span>
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="na">After</span><span class="o">=</span><span class="s">network-online.target</span>
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="na">Wants</span><span class="o">=</span><span class="s">network-online.target</span>
+<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>
+<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="k">[Service]</span>
+<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="na">Type</span><span class="o">=</span><span class="s">oneshot</span>
+<a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a><span class="na">EnvironmentFile</span><span class="o">=</span><span class="s">/etc/hitstor/agent.env</span>
+<a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a><span class="na">ExecStart</span><span class="o">=</span><span class="s">/usr/bin/hitstor-agent backup /etc /home</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="c1"># /etc/systemd/system/hitstor-backup.timer</span>
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="k">[Unit]</span>
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="na">Description</span><span class="o">=</span><span class="s">Run a HitStor backup daily at 2 AM</span>
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="k">[Timer]</span>
+<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a><span class="na">OnCalendar</span><span class="o">=</span><span class="s">*-*-* 02:00:00</span>
+<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a><span class="na">Persistent</span><span class="o">=</span><span class="s">true</span>
+<a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a>
+<a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a><span class="k">[Install]</span>
+<a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a><span class="na">WantedBy</span><span class="o">=</span><span class="s">timers.target</span>
+</code></pre></div>
 <h3 id="enable-the-timer">Enable the Timer<a class="headerlink" href="#enable-the-timer" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>sudo<span class="w"> </span>systemctl<span class="w"> </span><span class="nb">enable</span><span class="w"> </span>hitstor-agent.timer
-<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>sudo<span class="w"> </span>systemctl<span class="w"> </span>start<span class="w"> </span>hitstor-agent.timer
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>sudo<span class="w"> </span>systemctl<span class="w"> </span>daemon-reload
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>sudo<span class="w"> </span>systemctl<span class="w"> </span><span class="nb">enable</span><span class="w"> </span>--now<span class="w"> </span>hitstor-backup.timer
 </code></pre></div>
-<p>The timer triggers the <code>hitstor-agent</code> service unit, which runs a single backup and exits.</p>
 <h3 id="customize-the-schedule">Customize the Schedule<a class="headerlink" href="#customize-the-schedule" title="Permanent link">&para;</a></h3>
-<p>Override the default timer schedule:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>sudo<span class="w"> </span>systemctl<span class="w"> </span>edit<span class="w"> </span>hitstor-agent.timer
+<p>Change <code>OnCalendar</code> in the timer, or override it:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>sudo<span class="w"> </span>systemctl<span class="w"> </span>edit<span class="w"> </span>hitstor-backup.timer
 </code></pre></div>
-<p>Add an <code>[Timer]</code> section with your desired <code>OnCalendar</code> value:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="k">[Timer]</span>
-<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="na">OnCalendar</span><span class="o">=</span><span class="s">*-*-* 02:00:00</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="k">[Timer]</span>
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="na">OnCalendar</span><span class="o">=</span>
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="na">OnCalendar</span><span class="o">=</span><span class="s">*-*-* 03:00:00</span>
 </code></pre></div>
 <h3 id="oncalendar-syntax">OnCalendar Syntax<a class="headerlink" href="#oncalendar-syntax" title="Permanent link">&para;</a></h3>
 <p>The <code>OnCalendar</code> directive uses systemd calendar event syntax. Common examples:</p>
@@ -3778,7 +4057,7 @@
 </tbody>
 </table>
 <p>Verify the schedule with <code>systemd-analyze</code>:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>systemd-analyze<span class="w"> </span>calendar<span class="w"> </span><span class="s2">"*-*-* 02:00:00"</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>systemd-analyze<span class="w"> </span>calendar<span class="w"> </span><span class="s2">"*-*-* 02:00:00"</span>
 </code></pre></div>
 <h3 id="timer-vs-daemon-mode">Timer vs. Daemon Mode<a class="headerlink" href="#timer-vs-daemon-mode" title="Permanent link">&para;</a></h3>
 <table>
@@ -3811,6 +4090,11 @@
 <td>Starts per backup</td>
 </tr>
 <tr>
+<td>Workload (plugin) jobs and dashboard restores</td>
+<td>Yes</td>
+<td>No</td>
+</tr>
+<tr>
 <td>Server connection</td>
 <td>Persistent</td>
 <td>On-demand</td>
@@ -3825,12 +4109,13 @@
 <li>Create a new basic task.</li>
 <li>Set the trigger to the desired schedule (for example, daily at 2:00 AM).</li>
 <li>Set the action to start a program:<ul>
-<li>Program: <code>C:\Program Files\HitStor\hitstor-agent.exe</code></li>
+<li>Program: <code>hitstor-agent.exe</code> in the agent's installation folder</li>
 <li>Arguments: <code>backup C:\Users C:\Data</code></li>
 </ul>
 </li>
 <li>Save the task.</li>
 </ol>
+<p>The command line does not read <code>agent.env</code> (only the daemon and the service do), so give the task the server and key: add <code>--server HOST:8420 --api-key KEY</code> to the arguments, or set <code>agent_server</code> and <code>agent_api_key</code> in a config file passed with <code>--config</code>.</p>
 <p>For server-managed scheduling on Windows, use daemon mode via the Windows Service instead.</p>
 <h2 id="scheduling-best-practices">Scheduling Best Practices<a class="headerlink" href="#scheduling-best-practices" title="Permanent link">&para;</a></h2>
 <ul>

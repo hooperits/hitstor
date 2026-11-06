@@ -57,6 +57,8 @@
       
     
     
+      <link rel="stylesheet" href="../../../stylesheets/extra.css">
+    
     <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
@@ -73,7 +75,7 @@
     
     
     
-    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="custom">
   
     
     <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
@@ -98,7 +100,7 @@
   <nav class="md-header__inner md-grid" aria-label="Cabecera">
     <a href="../../" title="Documentación de HitStor" class="md-header__button md-logo" aria-label="Documentación de HitStor" data-md-component="logo">
       
-  <img src="../../../assets/logo.png" alt="logo">
+  <img src="../../../assets/icon.svg" alt="logo">
 
     </a>
     <label class="md-header__button md-icon" for="__drawer">
@@ -128,7 +130,7 @@
     
     
     
-    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="custom"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
     
       <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
@@ -138,7 +140,7 @@
     
     
     
-    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="custom" data-md-color-accent="custom"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
     
       <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
@@ -393,7 +395,7 @@
   <label class="md-nav__title" for="__drawer">
     <a href="../../" title="Documentación de HitStor" class="md-nav__button md-logo" aria-label="Documentación de HitStor" data-md-component="logo">
       
-  <img src="../../../assets/logo.png" alt="logo">
+  <img src="../../../assets/icon.svg" alt="logo">
 
     </a>
     Documentación de HitStor
@@ -1087,6 +1089,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user-guide/sql-server/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SQL Server
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -1382,6 +1412,62 @@
   
   
     <li class="md-nav__item">
+      <a href="../users/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Usuarios y acceso
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reports/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reportes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../settings/" class="md-nav__link">
         
   
@@ -1533,10 +1619,21 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#interval-mode" class="md-nav__link">
+  <a href="#interval-mode-legacy" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Modo intervalo
+        Modo intervalo (heredado)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#plugin-jobs-schedule-picker" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Selector de programación
       
     </span>
   </a>
@@ -1636,6 +1733,17 @@
   
     <nav class="md-nav" aria-label="Temporizador de systemd (alternativa)">
       <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#create-the-units" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Crear las unidades
+      
+    </span>
+  </a>
+  
+</li>
         
           <li class="md-nav__item">
   <a href="#enable-the-timer" class="md-nav__link">
@@ -2752,6 +2860,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../reference/agent-commands/plugin/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    plugin
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../reference/agent-commands/service/" class="md-nav__link">
         
   
@@ -3101,6 +3237,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../dev-guide/plugin-architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Arquitectura de plugins
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../dev-guide/dev-environment/" class="md-nav__link">
         
   
@@ -3359,10 +3523,21 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#interval-mode" class="md-nav__link">
+  <a href="#interval-mode-legacy" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Modo intervalo
+        Modo intervalo (heredado)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#plugin-jobs-schedule-picker" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Selector de programación
       
     </span>
   </a>
@@ -3462,6 +3637,17 @@
   
     <nav class="md-nav" aria-label="Temporizador de systemd (alternativa)">
       <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#create-the-units" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Crear las unidades
+      
+    </span>
+  </a>
+  
+</li>
         
           <li class="md-nav__item">
   <a href="#enable-the-timer" class="md-nav__link">
@@ -3571,25 +3757,68 @@
 <p>El enfoque recomendado es la programación gestionada por el servidor, en la que las programaciones de respaldo se configuran de forma centralizada y los agentes consultan al servidor la hora de su próxima ejecución.</p>
 <h3 id="configure-from-the-dashboard">Configurar desde el dashboard<a class="headerlink" href="#configure-from-the-dashboard" title="Permanent link">&para;</a></h3>
 <ol>
-<li>Abra el <a href="../dashboard/">Dashboard</a> en <code>http://SERVER_IP:8421</code>.</li>
-<li>Vaya a <strong>Respaldos</strong> y haga clic en <strong>+ Nueva tarea de respaldo</strong> (o abra una tarea existente).</li>
-<li>Elija un modo de programación:<ul>
-<li><strong>Intervalo</strong>: ejecutar cada N horas (sencillo, sin tener en cuenta la zona horaria).</li>
-<li><strong>Expresión cron</strong>: usar la sintaxis cron estándar de 5 campos para una programación precisa con soporte de zona horaria.</li>
-</ul>
-</li>
-<li>Si usa el modo cron, ingrese la expresión y seleccione una zona horaria. El dashboard valida la expresión y muestra una descripción legible junto con las próximas 3 ejecuciones.</li>
-<li>Guarde la configuración.</li>
+<li>Abra el <a href="../dashboard/">Dashboard</a> en <code>https://SERVER_IP:8421</code>.</li>
+<li>Vaya a <strong>Respaldos</strong> y haga clic en <strong>+ Nueva tarea de respaldo</strong>. El paso 2 del asistente
+   define la programación con el selector de programación (vea <a href="#plugin-jobs-schedule-picker">Selector de programación</a>); un
+   origen de plugin recibe un <a href="../backup-jobs/#backup-plans">plan de respaldo</a>, con una programación por tipo de respaldo.</li>
+<li>Para cambiar la programación de una tarea existente, ábrala y despliegue <strong>Editar programación</strong> (o <strong>Editar plan</strong>
+   en una tarea de carga de trabajo). Usa el mismo selector; <strong>Editar como expresión cron</strong> cambia a la expresión directa.</li>
+<li>El dashboard valida la expresión y la muestra en palabras junto con sus próximas ejecuciones.</li>
+<li>Haga clic en <strong>Guardar programación</strong> (o <strong>Guardar plan</strong>).</li>
 </ol>
-<p>El servidor almacena la configuración de la programación en el registro de agentes. Los agentes que se ejecutan en modo daemon aplican los cambios automáticamente.</p>
+<p>El servidor guarda la programación de cada tarea junto con la tarea, en el registro de agentes. Los agentes que se ejecutan en modo daemon aplican los cambios automáticamente.</p>
 <h3 id="schedule-modes">Modos de programación<a class="headerlink" href="#schedule-modes" title="Permanent link">&para;</a></h3>
-<h4 id="interval-mode">Modo intervalo<a class="headerlink" href="#interval-mode" title="Permanent link">&para;</a></h4>
-<p>La opción de programación más sencilla. Defina el número de horas entre respaldos:</p>
+<h4 id="interval-mode-legacy">Modo intervalo (heredado)<a class="headerlink" href="#interval-mode-legacy" title="Permanent link">&para;</a></h4>
+<p>Las tareas creadas antes de las programaciones cron (o mediante la API con <code>schedule_hours</code>) se ejecutan cada N horas:</p>
 <ul>
-<li><strong>Cómo funciona</strong>: <code>next_run = last_backup + interval_hours</code></li>
+<li><strong>Cómo funciona</strong>: <code>next_run = last_backup + interval_hours</code>; tras una ejecución fallida, el siguiente intento es 15 minutos después</li>
 <li><strong>Zona horaria</strong>: no aplica (relativo a la hora del último respaldo)</li>
-<li><strong>Ideal para</strong>: configuraciones sencillas en las que la hora exacta de ejecución no importa</li>
 </ul>
+<p>El dashboard ya no crea tareas por intervalo. Al guardar una programación nueva en una de esas tareas, el intervalo se reemplaza por una expresión cron; el selector parte del equivalente más cercano.</p>
+<h4 id="plugin-jobs-schedule-picker">Selector de programación<a class="headerlink" href="#plugin-jobs-schedule-picker" title="Permanent link">&para;</a></h4>
+<p>Las tareas de respaldo, de archivos o de un plugin, definen su programación con un selector inspirado en los
+conjuntos de programación de las herramientas de respaldo empresariales, y
+guardan el resultado como una expresión cron:</p>
+<table>
+<thead>
+<tr>
+<th>Opción</th>
+<th>Configuración</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Solo a demanda</strong></td>
+<td>La tarea solo se ejecuta con <strong>Respaldar ahora</strong></td>
+</tr>
+<tr>
+<td><strong>Repetitiva → Todos los días</strong></td>
+<td>Hora de inicio</td>
+</tr>
+<tr>
+<td><strong>Repetitiva → Días de la semana</strong></td>
+<td>Días, y opcionalmente semanas del mes (1.ª a 5.ª, Última); hora de inicio</td>
+</tr>
+<tr>
+<td><strong>Repetitiva → Días del mes</strong></td>
+<td>Días 1 a 31 y <strong>Último día</strong>; hora de inicio. Los días que un mes no tiene se omiten</td>
+</tr>
+<tr>
+<td><strong>Repetitiva → Cada…</strong></td>
+<td>Cada 5 a 30 minutos, o cada 1 a 12 horas en un minuto dado; opcionalmente solo entre dos horas y solo de lunes a viernes</td>
+</tr>
+</tbody>
+</table>
+<p>Cada programación tiene una zona horaria (en una tarea nueva, la del navegador
+por defecto; <strong>Hora local del servidor</strong> usa la del servidor). El selector
+muestra la programación en palabras y sus próximas ejecuciones, y <strong>Editar
+como expresión cron</strong> cambia a la expresión directa. Una tarea nueva de
+sistema de archivos parte de todos los días a las 2:00 a. m. En un plan de
+respaldo, cada tipo parte de su programación habitual: completos los domingos
+a la 1:00 a. m., diferenciales de lunes a sábado a la 1:00 a. m. (ambos
+activados) y respaldos de log cada 15 minutos (desactivados hasta que usted
+los active). En un plan, cada tipo es repetitivo o está desactivado (solo a
+demanda).</p>
 <h4 id="cron-expression-mode">Modo expresión cron<a class="headerlink" href="#cron-expression-mode" title="Permanent link">&para;</a></h4>
 <p>Sintaxis cron estándar de 5 campos para una programación precisa y con zona horaria:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>┌───────────── minute (0-59)
@@ -3640,8 +3869,24 @@
 <td><code>0-30/10</code></td>
 <td>0, 10, 20, 30</td>
 </tr>
+<tr>
+<td>Último día del mes</td>
+<td><code>L</code> (día del mes)</td>
+<td>El último día de cada mes</td>
+</tr>
+<tr>
+<td>N-ésimo día de la semana</td>
+<td><code>0#1</code> (día de la semana)</td>
+<td>El primer domingo del mes (<code>#1</code> a <code>#5</code>)</td>
+</tr>
+<tr>
+<td>Último día de la semana</td>
+<td><code>5L</code> (día de la semana)</td>
+<td>El último viernes del mes</td>
+</tr>
 </tbody>
 </table>
+<p>No se aceptan nombres (<code>MON</code>, <code>JAN</code>), <code>7</code> para el domingo ni macros como <code>@daily</code>. Cuando el día del mes y el día de la semana están restringidos a la vez, se ejecuta cualquier día que cumpla <strong>uno de los dos</strong>, como en el cron estándar (<code>0 2 1 * 1</code> se ejecuta el día 1 y todos los lunes).</p>
 <p><strong>Ejemplos comunes</strong>:</p>
 <table>
 <thead>
@@ -3675,14 +3920,22 @@
 <td><code>*/15 * * * *</code></td>
 <td>Cada 15 minutos</td>
 </tr>
+<tr>
+<td><code>0 23 L * *</code></td>
+<td>El último día de cada mes a las 11:00 p. m.</td>
+</tr>
+<tr>
+<td><code>0 2 * * 0#1</code></td>
+<td>El primer domingo de cada mes a las 2:00 a. m.</td>
+</tr>
 </tbody>
 </table>
 <p><strong>Manejo de zonas horarias</strong>:</p>
 <ul>
 <li>Seleccione una zona horaria en la lista desplegable (formato IANA, p. ej. <code>America/New_York</code>).</li>
-<li>Si no se selecciona ninguna zona horaria, se usa la zona horaria local del servidor.</li>
+<li>Si no se selecciona ninguna zona horaria (<strong>Hora local del servidor</strong>), se usa la zona horaria local del servidor. Una zona horaria desconocida se reemplaza por UTC.</li>
 <li>Las expresiones cron se evalúan en la zona horaria seleccionada y los cambios de horario de verano se manejan automáticamente:<ul>
-<li><strong>Adelanto de hora</strong>: si una hora programada cae en la hora que se omite, el respaldo se ejecuta en la siguiente hora válida.</li>
+<li><strong>Adelanto de hora</strong>: si una hora programada cae en la hora que se omite, la ejecución de ese día se omite; la siguiente es el próximo día que coincida.</li>
 <li><strong>Atraso de hora</strong>: si una hora programada cae en la hora que se repite, el respaldo se ejecuta en la primera ocurrencia.</li>
 </ul>
 </li>
@@ -3690,7 +3943,7 @@
 <h3 id="how-it-works">Cómo funciona<a class="headerlink" href="#how-it-works" title="Permanent link">&para;</a></h3>
 <ol>
 <li>El agente llama al RPC <code>GetSchedule</code> del servidor.</li>
-<li>El servidor evalúa la programación (expresión cron o intervalo) y responde con la hora de la próxima ejecución (<code>next_run</code>).</li>
+<li>El servidor evalúa la programación (expresión cron, plan de respaldo o intervalo) y responde con la hora de la próxima ejecución (<code>next_run</code>). En un plan de respaldo indica además qué tipo de respaldo corresponde.</li>
 <li>El agente espera hasta <code>next_run</code> y luego ejecuta el respaldo.</li>
 <li>Cuando el respaldo termina, el agente vuelve a llamar a <code>GetSchedule</code> para obtener la siguiente ejecución.</li>
 </ol>
@@ -3700,8 +3953,9 @@
 <ul>
 <li>En la siguiente consulta, el servidor detecta que <code>now &gt; next_run</code> e indica al agente que se ejecute de inmediato.</li>
 <li>Después del respaldo de recuperación, la programación avanza a la siguiente ocurrencia futura (sin ejecuciones dobles).</li>
-<li>Esto funciona tanto en el modo intervalo como en el modo cron.</li>
+<li>Esto funciona en las programaciones por intervalo, cron y plan de respaldo.</li>
 </ul>
+<p>Una ejecución fallida no se reintenta en cada consulta: una programación cron o un plan esperan su siguiente horario, y una tarea por intervalo se reintenta a los 15 minutos.</p>
 <h2 id="agent-daemon-mode">Modo daemon del agente<a class="headerlink" href="#agent-daemon-mode" title="Permanent link">&para;</a></h2>
 <p>El modo daemon es el componente del lado del cliente de la programación gestionada por el servidor. Inicie el agente en modo daemon:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>hitstor-agent<span class="w"> </span>daemon
@@ -3709,7 +3963,7 @@
 <p>En modo daemon, el agente:</p>
 <ul>
 <li>Se ejecuta como un proceso de larga duración</li>
-<li>Consulta al servidor su programación de respaldo mediante el RPC <code>GetSchedule</code> (predeterminado: cada 5 minutos)</li>
+<li>Consulta al servidor su programación de respaldo mediante el RPC <code>GetSchedule</code> (predeterminado: cada 5 minutos; <code>--poll-interval</code>, mínimo 1 minuto)</li>
 <li>Ejecuta respaldos cuando <code>now &gt;= next_run_unix</code> para cualquier tarea habilitada</li>
 <li>Informa al servidor los resultados de los respaldos</li>
 <li>Maneja fallos transitorios de conexión con reintentos automáticos</li>
@@ -3719,27 +3973,54 @@
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>sudo<span class="w"> </span>systemctl<span class="w"> </span><span class="nb">enable</span><span class="w"> </span>hitstor-agent
 <a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>sudo<span class="w"> </span>systemctl<span class="w"> </span>start<span class="w"> </span>hitstor-agent
 </code></pre></div>
-<p>La unidad de servicio ejecuta <code>hitstor-agent daemon</code> con reinicio en caso de fallo.</p>
+<p>La unidad de servicio ejecuta <code>hitstor-agent daemon --config /etc/hitstor/agent-config.yaml</code> con reinicio en caso de fallo.</p>
 <h3 id="windows-service">Servicio de Windows<a class="headerlink" href="#windows-service" title="Permanent link">&para;</a></h3>
 <p>Registre el daemon como servicio de Windows:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="n">hitstor-agent</span> <span class="n">service</span> <span class="n">install</span>
 <a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="n">hitstor-agent</span> <span class="n">service</span> <span class="nb">start</span>
 </code></pre></div>
-<p>El servicio se inicia automáticamente al arrancar el equipo. Consulte <a href="../agent-deployment/">Despliegue de agentes</a> para ver las instrucciones completas de configuración en Windows.</p>
+<p>El instalador de Windows ya lo hace. El servicio se inicia automáticamente al arrancar el equipo. Consulte <a href="../agent-deployment/">Despliegue de agentes</a> para ver las instrucciones completas de configuración en Windows.</p>
 <h2 id="systemd-timer-alternative">Temporizador de systemd (alternativa)<a class="headerlink" href="#systemd-timer-alternative" title="Permanent link">&para;</a></h2>
-<p>Si prefiere una programación de estilo cron gestionada a nivel del sistema operativo en lugar de la programación gestionada por el servidor, use un temporizador de systemd.</p>
+<p>Si prefiere una programación de estilo cron gestionada a nivel del sistema operativo en lugar de la programación gestionada por el servidor, use un temporizador de systemd que ejecute un <code>hitstor-agent backup</code> puntual.</p>
+<div class="admonition note">
+<p class="admonition-title">Nota</p>
+<p>El paquete del agente también instala un <code>hitstor-agent.timer</code> (diario a las 02:00). Este activa <code>hitstor-agent.service</code>, que ejecuta el <strong>daemon</strong>, no un respaldo puntual: si el daemon ya está habilitado, el temporizador no tiene efecto. Para respaldos puntuales, use sus propias unidades, como se muestra a continuación.</p>
+</div>
+<h3 id="create-the-units">Crear las unidades<a class="headerlink" href="#create-the-units" title="Permanent link">&para;</a></h3>
+<p>El agente ya debe poder conectarse al servidor: <code>/etc/hitstor/agent.env</code> contiene <code>HITSTOR_AGENT_SERVER</code> y <code>HITSTOR_AGENT_API_KEY</code> una vez registrado el agente.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="c1"># /etc/systemd/system/hitstor-backup.service</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="k">[Unit]</span>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="na">Description</span><span class="o">=</span><span class="s">HitStor one-shot backup</span>
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="na">After</span><span class="o">=</span><span class="s">network-online.target</span>
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="na">Wants</span><span class="o">=</span><span class="s">network-online.target</span>
+<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>
+<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="k">[Service]</span>
+<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="na">Type</span><span class="o">=</span><span class="s">oneshot</span>
+<a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a><span class="na">EnvironmentFile</span><span class="o">=</span><span class="s">/etc/hitstor/agent.env</span>
+<a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a><span class="na">ExecStart</span><span class="o">=</span><span class="s">/usr/bin/hitstor-agent backup /etc /home</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="c1"># /etc/systemd/system/hitstor-backup.timer</span>
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="k">[Unit]</span>
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="na">Description</span><span class="o">=</span><span class="s">Run a HitStor backup daily at 2 AM</span>
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="k">[Timer]</span>
+<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a><span class="na">OnCalendar</span><span class="o">=</span><span class="s">*-*-* 02:00:00</span>
+<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a><span class="na">Persistent</span><span class="o">=</span><span class="s">true</span>
+<a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a>
+<a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a><span class="k">[Install]</span>
+<a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a><span class="na">WantedBy</span><span class="o">=</span><span class="s">timers.target</span>
+</code></pre></div>
 <h3 id="enable-the-timer">Habilitar el temporizador<a class="headerlink" href="#enable-the-timer" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>sudo<span class="w"> </span>systemctl<span class="w"> </span><span class="nb">enable</span><span class="w"> </span>hitstor-agent.timer
-<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>sudo<span class="w"> </span>systemctl<span class="w"> </span>start<span class="w"> </span>hitstor-agent.timer
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>sudo<span class="w"> </span>systemctl<span class="w"> </span>daemon-reload
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>sudo<span class="w"> </span>systemctl<span class="w"> </span><span class="nb">enable</span><span class="w"> </span>--now<span class="w"> </span>hitstor-backup.timer
 </code></pre></div>
-<p>El temporizador activa la unidad de servicio <code>hitstor-agent</code>, que ejecuta un único respaldo y termina.</p>
 <h3 id="customize-the-schedule">Personalizar la programación<a class="headerlink" href="#customize-the-schedule" title="Permanent link">&para;</a></h3>
-<p>Sobrescriba la programación predeterminada del temporizador:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>sudo<span class="w"> </span>systemctl<span class="w"> </span>edit<span class="w"> </span>hitstor-agent.timer
+<p>Cambie <code>OnCalendar</code> en el temporizador, o sobrescríbalo:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>sudo<span class="w"> </span>systemctl<span class="w"> </span>edit<span class="w"> </span>hitstor-backup.timer
 </code></pre></div>
-<p>Agregue una sección <code>[Timer]</code> con el valor de <code>OnCalendar</code> que desee:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="k">[Timer]</span>
-<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="na">OnCalendar</span><span class="o">=</span><span class="s">*-*-* 02:00:00</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="k">[Timer]</span>
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="na">OnCalendar</span><span class="o">=</span>
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="na">OnCalendar</span><span class="o">=</span><span class="s">*-*-* 03:00:00</span>
 </code></pre></div>
 <h3 id="oncalendar-syntax">Sintaxis de OnCalendar<a class="headerlink" href="#oncalendar-syntax" title="Permanent link">&para;</a></h3>
 <p>La directiva <code>OnCalendar</code> usa la sintaxis de eventos de calendario de systemd. Ejemplos comunes:</p>
@@ -3778,7 +4059,7 @@
 </tbody>
 </table>
 <p>Verifique la programación con <code>systemd-analyze</code>:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>systemd-analyze<span class="w"> </span>calendar<span class="w"> </span><span class="s2">"*-*-* 02:00:00"</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>systemd-analyze<span class="w"> </span>calendar<span class="w"> </span><span class="s2">"*-*-* 02:00:00"</span>
 </code></pre></div>
 <h3 id="timer-vs-daemon-mode">Temporizador frente a modo daemon<a class="headerlink" href="#timer-vs-daemon-mode" title="Permanent link">&para;</a></h3>
 <table>
@@ -3811,6 +4092,11 @@
 <td>Se inicia en cada respaldo</td>
 </tr>
 <tr>
+<td>Tareas de carga de trabajo (plugins) y restauraciones desde el dashboard</td>
+<td>Sí</td>
+<td>No</td>
+</tr>
+<tr>
 <td>Conexión con el servidor</td>
 <td>Persistente</td>
 <td>Bajo demanda</td>
@@ -3825,12 +4111,13 @@
 <li>Cree una nueva tarea básica.</li>
 <li>Configure el desencadenador con la programación deseada (por ejemplo, diariamente a las 2:00 a. m.).</li>
 <li>Configure la acción para iniciar un programa:<ul>
-<li>Programa: <code>C:\Program Files\HitStor\hitstor-agent.exe</code></li>
+<li>Programa: <code>hitstor-agent.exe</code> en la carpeta de instalación del agente</li>
 <li>Argumentos: <code>backup C:\Users C:\Data</code></li>
 </ul>
 </li>
 <li>Guarde la tarea.</li>
 </ol>
+<p>La línea de comandos no lee <code>agent.env</code> (solo lo leen el daemon y el servicio), así que indique a la tarea el servidor y la clave: agregue <code>--server HOST:8420 --api-key KEY</code> a los argumentos, o defina <code>agent_server</code> y <code>agent_api_key</code> en un archivo de configuración que pase con <code>--config</code>.</p>
 <p>Para la programación gestionada por el servidor en Windows, use en su lugar el modo daemon mediante el servicio de Windows.</p>
 <h2 id="scheduling-best-practices">Buenas prácticas de programación<a class="headerlink" href="#scheduling-best-practices" title="Permanent link">&para;</a></h2>
 <ul>

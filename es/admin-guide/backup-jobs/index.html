@@ -57,6 +57,8 @@
       
     
     
+      <link rel="stylesheet" href="../../../stylesheets/extra.css">
+    
     <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
@@ -73,7 +75,7 @@
     
     
     
-    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="custom">
   
     
     <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
@@ -98,7 +100,7 @@
   <nav class="md-header__inner md-grid" aria-label="Cabecera">
     <a href="../../" title="Documentación de HitStor" class="md-header__button md-logo" aria-label="Documentación de HitStor" data-md-component="logo">
       
-  <img src="../../../assets/logo.png" alt="logo">
+  <img src="../../../assets/icon.svg" alt="logo">
 
     </a>
     <label class="md-header__button md-icon" for="__drawer">
@@ -128,7 +130,7 @@
     
     
     
-    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="custom"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
     
       <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
@@ -138,7 +140,7 @@
     
     
     
-    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="custom" data-md-color-accent="custom"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
     
       <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
@@ -393,7 +395,7 @@
   <label class="md-nav__title" for="__drawer">
     <a href="../../" title="Documentación de HitStor" class="md-nav__button md-logo" aria-label="Documentación de HitStor" data-md-component="logo">
       
-  <img src="../../../assets/logo.png" alt="logo">
+  <img src="../../../assets/icon.svg" alt="logo">
 
     </a>
     Documentación de HitStor
@@ -1087,6 +1089,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user-guide/sql-server/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SQL Server
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -1324,10 +1354,49 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#backup-plans" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tareas de carga de trabajo y planes de respaldo
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Tareas de carga de trabajo y planes de respaldo">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#results-per-object" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Resultados por objeto
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#scheduling" class="md-nav__link">
     <span class="md-ellipsis">
       
         Programación
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#retention" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Retención
       
     </span>
   </a>
@@ -1464,6 +1533,62 @@
     
   
     Dashboard
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../users/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Usuarios y acceso
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reports/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reportes
   
 
     
@@ -2585,6 +2710,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../reference/agent-commands/plugin/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    plugin
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../reference/agent-commands/service/" class="md-nav__link">
         
   
@@ -2934,6 +3087,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../dev-guide/plugin-architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Arquitectura de plugins
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../dev-guide/dev-environment/" class="md-nav__link">
         
   
@@ -3179,10 +3360,49 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#backup-plans" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tareas de carga de trabajo y planes de respaldo
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Tareas de carga de trabajo y planes de respaldo">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#results-per-object" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Resultados por objeto
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#scheduling" class="md-nav__link">
     <span class="md-ellipsis">
       
         Programación
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#retention" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Retención
       
     </span>
   </a>
@@ -3232,7 +3452,8 @@
 
 
 <h1 id="tareas-de-respaldo">Tareas de respaldo<a class="headerlink" href="#tareas-de-respaldo" title="Permanent link">&para;</a></h1>
-<p>La página <strong>Respaldos</strong> del dashboard (<code>/backups</code>) es el lugar central para definir qué se respalda y cuándo. Cada tarea de respaldo tiene un <code>job_type</code> que determina cómo se recopilan los datos.</p>
+<p>La página <strong>Respaldos</strong> del dashboard (<code>/backups</code>) es el lugar central para definir qué se respalda y cuándo. Cada tarea de respaldo respalda <strong>un origen de una máquina</strong> y tiene un <code>job_type</code> que determina cómo se recopilan los datos. <strong>+ Nueva tarea de respaldo</strong> abre el asistente descrito en <a href="../dashboard/#backups">Dashboard → Respaldos</a>.</p>
+<p><img alt="Nueva tarea de respaldo: elegir qué respaldar" class="screenshot" src="../../../assets/screenshots/es/backup-wizard-selection.webp" /></p>
 <h2 id="job-types">Tipos de tarea<a class="headerlink" href="#job-types" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -3245,32 +3466,63 @@
 <tbody>
 <tr>
 <td><code>files</code></td>
-<td>Escaneo del sistema de archivos del agente mediante el plugin integrado (hitstor-scanner-builtin, incluido con el agente) o un plugin de escáner personalizado</td>
+<td>Escaneo del sistema de archivos del agente mediante el plugin integrado (hitstor-scanner-builtin, incluido con el agente) o un plugin de escáner personalizado (<code>fs_scanner_plugin</code>)</td>
 <td>Agente remoto</td>
+</tr>
+<tr>
+<td><code>workload</code></td>
+<td>Un <a href="../../user-guide/plugins/">plugin de carga de trabajo</a> instalado, por ejemplo <a href="../../user-guide/sql-server/">SQL Server</a></td>
+<td>Agente remoto (en el host de la aplicación)</td>
 </tr>
 </tbody>
 </table>
-<p><code>files</code> es el único tipo de tarea soportado. Los tipos de tarea SaaS, de base de datos y de VM en la nube
-se eliminaron de forma permanente en v2.0.0; consulte la <a href="../roadmap/#permanently-removed-v200">Hoja de ruta</a>.
-Las tareas heredadas de esos tipos se cargan, pero se deshabilitan al iniciar.</p>
+<p>Los tipos de tarea SaaS, de bases de datos incorporadas y de VM en la nube se eliminaron
+antes de la primera versión pública (v0.1.0); consulte la <a href="../roadmap/#permanently-removed">Hoja de ruta</a>.
+Las tareas heredadas de esos tipos se cargan, pero su programación se deshabilita al iniciar.</p>
 <h2 id="filesystem-jobs">Tareas de sistema de archivos<a class="headerlink" href="#filesystem-jobs" title="Permanent link">&para;</a></h2>
 <p>Es el tipo de tarea predeterminado. El servidor asigna rutas y programación a un agente; el agente escanea, divide en fragmentos (chunks) y sube los datos nuevos.</p>
+<p><img alt="Detalle de una tarea de respaldo" class="screenshot" src="../../../assets/screenshots/es/backup-job.webp" /></p>
 <ul>
-<li>Configure las rutas desde la página de detalle de la tarea o desde la interfaz de exploración del agente</li>
-<li>Habilite <strong>VSS</strong> en agentes Windows para obtener instantáneas (snapshots) consistentes</li>
-<li>Defina el <strong>intervalo de reescaneo completo</strong> (días) para protegerse contra corrupción silenciosa</li>
-<li>Use <strong>Forzar respaldo completo</strong> desde el dashboard cuando sea necesario</li>
+<li>Elija las carpetas en el árbol de selección del asistente; en la página de la tarea, <strong>Editar selección</strong> las cambia</li>
+<li>Habilite <strong>Snapshot consistente</strong> para leer desde una instantánea (snapshot) del volumen (VSS en Windows, LVM o btrfs en Linux)</li>
+<li>Defina <strong>Reescaneo completo cada</strong> N días para protegerse contra corrupción silenciosa (0 lo desactiva)</li>
+<li><strong>Respaldar ahora</strong> pregunta si se fuerza un reescaneo completo o se ejecuta un respaldo incremental</li>
 </ul>
+<h2 id="backup-plans">Tareas de carga de trabajo y planes de respaldo<a class="headerlink" href="#backup-plans" title="Permanent link">&para;</a></h2>
+<p>Una tarea de carga de trabajo respalda los objetos marcados en el árbol de selección (en SQL Server, una instancia o algunas de sus bases de datos) con un <strong>plan de respaldo</strong>: cada tipo de respaldo que ofrece el plugin tiene su propia programación, y los respaldos diferenciales y de log se basan en los respaldos completos de la propia tarea. El asistente propone:</p>
+<table>
+<thead>
+<tr>
+<th>Tipo</th>
+<th>Programación predeterminada</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Completo</td>
+<td>Domingos a las 01:00, activado</td>
+</tr>
+<tr>
+<td>Diferencial</td>
+<td>De lunes a sábado a las 01:00, activado</td>
+</tr>
+<tr>
+<td>Log</td>
+<td>Cada 15 minutos, desactivado</td>
+</tr>
+</tbody>
+</table>
+<p>Cada tipo se puede desactivar (solo a demanda). El servidor entrega al agente el tipo que corresponde a continuación; cuando un completo y un diferencial coinciden, se ejecuta el completo, que cubre al diferencial. En la página de la tarea, <strong>Editar plan</strong> cambia el plan, la fila de cada tipo tiene su propio <strong>Ejecutar ahora</strong> y <strong>Respaldar ahora</strong> pregunta qué tipo ejecutar.</p>
+<h3 id="results-per-object">Resultados por objeto<a class="headerlink" href="#results-per-object" title="Permanent link">&para;</a></h3>
+<p>Cada ejecución informa sobre cada objeto de la selección. La página de la tarea muestra, por tipo de respaldo, los objetos que quedaron fuera o fallaron y el motivo; una ejecución que guardó algunos objetos y falló en otros se marca como <strong>parcial</strong>. En SQL Server la página muestra además la <strong>cadena de respaldos</strong> de cada base de datos y ofrece <strong>Ejecutar respaldo completo ahora</strong> cuando un respaldo diferencial o de log necesita un completo nuevo. Consulte <a href="../../user-guide/sql-server/#back-up">SQL Server</a>.</p>
 <h2 id="scheduling">Programación<a class="headerlink" href="#scheduling" title="Permanent link">&para;</a></h2>
-<p>Cada tarea admite:</p>
-<ul>
-<li><strong>Intervalo</strong>: cada N horas</li>
-<li><strong>Cron</strong>: cron de 5 campos con zona horaria IANA</li>
-<li><strong>Constructor visual de programación</strong>: plantillas diaria / semanal / mensual</li>
-</ul>
-<p>El daemon del agente consulta <code>GetSchedule</code> cada 5 minutos (valor predeterminado). "Respaldar ahora" envía un RPC <code>WakeUp</code> para que se tome de inmediato.</p>
+<p>Las programaciones son expresiones cron con una zona horaria IANA, armadas con el selector de programación (todos los días, días de la semana o del mes, cada N minutos u horas) o escritas como expresión de 5 campos. Las tareas creadas antes del selector pueden seguir ejecutándose cada N horas después de su último respaldo; al guardar una programación nueva, se reemplaza por una expresión cron. Consulte <a href="../scheduling/">Programación</a>.</p>
+<p><img alt="Nueva tarea de respaldo: repositorio y programación" class="screenshot" src="../../../assets/screenshots/es/backup-wizard-schedule.webp" /></p>
+<p>El daemon del agente consulta <code>GetSchedule</code> cada 5 minutos (valor predeterminado, <code>--poll-interval</code>). "Respaldar ahora" envía además un RPC <code>WakeUp</code> a los agentes administrados desde el dashboard para que la tarea se tome de inmediato.</p>
+<h2 id="retention">Retención<a class="headerlink" href="#retention" title="Permanent link">&para;</a></h2>
+<p>Las tareas no eliminan instantáneas antiguas. Aplique una política de retención con <code>hitstor forget --keep-*</code> (agregue <code>--prune</code> para recuperar el espacio); en las instantáneas de carga de trabajo, la política conserva cadenas de respaldo completas. Consulte <a href="../../user-guide/retention/">Retención</a>.</p>
 <h2 id="cancel-running-backups">Cancelar respaldos en ejecución<a class="headerlink" href="#cancel-running-backups" title="Permanent link">&para;</a></h2>
-<p><code>POST /api/backups/{id}/cancel</code> aborta una sesión activa. Las sesiones obsoletas (sin actividad durante 10 minutos o más) muestran una insignia de advertencia en el dashboard.</p>
+<p><code>POST /api/backups/{id}/cancel</code> aborta una sesión activa. Las sesiones sin actividad durante 10 minutos o más muestran la insignia <strong>detenido</strong> en el dashboard.</p>
 <h2 id="api">API<a class="headerlink" href="#api" title="Permanent link">&para;</a></h2>
 <p>Consulte <a href="../../reference/dashboard-api/#backup-jobs">API HTTP del dashboard: tareas de respaldo</a>.</p>
 

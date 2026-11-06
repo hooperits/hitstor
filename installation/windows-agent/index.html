@@ -57,6 +57,8 @@
       
     
     
+      <link rel="stylesheet" href="../../stylesheets/extra.css">
+    
     <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
@@ -73,7 +75,7 @@
     
     
     
-    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="custom">
   
     
     <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
@@ -98,7 +100,7 @@
   <nav class="md-header__inner md-grid" aria-label="Header">
     <a href="../.." title="HitStor Documentation" class="md-header__button md-logo" aria-label="HitStor Documentation" data-md-component="logo">
       
-  <img src="../../assets/logo.png" alt="logo">
+  <img src="../../assets/icon.svg" alt="logo">
 
     </a>
     <label class="md-header__button md-icon" for="__drawer">
@@ -128,7 +130,7 @@
     
     
     
-    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="custom"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
     
       <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
@@ -138,7 +140,7 @@
     
     
     
-    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="custom" data-md-color-accent="custom"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
     
       <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
@@ -393,7 +395,7 @@
   <label class="md-nav__title" for="__drawer">
     <a href="../.." title="HitStor Documentation" class="md-nav__button md-logo" aria-label="HitStor Documentation" data-md-component="logo">
       
-  <img src="../../assets/logo.png" alt="logo">
+  <img src="../../assets/icon.svg" alt="logo">
 
     </a>
     HitStor Documentation
@@ -765,15 +767,26 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#configuration" class="md-nav__link">
+  <a href="#register-the-agent" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Configuration
+        Register the Agent
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Configuration">
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#manual-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Manual Configuration
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Manual Configuration">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -1325,6 +1338,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user-guide/sql-server/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SQL Server
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -1597,6 +1638,62 @@
     
   
     Dashboard
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../admin-guide/users/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Users and Access
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../admin-guide/reports/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reports
   
 
     
@@ -2718,6 +2815,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../reference/agent-commands/plugin/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    plugin
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../reference/agent-commands/service/" class="md-nav__link">
         
   
@@ -3067,6 +3192,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../dev-guide/plugin-architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Plugin Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../dev-guide/dev-environment/" class="md-nav__link">
         
   
@@ -3323,15 +3476,26 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#configuration" class="md-nav__link">
+  <a href="#register-the-agent" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Configuration
+        Register the Agent
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Configuration">
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#manual-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Manual Configuration
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Manual Configuration">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -3498,12 +3662,12 @@
 
 
 <h1 id="windows-agent-installation">Windows Agent Installation<a class="headerlink" href="#windows-agent-installation" title="Permanent link">&para;</a></h1>
-<p>The HitStor agent is a lightweight binary that sends encrypted, deduplicated backups from a Windows machine to a remote HitStor server over gRPC. The NSIS installer provides an optional checkbox to register the agent as a Windows Service for unattended backups.</p>
+<p>The HitStor agent is a lightweight binary that sends encrypted, deduplicated backups from a Windows machine to a remote HitStor server over gRPC. The NSIS installer registers the agent as a Windows Service (selected by default) that is then managed from the HitStor dashboard.</p>
 <h2 id="requirements">Requirements<a class="headerlink" href="#requirements" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Windows 10 (1809+) or Windows Server 2016+</li>
-<li>Architecture: amd64 or arm64</li>
-<li>Network access to the HitStor server (default port 8420)</li>
+<li>Architecture: amd64 (the installer is amd64 only; an arm64 binary can be built from source with <code>make agent-windows-arm64</code>)</li>
+<li>Network access to the HitStor server (default port 8420), and from the server to the agent's listen port (default 8422)</li>
 <li>Administrator privileges (required for installation and service management)</li>
 </ul>
 <h2 id="download">Download<a class="headerlink" href="#download" title="Permanent link">&para;</a></h2>
@@ -3524,43 +3688,25 @@
 <li>Choose the installation directory (default: <code>C:\Program Files\HitStor Agent\</code>).</li>
 <li>On the <strong>Components</strong> page, select the components to install:<ul>
 <li><strong>HitStor Agent</strong> (required) -- installs the agent binary and configuration.</li>
-<li><strong>Install as Windows Service</strong> (optional) -- registers and starts the agent as a Windows Service for unattended scheduled backups.</li>
+<li><strong>Install as Windows Service</strong> (selected by default) -- registers and starts the agent as a Windows Service, and opens its listen port in Windows Firewall.</li>
 </ul>
 </li>
-<li>Click <strong>Install</strong>.</li>
+<li>On the <strong>Agent Configuration</strong> page, keep the listen port (default <code>8422</code>) unless another service uses it. The server connects to this port to register and manage the agent.</li>
+<li>Click <strong>Install</strong>. The last page shows the listen port, the <strong>agent token</strong>, and the next steps.</li>
 </ol>
 <p>The installer performs the following steps:</p>
 <ul>
-<li>Copies <code>hitstor-agent.exe</code> to the installation directory.</li>
-<li>Adds the installation directory to the system <code>PATH</code>.</li>
-<li>Creates a configuration directory at <code>%ProgramData%\HitStor\</code>.</li>
-<li>Copies <code>agent-config.yaml.example</code> to the configuration directory.</li>
+<li>Copies <code>hitstor-agent.exe</code> to the installation directory and adds the directory to the system <code>PATH</code>.</li>
+<li>Creates <code>%ProgramData%\HitStor\</code>, restricted to SYSTEM and Administrators, with <code>agent-config.yaml.example</code>, <code>agent.env</code> (<code>HITSTOR_AGENT_LISTEN_PORT</code>), and an <code>agent-config.yaml</code> without backup paths (an existing one is preserved). On upgrade, the credentials in <code>agent.env</code> are kept.</li>
 <li>Creates a Start Menu shortcut for the uninstaller.</li>
-<li>If the service component is selected, registers and starts the <code>HitStorAgent</code> Windows Service.</li>
+<li>If the service component is selected, registers the <code>HitStorAgent</code> Windows Service with <code>--config %ProgramData%\HitStor\agent-config.yaml</code>, adds the firewall rule <code>HitStor Agent</code> for the listen port, and starts the service. The service generates the agent token (<code>%ProgramData%\HitStor\agent-token</code>) on first start.</li>
 </ul>
-<h2 id="configuration">Configuration<a class="headerlink" href="#configuration" title="Permanent link">&para;</a></h2>
-<p>The agent reads configuration from one of these locations:</p>
-<table>
-<thead>
-<tr>
-<th>Location</th>
-<th>Scope</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>%AppData%\hitstor\config.yaml</code></td>
-<td>Per-user configuration</td>
-</tr>
-<tr>
-<td><code>%ProgramData%\HitStor\agent-config.yaml</code></td>
-<td>System-wide configuration</td>
-</tr>
-</tbody>
-</table>
-<p>Copy the example configuration and edit it:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="nb">copy </span><span class="s2">"%ProgramData%\HitStor\agent-config.yaml.example"</span> <span class="s2">"%ProgramData%\HitStor\agent-config.yaml"</span>
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="n">notepad</span> <span class="s2">"%ProgramData%\HitStor\agent-config.yaml"</span>
+<h2 id="register-the-agent">Register the Agent<a class="headerlink" href="#register-the-agent" title="Permanent link">&para;</a></h2>
+<p>In the HitStor dashboard, go to <strong>Agents → Add Agent</strong> and enter this machine's IP address, the listen port, and the agent token shown at the end of the installation (<code>hitstor-agent show-id</code> prints it again from an elevated prompt). The server sends the agent its address and API key, which the agent stores in <code>agent.env</code>. Then create backup jobs under <strong>Backups</strong>; backup paths and schedules are managed from the dashboard.</p>
+<h2 id="manual-configuration">Manual Configuration<a class="headerlink" href="#manual-configuration" title="Permanent link">&para;</a></h2>
+<p>A dashboard-managed agent needs no configuration file edits. To run the agent CLI against a server without dashboard registration (for example with an API key from <code>hitstor serve agent add &lt;name&gt;</code>), use a configuration file. The service reads <code>%ProgramData%\HitStor\agent-config.yaml</code> (passed with <code>--config</code>) and <code>%ProgramData%\HitStor\agent.env</code>; CLI commands read <code>%AppData%\hitstor\config.yaml</code> unless you pass <code>--config</code>.</p>
+<p>Edit the system-wide file (<code>agent-config.yaml.example</code> in the same folder lists every option):</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">notepad</span> <span class="s2">"$env:ProgramData\HitStor\agent-config.yaml"</span>
 </code></pre></div>
 <h3 id="required-settings">Required Settings<a class="headerlink" href="#required-settings" title="Permanent link">&para;</a></h3>
 <p>At minimum, configure the server address and API key:</p>
@@ -3581,8 +3727,9 @@
 <a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">"desktop.ini"</span>
 </code></pre></div>
 <h2 id="verify-the-installation">Verify the Installation<a class="headerlink" href="#verify-the-installation" title="Permanent link">&para;</a></h2>
-<p>Open a new PowerShell window and run:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="n">hitstor-agent</span> <span class="n">version</span>
+<p>Open a new elevated PowerShell window and run:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="nb">Get-Service</span> <span class="n">HitStorAgent</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="n">hitstor-agent</span> <span class="nb">show-id</span>
 </code></pre></div>
 <p>Test connectivity to the server:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="n">hitstor-agent</span> <span class="n">ping</span> <span class="p">-</span><span class="n">-server</span> <span class="nb">backup-server</span><span class="p">.</span><span class="n">internal</span><span class="p">:</span><span class="n">8420</span> <span class="p">-</span><span class="n">-ca-cert</span> <span class="n">C</span><span class="p">:\</span><span class="n">certs</span><span class="p">\</span><span class="n">ca</span><span class="p">.</span><span class="n">crt</span>
@@ -3597,7 +3744,7 @@
 <p>The agent can run as a Windows Service for unattended scheduled backups. Administrator privileges are required for all service operations.</p>
 <h3 id="install-the-service">Install the Service<a class="headerlink" href="#install-the-service" title="Permanent link">&para;</a></h3>
 <p>If you did not select the service component during installation, you can install it manually:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="n">hitstor-agent</span> <span class="n">service</span> <span class="n">install</span> <span class="p">-</span><span class="n">-server</span> <span class="nb">backup-server</span><span class="p">:</span><span class="n">8420</span> <span class="p">-</span><span class="n">-api-key</span> <span class="p">&lt;</span><span class="n">key</span><span class="p">&gt;</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="n">hitstor-agent</span> <span class="n">service</span> <span class="n">install</span> <span class="p">-</span><span class="n">-config</span> <span class="s2">"$env:ProgramData\HitStor\agent-config.yaml"</span>
 </code></pre></div>
 <p>Options:</p>
 <table>
@@ -3621,11 +3768,12 @@
 </tr>
 <tr>
 <td><code>--config</code></td>
-<td>(auto-detected)</td>
-<td>Path to the configuration file</td>
+<td>(none)</td>
+<td>Configuration file the service is started with; without it the service account's default (<code>%AppData%\hitstor\config.yaml</code>) is used</td>
 </tr>
 </tbody>
 </table>
+<p><code>--server</code>, <code>--api-key</code>, and <code>--ca-cert</code> given to <code>service install</code> are also passed to the service.</p>
 <h3 id="start-and-stop">Start and Stop<a class="headerlink" href="#start-and-stop" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="n">hitstor-agent</span> <span class="n">service</span> <span class="nb">start</span>
 <a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="n">hitstor-agent</span> <span class="n">service</span> <span class="n">stop</span>
@@ -3636,7 +3784,7 @@
 <a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="n">hitstor-agent</span> <span class="n">service</span> <span class="n">uninstall</span>
 </code></pre></div>
 <h3 id="service-behavior">Service Behavior<a class="headerlink" href="#service-behavior" title="Permanent link">&para;</a></h3>
-<p>When running as a service, the agent reads all settings from the configuration file (<code>agent_server</code>, <code>agent_api_key</code>, <code>agent_paths</code>, etc.) and performs a single backup pass. To schedule recurring backups, configure the service start type or use Windows Task Scheduler.</p>
+<p>When running as a service, the agent runs in <a href="../../reference/agent-commands/daemon/">daemon mode</a>: it listens on the listen port (<code>HITSTOR_AGENT_LISTEN_PORT</code> in <code>agent.env</code>, default 8422) for the server, and polls the server every 5 minutes for its backup jobs, which run on the schedules set in the dashboard. It reads <code>agent.env</code> from <code>%ProgramData%\HitStor\</code> and logs to <code>%ProgramData%\HitStor\logs\agent.log</code>.</p>
 <h2 id="known-limitations">Known Limitations<a class="headerlink" href="#known-limitations" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -3680,7 +3828,7 @@
 <p>Use <strong>Add/Remove Programs</strong> in Windows Settings, or run the uninstaller directly:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="p">&amp;</span> <span class="s2">"$env:ProgramFiles\HitStor Agent\uninstall.exe"</span>
 </code></pre></div>
-<p>The uninstaller stops and removes the Windows Service (if installed), removes the binary, PATH entry, Start Menu shortcuts, and registry entries.</p>
+<p>The uninstaller stops and removes the Windows Service (if installed) and the <code>HitStor Agent</code> firewall rule, removes the binary, PATH entry, Start Menu shortcuts, and registry entries, and deletes the agent's files in <code>%ProgramData%\HitStor\</code> (<code>agent.env</code>, <code>agent-config.yaml</code>, the agent token, and its certificates). Register the agent again after a reinstall.</p>
 <h2 id="next-steps">Next Steps<a class="headerlink" href="#next-steps" title="Permanent link">&para;</a></h2>
 <ul>
 <li><a href="../../user-guide/getting-started/">Getting Started</a> -- learn the full backup lifecycle.</li>

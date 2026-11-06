@@ -57,6 +57,8 @@
       
     
     
+      <link rel="stylesheet" href="../../../stylesheets/extra.css">
+    
     <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
@@ -73,7 +75,7 @@
     
     
     
-    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="custom">
   
     
     <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
@@ -98,7 +100,7 @@
   <nav class="md-header__inner md-grid" aria-label="Cabecera">
     <a href="../../" title="Documentación de HitStor" class="md-header__button md-logo" aria-label="Documentación de HitStor" data-md-component="logo">
       
-  <img src="../../../assets/logo.png" alt="logo">
+  <img src="../../../assets/icon.svg" alt="logo">
 
     </a>
     <label class="md-header__button md-icon" for="__drawer">
@@ -128,7 +130,7 @@
     
     
     
-    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="custom"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
     
       <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
@@ -138,7 +140,7 @@
     
     
     
-    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="custom" data-md-color-accent="custom"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
     
       <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
@@ -393,7 +395,7 @@
   <label class="md-nav__title" for="__drawer">
     <a href="../../" title="Documentación de HitStor" class="md-nav__button md-logo" aria-label="Documentación de HitStor" data-md-component="logo">
       
-  <img src="../../../assets/logo.png" alt="logo">
+  <img src="../../../assets/icon.svg" alt="logo">
 
     </a>
     Documentación de HitStor
@@ -861,12 +863,12 @@
   <a href="#dashboard-password" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Contraseña del dashboard
+        Contraseña del dashboard y primer administrador
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Contraseña del dashboard">
+    <nav class="md-nav" aria-label="Contraseña del dashboard y primer administrador">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -874,6 +876,17 @@
     <span class="md-ellipsis">
       
         Leer la contraseña generada
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#first-administrator-console" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Crear el primer administrador desde la consola
       
     </span>
   </a>
@@ -1464,6 +1477,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user-guide/sql-server/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SQL Server
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -1736,6 +1777,62 @@
     
   
     Dashboard
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../admin-guide/users/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Usuarios y acceso
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../admin-guide/reports/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reportes
   
 
     
@@ -2857,6 +2954,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../reference/agent-commands/plugin/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    plugin
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../reference/agent-commands/service/" class="md-nav__link">
         
   
@@ -3186,6 +3311,34 @@
     
   
     Visión general del código
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../dev-guide/plugin-architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Arquitectura de plugins
   
 
     
@@ -3698,12 +3851,12 @@
   <a href="#dashboard-password" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Contraseña del dashboard
+        Contraseña del dashboard y primer administrador
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Contraseña del dashboard">
+    <nav class="md-nav" aria-label="Contraseña del dashboard y primer administrador">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -3711,6 +3864,17 @@
     <span class="md-ellipsis">
       
         Leer la contraseña generada
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#first-administrator-console" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Crear el primer administrador desde la consola
       
     </span>
   </a>
@@ -3795,13 +3959,14 @@
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="nb">cd</span><span class="w"> </span>hitstor
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>cp<span class="w"> </span>.env.example<span class="w"> </span>.env
 </code></pre></div>
-<p>Edite <code>.env</code> y defina un <code>HITSTOR_PASSWORD</code> robusto (cifrado del repositorio) y un <code>HITSTOR_DASHBOARD_PASSWORD</code> (inicio de sesión en la interfaz web). Si deja <code>HITSTOR_DASHBOARD_PASSWORD</code> vacío, el servidor genera una nueva contraseña aleatoria del dashboard cada vez que se inicia el contenedor; consulte <a href="#dashboard-password">Contraseña del dashboard</a>.</p>
+<p>Edite <code>.env</code> y defina un <code>HITSTOR_PASSWORD</code> robusto (cifrado del repositorio) y un <code>HITSTOR_DASHBOARD_PASSWORD</code> (la contraseña de configuración inicial que usará una sola vez para crear el primer administrador del dashboard). Si deja <code>HITSTOR_DASHBOARD_PASSWORD</code> vacío, el servidor genera una nueva aleatoria cada vez que se inicia el contenedor; consulte <a href="#dashboard-password">Contraseña del dashboard y primer administrador</a>.</p>
 <h3 id="2-start-the-server">2. Iniciar el servidor<a class="headerlink" href="#2-start-the-server" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>docker<span class="w"> </span>compose<span class="w"> </span>-f<span class="w"> </span>docker-compose.quickstart.yml<span class="w"> </span>up<span class="w"> </span>-d
 </code></pre></div>
 <p>En el primer inicio, el contenedor ejecuta automáticamente <code>hitstor init</code> y luego <code>hitstor serve</code>.</p>
 <h3 id="3-open-the-dashboard">3. Abrir el dashboard<a class="headerlink" href="#3-open-the-dashboard" title="Permanent link">&para;</a></h3>
-<p>Vaya a <a href="http://localhost:8421">http://localhost:8421</a> e inicie sesión con <code>HITSTOR_DASHBOARD_PASSWORD</code> (o con la contraseña generada; consulte <a href="#dashboard-password">Contraseña del dashboard</a>).</p>
+<p>Vaya a <a href="https://localhost:8421">https://localhost:8421</a> (el certificado es autofirmado, por lo que el navegador muestra una advertencia la primera vez). El dashboard se abre en <strong>Cree el primer administrador</strong>: ingrese <code>HITSTOR_DASHBOARD_PASSWORD</code> (o la contraseña generada), elija su nombre de usuario y contraseña, y configure una app de autenticación. Consulte <a href="#dashboard-password">Contraseña del dashboard y primer administrador</a>.</p>
+<p><img alt="Página de inicio de sesión del dashboard" class="screenshot" src="../../../assets/screenshots/es/login.webp" /></p>
 <table>
 <thead>
 <tr>
@@ -3832,7 +3997,7 @@
 <p>Las credenciales de MinIO incluidas son para pruebas locales. No exponga este stack a internet sin cambiar las credenciales y habilitar TLS.</p>
 </div>
 <h3 id="pull-a-pre-built-image">Descargar una imagen precompilada<a class="headerlink" href="#pull-a-pre-built-image" title="Permanent link">&para;</a></h3>
-<p>Cuando se publiquen imágenes de versión en GHCR:</p>
+<p>Las imágenes de cada versión se publican en GHCR (<code>ghcr.io/hooperits/hitstor</code>, con la etiqueta de la versión y <code>latest</code>):</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="nb">export</span><span class="w"> </span><span class="nv">HITSTOR_IMAGE</span><span class="o">=</span>ghcr.io/hooperits/hitstor
 <a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="nb">export</span><span class="w"> </span><span class="nv">HITSTOR_VERSION</span><span class="o">=</span>latest
 <a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>docker<span class="w"> </span>compose<span class="w"> </span>-f<span class="w"> </span>docker-compose.quickstart.yml<span class="w"> </span>up<span class="w"> </span>-d
@@ -3854,9 +4019,9 @@
 <a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>chmod<span class="w"> </span>+x<span class="w"> </span>hitstor-server-*.run
 <a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>sudo<span class="w"> </span>./hitstor-server-*.run
 </code></pre></div>
-<p>El asistente interactivo inicializa el repositorio, configura systemd e inicia el servidor.</p>
+<p>El asistente interactivo pide el directorio de datos, una contraseña opcional de configuración inicial del dashboard, los puertos y la dirección que usan los agentes para llegar al servidor; luego configura systemd e inicia el servidor. No crea un repositorio: eso se hace desde el dashboard.</p>
 <h3 id="2-open-the-dashboard">2. Abrir el dashboard<a class="headerlink" href="#2-open-the-dashboard" title="Permanent link">&para;</a></h3>
-<p>URL predeterminada: <code>https://&lt;server-ip&gt;:8421</code> (TLS autofirmado) o <code>http://&lt;server-ip&gt;:8421</code>, según la configuración del asistente. Inicie sesión con la contraseña del dashboard que ingresó en el asistente; si la dejó vacía, consulte <a href="#dashboard-password">Contraseña del dashboard</a>.</p>
+<p>Abra <code>http://&lt;server-ip&gt;:8421</code> e inicie sesión con la contraseña del dashboard que ingresó en el asistente (si la dejó vacía, consulte <a href="#dashboard-password">Contraseña del dashboard y primer administrador</a>). Mientras no exista un repositorio, el servidor funciona en modo de configuración inicial por HTTP sin cifrar. Cree un repositorio desde la página <strong>Almacenamiento</strong> y reinicie el servicio (<code>sudo systemctl restart hitstor-server</code>): el dashboard pasa a HTTPS (<code>https://&lt;server-ip&gt;:8421</code>, autofirmado de forma predeterminada) y se abre en <strong>Cree el primer administrador</strong>.</p>
 <p>Consulte <a href="../linux-installer/">Instalación rápida para Linux</a> para conocer los detalles del asistente y <a href="../../admin-guide/server-setup/">Configuración del servidor</a> para el endurecimiento en producción.</p>
 <h3 id="3-install-agents">3. Instalar agentes<a class="headerlink" href="#3-install-agents" title="Permanent link">&para;</a></h3>
 <p>Continúe con la <a href="#path-d-agent-only">Ruta D</a>.</p>
@@ -3869,9 +4034,9 @@
 </code></pre></div>
 <p>El instalador copia <code>hitstor.exe</code> a <code>C:\Program Files\HitStor</code>, crea <code>C:\ProgramData\HitStor\config.yaml</code>, agrega reglas de firewall para los puertos 8420 y 8421, y registra e inicia el servicio <code>HitStor</code>. Si ejecuta un instalador más reciente de la misma forma, la instalación se actualiza en el mismo lugar.</p>
 <h3 id="2-get-the-dashboard-password">2. Obtener la contraseña del dashboard<a class="headerlink" href="#2-get-the-dashboard-password" title="Permanent link">&para;</a></h3>
-<p>El servidor genera una contraseña aleatoria del dashboard en el primer inicio. Léala en el servidor como se describe en <a href="#dashboard-password">Contraseña del dashboard</a>.</p>
+<p>El servidor genera una contraseña aleatoria de configuración inicial del dashboard en el primer inicio. Léala en el servidor como se describe en <a href="#dashboard-password">Contraseña del dashboard y primer administrador</a>.</p>
 <h3 id="3-open-the-dashboard_1">3. Abrir el dashboard<a class="headerlink" href="#3-open-the-dashboard_1" title="Permanent link">&para;</a></h3>
-<p>Abra <code>http://&lt;server-ip&gt;:8421</code>, inicie sesión y cambie la contraseña en <strong>Configuración</strong>. Luego cree un repositorio desde la página <strong>Almacenamiento</strong>. Mientras no exista un repositorio, el servidor funciona en modo de configuración inicial y sirve el dashboard por HTTP sin cifrar; HTTPS (autofirmado de forma predeterminada) se habilita después de configurar un repositorio y reiniciar el servicio (<code>Restart-Service HitStor</code>).</p>
+<p>Abra <code>http://&lt;server-ip&gt;:8421</code>, inicie sesión con esa contraseña y cree un repositorio desde la página <strong>Almacenamiento</strong>. Mientras no exista un repositorio, el servidor funciona en modo de configuración inicial y sirve el dashboard por HTTP sin cifrar; HTTPS (autofirmado de forma predeterminada) se habilita después de configurar un repositorio y reiniciar el servicio (<code>Restart-Service HitStor</code>). Después del reinicio, abra <code>https://&lt;server-ip&gt;:8421</code> y cree el primer administrador (consulte <a href="#dashboard-password">Contraseña del dashboard y primer administrador</a>).</p>
 <p>Consulte <a href="../windows-server/">Windows Server</a> para la gestión del servicio y los detalles del firewall.</p>
 <h3 id="4-install-agents">4. Instalar agentes<a class="headerlink" href="#4-install-agents" title="Permanent link">&para;</a></h3>
 <p>Continúe con la <a href="#path-d-agent-only">Ruta D</a>.</p>
@@ -3883,22 +4048,28 @@
 <a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>chmod<span class="w"> </span>+x<span class="w"> </span>hitstor-agent-*.run
 <a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>sudo<span class="w"> </span>./hitstor-agent-*.run
 </code></pre></div>
-<p>Elija el modo de <strong>registro desde el dashboard</strong>. El asistente muestra un token del agente. En el dashboard de HitStor:</p>
+<p>El asistente solo pide el puerto de escucha del agente (de forma predeterminada, <strong>8422</strong>), instala el servicio y muestra el token del agente. En el dashboard de HitStor:</p>
 <ol>
 <li>Vaya a <strong>Agentes</strong> → <strong>Agregar agente</strong></li>
-<li>Ingrese el token y la dirección IP del agente</li>
+<li>Ingrese la dirección IP del agente, su puerto de escucha y el token</li>
 <li>Cree una tarea de respaldo en <strong>Respaldos</strong></li>
 </ol>
 <p>Para instalaciones mediante scripts:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>curl<span class="w"> </span>-fsSL<span class="w"> </span>https://raw.githubusercontent.com/hooperits/hitstor/master/scripts/install-agent.sh<span class="w"> </span><span class="p">|</span><span class="w"> </span>sudo<span class="w"> </span>bash
 </code></pre></div>
-<p>Consulte <a href="../../admin-guide/agent-deployment/">Despliegue de agentes</a> para el modo daemon, las tareas de bases de datos y Windows.</p>
+<p>Consulte <a href="../../admin-guide/agent-deployment/">Despliegue de agentes</a> para el modo daemon y Windows, y <a href="../../user-guide/sql-server/">SQL Server</a> para los respaldos de bases de datos mediante el plugin de carga de trabajo <code>mssql</code>.</p>
 <h3 id="windows">Windows<a class="headerlink" href="#windows" title="Permanent link">&para;</a></h3>
-<p>Descargue <code>hitstor-agent-X.Y.Z-windows-amd64.exe</code> desde Releases y ejecute el instalador. Consulte <a href="../windows-agent/">Agente de Windows</a>.</p>
+<p>Descargue <code>hitstor-agent-X.Y.Z-windows-amd64-setup.exe</code> desde Releases y ejecute el instalador. Consulte <a href="../windows-agent/">Agente de Windows</a>.</p>
 <h3 id="verify-connectivity">Verificar la conectividad<a class="headerlink" href="#verify-connectivity" title="Permanent link">&para;</a></h3>
 <p>Desde el host del agente, el puerto gRPC del servidor debe ser accesible (de forma predeterminada, <strong>8420</strong>). Los agentes consultan periódicamente al servidor para obtener las programaciones de respaldo; también puede iniciar un respaldo con <strong>Respaldar ahora</strong> desde el dashboard.</p>
 <hr />
-<h2 id="dashboard-password">Contraseña del dashboard<a class="headerlink" href="#dashboard-password" title="Permanent link">&para;</a></h2>
+<h2 id="dashboard-password">Contraseña del dashboard y primer administrador<a class="headerlink" href="#dashboard-password" title="Permanent link">&para;</a></h2>
+<p>El dashboard usa cuentas personales, cada una con su propia contraseña, sus roles y verificación en dos pasos obligatoria (consulte <a href="../../admin-guide/users/">Usuarios y acceso</a>). Un servidor nuevo todavía no tiene cuentas, así que arranca con una única <strong>contraseña del dashboard</strong> (el parámetro <code>serve_dashboard_password</code>) que solo sirve para llegar al primer administrador:</p>
+<ol>
+<li><strong>Todavía sin repositorio</strong> (modo de configuración inicial): inicie sesión con la contraseña del dashboard, cree un repositorio en <strong>Almacenamiento</strong> y reinicie el servidor. Las cuentas se guardan junto al primer repositorio, por lo que solo pueden existir cuando este existe.</li>
+<li><strong>Con repositorio y sin cuentas</strong>: todas las páginas llevan a <strong>Cree el primer administrador</strong> (<code>/setup</code>). Ingrese la contraseña actual del dashboard, elija el nombre de usuario y la contraseña del administrador (al menos 12 caracteres), escanee el código QR con una app de autenticación y guarde los códigos de recuperación.</li>
+<li><strong>Con cuentas</strong>: cada persona inicia sesión con su propio nombre de usuario, contraseña y un código. La contraseña del dashboard ya no permite iniciar sesión. Agregue más usuarios en <strong>Usuarios y acceso</strong>.</li>
+</ol>
 <p>HitStor <strong>no tiene una contraseña predeterminada del dashboard</strong>. La contraseña proviene de:</p>
 <table>
 <thead>
@@ -3922,7 +4093,7 @@
 </tr>
 </tbody>
 </table>
-<p>Cuando el archivo de configuración no tiene contraseña del dashboard, <code>hitstor serve</code> genera una aleatoria al iniciar, guarda su hash en el archivo de configuración y escribe el texto plano <strong>una sola vez</strong> en el registro del servidor, en una entrada que contiene <code>no dashboard password configured; generated one</code>. No necesita acceso al dashboard para leerla: lea el registro en el servidor.</p>
+<p>Cuando el archivo de configuración no tiene contraseña del dashboard, <code>hitstor serve</code> genera una aleatoria al iniciar, guarda su hash en el archivo de configuración (si el servidor tiene uno; si no, se genera una contraseña nueva en cada inicio) y escribe el texto plano <strong>una sola vez</strong> en el registro del servidor, en una entrada que contiene <code>no dashboard password configured; generated one</code>. No necesita acceso al dashboard para leerla: lea el registro en el servidor.</p>
 <h3 id="read-the-generated-password">Leer la contraseña generada<a class="headerlink" href="#read-the-generated-password" title="Permanent link">&para;</a></h3>
 <p><strong>Windows</strong> (PowerShell como Administrador; el registro solo pueden leerlo los Administradores y SYSTEM):</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="nb">Select-String</span> <span class="n">-Path</span> <span class="n">C</span><span class="p">:\</span><span class="n">ProgramData</span><span class="p">\</span><span class="n">HitStor</span><span class="p">\</span><span class="n">logs</span><span class="p">\</span><span class="n">server</span><span class="p">.</span><span class="n">log</span> <span class="n">-Pattern</span> <span class="s1">'generated one'</span> <span class="p">|</span>
@@ -3938,27 +4109,37 @@
 <div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>docker<span class="w"> </span>compose<span class="w"> </span>-f<span class="w"> </span>docker-compose.quickstart.yml<span class="w"> </span>logs<span class="w"> </span>hitstor<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span><span class="s1">'generated one'</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>tail<span class="w"> </span>-1
 </code></pre></div>
 <p>Copie y pegue el valor en lugar de escribirlo: las contraseñas generadas mezclan caracteres que se parecen (<code>l</code>/<code>I</code>, <code>O</code>/<code>0</code>).</p>
-<p>Inicie sesión y cambie la contraseña en <strong>Configuración</strong> de inmediato. El registro conserva la entrada original, por lo que después de cambiar la contraseña el valor registrado deja de funcionar.</p>
+<p>Úsela para iniciar sesión mientras el servidor no tiene repositorio y para crear el primer administrador. El registro conserva la entrada original, por lo que si cambia la contraseña en <strong>Configuración</strong> antes de eso, el valor registrado deja de funcionar.</p>
+<h3 id="first-administrator-console">Crear el primer administrador desde la consola<a class="headerlink" href="#first-administrator-console" title="Permanent link">&para;</a></h3>
+<p>En lugar de la página <code>/setup</code>, puede crear el primer administrador en el servidor con <a href="../../admin-guide/users/#cli"><code>hitstor serve user add</code></a>. Ejecútelo con la misma configuración que el servicio: usa el repositorio donde el servidor guarda sus usuarios (el primero por nombre) y muestra una contraseña temporal y, en el primer inicio de sesión, el usuario elige su propia contraseña y configura la app de autenticación:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="c1"># Linux</span>
+<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>sudo<span class="w"> </span>-u<span class="w"> </span>hitstor<span class="w"> </span>hitstor<span class="w"> </span>--config<span class="w"> </span>/etc/hitstor/config.yaml<span class="w"> </span>serve<span class="w"> </span>user<span class="w"> </span>add<span class="w"> </span>admin<span class="w"> </span>--grant<span class="w"> </span>admin
+<a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a>
+<a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a><span class="c1"># Inicio rápido con Docker (el contenedor ya tiene HITSTOR_REPO y HITSTOR_PASSWORD)</span>
+<a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a>docker<span class="w"> </span>compose<span class="w"> </span>-f<span class="w"> </span>docker-compose.quickstart.yml<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>hitstor<span class="w"> </span>hitstor<span class="w"> </span>serve<span class="w"> </span>user<span class="w"> </span>add<span class="w"> </span>admin<span class="w"> </span>--grant<span class="w"> </span>admin
+</code></pre></div>
+<p>La misma familia de comandos restablece una contraseña (<code>serve user passwd</code>) o la verificación en dos pasos (<code>serve user reset-2fa</code>) cuando ningún administrador puede iniciar sesión.</p>
 <h3 id="reset-a-lost-password">Restablecer una contraseña perdida<a class="headerlink" href="#reset-a-lost-password" title="Permanent link">&para;</a></h3>
+<p>Esto se aplica a la contraseña del dashboard, antes de que exista el primer administrador. Cuando ya hay cuentas, restablezca la contraseña de un usuario con <code>hitstor serve user passwd &lt;nombre&gt;</code> (consulte <a href="../../admin-guide/users/#cli">Usuarios y acceso</a>).</p>
 <p>Elimine la contraseña almacenada del archivo de configuración y reinicie el servidor; se genera una contraseña nueva y se registra como se indicó arriba.</p>
 <p><strong>Windows:</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="nb">Stop-Service</span> <span class="n">HitStor</span>
-<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="nv">$cfg</span> <span class="p">=</span> <span class="s1">'C:\ProgramData\HitStor\config.yaml'</span>
-<a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a><span class="p">(</span><span class="nb">Get-Content</span> <span class="nv">$cfg</span><span class="p">)</span> <span class="o">-notmatch</span> <span class="s1">'^serve_dashboard_password:'</span> <span class="p">|</span> <span class="nb">Set-Content</span> <span class="nv">$cfg</span> <span class="n">-Encoding</span> <span class="n">ascii</span>
-<a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a><span class="nb">Start-Service</span> <span class="n">HitStor</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="nb">Stop-Service</span> <span class="n">HitStor</span>
+<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a><span class="nv">$cfg</span> <span class="p">=</span> <span class="s1">'C:\ProgramData\HitStor\config.yaml'</span>
+<a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a><span class="p">(</span><span class="nb">Get-Content</span> <span class="nv">$cfg</span><span class="p">)</span> <span class="o">-notmatch</span> <span class="s1">'^serve_dashboard_password:'</span> <span class="p">|</span> <span class="nb">Set-Content</span> <span class="nv">$cfg</span> <span class="n">-Encoding</span> <span class="n">ascii</span>
+<a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a><span class="nb">Start-Service</span> <span class="n">HitStor</span>
 </code></pre></div>
 <p><strong>Linux:</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>sudo<span class="w"> </span>sed<span class="w"> </span>-i<span class="w"> </span><span class="s1">'/^serve_dashboard_password:/d'</span><span class="w"> </span>/etc/hitstor/config.yaml
-<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a>sudo<span class="w"> </span>systemctl<span class="w"> </span>restart<span class="w"> </span>hitstor-server
+<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>sudo<span class="w"> </span>sed<span class="w"> </span>-i<span class="w"> </span><span class="s1">'/^serve_dashboard_password:/d'</span><span class="w"> </span>/etc/hitstor/config.yaml
+<a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a>sudo<span class="w"> </span>systemctl<span class="w"> </span>restart<span class="w"> </span>hitstor-server
 </code></pre></div>
 <p><strong>Docker:</strong> defina un nuevo <code>HITSTOR_DASHBOARD_PASSWORD</code> en <code>.env</code> y vuelva a crear el contenedor (<code>docker compose -f docker-compose.quickstart.yml up -d --force-recreate</code>).</p>
 <hr />
 <h2 id="first-backup-checklist">Lista de verificación del primer respaldo<a class="headerlink" href="#first-backup-checklist" title="Permanent link">&para;</a></h2>
 <p>Una vez conectados el servidor y al menos un agente:</p>
 <ol>
-<li><strong>Almacenamiento</strong>: confirme que existe un repositorio (el inicio rápido con Docker crea uno automáticamente; el asistente de la VM crea uno durante la instalación)</li>
+<li><strong>Almacenamiento</strong>: confirme que existe un repositorio (el inicio rápido con Docker crea uno automáticamente; con los instaladores para VM y Windows se crea desde el dashboard)</li>
 <li><strong>Agentes</strong>: el agente aparece como conectado en el dashboard</li>
-<li><strong>Respaldos</strong>: cree una tarea (<code>files</code>, <code>database</code>, etc.) y asígnela al agente</li>
+<li><strong>Respaldos</strong>: cree una tarea y asígnela al agente: un respaldo de archivos o una tarea de carga de trabajo como <a href="../../user-guide/sql-server/">SQL Server</a>, con un plan de respaldo con programaciones completa, diferencial y de log</li>
 <li><strong>Ejecutar</strong>: haga clic en <strong>Respaldar ahora</strong> o espere a la programación</li>
 <li><strong>Restaurar</strong>: pruebe una restauración desde el dashboard o la CLI</li>
 </ol>

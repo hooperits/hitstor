@@ -16,7 +16,7 @@
         <link rel="prev" href="../configuration/">
       
       
-        <link rel="next" href="../../admin-guide/">
+        <link rel="next" href="../sql-server/">
       
       
         
@@ -57,6 +57,8 @@
       
     
     
+      <link rel="stylesheet" href="../../stylesheets/extra.css">
+    
     <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
@@ -73,7 +75,7 @@
     
     
     
-    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="custom">
   
     
     <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
@@ -98,7 +100,7 @@
   <nav class="md-header__inner md-grid" aria-label="Header">
     <a href="../.." title="HitStor Documentation" class="md-header__button md-logo" aria-label="HitStor Documentation" data-md-component="logo">
       
-  <img src="../../assets/logo.png" alt="logo">
+  <img src="../../assets/icon.svg" alt="logo">
 
     </a>
     <label class="md-header__button md-icon" for="__drawer">
@@ -128,7 +130,7 @@
     
     
     
-    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="custom"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
     
       <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
@@ -138,7 +140,7 @@
     
     
     
-    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="custom" data-md-color-accent="custom"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
     
       <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
@@ -393,7 +395,7 @@
   <label class="md-nav__title" for="__drawer">
     <a href="../.." title="HitStor Documentation" class="md-nav__button md-logo" aria-label="HitStor Documentation" data-md-component="logo">
       
-  <img src="../../assets/logo.png" alt="logo">
+  <img src="../../assets/icon.svg" alt="logo">
 
     </a>
     HitStor Documentation
@@ -1217,6 +1219,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#workload-plugins" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Workload Plugins
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#see-also" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1231,6 +1244,34 @@
   
 </nav>
       
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../sql-server/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SQL Server
+  
+
+    
+  </span>
+  
+  
+
+      </a>
     </li>
   
 
@@ -1508,6 +1549,62 @@
     
   
     Dashboard
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../admin-guide/users/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Users and Access
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../admin-guide/reports/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reports
   
 
     
@@ -2629,6 +2726,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../reference/agent-commands/plugin/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    plugin
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../reference/agent-commands/service/" class="md-nav__link">
         
   
@@ -2978,6 +3103,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../dev-guide/plugin-architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Plugin Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../dev-guide/dev-environment/" class="md-nav__link">
         
   
@@ -3289,6 +3442,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#workload-plugins" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Workload Plugins
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#see-also" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3358,7 +3522,7 @@
 </tbody>
 </table>
 <h2 id="built-in-plugin-binaries">Built-in Plugin Binaries<a class="headerlink" href="#built-in-plugin-binaries" title="Permanent link">&para;</a></h2>
-<p>The <strong>filesystem scanner</strong> (<code>hitstor-scanner-builtin</code>) is the core built-in plugin and is installed with the agent/server packages into the standard plugin directory. It provides Linux and Windows filesystem backup.</p>
+<p>The <strong>filesystem scanner</strong> (<code>hitstor-scanner-builtin</code>) is the core built-in plugin. The agent package installs it in <code>/usr/lib/hitstor/plugins/</code>. It provides Linux and Windows filesystem backup; when its binary is not found, <code>hitstor</code> and <code>hitstor-agent</code> use the same walker built into them.</p>
 <p>Other plugins (storage backend, notifier, hook) are optional and extend how backups are stored, alerted on, or triggered around.</p>
 <p>Build all plugins:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>make<span class="w"> </span>plugins
@@ -3414,12 +3578,39 @@
 <div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="nt">fs_scanner_plugin</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">builtin</span><span class="w">   </span><span class="c1"># default walker</span>
 </code></pre></div>
 <p>Use <code>builtin</code> for the default walker, or the name of a custom filesystem scanner
-plugin you have installed.</p>
+plugin you have installed. With <code>fs_scanner_plugin</code> unset, HitStor uses
+<code>hitstor-scanner-builtin</code> when it finds it (in <code>plugin_dir</code> or <code>$PATH</code>) and its
+in-process walker otherwise; a name set explicitly, <code>builtin</code> included, must be
+found or the backup fails.</p>
 <h2 id="installing-plugins">Installing Plugins<a class="headerlink" href="#installing-plugins" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="go">cp bin/hitstor-scanner-myfs /usr/local/lib/hitstor/plugins/</span>
 <a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="go">chmod +x /usr/local/lib/hitstor/plugins/hitstor-scanner-myfs</span>
 </code></pre></div>
-<p>No restart is required — plugins are spawned on demand.</p>
+<p>Storage backend and scanner plugins are started when a command needs them. Notifier and hook plugins used by the server are loaded when <code>hitstor serve</code> starts, so restart the server after changing <code>alert_notifier_plugins</code> or <code>hook_plugins</code>.</p>
+<h2 id="workload-plugins">Workload Plugins<a class="headerlink" href="#workload-plugins" title="Permanent link">&para;</a></h2>
+<p>Workload plugins teach an agent to back up an application, such as a database engine, instead of files. They are different from the plugins above: each is a signed <code>.hpk</code> package, installed per agent with <a href="../../reference/agent-commands/plugin/"><code>hitstor-agent plugin</code></a> or from the dashboard (<strong>Settings → Plugins</strong>, then the agent's page), and the agent verifies the signature before activating it. Packages are released as <code>hitstor-plugin-&lt;id&gt;-&lt;version&gt;-&lt;os&gt;-&lt;arch&gt;.hpk</code>.</p>
+<table>
+<thead>
+<tr>
+<th>Plugin</th>
+<th>Package</th>
+<th>Workload</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>mssql</code></td>
+<td><code>hitstor-plugin-mssql-&lt;version&gt;-windows-amd64.hpk</code></td>
+<td>Microsoft SQL Server, through the Virtual Device Interface. See <a href="../sql-server/">SQL Server</a>.</td>
+</tr>
+<tr>
+<td><code>example</code></td>
+<td><code>hitstor-plugin-example-&lt;version&gt;-&lt;os&gt;-amd64.hpk</code> (Linux and Windows)</td>
+<td>Reference plugin for developers; it backs up nothing useful.</td>
+</tr>
+</tbody>
+</table>
+<p>Jobs that use a workload plugin are created in the dashboard with a <strong>backup plan</strong>: a schedule for each backup kind the plugin supports (for SQL Server: full, differential, and transaction log). The job page shows the result of each database (object) separately.</p>
 <h2 id="see-also">See Also<a class="headerlink" href="#see-also" title="Permanent link">&para;</a></h2>
 <ul>
 <li><a href="../../reference/plugin-development/">Plugin Development</a></li>

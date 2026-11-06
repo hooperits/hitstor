@@ -39,12 +39,12 @@ Sistema de diseño para el dashboard web de HitStor y la experiencia de inicio d
 
 ## Sistema de logotipo { #logo-system }
 
-### Isotipo (`assets/icon.png` → `internal/dashboard/static/icon.png`) { #isotipo-assetsiconpng-internaldashboardstaticiconpng }
+### Isotipo (`assets/icon.svg` → `internal/dashboard/static/icon.svg`) { #isotipo-assetsiconsvg-internaldashboardstaticiconsvg }
 
-- Marca de candado en un cuadrado redondeado sobre fondo oscuro
-- Úselo solo en espacios compactos (encabezado, barra lateral, tarjeta de inicio de sesión)
-- El radio del borde escala con el tamaño: 10px (sm), 12px (md), 18px (lg)
-- Aplique siempre una sombra suave sobre fondos azul marino
+- Candado cuyo cuerpo continúa en capas de respaldo apiladas, naranja sobre un cuadrado redondeado azul marino (cuadrícula de 64 unidades)
+- El SVG incluye su propio cuadrado, radio y borde fino, así que el CSS no agrega `border-radius`; use `filter: drop-shadow` sobre fondos azul marino
+- `favicon.svg` es una versión simplificada (sin ojo de cerradura, una sola capa) legible a 16px
+- Junto al logotipo, use el bloque horizontal: el ícono mide `1em` y se centra en las letras (`.brand-lockup`)
 
 ### Logotipo (HTML, no una imagen) { #wordmark-html-not-an-image }
 
@@ -66,15 +66,15 @@ Espaciado entre letras: `-0.04em`. En la estructura del dashboard, prefiera el l
 | Contexto | Recurso |
 |---------|--------|
 | Encabezado del dashboard | Isotipo + logotipo HTML (una vez; no se repite en la barra lateral) |
-| Panel principal del inicio de sesión | Isotipo grande + logotipo grande |
-| README / documentación externa | `logo.svg` / `logo-dark.svg` (logotipo SVG) |
-| Favicon | `favicon.png` |
+| Panel principal del inicio de sesión | Bloque horizontal (`.brand-lockup`): isotipo + logotipo |
+| README / documentación externa | `logo.svg` / `logo-dark.svg` (isotipo + logotipo) |
+| Favicon | `favicon.svg` (respaldo PNG `favicon.png`) |
 
 ## Tipografía { #typography }
 
 - **Interfaz**: `system-ui, -apple-system, "Segoe UI", Roboto, sans-serif`
 - **Monoespaciada** (ID de repositorio, códigos): `SF Mono, Cascadia Code, Fira Code`
-- **Tamaños del logotipo**: 2.75rem (panel principal del inicio de sesión), 1.35rem (barra lateral), 1.15rem (encabezado)
+- **Tamaños del logotipo**: 3.25rem (panel principal del inicio de sesión), 1.35rem (barra lateral), 1.15rem (encabezado)
 
 ## Estructura de la interfaz (dashboard autenticado) { #layout-shell-authenticated-dashboard }
 
@@ -100,11 +100,15 @@ Degradado azul marino + capa de resplandor. Se usa en el panel izquierdo del ini
 
 ### `.brand-icon` (+ `-sm` / `-md` / `-lg`)
 
-Tamaños predefinidos del isotipo con radio y sombra uniformes.
+Tamaños predefinidos del isotipo con sombra uniforme.
+
+### `.brand-lockup`
+
+Isotipo + logotipo en horizontal. Defina `font-size` en el bloque; el ícono (`1em`) y el logotipo escalan juntos.
 
 ### `.brand-wordmark`
 
-Tipografía del logotipo; combínela con modificadores de tamaño (`brand-wordmark-header`, `login-brand-wordmark`).
+Tipografía del logotipo; combínela con modificadores de tamaño (`brand-wordmark-header`, o dentro de `.brand-lockup`).
 
 ### Tarjeta de inicio de sesión { #login-card }
 
@@ -125,10 +129,11 @@ Todos los tokens están en `internal/dashboard/static/style.css`, dentro de `:ro
 
 | Archivo | Función |
 |------|------|
-| `assets/icon.png` | Isotipo maestro |
-| `assets/logo.svg` | Logotipo para fondos claros (externo) |
-| `assets/logo-dark.svg` | Logotipo para fondos oscuros (externo) |
-| `scripts/render-logos.sh` | Regenera las exportaciones PNG mediante resvg |
+| `assets/icon.svg` | Isotipo maestro (fuente vectorial; `icon.png` se genera a partir de él) |
+| `assets/favicon.svg` | Isotipo simplificado para 16–32px |
+| `assets/logo.svg` | Isotipo + logotipo para fondos claros (externo) |
+| `assets/logo-dark.svg` | Isotipo + logotipo para fondos oscuros (externo) |
+| `scripts/render-logos.sh` | Regenera las exportaciones PNG/ICO mediante resvg (usa Segoe UI de Windows desde WSL) |
 
 Después de modificar los recursos estáticos, vuelva a compilar el binario del servidor (`make build`) para que `go:embed` incluya los archivos nuevos.
 

@@ -39,12 +39,12 @@ Design system for the HitStor web dashboard and login experience. The goal is a 
 
 ## Logo system
 
-### Isotipo (`assets/icon.png` → `internal/dashboard/static/icon.png`)
+### Isotipo (`assets/icon.svg` → `internal/dashboard/static/icon.svg`)
 
-- Rounded square padlock mark on dark ground
-- Use alone in compact spaces (header, sidebar, login card)
-- Border radius scales with size: 10px (sm), 12px (md), 18px (lg)
-- Always apply soft drop shadow on navy backgrounds
+- Padlock whose body continues into stacked backup layers, orange on a navy rounded tile (64-unit grid)
+- The SVG carries its own tile, radius and hairline rim, so CSS adds no `border-radius`; use `filter: drop-shadow` on navy backgrounds
+- `favicon.svg` is a simplified cut (no keyhole, one layer) that stays legible at 16px
+- Next to the wordmark, use the horizontal lockup: the icon is `1em` tall and centred on the letters (`.brand-lockup`)
 
 ### Wordmark (HTML, not an image)
 
@@ -66,15 +66,15 @@ Letter-spacing: `-0.04em`. Prefer the HTML wordmark over `logo.png` in the dashb
 | Context | Asset |
 |---------|--------|
 | Dashboard header | Isotipo + HTML wordmark (once; not repeated in sidebar) |
-| Login hero panel | Large isotipo + large wordmark |
-| README / external docs | `logo.svg` / `logo-dark.svg` (SVG wordmark) |
-| Favicon | `favicon.png` |
+| Login hero panel | Horizontal lockup (`.brand-lockup`): isotipo + wordmark |
+| README / external docs | `logo.svg` / `logo-dark.svg` (isotipo + wordmark lockup) |
+| Favicon | `favicon.svg` (PNG fallback `favicon.png`) |
 
 ## Typography
 
 - **UI**: `system-ui, -apple-system, "Segoe UI", Roboto, sans-serif`
 - **Monospace** (repo IDs, codes): `SF Mono, Cascadia Code, Fira Code`
-- **Wordmark sizes**: 2.75rem (login hero), 1.35rem (sidebar), 1.15rem (header)
+- **Wordmark sizes**: 3.25rem (login hero), 1.35rem (sidebar), 1.15rem (header)
 
 ## Layout shell (authenticated dashboard)
 
@@ -100,11 +100,15 @@ Navy gradient + glow overlay. Used on login left panel and dashboard header.
 
 ### `.brand-icon` (+ `-sm` / `-md` / `-lg`)
 
-Isotipo sizing presets with consistent radius and shadow.
+Isotipo sizing presets with a consistent drop shadow.
+
+### `.brand-lockup`
+
+Horizontal isotipo + wordmark. Set `font-size` on the lockup; the icon (`1em`) and wordmark scale together.
 
 ### `.brand-wordmark`
 
-Wordmark typography; combine with size modifiers (`brand-wordmark-header`, `login-brand-wordmark`).
+Wordmark typography; combine with size modifiers (`brand-wordmark-header`, or inside `.brand-lockup`).
 
 ### Login card
 
@@ -125,10 +129,11 @@ All tokens live in `internal/dashboard/static/style.css` under `:root`. Shared c
 
 | File | Role |
 |------|------|
-| `assets/icon.png` | Master isotipo |
-| `assets/logo.svg` | Light-background wordmark (external) |
-| `assets/logo-dark.svg` | Dark-background wordmark (external) |
-| `scripts/render-logos.sh` | Regenerate PNG exports via resvg |
+| `assets/icon.svg` | Master isotipo (vector source; `icon.png` is rendered from it) |
+| `assets/favicon.svg` | Simplified isotipo for 16–32px |
+| `assets/logo.svg` | Light-background lockup (external) |
+| `assets/logo-dark.svg` | Dark-background lockup (external) |
+| `scripts/render-logos.sh` | Regenerate PNG/ICO exports via resvg (uses Windows Segoe UI when run from WSL) |
 
 After changing static assets, rebuild the server binary (`make build`) so `go:embed` picks up new files.
 

@@ -4,6 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>HitStor — {{t "Login"}}</title>
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
     <link rel="icon" type="image/png" href="/static/favicon.png">
     <link rel="stylesheet" href="/static/style.css">
     {{template "i18n_head"}}
@@ -12,10 +13,12 @@
     <div class="login-shell">
         <section class="login-brand brand-surface" aria-hidden="false">
             <div class="login-brand-inner">
-                <img src="/static/icon.png" alt="" class="brand-icon brand-icon-lg" width="72" height="72">
-                <h1 class="brand-wordmark login-brand-wordmark">
-                    <span class="wm-hit">hit</span><span class="wm-stor">stor</span>
-                </h1>
+                <div class="brand-lockup login-brand-lockup">
+                    <img src="/static/icon.svg" alt="" class="brand-icon" width="52" height="52">
+                    <h1 class="brand-wordmark">
+                        <span class="wm-hit">hit</span><span class="wm-stor">stor</span>
+                    </h1>
+                </div>
                 <p class="login-brand-lead">{{t "Encrypted, deduplicated backups for your infrastructure."}}</p>
                 <ul class="login-brand-points">
                     <li>{{t "Agent-based file protection for Windows and Linux"}}</li>
@@ -28,7 +31,7 @@
             <div class="login-lang">{{template "lang_selector" "login"}}</div>
             <div class="login-card{{if eq .Mode "enroll" "recovery-codes"}} login-card--wide{{end}}">
                 <div class="login-card-header">
-                    <img src="/static/icon.png" alt="" class="brand-icon brand-icon-md login-card-icon" width="48" height="48">
+                    <img src="/static/icon.svg" alt="" class="brand-icon brand-icon-md login-card-icon" width="48" height="48">
                     <div>
                         {{if eq .Mode "code"}}
                         <h2 class="login-card-title">{{t "Verification code"}}</h2>

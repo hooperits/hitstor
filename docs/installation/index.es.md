@@ -16,7 +16,7 @@ Elija el método de instalación que mejor se adapte a su entorno.
 | [Inicio rápido](quickstart.md) | Docker + agentes Linux/Windows | La ruta más rápida: servidor en Docker, instalador en VM o solo agente |
 | [Instalación rápida en Linux (.run)](linux-installer.md) | Ubuntu, Debian, RHEL, Fedora, AlmaLinux | Asistente interactivo: configura, inicializa e inicia todo. Incluye actualización con reversión y desinstalador. |
 | [Paquetes de Linux (deb/rpm)](linux-packages.md) | Debian, Ubuntu, RHEL, Fedora, AlmaLinux | Servidores de producción con gestor de paquetes |
-| [Compilar desde el código fuente](linux-source.md) | Cualquier SO con Go 1.26+ | Desarrollo, compilaciones personalizadas, arquitecturas no soportadas |
+| [Compilar desde el código fuente](linux-source.md) | Linux o Windows, Go 1.26+ | Desarrollo, compilaciones personalizadas, arquitecturas no soportadas |
 | [Windows Server](windows-server.md) | Windows 10+, Windows Server 2016+ | Ejecutar el servidor HitStor en Windows |
 | [Agente de Windows](windows-agent.md) | Windows 10+, Windows Server 2016+ | Respaldar equipos Windows en un servidor HitStor remoto |
 | [Docker](docker.md) | Cualquier host con Docker | Implementación en contenedores, pipelines de CI/CD |

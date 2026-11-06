@@ -12,7 +12,7 @@ Esta página explica cómo actualizar una instalación existente de HitStor. Los
     ```
 
     !!! tip "Consejo"
-        El servidor busca actualizaciones automáticamente cada 24 horas y muestra un aviso en el dashboard web cuando hay una versión más nueva disponible.
+        Con `update_check: true` en la configuración del servidor (o en **Configuración → General**), el servidor busca actualizaciones cada 24 horas y muestra un aviso en el dashboard web cuando hay una versión más nueva disponible. La comprobación está desactivada si no se habilita.
 
 2. **Respalde sus archivos de configuración.** Aunque las actualizaciones conservan la configuración, es una buena práctica guardar una copia antes de continuar:
 
@@ -64,7 +64,7 @@ Descargue el nuevo paquete desde [GitHub Releases](https://github.com/hooperits/
 === "RHEL / Fedora"
 
     ```bash
-    sudo rpm -U hitstor-x.y.z.x86_64.rpm
+    sudo rpm -U hitstor-x.y.z-1.x86_64.rpm
     ```
 
 Lo mismo aplica al paquete del agente:
@@ -78,7 +78,7 @@ Lo mismo aplica al paquete del agente:
 === "RHEL / Fedora"
 
     ```bash
-    sudo rpm -U hitstor-agent-x.y.z.x86_64.rpm
+    sudo rpm -U hitstor-agent-x.y.z-1.x86_64.rpm
     ```
 
 Reinicie los servicios después de actualizar:
@@ -113,8 +113,8 @@ docker compose -f docker-compose.prod.yml up -d
 O bien, si usa una etiqueta de versión específica:
 
 ```bash
-docker build -t hitstor:1.1.0 \
-  --build-arg VERSION=1.1.0 \
+docker build -t hitstor:0.2.0 \
+  --build-arg VERSION=0.2.0 \
   --build-arg COMMIT=$(git rev-parse --short HEAD) \
   --build-arg DATE=$(date -u +%Y-%m-%d) .
 ```
@@ -189,6 +189,16 @@ Si se ejecuta como servicio de systemd, reinícielo:
 ```bash
 sudo systemctl restart hitstor-server
 ```
+
+## Después de actualizar desde 0.1.x { #after-upgrading-from-01x }
+
+La versión 0.2.0 reemplaza la contraseña única y compartida del dashboard por cuentas personales, roles y verificación en dos pasos obligatoria. Después de la actualización, el dashboard se abre en **Cree el primer administrador**:
+
+1. Ingrese la contraseña actual del dashboard (la que definió en `serve_dashboard_password` o la que el servidor mostró en su registro).
+2. Elija el nombre de usuario y la contraseña del administrador (al menos 12 caracteres).
+3. Escanee el código QR con una app de autenticación, ingrese un código y guarde los códigos de recuperación.
+
+A partir de ese momento, la contraseña compartida ya no permite iniciar sesión. Cree cuentas para las demás personas que usan el dashboard en **Usuarios y acceso**, o con `hitstor serve user add` en el servidor. Las cuentas se guardan en el primer repositorio, junto al registro de agentes. Consulte [Usuarios y acceso](../admin-guide/users.md).
 
 ## Compatibilidad del repositorio { #repository-compatibility }
 

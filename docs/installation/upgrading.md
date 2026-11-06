@@ -12,7 +12,7 @@ This page covers how to upgrade an existing HitStor installation. Repositories a
     ```
 
     !!! tip
-        The server automatically checks for updates every 24 hours and displays a banner in the web dashboard when a newer version is available.
+        With `update_check: true` in the server configuration (or **Settings → General**), the server checks for updates every 24 hours and displays a banner in the web dashboard when a newer version is available. The check is off unless enabled.
 
 2. **Back up your configuration files.** While upgrades preserve configuration, it is good practice to save a copy before proceeding:
 
@@ -64,7 +64,7 @@ Download the new package from [GitHub Releases](https://github.com/hooperits/hit
 === "RHEL / Fedora"
 
     ```bash
-    sudo rpm -U hitstor-x.y.z.x86_64.rpm
+    sudo rpm -U hitstor-x.y.z-1.x86_64.rpm
     ```
 
 The same applies to the agent package:
@@ -78,7 +78,7 @@ The same applies to the agent package:
 === "RHEL / Fedora"
 
     ```bash
-    sudo rpm -U hitstor-agent-x.y.z.x86_64.rpm
+    sudo rpm -U hitstor-agent-x.y.z-1.x86_64.rpm
     ```
 
 Restart the services after upgrading:
@@ -113,8 +113,8 @@ docker compose -f docker-compose.prod.yml up -d
 Or, if using a specific version tag:
 
 ```bash
-docker build -t hitstor:1.1.0 \
-  --build-arg VERSION=1.1.0 \
+docker build -t hitstor:0.2.0 \
+  --build-arg VERSION=0.2.0 \
   --build-arg COMMIT=$(git rev-parse --short HEAD) \
   --build-arg DATE=$(date -u +%Y-%m-%d) .
 ```
@@ -189,6 +189,16 @@ If running as a systemd service, restart it:
 ```bash
 sudo systemctl restart hitstor-server
 ```
+
+## After Upgrading from 0.1.x
+
+Version 0.2.0 replaces the single shared dashboard password with personal accounts, roles, and mandatory two-step verification. After the upgrade, the dashboard opens at **Create the first administrator**:
+
+1. Enter the current dashboard password (the one you set in `serve_dashboard_password`, or the one the server printed in its log).
+2. Choose the administrator's user name and password (at least 12 characters).
+3. Scan the QR code with an authenticator app, enter a code, and save the recovery codes.
+
+From then on the shared password no longer signs in. Create accounts for the other people who use the dashboard under **Users and access**, or with `hitstor serve user add` on the server. Accounts are stored in the first repository, next to the agent registry. See [Users and Access](../admin-guide/users.md).
 
 ## Repository Compatibility
 

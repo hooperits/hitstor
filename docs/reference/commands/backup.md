@@ -20,10 +20,11 @@ An exclusive lock is acquired on the repository for the duration of the backup.
 
 | Flag | Type | Default | Description |
 |------|------|---------|-------------|
-| `--exclude` | string | | Exclude files matching this glob pattern (repeatable) |
+| `--exclude` | string | | Exclude files matching this glob pattern (repeatable). Matched against the name and the path relative to the backup root; `**` is not supported. See [Exclude Patterns](../../user-guide/backup.md#exclude-patterns) |
 | `--tag` | string | | Add a tag to the snapshot (repeatable) |
 | `--host` | string | system hostname | Override the hostname stored in the snapshot |
 | `--dry-run` | bool | false | Preview what would be backed up without writing data |
+| `--bare-metal` | bool | false | Also capture what a bare-metal restore needs: extended attributes (SELinux labels, capabilities, ACLs) and the host's disk and boot layout. See [Bare-metal restore](../../user-guide/bare-metal-restore.md) |
 
 Plus all [global flags](index.md#global-flags), including `--repo-name` for multi-repo setups.
 
@@ -47,7 +48,7 @@ Back up multiple paths with exclusions:
 ```bash
 hitstor backup --repo /backups/hitstor --password "secret" \
   /home/user/documents /home/user/photos \
-  --exclude "*.tmp" --exclude ".cache/**"
+  --exclude "*.tmp" --exclude ".cache"
 ```
 
 Tag a backup for identification:

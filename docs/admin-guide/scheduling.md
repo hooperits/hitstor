@@ -8,30 +8,31 @@ The recommended approach is server-managed scheduling, where backup schedules ar
 
 ### Configure from the Dashboard
 
-1. Open the [Dashboard](dashboard.md) at `http://SERVER_IP:8421`.
+1. Open the [Dashboard](dashboard.md) at `https://SERVER_IP:8421`.
 2. Navigate to **Backups** and click **+ New Backup Job**. Step 2 of the wizard sets the
-   schedule with the schedule picker (see [New Jobs: Schedule Picker](#plugin-jobs-schedule-picker)).
-3. To change the schedule of an existing job, open it and expand **Edit schedule**, then choose a mode:
-    - **Interval**: Run every N hours (simple, no timezone awareness).
-    - **Cron Expression**: Use standard 5-field cron syntax for precise scheduling with timezone support.
-4. If using Cron mode, enter the expression and select a timezone. The dashboard validates the expression and shows a human-readable description with the next 3 run times.
-5. Save the configuration.
+   schedule with the schedule picker (see [Schedule Picker](#plugin-jobs-schedule-picker)); a plugin
+   source gets a [backup plan](backup-jobs.md#backup-plans), one schedule per backup kind.
+3. To change the schedule of an existing job, open it and expand **Edit schedule** (or **Edit plan**
+   for a workload job). It uses the same picker; **Edit as cron expression** switches to the raw expression.
+4. The dashboard validates the expression and shows it in words with its next runs.
+5. Click **Save Schedule** (or **Save plan**).
 
-The server stores schedule configuration in the agent registry. Agents running in daemon mode pick up changes automatically.
+The server stores each job's schedule with the job, in the agent registry. Agents running in daemon mode pick up changes automatically.
 
 ### Schedule Modes
 
-#### Interval Mode
+#### Interval Mode (legacy)
 
-The simplest scheduling option. Set the number of hours between backups:
+Jobs created before cron schedules (or through the API with `schedule_hours`) run every N hours:
 
-- **How it works**: `next_run = last_backup + interval_hours`
+- **How it works**: `next_run = last_backup + interval_hours`; after a failed run, the next try is 15 minutes later
 - **Timezone**: Not applicable (relative to last backup time)
-- **Best for**: Simple setups where exact run times don't matter
 
-#### New Jobs: Schedule Picker { #plugin-jobs-schedule-picker }
+The dashboard no longer creates interval jobs. Saving a new schedule on such a job replaces the interval with a cron expression; the picker starts from the nearest equivalent.
 
-New backup jobs, of files or of a plugin, set their
+#### Schedule Picker { #plugin-jobs-schedule-picker }
+
+Backup jobs, of files or of a plugin, set their
 schedule with a picker modeled on the schedule sets of enterprise backup
 tools, and store the result as a cron expression:
 
@@ -43,11 +44,14 @@ tools, and store the result as a cron expression:
 | **Repeating → Days of month** | Days 1 to 31 and **Last day**; start time. Days a month does not have are skipped |
 | **Repeating → Every…** | Every 5 to 30 minutes, or every 1 to 12 hours at a given minute; optionally only between two hours and only Monday to Friday |
 
-Each schedule takes a time zone (the browser's by default). The picker shows
-the schedule in words and its next runs, and **Edit as cron expression**
-switches to the raw expression. Until you change the schedule, it follows the
-backup kind: fulls on Sundays at 1:00 AM, differentials Monday to Saturday at
-1:00 AM, and log backups every 15 minutes.
+Each schedule takes a time zone (the browser's by default for a new job;
+**Server local** uses the server's). The picker shows the schedule in words
+and its next runs, and **Edit as cron expression** switches to the raw
+expression. A new filesystem job starts from every day at 2:00 AM. In a backup
+plan each kind starts from its usual schedule: fulls on Sundays at 1:00 AM,
+differentials Monday to Saturday at 1:00 AM (both on), and log backups every
+15 minutes (off until you switch them on). In a plan, a kind is either
+repeating or off (on demand only).
 
 #### Cron Expression Mode
 
@@ -77,6 +81,8 @@ Standard 5-field cron syntax for precise, timezone-aware scheduling:
 | Nth weekday | `0#1` (day of week) | The first Sunday of the month (`#1` to `#5`) |
 | Last weekday | `5L` (day of week) | The last Friday of the month |
 
+Names (`MON`, `JAN`), `7` for Sunday, and macros such as `@daily` are not accepted. When both day of month and day of week are restricted, a day matching **either** runs, as in standard cron (`0 2 1 * 1` runs on the 1st and on every Monday).
+
 **Common examples**:
 
 | Expression | Description |
@@ -93,15 +99,15 @@ Standard 5-field cron syntax for precise, timezone-aware scheduling:
 **Timezone handling**:
 
 - Select a timezone from the dropdown (IANA format, e.g. `America/New_York`).
-- If no timezone is selected, the server's local timezone is used.
+- If no timezone is selected (**Server local**), the server's local timezone is used. An unknown timezone falls back to UTC.
 - Cron expressions are evaluated in the selected timezone, handling DST transitions automatically:
-    - **Spring forward**: If a scheduled time falls in the skipped hour, the backup runs at the next valid time.
+    - **Spring forward**: If a scheduled time falls in the skipped hour, that day's run is skipped; the next run is the next matching day.
     - **Fall back**: If a scheduled time falls in the repeated hour, the backup runs on the first occurrence.
 
 ### How It Works
 
 1. The agent calls the `GetSchedule` RPC on the server.
-2. The server evaluates the schedule (cron expression or interval) and responds with the next run time (`next_run`).
+2. The server evaluates the schedule (cron expression, backup plan or interval) and responds with the next run time (`next_run`). For a backup plan it also says which backup kind is due.
 3. The agent sleeps until `next_run`, then executes the backup.
 4. After the backup completes, the agent calls `GetSchedule` again for the next run.
 
@@ -113,7 +119,9 @@ If the server or agent is offline when a backup was due:
 
 - On the next poll, the server detects that `now > next_run` and signals the agent to run immediately.
 - After the catch-up backup, the schedule advances to the next future occurrence (no double-runs).
-- This works for both interval and cron modes.
+- This works for interval, cron and backup-plan schedules.
+
+A failed run is not retried on every poll: a cron or plan schedule waits for its next slot, and an interval job retries after 15 minutes.
 
 ## Agent Daemon Mode
 
@@ -126,7 +134,7 @@ hitstor-agent daemon
 In daemon mode, the agent:
 
 - Runs as a long-lived process
-- Polls the server for its backup schedule via the `GetSchedule` RPC (default: every 5 minutes)
+- Polls the server for its backup schedule via the `GetSchedule` RPC (default: every 5 minutes; `--poll-interval`, minimum 1 minute)
 - Executes backups when `now >= next_run_unix` for any enabled job
 - Reports backup results back to the server
 - Handles transient connection failures with automatic retry
@@ -140,7 +148,7 @@ sudo systemctl enable hitstor-agent
 sudo systemctl start hitstor-agent
 ```
 
-The service unit runs `hitstor-agent daemon` with restart-on-failure.
+The service unit runs `hitstor-agent daemon --config /etc/hitstor/agent-config.yaml` with restart-on-failure.
 
 ### Windows Service
 
@@ -151,34 +159,64 @@ hitstor-agent service install
 hitstor-agent service start
 ```
 
-The service starts automatically on boot. See [Agent Deployment](agent-deployment.md) for full Windows setup instructions.
+The Windows installer already does this. The service starts automatically on boot. See [Agent Deployment](agent-deployment.md) for full Windows setup instructions.
 
 ## Systemd Timer (Alternative)
 
-If you prefer cron-style scheduling managed at the OS level rather than server-managed scheduling, use a systemd timer.
+If you prefer cron-style scheduling managed at the OS level rather than server-managed scheduling, use a systemd timer that runs a one-shot `hitstor-agent backup`.
+
+!!! note
+    The agent package also installs a `hitstor-agent.timer` (daily at 02:00). It activates `hitstor-agent.service`, which runs the **daemon**, not a single backup: with the daemon already enabled the timer has no effect. Use your own units, as below, for one-shot backups.
+
+### Create the Units
+
+The agent must already be able to reach the server: `/etc/hitstor/agent.env` holds `HITSTOR_AGENT_SERVER` and `HITSTOR_AGENT_API_KEY` once the agent is registered.
+
+```ini
+# /etc/systemd/system/hitstor-backup.service
+[Unit]
+Description=HitStor one-shot backup
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+EnvironmentFile=/etc/hitstor/agent.env
+ExecStart=/usr/bin/hitstor-agent backup /etc /home
+```
+
+```ini
+# /etc/systemd/system/hitstor-backup.timer
+[Unit]
+Description=Run a HitStor backup daily at 2 AM
+
+[Timer]
+OnCalendar=*-*-* 02:00:00
+Persistent=true
+
+[Install]
+WantedBy=timers.target
+```
 
 ### Enable the Timer
 
 ```bash
-sudo systemctl enable hitstor-agent.timer
-sudo systemctl start hitstor-agent.timer
+sudo systemctl daemon-reload
+sudo systemctl enable --now hitstor-backup.timer
 ```
-
-The timer triggers the `hitstor-agent` service unit, which runs a single backup and exits.
 
 ### Customize the Schedule
 
-Override the default timer schedule:
+Change `OnCalendar` in the timer, or override it:
 
 ```bash
-sudo systemctl edit hitstor-agent.timer
+sudo systemctl edit hitstor-backup.timer
 ```
-
-Add an `[Timer]` section with your desired `OnCalendar` value:
 
 ```ini
 [Timer]
-OnCalendar=*-*-* 02:00:00
+OnCalendar=
+OnCalendar=*-*-* 03:00:00
 ```
 
 ### OnCalendar Syntax
@@ -208,6 +246,7 @@ systemd-analyze calendar "*-*-* 02:00:00"
 | Central management | Yes | No (per-machine) |
 | Dynamic schedule changes | Yes (via dashboard) | Requires systemd edit |
 | Process lifecycle | Long-running | Starts per backup |
+| Workload (plugin) jobs and dashboard restores | Yes | No |
 | Server connection | Persistent | On-demand |
 
 Daemon mode is recommended for most deployments because it enables centralized schedule management.
@@ -220,9 +259,11 @@ On Windows systems where the agent is not registered as a Windows Service, use T
 2. Create a new basic task.
 3. Set the trigger to the desired schedule (for example, daily at 2:00 AM).
 4. Set the action to start a program:
-    - Program: `C:\Program Files\HitStor\hitstor-agent.exe`
+    - Program: `hitstor-agent.exe` in the agent's installation folder
     - Arguments: `backup C:\Users C:\Data`
 5. Save the task.
+
+The command line does not read `agent.env` (only the daemon and the service do), so give the task the server and key: add `--server HOST:8420 --api-key KEY` to the arguments, or set `agent_server` and `agent_api_key` in a config file passed with `--config`.
 
 For server-managed scheduling on Windows, use daemon mode via the Windows Service instead.
 

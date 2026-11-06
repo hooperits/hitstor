@@ -2,7 +2,11 @@
 
 HitStor envía reportes en PDF por correo según una programación, y cualquiera de ellos se puede descargar en todo momento. Los administradores los gestionan en **Administración → Reportes**. Para enviarlos hace falta tener configurado el [correo](users.md#email); para descargarlos, no.
 
+![Página Reportes con reportes programados](../assets/screenshots/es/reports.webp){ .screenshot }
+
 ## Tipos { #types }
+
+![Primera página de un PDF de resumen de protección](../assets/screenshots/es/report-pdf.webp){ .screenshot }
 
 | Reporte | Abarca | Para |
 |---------|--------|------|
@@ -31,7 +35,7 @@ Un reporte también señala las alertas de ransomware activas y los discos de re
 
 ## Historial de ejecuciones { #history }
 
-Las tareas recuerdan solo su último resultado, así que el servidor guarda para los reportes un historial de cada ejecución (correcta, parcial o fallida): un archivo por mes junto al registro de agentes, cifrado con la clave del repositorio, conservado 13 meses. Las ejecuciones correctas anteriores al historial se leen de los snapshots; las fallas se conocen solo desde que empezó, y los reportes lo indican.
+Las tareas recuerdan solo su último resultado, así que el servidor guarda para los reportes un historial de cada ejecución (correcta, parcial o fallida): un archivo por mes junto al registro de agentes, cifrado con la clave del repositorio, conservado 13 meses. Las ejecuciones correctas anteriores al historial se leen de las instantáneas; las fallas se conocen solo desde que empezó, y los reportes lo indican.
 
 ## Reportes programados { #scheduled }
 

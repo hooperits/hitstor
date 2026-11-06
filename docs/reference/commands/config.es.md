@@ -18,7 +18,7 @@ hitstor config repositories list
 
 ## Descripción { #description }
 
-Administra el archivo de configuración de HitStor en `~/.config/hitstor/config.yaml` (o `/etc/hitstor/config.yaml` en servidores con --config).
+Administra el archivo de configuración de HitStor: `--config` si se indica; si no, `/etc/hitstor/config.yaml` cuando existe y puede leerse; si no, `~/.config/hitstor/config.yaml`.
 
 Para la administración moderna de múltiples repositorios (lista de repositorios, credenciales S3, etc.), es preferible usar el subcomando `hitstor repo`. Las claves planas heredadas de esta página existen por compatibilidad con versiones anteriores.
 
@@ -91,5 +91,5 @@ hitstor config init
 ## Notas { #notes }
 
 - El archivo de configuración usa formato YAML.
-- Precedencia: flags de la CLI > variables de entorno > archivo de configuración > valores predeterminados.
+- Precedencia: flags de la CLI > archivo de configuración > variables de entorno > valores predeterminados. Consulte [Configuración](../../user-guide/configuration.md#precedence).
 - Consulte la [Referencia de configuración](../config-reference.md) para ver la lista completa de claves.

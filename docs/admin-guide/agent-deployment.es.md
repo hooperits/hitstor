@@ -12,49 +12,14 @@ El instalador `.run` incluye un asistente interactivo que configura el agente e 
 sudo ./hitstor-agent-X.Y.Z-linux-amd64.run
 ```
 
-El asistente ofrece dos modos de configuración:
-
-#### Administrado desde el dashboard (recomendado) { #dashboard-managed-recommended }
-
-El agente genera un token y espera el registro desde el dashboard del servidor. No se necesita la dirección del servidor ni una clave de API al momento de la instalación.
-
-El asistente solicita:
-
-1. **Modo de configuración**: seleccione `1` para administrado desde el dashboard
-2. **Puerto de escucha**: puerto gRPC para las conexiones del servidor (predeterminado: 8422)
-3. **Rutas de respaldo**: opcionales; pueden configurarse más adelante desde el dashboard
-
-Al terminar la instalación, el asistente muestra el **token del agente** e instrucciones para agregar el agente desde el dashboard.
-
-#### Heredado (manual) { #legacy-manual }
-
-El agente se configura con la dirección del servidor y una clave de API al momento de la instalación. Use este modo si registró el agente con `hitstor serve agent add`.
-
-El asistente solicita:
-
-1. **Modo de configuración**: seleccione `2` para heredado
-2. **Dirección del servidor**: `host:port` del servidor HitStor
-3. **Clave de API**: clave hexadecimal de 64 caracteres obtenida con `hitstor serve agent add <name>` (entrada oculta)
-4. **Prueba de conexión**: verifica la conectividad antes de continuar
-5. **Rutas de respaldo**: directorios a respaldar, separados por comas (predeterminado: `/etc,/home`)
+El asistente pide un solo valor, el **puerto de escucha** (puerto gRPC que usa el servidor para administrar el agente; predeterminado `8422`). Luego instala el binario y las unidades de systemd, escribe `/etc/hitstor/agent.env`, inicia el servicio `hitstor-agent` y muestra el **token del agente** con las instrucciones para agregarlo desde el dashboard. No se necesita la dirección del servidor ni una clave de API al instalar: el servidor las envía cuando usted registra el agente.
 
 ### Instalación no interactiva { #non-interactive-install }
 
-Para automatizar, use `--no-wizard` con variables de entorno.
-
-**Modo administrado desde el dashboard** (predeterminado cuando no se definen las variables de servidor y clave):
+Para automatizar, use `--no-wizard`; el único ajuste es el puerto de escucha:
 
 ```bash
 sudo HITSTOR_AGENT_LISTEN_PORT=8422 \
-     ./hitstor-agent-X.Y.Z-linux-amd64.run --no-wizard
-```
-
-**Modo heredado** (se activa al definir el servidor y la clave de API):
-
-```bash
-sudo HITSTOR_AGENT_SERVER=backup.example.com:8420 \
-     HITSTOR_AGENT_API_KEY=<64-char-hex-key> \
-     HITSTOR_AGENT_PATHS=/etc,/home \
      ./hitstor-agent-X.Y.Z-linux-amd64.run --no-wizard
 ```
 
@@ -66,28 +31,26 @@ Como alternativa, instale el agente desde un paquete deb o rpm:
 
 ```bash
 # Debian / Ubuntu
-sudo apt install ./hitstor-agent_1.0.0_amd64.deb
+sudo apt install ./hitstor-agent_X.Y.Z_amd64.deb
 
 # RHEL / Fedora / AlmaLinux
-sudo rpm -i hitstor-agent-1.0.0.x86_64.rpm
+sudo rpm -i hitstor-agent-X.Y.Z-1.x86_64.rpm
 ```
 
-Consulte [Instalación](../installation/index.md) para conocer otros métodos de instalación.
+El paquete no inicia el agente. Habilítelo con `sudo systemctl enable --now hitstor-agent`; el token se genera en el primer inicio. Consulte [Instalación](../installation/index.md) para conocer otros métodos de instalación.
 
 ### Configurar el agente { #configure-the-agent }
 
-La configuración depende del modo de configuración elegido.
+#### Agente administrado desde el dashboard (recomendado) { #dashboard-managed-agent-recommended }
 
-#### Agente administrado desde el dashboard { #dashboard-managed-agent }
-
-El agente lee su puerto de escucha desde `/etc/hitstor/agent.env`:
+El agente lee su puerto de escucha de `/etc/hitstor/agent.env`:
 
 ```bash
 # /etc/hitstor/agent.env
 HITSTOR_AGENT_LISTEN_PORT=8422
 ```
 
-Cuando el servidor registra el agente desde el dashboard, escribe automáticamente la dirección del servidor y la clave de API en este archivo. El token del agente se guarda en `/etc/hitstor/agent-token`.
+Cuando el servidor registra el agente desde el dashboard, el agente reescribe este archivo con la dirección del servidor y la clave de API (`HITSTOR_AGENT_SERVER`, `HITSTOR_AGENT_API_KEY`). El token del agente se guarda en `/etc/hitstor/agent-token`.
 
 Para ver el token del agente:
 
@@ -95,9 +58,9 @@ Para ver el token del agente:
 sudo hitstor-agent show-id
 ```
 
-#### Agente heredado { #legacy-agent }
+#### Registro manual (CLI) { #manual-cli-registration }
 
-El agente lee la dirección del servidor y la clave de API desde `/etc/hitstor/agent.env`:
+Si registró el agente en el servidor con `hitstor serve agent add <name>`, escriba usted mismo la dirección del servidor y la clave de API impresa en `/etc/hitstor/agent.env` y luego reinicie el servicio:
 
 ```bash
 # /etc/hitstor/agent.env
@@ -105,7 +68,7 @@ HITSTOR_AGENT_SERVER=backup.example.com:8420
 HITSTOR_AGENT_API_KEY=a3f8c1d9e4b7...6f2a0e5d
 ```
 
-Ajuste los permisos del archivo para que solo root pueda leer la clave:
+Defina los permisos del archivo para que solo root pueda leer la clave:
 
 ```bash
 sudo chmod 0600 /etc/hitstor/agent.env
@@ -117,13 +80,15 @@ sudo chown root:root /etc/hitstor/agent.env
 | Variable | Descripción |
 |----------|-------------|
 | `HITSTOR_AGENT_LISTEN_PORT` | Puerto de escucha gRPC para la administración desde el dashboard (predeterminado: 8422) |
-| `HITSTOR_AGENT_SERVER` | Dirección del servidor en formato `host:port` (modo heredado) |
-| `HITSTOR_AGENT_API_KEY` | Clave de API hexadecimal de 64 caracteres (modo heredado) |
-| `HITSTOR_AGENT_CA_CERT` | Ruta al certificado de la CA para la verificación TLS |
+| `HITSTOR_AGENT_SERVER` | Dirección del servidor en formato `host:port` (se escribe al registrar) |
+| `HITSTOR_AGENT_API_KEY` | Clave de API hexadecimal de 64 caracteres (se escribe al registrar) |
+| `HITSTOR_AGENT_CA_CERT` | Ruta al certificado de la CA para la verificación TLS (opcional; sin ella, el agente fija el certificado del servidor en el primer uso) |
+
+El daemon y el servicio de Windows leen `agent.env` por su cuenta; los comandos puntuales como `hitstor-agent ping` o `backup` leen estas variables del entorno, de `--server`/`--api-key`/`--ca-cert`, o de `agent_server`/`agent_api_key`/`agent_ca_cert` en el archivo indicado con `--config`.
 
 ### Obtener el token del agente { #retrieve-the-agent-token }
 
-Los agentes administrados desde el dashboard generan un token durante la instalación. Para mostrarlo:
+Los agentes administrados desde el dashboard generan un token en su primer inicio. Para mostrarlo:
 
 ```bash
 sudo hitstor-agent show-id
@@ -131,46 +96,46 @@ sudo hitstor-agent show-id
 
 El token se guarda en `/etc/hitstor/agent-token` con modo `0600`.
 
-### Probar la conexión (modo heredado) { #test-the-connection-legacy-mode }
+### Probar la conexión { #test-the-connection }
 
-En los agentes heredados, verifique que el agente pueda comunicarse con el servidor:
+Una vez registrado el agente, verifique que pueda conectarse al servidor (las variables provienen de `agent.env`):
 
 ```bash
-hitstor-agent ping
+sudo sh -c 'set -a; . /etc/hitstor/agent.env; hitstor-agent ping'
 ```
 
 Salida esperada:
 
 ```
 Server: backup.example.com:8420
-Status: connected
-Agent:  web-server-01
+Version: X.Y.Z
+Repo ID: 03b9cb33...
 ```
 
 Si falla, consulte [Solución de problemas](troubleshooting.md) para ver los problemas de conexión más comunes.
 
 ### Ejecutar un respaldo manual { #run-a-manual-backup }
 
-Cree un respaldo de uno o más directorios:
+Cree un respaldo de uno o varios directorios:
 
 ```bash
-hitstor-agent backup /etc /home /var/lib
+sudo sh -c 'set -a; . /etc/hitstor/agent.env; hitstor-agent backup /etc /home /var/lib'
 ```
 
 El agente envía los datos al servidor por gRPC. El progreso se muestra en la terminal.
 
 ### Modo daemon { #daemon-mode }
 
-En modo daemon, el agente se ejecuta de forma continua y cumple dos funciones:
+En modo daemon, el agente se ejecuta de forma continua con dos funciones:
 
-1. **Servidor de administración**: escucha en el puerto 8422 los comandos gRPC del servidor HitStor (registro, exploración del sistema de archivos, configuración)
-2. **Consulta de respaldos**: consulta periódicamente al servidor su programación de respaldos y ejecuta los respaldos automáticamente
+1. **Servidor de administración**: escucha en el puerto 8422 los comandos gRPC del servidor HitStor (registro, exploración del sistema de archivos y de los plugins, instalación de plugins, restauraciones, activación inmediata)
+2. **Consulta de respaldos**: consulta al servidor su programación de respaldo y ejecuta los respaldos automáticamente
 
 ```bash
 hitstor-agent daemon
 ```
 
-Si el agente aún no está registrado (modo administrado desde el dashboard), el daemon espera el registro desde el dashboard y comienza a respaldar una vez registrado.
+Si el agente aún no está registrado, el daemon espera el registro desde el dashboard y luego ejecuta las tareas de respaldo creadas para él.
 
 ### Integración con systemd { #systemd-integration }
 
@@ -185,29 +150,11 @@ sudo systemctl enable hitstor-agent
 sudo systemctl start hitstor-agent
 ```
 
-Esto inicia `hitstor-agent daemon` como un servicio de larga duración. El agente escucha comandos de administración y consulta al servidor para obtener actualizaciones de la programación.
+Esto inicia `hitstor-agent daemon` como un servicio de larga duración. El agente escucha los comandos de administración y consulta al servidor si hay cambios en la programación.
 
-#### Modo timer { #timer-mode }
+#### Unidad timer { #timer-unit }
 
-Para una ejecución al estilo cron, use en su lugar el timer de systemd:
-
-```bash
-sudo systemctl enable hitstor-agent.timer
-sudo systemctl start hitstor-agent.timer
-```
-
-El timer ejecuta `hitstor-agent backup` en el intervalo configurado. Edite el timer para personalizar la programación:
-
-```bash
-sudo systemctl edit hitstor-agent.timer
-```
-
-```ini
-[Timer]
-OnCalendar=*-*-* 02:00:00
-```
-
-Consulte [Programación](scheduling.md) para obtener más detalles sobre la configuración del timer.
+El paquete también incluye `hitstor-agent.timer` (diario a las 02:00). Este activa `hitstor-agent.service`, el mismo daemon, en lugar de ejecutar un respaldo puntual, así que no aporta nada si el daemon está habilitado. Para respaldos puntuales programados por el sistema operativo, consulte [Programación → Temporizador de systemd](scheduling.md#systemd-timer-alternative).
 
 #### Verificar el estado del agente { #check-agent-status }
 
@@ -220,49 +167,52 @@ sudo journalctl -u hitstor-agent -f
 
 ### Instalar el agente { #install-the-agent }
 
-Descargue el instalador para Windows desde la página de versiones (releases) de HitStor y ejecútelo. El instalador coloca el binario `hitstor-agent.exe` en `C:\Program Files\HitStor\` y lo agrega al PATH del sistema.
+Descargue el instalador del agente para Windows (`hitstor-agent-X.Y.Z-windows-amd64-setup.exe`) desde la página de versiones de HitStor y ejecútelo como administrador. El instalador:
+
+- Pide el **puerto de escucha** (predeterminado `8422`)
+- Instala `hitstor-agent.exe` y agrega su carpeta al PATH del sistema
+- Escribe `C:\ProgramData\HitStor\agent.env` y `agent-config.yaml`, legibles solo por SYSTEM y Administradores
+- Agrega una regla del Firewall de Windows para el puerto de escucha
+- Registra e inicia el servicio de Windows `HitStorAgent` ("HitStor Backup Agent"), que ejecuta el daemon
+- Muestra el **token del agente**
+
+Luego agregue el agente desde el dashboard (**Agentes → + Agregar agente**) con su dirección IP y su token. Consulte [Instalación del agente en Windows](../installation/windows-agent.md).
 
 ### Configurar el agente { #configure-the-agent_1 }
 
-Cree o edite el archivo de configuración en `C:\ProgramData\HitStor\config.yaml`:
+El registro desde el dashboard escribe la dirección del servidor y la clave de API en `C:\ProgramData\HitStor\agent.env`, que el servicio lee. Para un agente registrado con `hitstor serve agent add`, escriba usted mismo ese archivo:
 
-```yaml
-# C:\ProgramData\HitStor\config.yaml
-agent_server: "backup.example.com:8420"
-agent_api_key: "a3f8c1d9e4b7...6f2a0e5d"
-
+```ini
+# C:\ProgramData\HitStor\agent.env
+HITSTOR_AGENT_SERVER=backup.example.com:8420
+HITSTOR_AGENT_API_KEY=a3f8c1d9e4b7...6f2a0e5d
 # Opcional: certificado de la CA para la verificación TLS
-# agent_ca_cert: "C:\\ProgramData\\HitStor\\ca.crt"
+# HITSTOR_AGENT_CA_CERT=C:\ProgramData\HitStor\ca.crt
 ```
 
-### Probar la conexión { #test-the-connection }
+Luego reinicie el servicio (`hitstor-agent service stop`, `hitstor-agent service start`).
 
-Abra una ventana de Símbolo del sistema o de PowerShell:
+### Probar la conexión { #test-the-connection_1 }
+
+Abra una ventana de PowerShell con privilegios elevados e indique el servidor y la clave (la línea de comandos no lee `agent.env`):
 
 ```powershell
-hitstor-agent ping
+hitstor-agent ping --server backup.example.com:8420 --api-key KEY
 ```
 
 ### Ejecutar un respaldo manual { #run-a-manual-backup_1 }
 
 ```powershell
-hitstor-agent backup C:\Users C:\Data
+hitstor-agent backup --server backup.example.com:8420 --api-key KEY C:\Users C:\Data
 ```
 
-### Registrar como servicio de Windows { #register-as-a-windows-service }
+### Administrar el servicio de Windows { #manage-the-windows-service }
 
-Para ejecutar el agente en segundo plano como servicio de Windows:
+El instalador registra el servicio. Para administrarlo manualmente:
 
 ```powershell
 hitstor-agent service install
 hitstor-agent service start
-```
-
-Esto registra `hitstor-agent daemon` como un servicio de Windows que se inicia automáticamente al arrancar el equipo.
-
-Administre el servicio:
-
-```powershell
 hitstor-agent service stop
 hitstor-agent service uninstall
 ```
@@ -273,16 +223,16 @@ También puede administrar el servicio desde la consola de Servicios de Windows 
 
 Para despliegues a gran escala, use herramientas de gestión de configuración (Ansible, Puppet, Chef o similares) para:
 
-1. Instalar el paquete `hitstor-agent`
+1. Instalar el paquete `hitstor-agent` y habilitar el servicio `hitstor-agent`
 2. El agente genera automáticamente un token en su primer inicio
 3. Recopilar los tokens de los agentes (con `hitstor-agent show-id`) y agregar los agentes desde el dashboard
-4. Configurar las rutas de respaldo desde el explorador del sistema de archivos del dashboard
+4. Crear tareas de respaldo para ellos en el dashboard (**Respaldos → + Nueva tarea de respaldo**)
 
 Como alternativa, para despliegues heredados:
 
 1. Registre cada agente en el servidor con `hitstor serve agent add`
-2. Despliegue `/etc/hitstor/agent.env` con la clave de API específica de cada equipo
-3. Despliegue el archivo del certificado de la CA si usa certificados autofirmados
+2. Despliegue `/etc/hitstor/agent.env` con la dirección del servidor y la clave de API específica de cada equipo
+3. Despliegue el archivo del certificado de la CA si no quiere que el agente fije el certificado del servidor en el primer uso (consulte [Certificados TLS](tls-certificates.md#agent-ca-certificate))
 4. Habilite e inicie el servicio systemd `hitstor-agent`
 
 ## Próximos pasos { #next-steps }

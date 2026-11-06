@@ -5,7 +5,7 @@
 > Server plugin, and the dashboard pages driven by plugin-declared fields. The first plugin built on this architecture is Microsoft SQL Server
 > backup through the Virtual Device Interface (VDI).
 > It supersedes the "workload collector plugin type" entry under
-> [Permanently removed](../admin-guide/roadmap.md#permanently-removed-v200) in
+> [Permanently removed](../admin-guide/roadmap.md#permanently-removed) in
 > the roadmap.
 
 ## Goals
@@ -78,6 +78,11 @@ entrypoint: bin/hitstor-plugin-mssql.exe
 publisher: hitstor             # selects the trusted key
 ```
 
+This is the manifest inside a package. The `plugins/<id>/plugin.yaml` kept
+with the source omits `platforms` and `entrypoint`: `hitstor-pluginkit pack`
+fills them in for each target, so one source manifest yields one package per
+platform.
+
 The capabilities (backup kinds, restore options, and form fields) are not
 duplicated in the manifest. The agent asks the plugin for them through
 `GetMetadata`, so the binary is the single source of truth.
@@ -122,7 +127,7 @@ Unsigned packages are rejected unless the agent explicitly enables
 
 | Channel | How |
 |---------|-----|
-| Local | `hitstor-agent plugin install <file.hpk>`, plus `list`, `upgrade`, and `remove` |
+| Local | `hitstor-agent plugin install <file.hpk>`, plus `list`, `info`, `upgrade`, and `remove`; `browse`, `configure`, `test-backup`, and `test-restore` help diagnose a plugin on the agent without the server |
 | Remote | Upload the package to the server once, then install it on chosen agents from the dashboard. The server streams the package over a new `AgentService.InstallPlugin` RPC, and the agent applies the same checks as a local install. |
 
 ## Workload protocol
@@ -145,15 +150,22 @@ Each item a plugin produces is stored as a virtual file in the snapshot, under
 `/<plugin id>/<object path>/<item name>`. For example:
 
 ```
-/mssql/<instance>/<database>/full-20260101T020000Z.bak
-/mssql/<instance>/<database>/full-20260101T020000Z.meta.json
+/mssql/<instance>/<database>/full-20260101T020000.000Z.bak
+/mssql/<instance>/<database>/full-20260101T020000.000Z.bak.meta.json
+/mssql/<instance>/<database>/log-20260101T021500.000Z.trn
 ```
 
 The agent feeds each item's stream through the same chunk, dedup, compress, and
 encrypt pipeline as regular files. As a result, deduplication, encryption,
 retention, verification, and replication work without changes. The metadata
 blob, which the core never interprets, is stored next to the item. The snapshot
-is tagged with `plugin:<id>` and the backup kind.
+is tagged with `plugin:<id>`, `kind:<kind>`, `copy-only` for a copy-only
+full, and one `obj:<object>` per object it holds.
+
+Each run also reports per-object outcomes: an object the plugin left out (for
+example a database that does not support the requested kind) or one that
+failed, with the reason. The server keeps them with the job, per backup kind,
+and a run that stored some objects and failed others counts as partial.
 
 Because items are ordinary files, they can also be restored to a folder through
 the normal file restore. This is the fallback when the plugin is unavailable.
@@ -176,22 +188,33 @@ and recovery options.
 ### Retention
 
 A retention policy must not delete an item that a still-retained item depends
-on (for example, a full backup that later differentials or logs need). The
-agent tags workload snapshots with `plugin:<id>` and `kind:<kind>`; when a
-policy keeps a snapshot whose kind is not `full`, `forget` also keeps the
-earlier snapshots of the same host and plugin back to the previous full. The
-rule needs no plugin-specific knowledge and errs on the side of keeping
-more.
+on (for example, a full backup that later differentials or logs need). Using
+the `plugin:`, `kind:`, and `obj:` tags, when a policy keeps a differential
+or log backup of an object, `forget` also keeps the earlier backups of that
+object, on the same host and plugin, back to its base: the previous full that
+is not copy-only (tagged `copy-only`). A kept differential needs only that
+full; a kept log also needs the logs in between. A kept full, copy-only or
+not, restores on its own. The rule needs no plugin-specific knowledge and errs
+on the side of keeping more.
 
 ## Server and dashboard
 
 - Workload jobs (`job_type: workload`) store the plugin id, the selected
-  objects, the backup kind, the plugin settings, and the backup options as
-  opaque values; only the plugin interprets them.
+  objects, the plugin settings, and the backup options as opaque values; only
+  the plugin interprets them.
+- A workload job carries a **backup plan**: each backup kind of the same
+  selection has its own schedule (for SQL Server, for example, weekly fulls,
+  daily differentials, and log backups every 15 minutes), or runs on demand
+  only. The server picks the kind that is due next and hands it to the agent
+  as the run's backup kind, so agents need no notion of plans. When a full and
+  a differential fall due at the same time, the full runs and fills both
+  slots.
 - The dashboard renders job, restore, and settings forms from the fields each
-  plugin declares in `GetMetadata` (`FieldSpec`: key, scope, type `string`,
-  `bool`, `number`, or `choice`, labels and help per language, default,
-  choices). Plugins never ship HTML.
+  plugin declares in `GetMetadata` (`FieldSpec`: key; scope `settings`, `object`, `backup`, or
+  `restore`; type `string`, `bool`, `number`, `choice`, or `password`; labels
+  and help per language, default, choices). `password` fields are accepted
+  only in scope `object`: they stay on the agent, encrypted, and are never
+  sent back to the dashboard. Plugins never ship HTML.
 - The agent page lists the plugins installed on that agent, with install,
   upgrade, and remove actions. **Settings → Plugins** manages uploaded
   packages. Removing a plugin that a job still uses is refused.

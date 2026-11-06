@@ -6,12 +6,12 @@ Every time you run `hitstor backup`, a new **snapshot** is created. A snapshot i
 
 ```console
 hitstor snapshots --repo /path/to/repo --password "secret"
-ID        Time                 Host        Tags        Paths
-----------------------------------------------------------------------------
-abc12345  2026-02-20 08:00:12  webserver   daily       /var/www
-bcd23456  2026-02-21 08:00:09  webserver   daily       /var/www
-cde34567  2026-02-22 08:00:11  webserver   daily       /var/www
-def45678  2026-02-22 10:30:00  laptop      manual      /home/user
+ID        Time                 Host       Tags    Files  Size
+────────  ───────────────────  ─────────  ──────  ─────  ─────────
+def45678  2026-02-22 10:30:00  laptop     manual  8,312  2.1 GiB
+cde34567  2026-02-22 08:00:11  webserver  daily   1,204  96.4 MiB
+bcd23456  2026-02-21 08:00:09  webserver  daily   1,201  96.1 MiB
+abc12345  2026-02-20 08:00:12  webserver  daily   1,198  95.8 MiB
 ```
 
 The `hitstor ls` alias works identically:
@@ -28,11 +28,11 @@ Show only snapshots recorded from a specific host:
 
 ```console
 hitstor snapshots --repo /path/to/repo --password "secret" --host webserver
-ID        Time                 Host        Tags        Paths
-----------------------------------------------------------------------------
-abc12345  2026-02-20 08:00:12  webserver   daily       /var/www
-bcd23456  2026-02-21 08:00:09  webserver   daily       /var/www
-cde34567  2026-02-22 08:00:11  webserver   daily       /var/www
+ID        Time                 Host       Tags    Files  Size
+────────  ───────────────────  ─────────  ──────  ─────  ─────────
+cde34567  2026-02-22 08:00:11  webserver  daily   1,204  96.4 MiB
+bcd23456  2026-02-21 08:00:09  webserver  daily   1,201  96.1 MiB
+abc12345  2026-02-20 08:00:12  webserver  daily   1,198  95.8 MiB
 ```
 
 ### By Path
@@ -41,9 +41,9 @@ Show only snapshots that include a specific backup path:
 
 ```console
 hitstor snapshots --repo /path/to/repo --password "secret" --path /home/user
-ID        Time                 Host        Tags        Paths
-----------------------------------------------------------------------------
-def45678  2026-02-22 10:30:00  laptop      manual      /home/user
+ID        Time                 Host       Tags    Files  Size
+────────  ───────────────────  ─────────  ──────  ─────  ─────────
+def45678  2026-02-22 10:30:00  laptop     manual  8,312  2.1 GiB
 ```
 
 ### Combining Filters
@@ -63,11 +63,13 @@ The output is a JSON array of snapshot objects:
 ```json
 [
   {
-    "id": "abc12345...",
+    "id": "abc12345",
     "time": "2026-02-20T08:00:12Z",
-    "host": "webserver",
+    "hostname": "webserver",
     "tags": ["daily"],
-    "paths": ["/var/www"]
+    "paths": ["/var/www"],
+    "total_files": 1198,
+    "total_size": 100453171
   },
   ...
 ]
@@ -86,17 +88,17 @@ Each snapshot is identified by a hexadecimal string derived from a cryptographic
 
 ### Short Prefix Matching
 
-Whenever a command accepts a snapshot ID, you can provide a short prefix instead of the full hex string. The prefix must be long enough to uniquely identify one snapshot in the repository. If the prefix is ambiguous, HitStor prints an error listing the matching snapshots so you can provide a longer prefix.
+Whenever a command accepts a snapshot ID, you can provide a short prefix instead of the full hex string. The prefix must be long enough to uniquely identify one snapshot in the repository. If the prefix is ambiguous, HitStor reports how many snapshots match so you can provide a longer prefix.
 
 ```console
 hitstor snapshots --repo /path/to/repo --password "secret"
 ID        ...
---------  ...
+────────  ...
 abc12345  ...
 abc12399  ...
 
 hitstor restore --repo /path/to/repo --password "secret" abc123 /target
-Fatal: prefix "abc123" matches multiple snapshots: abc12345, abc12399
+Error: snapshot prefix "abc123" is ambiguous (2 matches)
 
 hitstor restore --repo /path/to/repo --password "secret" abc12345 /target
 restoring snapshot abc12345 ...
@@ -114,13 +116,17 @@ The `hitstor diff` command shows what changed between two snapshots:
 hitstor diff --repo /path/to/repo --password "secret" abc12345 bcd23456
 ```
 
-The output lists files that were added, removed, or modified:
+The output lists files that were added, removed, or modified, with paths relative to the snapshot root (a backup of `/var/www` stores its files under `www/`), followed by a summary:
 
 ```
-+    /var/www/blog/new-post.html
--    /var/www/old-page.html
-M    /var/www/index.html
-M    /var/www/css/style.css
+comparing snapshots abc12345 ↔ bcd23456
+
++  www/blog/new-post.html
+-  www/old-page.html
+M  www/index.html
+M  www/css/style.css
+
+4 differences (1 added, 1 removed, 2 modified)
 ```
 
 | Prefix | Meaning |
@@ -133,21 +139,17 @@ This is helpful for auditing what changed between backups or verifying that an e
 
 ## Disk Usage
 
-The `hitstor du` command reports how much repository space is consumed by one or more snapshots:
+The `hitstor du` command reports the number of snapshots, pack files, and index files in the repository and the total space they use:
 
 ```console
 hitstor du --repo /path/to/repo --password "secret"
-Snapshot    Size
----------------------
-abc12345    512.00 MiB
-bcd23456      4.20 MiB
-cde34567      3.80 MiB
-def45678    128.00 MiB
----------------------
-Total:      648.00 MiB
+Snapshots:     4
+Packs:        38
+Indexes:       4
+Total size: 2.2 GiB
 ```
 
-Because of deduplication, the per-snapshot sizes reflect only the **unique** data each snapshot contributes. The total may be much smaller than the sum of the original file sizes across all snapshots.
+Because of deduplication, the total may be much smaller than the sum of the `Size` column of `hitstor snapshots`, which shows each snapshot's original file sizes. Use `--json` for machine-readable output.
 
 !!! note
-    `hitstor du` reads the repository index and does not download or decrypt the actual data, so it is fast even for large repositories.
+    `hitstor du` lists the repository's files and adds up their sizes; it does not download or decrypt the actual data, so it is fast even for large repositories.

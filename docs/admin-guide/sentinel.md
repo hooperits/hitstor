@@ -17,9 +17,10 @@ This only runs the containment steps above the confidence threshold — most bac
 
 ## Telemetry Signals
 
-- FastCDC compression ratios (encrypted/random data compresses poorly)
-- Mass file change or deletion rates
-- Session-level anomaly patterns compared to the host's own history
+- New versus unchanged files (mass modification)
+- Bytes added versus bytes processed (encrypted data stops deduplicating)
+- New files with extensions typical of ransomware
+- Session duration, compared to the host's own history
 
 ## Configuration
 
@@ -38,7 +39,7 @@ plugin_dir: /usr/local/lib/hitstor/plugins
 
 ## Dashboard Alerts
 
-Active sentinel alerts appear via `GET /api/alerts`. Resolve handled incidents with `POST /api/alerts/{id}/resolve`.
+Active Sentinel alerts appear at the top of the dashboard's **Overview** page, with the agent, host, confidence and reason. **Resolve & Unsuspend** (administrators) closes the alert and unsuspends the agent so it can back up again. Through the API, list alerts with `GET /api/alerts`, close one with `POST /api/alerts/{id}/resolve`, and unsuspend the agent separately with `POST /api/agents/{name}/unsuspend`.
 
 ## Retention Lock
 

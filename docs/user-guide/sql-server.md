@@ -34,7 +34,7 @@ verifies the package signature before installing it.
 Or on the SQL Server host, in an elevated prompt:
 
 ```powershell
-hitstor-agent plugin install hitstor-plugin-mssql-0.1.0-windows-amd64.hpk
+hitstor-agent plugin install hitstor-plugin-mssql-0.5.0-windows-amd64.hpk
 hitstor-agent plugin browse mssql MSSQLSERVER
 ```
 
@@ -118,16 +118,16 @@ In the dashboard, choose **New Backup Job**, expand the machine and
 individual databases. The next step sets the repository and the plan. See
 [Backup jobs](../admin-guide/dashboard.md#backups).
 
-The same job through the dashboard API:
+The same job through the [dashboard API](../reference/dashboard-api.md) (port 8421; requests need the session cookie of a signed-in user with the backup role on the agent, see [Authentication](../reference/dashboard-api.md#authentication)):
 
 ```bash
-curl -X POST https://<server>:8420/api/backups -H 'Content-Type: application/json' -d '{
+curl -X POST https://<server>:8421/api/backups -H 'Content-Type: application/json' -d '{
   "name": "Sales", "agent_name": "sql01", "repo_name": "default",
   "job_type": "workload", "plugin": "mssql", "selection": ["MSSQLSERVER/Sales"],
   "plan": [
-    {"kind": "full", "enabled": true, "cron_expression": "0 1 * * 0", "timezone": "America/Panama"},
-    {"kind": "differential", "enabled": true, "cron_expression": "0 1 * * 1,2,3,4,5,6", "timezone": "America/Panama"},
-    {"kind": "log", "enabled": true, "cron_expression": "*/15 * * * *", "timezone": "America/Panama"}
+    {"kind": "full", "enabled": true, "cron_expression": "0 1 * * 0", "timezone": "America/New_York"},
+    {"kind": "differential", "enabled": true, "cron_expression": "0 1 * * 1,2,3,4,5,6", "timezone": "America/New_York"},
+    {"kind": "log", "enabled": true, "cron_expression": "*/15 * * * *", "timezone": "America/New_York"}
   ]
 }'
 ```
@@ -205,13 +205,13 @@ page restores the `.bak` files themselves instead.
 List the available backups:
 
 ```bash
-curl 'https://<server>:8420/api/workload/points?agent=sql01&plugin=mssql&object=MSSQLSERVER/Sales'
+curl 'https://<server>:8421/api/workload/points?agent=sql01&plugin=mssql&object=MSSQLSERVER/Sales'
 ```
 
 Restore a copy as of a point in time, under a new name:
 
 ```bash
-curl -X POST https://<server>:8420/api/workload/restores -H 'Content-Type: application/json' -d '{
+curl -X POST https://<server>:8421/api/workload/restores -H 'Content-Type: application/json' -d '{
   "agent_name": "sql01", "plugin": "mssql", "object": "MSSQLSERVER/Sales",
   "target": "2026-03-01T14:30:00Z",
   "options": {"database": "Sales_restored"}
@@ -248,9 +248,10 @@ hitstor-agent plugin test-restore mssql --from C:\Temp\sales-backup `
 ## Limitations
 
 - [Retention](retention.md#workload-backup-chains) keeps each kept
-  differential or log together with the backups back to the previous full.
-  It treats every full as a chain start, so do not mix `copy_only` fulls into
-  a job plan that also takes differentials.
+  differential together with its base full, and each kept log backup together
+  with the earlier logs back to its base full. Copy-only fulls are never used
+  as a base, so they do not break the chain of a plan that also takes
+  differentials.
 - One database per VDI stream; databases in a job are backed up one after
   another.
 

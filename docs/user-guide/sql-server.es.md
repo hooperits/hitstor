@@ -35,7 +35,7 @@ agente verifica la firma del paquete antes de instalarlo.
 O bien, en el servidor de SQL Server, en una consola con privilegios elevados:
 
 ```powershell
-hitstor-agent plugin install hitstor-plugin-mssql-0.1.0-windows-amd64.hpk
+hitstor-agent plugin install hitstor-plugin-mssql-0.5.0-windows-amd64.hpk
 hitstor-agent plugin browse mssql MSSQLSERVER
 ```
 
@@ -124,16 +124,16 @@ En el dashboard, elija **Nueva tarea de respaldo**, expanda la máquina y
 individuales. El paso siguiente define el repositorio y el plan. Vea
 [Tareas de respaldo](../admin-guide/dashboard.md#backups).
 
-La misma tarea con la API del dashboard:
+La misma tarea con la [API del dashboard](../reference/dashboard-api.md) (puerto 8421; las peticiones necesitan la cookie de sesión de un usuario que haya iniciado sesión y tenga el rol de respaldo sobre el agente; consulte [Autenticación](../reference/dashboard-api.md#authentication)):
 
 ```bash
-curl -X POST https://<servidor>:8420/api/backups -H 'Content-Type: application/json' -d '{
+curl -X POST https://<servidor>:8421/api/backups -H 'Content-Type: application/json' -d '{
   "name": "Sales", "agent_name": "sql01", "repo_name": "default",
   "job_type": "workload", "plugin": "mssql", "selection": ["MSSQLSERVER/Sales"],
   "plan": [
-    {"kind": "full", "enabled": true, "cron_expression": "0 1 * * 0", "timezone": "America/Panama"},
-    {"kind": "differential", "enabled": true, "cron_expression": "0 1 * * 1,2,3,4,5,6", "timezone": "America/Panama"},
-    {"kind": "log", "enabled": true, "cron_expression": "*/15 * * * *", "timezone": "America/Panama"}
+    {"kind": "full", "enabled": true, "cron_expression": "0 1 * * 0", "timezone": "America/New_York"},
+    {"kind": "differential", "enabled": true, "cron_expression": "0 1 * * 1,2,3,4,5,6", "timezone": "America/New_York"},
+    {"kind": "log", "enabled": true, "cron_expression": "*/15 * * * *", "timezone": "America/New_York"}
   ]
 }'
 ```
@@ -214,13 +214,13 @@ la instantánea, restaura en cambio los archivos `.bak`.
 Liste los respaldos disponibles:
 
 ```bash
-curl 'https://<servidor>:8420/api/workload/points?agent=sql01&plugin=mssql&object=MSSQLSERVER/Sales'
+curl 'https://<servidor>:8421/api/workload/points?agent=sql01&plugin=mssql&object=MSSQLSERVER/Sales'
 ```
 
 Restaure una copia a un punto en el tiempo, con otro nombre:
 
 ```bash
-curl -X POST https://<servidor>:8420/api/workload/restores -H 'Content-Type: application/json' -d '{
+curl -X POST https://<servidor>:8421/api/workload/restores -H 'Content-Type: application/json' -d '{
   "agent_name": "sql01", "plugin": "mssql", "object": "MSSQLSERVER/Sales",
   "target": "2026-03-01T14:30:00Z",
   "options": {"database": "Sales_restored"}
@@ -258,10 +258,10 @@ hitstor-agent plugin test-restore mssql --from C:\Temp\sales-backup `
 ## Limitaciones { #limitations }
 
 - La [retención](retention.md#workload-backup-chains) conserva cada
-  diferencial o log que se mantiene junto con los respaldos hasta el completo
-  anterior. Trata cada respaldo completo como inicio de cadena, así que no
-  mezcle completos `copy_only` en un plan de tareas que también toma
-  diferenciales.
+  diferencial que se mantiene junto con su respaldo completo base, y cada
+  respaldo de log junto con los logs anteriores hasta su completo base. Los
+  completos de solo copia (`copy_only`) nunca se usan como base, así que no
+  rompen la cadena de un plan que también toma diferenciales.
 - Un stream VDI por base de datos; las bases de una tarea se respaldan una
   tras otra.
 

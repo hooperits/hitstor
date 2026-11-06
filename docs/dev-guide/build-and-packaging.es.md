@@ -44,6 +44,27 @@ Compila los cuatro binarios de plugins en `bin/`:
 | `make hook-log` | `bin/hitstor-hook-log` |
 | `make scanner-builtin` | `bin/hitstor-scanner-builtin` |
 
+Estos son los tipos de plugin incorporados (almacenamiento, notificador, hook, escáner). Los plugins de carga de trabajo, como el de SQL Server, se empaquetan aparte; consulte la sección siguiente.
+
+### Paquetes de plugins de carga de trabajo (.hpk) { #workload-plugin-packages-hpk }
+
+Los plugins de carga de trabajo están en `plugins/<id>/` y se distribuyen como paquetes `.hpk` firmados (consulte [Arquitectura de plugins de carga de trabajo](plugin-architecture.md)).
+
+```bash
+make pluginkit                          # bin/hitstor-pluginkit
+make plugin-packages PLUGIN_UNSIGNED=1  # paquetes sin firma, para desarrollo local
+make plugin-packages PLUGIN_KEY_FILE=mykey.key
+```
+
+`make plugin-packages` compila cada entrada de `WORKLOAD_PLUGIN_TARGETS` (por defecto `example:linux/amd64 example:windows/amd64 mssql:windows/amd64`) en `bin/plugins/` y la empaqueta con `hitstor-pluginkit pack` en `dist/hitstor-plugin-<id>-<versión>-<os>-<arch>.hpk`. La versión del paquete sale del `plugins/<id>/plugin.yaml` del plugin, no de `VERSION`.
+
+La clave de firma (una semilla ed25519 en base64) se lee de `PLUGIN_KEY_FILE` o, si no se indica, de la variable de entorno `HITSTOR_PLUGIN_SIGNING_KEY`, que es la que usa el flujo de publicación. Los agentes rechazan los paquetes sin firma salvo que esté activado `plugin_allow_unsigned`, y solo aceptan paquetes firmados con la clave oficial incluida en el agente o con una clave listada en `plugin_trusted_keys`. Para firmar plugins internos, cree un par de claves y verifique el paquete:
+
+```bash
+bin/hitstor-pluginkit keygen --out mykey
+bin/hitstor-pluginkit verify dist/hitstor-plugin-example-0.1.0-windows-amd64.hpk
+```
+
 ## Generación de código Protobuf { #protobuf-code-generation }
 
 Regenere los archivos `.pb.go` y `_grpc.pb.go` después de modificar las definiciones `.proto`:
@@ -67,12 +88,12 @@ Los paquetes de Linux se compilan con [nfpm](https://nfpm.goreleaser.com/) usand
 | Target | Requisito previo | Salida |
 |--------|-------------|--------|
 | `make pkg-server-deb` | `bin/hitstor` | `dist/hitstor_VERSION_amd64.deb` |
-| `make pkg-server-rpm` | `bin/hitstor` | `dist/hitstor-VERSION.x86_64.rpm` |
-| `make pkg-agent-deb` | `bin/hitstor-agent` | `dist/hitstor-agent_VERSION_amd64.deb` |
-| `make pkg-agent-rpm` | `bin/hitstor-agent` | `dist/hitstor-agent-VERSION.x86_64.rpm` |
+| `make pkg-server-rpm` | `bin/hitstor` | `dist/hitstor-VERSION-1.x86_64.rpm` |
+| `make pkg-agent-deb` | `bin/hitstor-agent`, `bin/hitstor-scanner-builtin` | `dist/hitstor-agent_VERSION_amd64.deb` |
+| `make pkg-agent-rpm` | `bin/hitstor-agent`, `bin/hitstor-scanner-builtin` | `dist/hitstor-agent-VERSION-1.x86_64.rpm` |
 | `make pkg-linux` | (todos los anteriores) | Los 4 paquetes de Linux |
 
-Cada target compila primero, de forma automática, el binario que necesita.
+Cada target compila primero, de forma automática, los binarios que necesita.
 
 ### Definir la versión { #setting-the-version }
 
@@ -93,6 +114,7 @@ nfpm lee una configuración YAML (p. ej. `packaging/nfpm/hitstor-server.yaml`), 
 | Origen | Se instala en | Descripción |
 |--------|-------------|-------------|
 | `bin/hitstor` | `/usr/bin/hitstor` | Binario del servidor |
+| `packaging/scripts/grant-hitstor-journal-access.sh` | `/usr/lib/hitstor/grant-journal-access.sh` | Permite al usuario `hitstor` leer el journal (página **Registros** del dashboard) |
 | `packaging/systemd/hitstor-server.service` | `/usr/lib/systemd/system/hitstor-server.service` | Unidad de systemd |
 | `packaging/systemd/hitstor-server.env.example` | `/etc/hitstor/server.env.example` | Plantilla del archivo de entorno |
 | `packaging/config/server-config.yaml.example` | `/etc/hitstor/config.yaml.example` | Plantilla de configuración |
@@ -100,8 +122,9 @@ nfpm lee una configuración YAML (p. ej. `packaging/nfpm/hitstor-server.yaml`), 
 Script posterior a la instalación (`packaging/scripts/server-postinstall.sh`):
 
 - Crea el usuario y el grupo de sistema `hitstor`
-- Crea `/var/lib/hitstor`, `/var/log/hitstor`, `/etc/hitstor`
-- Copia `server.env.example` a `server.env` si este no existe
+- Agrega el usuario `hitstor` al grupo `systemd-journal` (mediante `grant-journal-access.sh`)
+- Crea `/var/lib/hitstor`, `/var/log/hitstor`, `/etc/hitstor`, `/usr/lib/hitstor/plugins`
+- Copia `server.env.example` a `server.env` y `config.yaml.example` a `config.yaml` (modo `600`) si no existen
 - Ejecuta `systemctl daemon-reload`
 
 ### Contenido del paquete del agente { #agent-package-contents }
@@ -109,16 +132,21 @@ Script posterior a la instalación (`packaging/scripts/server-postinstall.sh`):
 | Origen | Se instala en | Descripción |
 |--------|-------------|-------------|
 | `bin/hitstor-agent` | `/usr/bin/hitstor-agent` | Binario del agente |
+| `bin/hitstor-scanner-builtin` | `/usr/lib/hitstor/plugins/hitstor-scanner-builtin` | Plugin escáner de sistema de archivos incorporado |
 | `packaging/systemd/hitstor-agent.service` | `/usr/lib/systemd/system/hitstor-agent.service` | Unidad de systemd |
 | `packaging/systemd/hitstor-agent.timer` | `/usr/lib/systemd/system/hitstor-agent.timer` | Temporizador de respaldo diario |
 | `packaging/systemd/hitstor-agent.env.example` | `/etc/hitstor/agent.env.example` | Plantilla del archivo de entorno |
 | `packaging/config/agent-config.yaml.example` | `/etc/hitstor/agent-config.yaml.example` | Plantilla de configuración |
+| (directorio) | `/usr/share/hitstor/bmr`, `/var/lib/hitstor/bmr` | Hook y medios de recuperación bare-metal (`/var/lib/hitstor/bmr` solo para root) |
+| (directorio) | `/var/lib/hitstor/plugins` | Paquetes de plugins de carga de trabajo instalados (solo para root) |
 
 Script posterior a la instalación (`packaging/scripts/agent-postinstall.sh`):
 
-- Crea `/etc/hitstor`
-- Copia `agent.env.example` a `agent.env` si este no existe
+- Crea `/etc/hitstor` y `/usr/lib/hitstor/plugins`
+- Copia `agent.env.example` a `agent.env` y `agent-config.yaml.example` a `agent-config.yaml` (modo `600`) si no existen
 - Ejecuta `systemctl daemon-reload`
+
+El `hitstor-agent.timer` incluido (diario a las 02:00) activa `hitstor-agent.service`, que ejecuta `hitstor-agent daemon`; no ejecuta un respaldo único.
 
 ### Archivos de configuración de nfpm { #nfpm-configuration-files }
 
@@ -129,7 +157,7 @@ Ambos usan las variables de entorno `${VERSION}` y `${ARCH}`, que el Makefile de
 
 ## Instaladores autoextraíbles (.run) { #self-extracting-installers-run }
 
-Los instaladores autoextraíbles `.run` reúnen el binario, las unidades de systemd, las plantillas de configuración y un asistente interactivo en un único archivo shell ejecutable. El usuario descarga un solo archivo, lo ejecuta con `sudo` y el asistente configura todo: contraseñas, puertos, inicialización del repositorio y arranque del servicio.
+Los instaladores autoextraíbles `.run` reúnen el binario, las unidades de systemd, las plantillas de configuración y un asistente interactivo en un único archivo shell ejecutable. El usuario descarga un solo archivo, lo ejecuta con `sudo` y el asistente configura lo esencial (directorio de datos, contraseña del dashboard y puertos en el servidor; el puerto de escucha en el agente) y luego habilita e inicia el servicio. Los repositorios se crean después desde el dashboard.
 
 ### Targets del Makefile { #makefile-targets_1 }
 
@@ -185,8 +213,8 @@ Bibliotecas compartidas en `packaging/installer/lib/`:
 | Archivo | Marcador `__INLINE_*__` | Descripción |
 |------|----------------------|-------------|
 | `lib/common.sh` | `__INLINE_COMMON__` | Análisis de flags, salida en color, extracción del payload, banner, verificaciones de root/systemd |
-| `lib/wizard-server.sh` | `__INLINE_WIZARD_SERVER__` | Asistente interactivo del servidor (ruta del repositorio, contraseña, puertos, TLS, contraseña del dashboard) |
-| `lib/wizard-agent.sh` | `__INLINE_WIZARD_AGENT__` | Asistente interactivo del agente (dirección del servidor, clave de API, rutas de respaldo) |
+| `lib/wizard-server.sh` | `__INLINE_WIZARD_SERVER__` | Asistente interactivo del servidor (directorio de datos, contraseña del dashboard, puertos gRPC y del dashboard, dirección anunciada) |
+| `lib/wizard-agent.sh` | `__INLINE_WIZARD_AGENT__` | Asistente interactivo del agente (puerto de escucha; luego el agente se agrega desde el dashboard) |
 | `lib/verify.sh` | `__INLINE_VERIFY__` | Verificación posterior a la instalación (puertos en escucha, estado del servicio) |
 | `lib/uninstall.sh` | `__INLINE_UNINSTALL__` | Eliminación limpia de binarios, archivos de servicio, configuración y datos |
 | `lib/upgrade.sh` | `__INLINE_UPGRADE__` | Actualización en el lugar con reversión automática en caso de fallo |
@@ -199,8 +227,9 @@ Los instaladores del servidor y del agente aceptan los mismos flags:
 |------|-------------|
 | `--no-wizard` | Omite el asistente interactivo (lee la configuración de variables de entorno) |
 | `--uninstall` | Elimina todos los archivos instalados y detiene y deshabilita los servicios |
+| `--yes` | Omite las solicitudes de confirmación (con `--uninstall`) |
 | `--version` | Muestra la versión del instalador y termina |
-| `--help` | Muestra información de uso |
+| `--help`, `-h` | Muestra información de uso |
 
 ### Comportamiento del instalador { #installer-behavior }
 
@@ -212,29 +241,33 @@ El instalador detecta automáticamente el modo de instalación:
 
 #### Instalación nueva (asistente) { #fresh-install-wizard }
 
-El asistente solicita toda la configuración necesaria, escribe los archivos de configuración, inicializa el repositorio (solo en el servidor), habilita e inicia el servicio y luego verifica que los puertos estén en escucha.
+El asistente solicita la configuración, escribe los archivos de configuración, habilita e inicia el servicio y luego verifica que los puertos estén en escucha. No crea ningún repositorio: el servidor arranca sin uno y el dashboard ofrece crearlo o conectarlo.
 
 #### Instalación nueva (`--no-wizard`) { #fresh-install-no-wizard }
 
 Para despliegues automatizados, pase la configuración mediante variables de entorno:
 
 ```bash
-# Servidor
-sudo HITSTOR_REPO=/var/lib/hitstor/repo \
-     HITSTOR_PASSWORD=secret \
+# Servidor (todas opcionales; se muestran los valores por defecto)
+sudo HITSTOR_DATA_DIR=/var/lib/hitstor \
+     HITSTOR_GRPC_PORT=8420 \
+     HITSTOR_DASHBOARD_PORT=8421 \
+     HITSTOR_ADVERTISE_ADDR=backup.example.com:8420 \
+     HITSTOR_DASHBOARD_PASSWORD='elija-una-contrasena' \
      ./hitstor-server-1.0.0-linux-amd64.run --no-wizard
 
-# Agente
-sudo HITSTOR_AGENT_SERVER=backup.example.com:8420 \
-     HITSTOR_AGENT_API_KEY=<64-char-hex> \
+# Agente (puerto de escucha por defecto 8422)
+sudo HITSTOR_AGENT_LISTEN_PORT=8422 \
      ./hitstor-agent-1.0.0-linux-amd64.run --no-wizard
 ```
+
+Por defecto, `HITSTOR_ADVERTISE_ADDR` es la IP de salida detectada con el puerto gRPC. Sin `HITSTOR_DASHBOARD_PASSWORD`, el servidor genera una contraseña del dashboard en el primer arranque y la muestra una sola vez en el registro; sirve para crear el primer administrador. Después, el agente se agrega desde el dashboard con su dirección y su token (`hitstor-agent show-id`).
 
 #### Actualización con reversión { #upgrade-with-rollback }
 
 Cuando el instalador detecta una instalación existente:
 
-1. Respalda el binario actual en una ubicación temporal
+1. Respalda el binario actual (en `/usr/bin/hitstor.rollback` o `/usr/bin/hitstor-agent.rollback`)
 2. Detiene el servicio
 3. Reemplaza el binario por la nueva versión
 4. Inicia el servicio
@@ -257,10 +290,10 @@ Detiene y deshabilita el servicio, elimina el binario y las unidades de systemd 
 |----------------|-------------|
 | `hitstor` | `/usr/bin/hitstor` |
 | `hitstor-server.service` | `/usr/lib/systemd/system/hitstor-server.service` |
-| `config.yaml.example` | `/etc/hitstor/config.yaml.example` + `/etc/hitstor/config.yaml` |
-| `server.env.example` | `/etc/hitstor/server.env.example` + `/etc/hitstor/server.env` |
+| `config.yaml.example` | `/etc/hitstor/config.yaml.example` |
+| `server.env.example` | `/etc/hitstor/server.env.example` |
 
-El instalador del servidor también crea el usuario/grupo de sistema `hitstor` y los directorios `/var/lib/hitstor` y `/var/log/hitstor`.
+`/etc/hitstor/config.yaml` (puertos, dirección anunciada, contraseña del dashboard) y `/etc/hitstor/server.env` se escriben a partir de las respuestas del asistente. El instalador del servidor también crea el usuario/grupo de sistema `hitstor` y los directorios `/var/lib/hitstor` y `/var/log/hitstor`.
 
 ### Payload del instalador del agente { #agent-installer-payload }
 
@@ -270,7 +303,9 @@ El instalador del servidor también crea el usuario/grupo de sistema `hitstor` y
 | `hitstor-agent.service` | `/usr/lib/systemd/system/hitstor-agent.service` |
 | `hitstor-agent.timer` | `/usr/lib/systemd/system/hitstor-agent.timer` |
 | `agent-config.yaml.example` | `/etc/hitstor/agent-config.yaml.example` + `/etc/hitstor/agent-config.yaml` |
-| `agent.env.example` | `/etc/hitstor/agent.env.example` + `/etc/hitstor/agent.env` |
+| `agent.env.example` | `/etc/hitstor/agent.env.example` |
+
+`/etc/hitstor/agent.env` se escribe con `HITSTOR_AGENT_LISTEN_PORT`; si ya contiene un registro (`HITSTOR_AGENT_SERVER`), solo se actualiza el puerto de escucha.
 
 ## Paquetes de Windows (instaladores .exe) { #windows-packages-exe-installers }
 
@@ -281,6 +316,8 @@ Los instaladores de Windows se compilan con [NSIS](https://nsis.sourceforge.io/)
 | `make pkg-server-windows` | `bin/hitstor.exe` | `dist/hitstor-VERSION-windows-amd64-setup.exe` |
 | `make pkg-agent-windows` | `bin/hitstor-agent.exe` | `dist/hitstor-agent-VERSION-windows-amd64-setup.exe` |
 | `make pkg-windows` | (ambos anteriores) | Ambos instaladores de Windows |
+
+Ambos targets ejecutan primero `make render-windows-icon`, que regenera `packaging/nsis/hitstor.ico` a partir de `assets/icon.png` (requiere Python con Pillow).
 
 ### Scripts de NSIS { #nsis-scripts }
 
@@ -307,6 +344,15 @@ make docker-save VERSION=1.2.0
 ```
 
 Genera `dist/hitstor-VERSION-docker.tar.gz`, un tarball comprimido con gzip que se puede cargar con `docker load`.
+
+### Entorno de inicio rápido { #quickstart-stack }
+
+```bash
+make docker-quickstart-up     # requiere .env (copie .env.example y defina HITSTOR_PASSWORD)
+make docker-quickstart-down
+```
+
+Estos targets envuelven `docker compose -f docker-compose.quickstart.yml`. Las imágenes publicadas las genera `.github/workflows/docker-publish.yml`, no estos targets.
 
 ## Versiones publicadas { #releases }
 

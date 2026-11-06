@@ -18,7 +18,7 @@ Ambos argumentos son obligatorios: el ID de la instantánea y la ruta de destino
 
 | Flag | Tipo | Valor predeterminado | Descripción |
 |------|------|---------|-------------|
-| `--include` | string | | Restaura solo los archivos que coinciden con esta ruta (se puede repetir) |
+| `--include` | string | | Restaura solo esta ruta, relativa a la raíz de la instantánea (por ejemplo, `documents/important.pdf` de un respaldo de `/home/user/documents`), y todo lo que contiene. Ruta exacta, no un patrón glob (se puede repetir) |
 
 Además de todos los [flags globales](index.md#global-flags), incluido `--repo-name` para configuraciones con varios repositorios.
 
@@ -48,5 +48,5 @@ Restaurar solo archivos específicos:
 
 ```bash
 hitstor restore --repo /backups/hitstor --password "secret" latest /tmp/restore \
-  --include "/home/user/documents/important.pdf"
+  --include "documents/important.pdf"
 ```

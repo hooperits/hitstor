@@ -1,14 +1,14 @@
 # Configuration Reference
 
-Complete reference for all HitStor configuration keys. Configuration is stored in YAML format at `~/.config/hitstor/config.yaml` (Linux) or `%AppData%\hitstor\config.yaml` (Windows).
+Complete reference for all HitStor configuration keys. Configuration is stored in YAML format. Without `--config`, HitStor uses `/etc/hitstor/config.yaml` when it exists and is readable, and otherwise `~/.config/hitstor/config.yaml` (`%AppData%\hitstor\config.yaml` on Windows). The Windows server service uses `%ProgramData%\HitStor\config.yaml`.
 
 ## Precedence
 
 Values are resolved in this order (highest priority first):
 
 1. **CLI flag** -- `--repo /path`
-2. **Environment variable** -- `HITSTOR_REPO=/path`
-3. **Config file** -- `repo: /path`
+2. **Config file** -- `repo: /path`
+3. **Environment variable** -- `HITSTOR_REPO=/path` (used only when neither a flag nor the config file sets the value)
 4. **Default value**
 
 ## Configuration Keys
@@ -21,6 +21,8 @@ Values are resolved in this order (highest priority first):
 | `password_file` | string | | `--password-file` | | Path to file containing the repository password |
 | `parallel` | int | `0` | `--parallel` | | Number of parallel workers (`0` = auto-detect based on CPU count) |
 | `exclude` | list | | | | Global exclude patterns (applied to all backups) |
+| `sync_writes` | bool | `false` | | `HITSTOR_SYNC_WRITES=1` | Fsync local repository files after each atomic rename (durability over speed) |
+| `min_free_reserve_bytes` | int | `1073741824` (1 GiB) | | | Minimum free disk space required before writing pack files to a local repository |
 
 ### S3 Backend
 
@@ -40,10 +42,10 @@ Used by `hitstor serve` to configure the gRPC server and web dashboard.
 | `serve_tls_cert` | string | | `--tls-cert` | Path to TLS certificate file |
 | `serve_tls_key` | string | | `--tls-key` | Path to TLS private key file |
 | `serve_dashboard_port` | int | `8421` | `--dashboard-port` | HTTP dashboard listen port |
-| `serve_dashboard_password` | string | | | Dashboard login password (sensitive -- if empty, a random one is generated at startup and logged once; see [Dashboard Password](../installation/quickstart.md#dashboard-password)) |
+| `serve_dashboard_password` | string | | | Dashboard setup password (sensitive). It signs in while the server has no repository and is asked for once to create the first administrator; after that, people sign in with their own accounts. If empty, a random one is generated at startup and logged once; see [Dashboard Password and First Administrator](../installation/quickstart.md#dashboard-password) |
 | `serve_dashboard_language` | string | | | Default dashboard language code (`en`, `es`). Empty uses the browser language; users can still switch with the selector. See [Translations](../dev-guide/translations.md#choosing-the-language) |
 | `serve_advertise_addr` | string | | `--advertise-addr` | Address advertised to agents for registration (use when server is behind NAT) |
-| `update_check` | bool | `true` | | Enable automatic version checks. When enabled, the server checks for updates every 24 hours and shows a banner in the dashboard. |
+| `update_check` | bool | `false` | | Enable automatic version checks. When enabled, the server checks for updates every 24 hours and shows a banner in the dashboard. Can also be turned on under **Settings → General**. |
 | `update_url` | string | | | Custom update check URL (empty = GitHub Releases API) |
 
 ### Alerting
@@ -63,7 +65,7 @@ Used by `hitstor-agent` to configure the remote backup agent.
 | `agent_server` | string | | `--server` | `HITSTOR_AGENT_SERVER` | Remote server address (`host:port`) |
 | `agent_api_key` | string | | `--api-key` | `HITSTOR_AGENT_API_KEY` | Agent API key for authentication (sensitive -- 64-char hex) |
 | `agent_ca_cert` | string | | `--ca-cert` | | Path to CA certificate for TLS verification |
-| `agent_hostname` | string | | `--hostname` | | Override hostname sent to server (defaults to system hostname) |
+| `agent_hostname` | string | | `backup --host` | | Override hostname sent to server (defaults to system hostname) |
 | `agent_paths` | list | | | | Default backup paths (used when no paths given on command line) |
 | `agent_excludes` | list | | | | Default exclude patterns for agent backups |
 
@@ -96,7 +98,7 @@ environment** in Settings to migrate it to encrypted YAML.
 
 Microsoft 365 (`m365_*`), cloud provider (`gcp_project`, `aws_role_arn`,
 `aws_region`, `azure_tenant`, `azure_client`, `azure_sub`), and
-`collector_plugins` keys were removed from the config schema in v2.0.0. Existing
+`collector_plugins` keys were removed from the config schema in an earlier release. Existing
 `config.yaml` files containing them still load — YAML silently ignores unknown
 keys — but the values are never read. Remove these keys at your convenience.
 
@@ -140,6 +142,18 @@ The reports emailed on a schedule, a list. Editable from **Administration → Re
 | `language` | string | `en` or `es`; empty: the dashboard's default |
 | `enabled` | bool | Send it on schedule |
 | `created`, `last_sent`, `last_error` | | Kept by the server |
+
+### Logging
+
+Server and agent log retention: the in-memory buffer behind the dashboard's **Logs** page and the rotated log file. Each key has an environment variable that overrides it.
+
+| Key | Type | Default | Env Var | Description |
+|-----|------|---------|---------|-------------|
+| `log_max_entries` | int | `5000` | `HITSTOR_LOG_MAX_ENTRIES` | Entries kept in memory (500-50000) |
+| `log_file_enabled` | bool | `true` | `HITSTOR_LOG_FILE_ENABLED` | Write the log file |
+| `log_file_path` | string | `/var/log/hitstor/server.log` (`C:\ProgramData\HitStor\logs\server.log` on Windows); the agent writes `agent.log` in the same folder | `HITSTOR_LOG_FILE_PATH` | Log file path |
+| `log_rotate_max_mb` | int | `50` | `HITSTOR_LOG_ROTATE_MAX_MB` | Rotate the file at this size (at most 500) |
+| `log_rotate_max_files` | int | `5` | `HITSTOR_LOG_ROTATE_MAX_FILES` | Rotated files kept (at most 20) |
 
 ### Sentinel (`sentinel`)
 
@@ -192,7 +206,6 @@ serve_port: 8420
 serve_tls_cert: /etc/hitstor/tls/cert.pem
 serve_tls_key: /etc/hitstor/tls/key.pem
 serve_dashboard_port: 8421
-serve_dashboard_password: changeme
 alert_webhook_url: https://hooks.slack.com/services/T.../B.../xxx
 alert_stale_threshold: 25
 ```
@@ -209,13 +222,13 @@ agent_paths:
   - /var/lib
 agent_excludes:
   - "*.log"
-  - "/home/*/.cache"
+  - ".cache"
 ```
 
 ### S3 Backend
 
 ```yaml
-repo: s3:s3.amazonaws.com/my-backup-bucket
+repo: s3:https://s3.amazonaws.com/my-backup-bucket
 s3_access_key: AKIAIOSFODNN7EXAMPLE
 s3_secret_key: wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
 s3_region: us-west-2

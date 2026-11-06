@@ -10,12 +10,14 @@ If you are looking for instructions on creating and restoring backups, see the [
 |-------|-------------|
 | [Server Setup](server-setup.md) | Initialize a repository, start the server, configure systemd, and manage firewall rules. |
 | [TLS Certificates](tls-certificates.md) | Configure auto-generated or custom TLS certificates for gRPC and dashboard communication. |
-| [Backup Jobs](backup-jobs.md) | Filesystem backup jobs, scheduling, and retention. |
+| [Backup Jobs](backup-jobs.md) | Filesystem and workload backup jobs, backup plans, scheduling, and retention. |
 | [Agent Management](agent-management.md) | Register, configure, and remove backup agents. |
 | [Agent Discovery](agent-discovery.md) | Network scan for unregistered agents. |
 | [Agent Deployment](agent-deployment.md) | Install and configure the `hitstor-agent` binary on Linux and Windows machines. |
-| [Dashboard](dashboard.md) | Access the web dashboard, manage schedules, and use the JSON API. |
-| [Server Settings](settings.md) | Central settings hub: TLS, network, integrations (Gemini), notifications. |
+| [Dashboard](dashboard.md) | Access the web dashboard, its pages, and the JSON API. |
+| [Users and Access](users.md) | Accounts, roles, two-step verification, email, and the audit log. |
+| [Reports](reports.md) | PDF reports emailed on a schedule or downloaded. |
+| [Server Settings](settings.md) | Central settings hub: TLS, network, integrations (Gemini), notifications, email, plugin packages. |
 | [Monitoring](monitoring.md) | Prometheus metrics, webhook alerting, and Grafana integration. |
 | [Scheduling](scheduling.md) | Configure server-managed schedules, daemon mode, and systemd timers. |
 | [Sentinel](sentinel.md) | Ransomware telemetry and alerts. |

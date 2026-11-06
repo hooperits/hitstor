@@ -59,17 +59,24 @@ Por ejemplo, con `--keep-last 3 --keep-daily 7`:
 
 ## Cadenas de respaldo de cargas de trabajo { #workload-backup-chains }
 
-Los respaldos diferenciales y de log que toman los plugins de carga de trabajo
-(por ejemplo [SQL Server](sql-server.md)) solo se pueden restaurar junto con
-los respaldos anteriores. Cuando una política conserva una de esas
-instantáneas, HitStor también conserva las instantáneas anteriores del mismo
-host y plugin hasta el respaldo completo más reciente, aunque la política por
-sí sola las olvidaría. Las instantáneas se reconocen por sus etiquetas
-`plugin:<id>` y `kind:<tipo>`.
+Las instantáneas de cargas de trabajo (por ejemplo, de [SQL Server](sql-server.md))
+llevan las etiquetas `plugin:<id>` y `kind:<tipo>`, y una etiqueta
+`obj:<objeto>` por cada objeto (base de datos) que contienen. La política se
+aplica a las instantáneas en conjunto y también a los respaldos propios de cada
+objeto, de modo que cada base de datos conserva sus últimos N respaldos, sus
+respaldos diarios, etc., sin importar lo que ocurra con las demás.
+
+Los respaldos diferenciales y de log solo se pueden restaurar junto con los
+respaldos en los que se basan. Cuando una política conserva uno, HitStor
+también conserva, para el mismo host, plugin y objeto, los respaldos que
+necesita, aunque la política por sí sola los olvidaría: un diferencial conserva
+su respaldo completo base; un respaldo de log conserva los respaldos de log
+anteriores hasta su respaldo completo base. Los respaldos completos de solo
+copia (copy-only) nunca se usan como base.
 
 ## Filtrado por host y ruta { #host-and-path-filtering }
 
-De forma predeterminada, `forget` aplica la política de retención a **todas** las instantáneas del repositorio, agrupadas por host y ruta. Puede acotar el alcance con filtros:
+De forma predeterminada, `forget` aplica la política de retención a **todas** las instantáneas del repositorio como un solo conjunto: las instantáneas no se agrupan por host ni por ruta, así que `--keep-last 7` conserva las 7 instantáneas más recientes en total. Para aplicar una política a un host o una ruta, acote el alcance con filtros:
 
 ### Filtrar por host { #filter-by-host }
 
@@ -104,18 +111,18 @@ hitstor forget --repo /path/to/repo --password "secret" \
     --dry-run
 ```
 
-El comando muestra exactamente qué instantáneas se conservarían y cuáles se eliminarían, sin borrar nada realmente. Ejecute siempre `--dry-run` primero cuando ajuste una política nueva.
+El comando muestra cada instantánea con `keep` (conservar) o `forget` (olvidar), sin borrar nada realmente. Ejecute siempre `--dry-run` primero cuando ajuste una política nueva.
 
 Ejemplo de salida de una simulación:
 
 ```
-Applying retention policy to 15 snapshots:
-  keep 7 snapshots:
-    abc12345  bcd23456  cde34567  def45678  efg56789  fgh67890  ghi78901
-  remove 8 snapshots:
-    hij89012  ijk90123  jkl01234  klm12345  lmn23456  mno34567  nop45678  opq56789
-
-Dry run -- no snapshots removed.
+keep   abc12345 2026-02-22 08:00:11
+keep   bcd23456 2026-02-21 08:00:09
+...
+keep   cde34567 2026-01-24 08:00:12
+forget def45678 2026-01-23 08:00:10
+forget ef567890 2026-01-22 08:00:07
+snapshots: 30 kept, 2 forgotten
 ```
 
 ## Depuración automática { #automatic-prune }
@@ -147,7 +154,7 @@ En repositorios muy grandes, el reempaquetado puede implicar una E/S considerabl
 
 ```console
 hitstor prune --repo /path/to/repo --password "secret" \
-    --max-repack-size 5G
+    --max-repack-size 5GiB
 ```
 
 Esto procesa hasta 5 GiB de datos de paquetes por invocación. Ejecute `prune` de nuevo más tarde para continuar donde se quedó. Este enfoque es útil para repartir el costo de E/S entre varias ventanas de mantenimiento.

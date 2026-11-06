@@ -34,7 +34,7 @@ Salidas: `results.md` y `results.json` en el directorio de trabajo que se imprim
 
 ## Qué significa un “buen” resultado para la comunicación del producto { #what-good-looks-like-for-product-messaging }
 
-HitStor es un producto de respaldo de sistemas de archivos ([Hoja de ruta](../admin-guide/roadmap.md)), así que cite cifras que importen a quienes compran respaldo de sistemas de archivos:
+Este conjunto de pruebas mide el respaldo de sistemas de archivos, el núcleo de HitStor ([Hoja de ruta](../admin-guide/roadmap.md)), así que cite cifras que importen a quienes compran respaldo de sistemas de archivos:
 
 1. **MiB/s de respaldo completo** en disco local
 2. Tiempo real del respaldo **incremental** tras un conjunto pequeño de cambios

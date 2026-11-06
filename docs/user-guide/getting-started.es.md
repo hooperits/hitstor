@@ -8,13 +8,13 @@ Un **repositorio** es el directorio donde HitStor almacena los datos de respaldo
 
 ```console
 hitstor init --repo /path/to/repo --password "secret"
-created hitstor repository at /path/to/repo
+created new repository 3d3f89b7 at /path/to/repo
 ```
 
 El flag `--repo` indica el directorio de destino (se crea si no existe). El flag `--password` proporciona la frase de contraseña de cifrado que protege todos los datos del repositorio.
 
 !!! warning "Advertencia"
-    No olvide su contraseña. Sin ella, los datos del repositorio no pueden recuperarse. Considere guardar la contraseña en un gestor de contraseñas o usar `HITSTOR_PASSWORD_FILE` para leerla desde un archivo.
+    No olvide su contraseña. Sin ella, los datos del repositorio no pueden recuperarse. Considere guardar la contraseña en un gestor de contraseñas o usar `--password-file` para leerla desde un archivo.
 
 ## Crear su primer respaldo { #create-your-first-backup }
 
@@ -22,11 +22,13 @@ Respalde un directorio pasando su ruta como último argumento:
 
 ```console
 hitstor backup --repo /path/to/repo --password "secret" /data
-snapshot abc12345 saved
-  Files:        1,247 new,     0 changed,     0 unmodified
-  Dirs:            38 new,     0 changed,     0 unmodified
-  Data:       512.00 MiB added
-  Processed:  1,247 files, 512.00 MiB in 0:08
+scanning files...
+scanned 1,247 files in 38 directories
+✓ snapshot abc12345 saved
+  Files:       1,247 new,        0 unchanged
+  Dirs:           38 new
+  Added:    498.2 MiB (512.0 MiB processed)
+  Duration:      8.2s
 ```
 
 HitStor divide cada archivo en fragmentos (chunks) de longitud variable, los deduplica, los comprime y cifra el resultado antes de escribirlo en el repositorio.
@@ -37,9 +39,9 @@ Cada respaldo genera una **instantánea**: un registro de los archivos respaldad
 
 ```console
 hitstor snapshots --repo /path/to/repo --password "secret"
-ID        Time                 Host        Tags    Paths
-------------------------------------------------------------------------
-abc12345  2026-02-22 10:00:05  myhost              /data
+ID        Time                 Host    Tags  Files  Size
+────────  ───────────────────  ──────  ────  ─────  ─────────
+abc12345  2026-02-22 10:00:05  myhost        1,247  512.0 MiB
 ```
 
 ## Crear un segundo respaldo (comportamiento incremental) { #create-a-second-backup-incremental-behavior }
@@ -48,21 +50,23 @@ Ejecute de nuevo el mismo comando de respaldo después de hacer algunos cambios 
 
 ```console
 hitstor backup --repo /path/to/repo --password "secret" /data
-snapshot def67890 saved
-  Files:           3 new,     5 changed, 1,239 unmodified
-  Dirs:            0 new,     2 changed,    36 unmodified
-  Data:        4.20 MiB added
-  Processed:  1,247 files, 512.00 MiB in 0:01
+scanning files...
+scanned 1,247 files in 38 directories
+✓ snapshot def67890 saved
+  Files:           8 new,    1,239 unchanged
+  Dirs:            2 new
+  Added:     4.2 MiB (6.1 MiB processed)
+  Duration:      1.1s
 ```
 
 Observe cuánto más rápido es el segundo respaldo. HitStor solo almacena los fragmentos nuevos o modificados; los datos sin cambios se deduplican automáticamente.
 
 ```console
 hitstor snapshots --repo /path/to/repo --password "secret"
-ID        Time                 Host        Tags    Paths
-------------------------------------------------------------------------
-abc12345  2026-02-22 10:00:05  myhost              /data
-def67890  2026-02-22 10:15:32  myhost              /data
+ID        Time                 Host    Tags  Files  Size
+────────  ───────────────────  ──────  ────  ─────  ─────────
+def67890  2026-02-22 10:15:32  myhost        1,247  512.3 MiB
+abc12345  2026-02-22 10:00:05  myhost        1,247  512.0 MiB
 ```
 
 ## Restaurar desde una instantánea { #restore-from-a-snapshot }
@@ -72,11 +76,10 @@ Para restaurar el contenido de una instantánea en un directorio de destino, pas
 ```console
 hitstor restore --repo /path/to/repo --password "secret" abc12345 /restore/path
 restoring snapshot abc12345 to /restore/path
-  Files:  1,247 restored
-  Dirs:      38 restored
+✓ restored 1,247 files (512.0 MiB) in 6.3s
 ```
 
-Puede usar el ID completo de la instantánea o un prefijo corto único (los primeros 8 caracteres o más). También puede usar la palabra clave `latest` para restaurar la instantánea más reciente:
+Puede usar el ID completo de la instantánea o cualquier prefijo único de él, como el ID de 8 caracteres que muestra `hitstor snapshots`. También puede usar la palabra clave `latest` para restaurar la instantánea más reciente:
 
 ```console
 hitstor restore --repo /path/to/repo --password "secret" latest /restore/path
@@ -84,13 +87,13 @@ hitstor restore --repo /path/to/repo --password "secret" latest /restore/path
 
 ## Verificar el repositorio { #verify-the-repository }
 
-El comando `check` verifica la integridad estructural del repositorio. Lee cada archivo de paquete, valida las sumas de verificación y confirma que todos los datos referenciados estén presentes.
+El comando `check` verifica la integridad estructural del repositorio: que sus índices, archivos de paquete e instantáneas sean coherentes y que todos los datos referenciados estén presentes. Agregue `--read-data` para leer y descifrar además cada blob.
 
 ```console
 hitstor check --repo /path/to/repo --password "secret"
-using temporary cache in /tmp/hitstor-check-123456
-repository structure is ok
-all pack files verified
+checking indexes...
+checking pack files...
+checking snapshots...
 no errors found
 ```
 
@@ -104,11 +107,7 @@ Con el tiempo, la cantidad de instantáneas crece. El comando `forget` olvida (f
 hitstor forget --repo /path/to/repo --password "secret" \
     --keep-last 7 \
     --keep-daily 30
-Applying retention policy:
-  keep the last 7 snapshots
-  keep daily snapshots for 30 days
-
-remove 0 snapshots
+snapshots: 2 kept, 0 forgotten
 ```
 
 En este ejemplo, ambas instantáneas son lo bastante recientes como para conservarse. A medida que crezca su historial de instantáneas, se eliminarán las instantáneas más antiguas que no cumplan ninguna regla de la política.
@@ -119,13 +118,13 @@ Después de que `forget` marca instantáneas para eliminarlas, los fragmentos de
 
 ```console
 hitstor prune --repo /path/to/repo --password "secret"
-counting files in repo
-finding data still in use for 2 snapshots
-[0:00] 100.00%  2 / 2 snapshots
-searching used packs...
-collecting packs for deletion and repacking
-  no packs to delete or repack
-done
+collecting referenced blobs...
+classifying packs...
+nothing to prune
+prune complete
+Packs:      0 deleted,    0 repacked
+Freed:   0 B (repacked 0 B)
+Indexes:    0 deleted,    0 written
 ```
 
 Cuando hay datos no referenciados que limpiar, `prune` informa exactamente cuánto espacio se recuperó.

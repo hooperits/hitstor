@@ -69,7 +69,7 @@ Select-String -Path "$env:ProgramData\HitStor\logs\server.log" -Pattern "generat
   ForEach-Object { ($_.Line | ConvertFrom-Json).fields.password }
 ```
 
-Inicie sesión con ella y cámbiela en **Configuración**. Luego cree un repositorio desde la página **Almacenamiento**. Para restablecer una contraseña perdida, consulte [Contraseña del dashboard](quickstart.md#dashboard-password).
+Inicie sesión con ella, cree un repositorio desde la página **Almacenamiento** y reinicie el servicio (`Restart-Service HitStor`). Abra `https://<server>:8421`: el dashboard ahora le pide **Cree el primer administrador**. Ingrese la misma contraseña, elija el nombre de usuario y la contraseña del administrador, y configure una app de autenticación. A partir de ese momento cada persona inicia sesión con una cuenta personal y la contraseña generada ya no permite iniciar sesión. Consulte [Contraseña del dashboard y primer administrador](quickstart.md#dashboard-password), que también explica cómo restablecer una contraseña perdida y cómo crear el administrador desde la consola con `hitstor serve user add`.
 
 ## Configuración { #configuration }
 

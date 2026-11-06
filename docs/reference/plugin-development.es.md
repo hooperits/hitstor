@@ -608,4 +608,4 @@ go-plugin establece el tamaño máximo de mensaje gRPC en ~2 GiB. Los archivos d
 ## Consulte también { #see-also }
 
 - [Guía de uso de plugins](../user-guide/plugins.md) -- instalar y configurar plugins
-- [Referencia de la API](api-reference.md) -- protocolo gRPC principal de respaldo
+- [Referencia de la API gRPC](grpc-api.md) -- protocolo gRPC principal de respaldo

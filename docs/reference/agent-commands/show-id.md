@@ -10,7 +10,7 @@ hitstor-agent show-id
 
 ## Description
 
-Reads and prints the agent token from `/etc/hitstor/agent-token`. The token is a 64-character hexadecimal string generated during agent installation or on first daemon start.
+Reads and prints the agent token from `/etc/hitstor/agent-token` (`%ProgramData%\HitStor\agent-token` on Windows). The token is a 64-character hexadecimal string generated during agent installation or on first daemon start.
 
 Use this token when adding the agent from the HitStor dashboard:
 

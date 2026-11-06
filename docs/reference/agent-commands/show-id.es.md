@@ -10,7 +10,7 @@ hitstor-agent show-id
 
 ## Descripción { #description }
 
-Lee e imprime el token del agente desde `/etc/hitstor/agent-token`. El token es una cadena hexadecimal de 64 caracteres que se genera durante la instalación del agente o en el primer arranque del daemon.
+Lee e imprime el token del agente desde `/etc/hitstor/agent-token` (`%ProgramData%\HitStor\agent-token` en Windows). El token es una cadena hexadecimal de 64 caracteres que se genera durante la instalación del agente o en el primer arranque del daemon.
 
 Use este token al agregar el agente desde el dashboard de HitStor:
 

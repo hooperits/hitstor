@@ -19,6 +19,10 @@ At least one path argument is required (or configured via `agent_paths`).
 | Flag | Type | Default | Description |
 |------|------|---------|-------------|
 | `--exclude` | string | | Exclude files matching this glob pattern (repeatable) |
+| `--tag` | string | | Add a tag to the snapshot (repeatable) |
+| `--host` | string | system hostname, or `agent_hostname` | Override the hostname sent to the server |
+| `--parallel` | int | 0 | Parallel file workers (0 = number of CPUs, at most 8) |
+| `--use-vss` | bool | false | Read from a consistent snapshot: Windows VSS, or LVM/btrfs on Linux when available |
 
 Plus all agent [global flags](index.md#global-flags).
 

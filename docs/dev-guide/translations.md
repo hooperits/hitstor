@@ -1,6 +1,6 @@
 # Translations
 
-HitStor's web dashboard and this documentation are available in **English** and **Spanish**. Both are built so that more languages can be added without code changes. The CLI, installers and log messages stay in English.
+HitStor's web dashboard and this documentation are available in **English** and **Spanish**. Both are built so that more languages can be added without code changes. Account emails (invitations, password resets) and PDF reports use the same message catalogs: an account email is written in the language of the dashboard page that triggers it, and each scheduled report (and its email) has its own language setting. The CLI, installers and log messages stay in English.
 
 ## Dashboard
 

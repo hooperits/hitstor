@@ -12,49 +12,14 @@ The `.run` installer includes an interactive wizard that configures the agent an
 sudo ./hitstor-agent-X.Y.Z-linux-amd64.run
 ```
 
-The wizard offers two setup modes:
-
-#### Dashboard-Managed (Recommended)
-
-The agent generates a token and listens for registration from the server dashboard. No server address or API key is needed at install time.
-
-The wizard prompts for:
-
-1. **Setup mode** — select `1` for dashboard-managed
-2. **Listen port** — gRPC port for server connections (default: 8422)
-3. **Backup paths** — optional, can be configured later from the dashboard
-
-After installation, the wizard displays the **agent token** and instructions for adding the agent from the dashboard.
-
-#### Legacy (Manual)
-
-The agent is configured with a server address and API key at install time. Use this if you registered the agent via `hitstor serve agent add`.
-
-The wizard prompts for:
-
-1. **Setup mode** — select `2` for legacy
-2. **Server address** — `host:port` of the HitStor server
-3. **API key** — 64-character hex key from `hitstor serve agent add <name>` (masked input)
-4. **Connection test** — verifies connectivity before proceeding
-5. **Backup paths** — comma-separated directories to back up (default: `/etc,/home`)
+The wizard asks for one value, the **listen port** (gRPC port the server uses to manage the agent; default `8422`). It then installs the binary and the systemd units, writes `/etc/hitstor/agent.env`, starts the `hitstor-agent` service, and displays the **agent token** with instructions for adding the agent from the dashboard. No server address or API key is needed at install time: the server sends them when you register the agent.
 
 ### Non-Interactive Install
 
-For automation, use `--no-wizard` with environment variables.
-
-**Dashboard-managed mode** (default when no server/key env vars are set):
+For automation, use `--no-wizard`; the only setting is the listen port:
 
 ```bash
 sudo HITSTOR_AGENT_LISTEN_PORT=8422 \
-     ./hitstor-agent-X.Y.Z-linux-amd64.run --no-wizard
-```
-
-**Legacy mode** (triggered by setting server and API key):
-
-```bash
-sudo HITSTOR_AGENT_SERVER=backup.example.com:8420 \
-     HITSTOR_AGENT_API_KEY=<64-char-hex-key> \
-     HITSTOR_AGENT_PATHS=/etc,/home \
      ./hitstor-agent-X.Y.Z-linux-amd64.run --no-wizard
 ```
 
@@ -66,19 +31,17 @@ Alternatively, install the agent from a deb or rpm package:
 
 ```bash
 # Debian / Ubuntu
-sudo apt install ./hitstor-agent_1.0.0_amd64.deb
+sudo apt install ./hitstor-agent_X.Y.Z_amd64.deb
 
 # RHEL / Fedora / AlmaLinux
-sudo rpm -i hitstor-agent-1.0.0.x86_64.rpm
+sudo rpm -i hitstor-agent-X.Y.Z-1.x86_64.rpm
 ```
 
-See [Installation](../installation/index.md) for additional installation methods.
+The package does not start the agent. Enable it with `sudo systemctl enable --now hitstor-agent`; the token is generated on the first start. See [Installation](../installation/index.md) for additional installation methods.
 
 ### Configure the Agent
 
-Configuration depends on the setup mode.
-
-#### Dashboard-Managed Agent
+#### Dashboard-Managed Agent (Recommended)
 
 The agent reads its listen port from `/etc/hitstor/agent.env`:
 
@@ -87,7 +50,7 @@ The agent reads its listen port from `/etc/hitstor/agent.env`:
 HITSTOR_AGENT_LISTEN_PORT=8422
 ```
 
-After the server registers the agent via the dashboard, it writes the server address and API key to this file automatically. The agent token is stored at `/etc/hitstor/agent-token`.
+When the server registers the agent from the dashboard, the agent rewrites this file with the server address and API key (`HITSTOR_AGENT_SERVER`, `HITSTOR_AGENT_API_KEY`). The agent token is stored at `/etc/hitstor/agent-token`.
 
 To view the agent token:
 
@@ -95,9 +58,9 @@ To view the agent token:
 sudo hitstor-agent show-id
 ```
 
-#### Legacy Agent
+#### Manual (CLI) Registration { #manual-cli-registration }
 
-The agent reads its server address and API key from `/etc/hitstor/agent.env`:
+If you registered the agent on the server with `hitstor serve agent add <name>`, put the server address and the printed API key in `/etc/hitstor/agent.env` yourself, then restart the service:
 
 ```bash
 # /etc/hitstor/agent.env
@@ -117,13 +80,15 @@ sudo chown root:root /etc/hitstor/agent.env
 | Variable | Description |
 |----------|-------------|
 | `HITSTOR_AGENT_LISTEN_PORT` | gRPC listen port for dashboard management (default: 8422) |
-| `HITSTOR_AGENT_SERVER` | Server address in `host:port` format (legacy mode) |
-| `HITSTOR_AGENT_API_KEY` | 64-character hex API key (legacy mode) |
-| `HITSTOR_AGENT_CA_CERT` | Path to CA certificate for TLS verification |
+| `HITSTOR_AGENT_SERVER` | Server address in `host:port` format (written at registration) |
+| `HITSTOR_AGENT_API_KEY` | 64-character hex API key (written at registration) |
+| `HITSTOR_AGENT_CA_CERT` | Path to CA certificate for TLS verification (optional; without it the agent pins the server certificate on first use) |
+
+The daemon and the Windows service read `agent.env` themselves; one-off commands such as `hitstor-agent ping` or `backup` read these variables from the environment, from `--server`/`--api-key`/`--ca-cert`, or from `agent_server`/`agent_api_key`/`agent_ca_cert` in the file given with `--config`.
 
 ### Retrieve the Agent Token
 
-Dashboard-managed agents generate a token during installation. To display it:
+Dashboard-managed agents generate a token on their first start. To display it:
 
 ```bash
 sudo hitstor-agent show-id
@@ -131,20 +96,20 @@ sudo hitstor-agent show-id
 
 The token is stored at `/etc/hitstor/agent-token` with mode `0600`.
 
-### Test the Connection (Legacy Mode)
+### Test the Connection
 
-For legacy agents, verify the agent can reach the server:
+Once the agent is registered, verify it can reach the server (the variables come from `agent.env`):
 
 ```bash
-hitstor-agent ping
+sudo sh -c 'set -a; . /etc/hitstor/agent.env; hitstor-agent ping'
 ```
 
 Expected output:
 
 ```
 Server: backup.example.com:8420
-Status: connected
-Agent:  web-server-01
+Version: X.Y.Z
+Repo ID: 03b9cb33...
 ```
 
 If this fails, see [Troubleshooting](troubleshooting.md) for common connection issues.
@@ -154,7 +119,7 @@ If this fails, see [Troubleshooting](troubleshooting.md) for common connection i
 Create a backup of one or more directories:
 
 ```bash
-hitstor-agent backup /etc /home /var/lib
+sudo sh -c 'set -a; . /etc/hitstor/agent.env; hitstor-agent backup /etc /home /var/lib'
 ```
 
 The agent sends the data to the server over gRPC. Progress is displayed in the terminal.
@@ -163,14 +128,14 @@ The agent sends the data to the server over gRPC. Progress is displayed in the t
 
 In daemon mode, the agent runs continuously with two functions:
 
-1. **Management server** — listens on port 8422 for gRPC commands from the HitStor server (registration, filesystem browsing, configuration)
+1. **Management server** — listens on port 8422 for gRPC commands from the HitStor server (registration, filesystem and plugin browsing, plugin installation, restores, wake-up)
 2. **Backup polling** — polls the server for its backup schedule and executes backups automatically
 
 ```bash
 hitstor-agent daemon
 ```
 
-If the agent is not yet registered (dashboard-managed mode), the daemon waits for registration from the dashboard and begins backing up once registered.
+If the agent is not yet registered, the daemon waits for registration from the dashboard, then runs the backup jobs created for it.
 
 ### Systemd Integration
 
@@ -187,27 +152,9 @@ sudo systemctl start hitstor-agent
 
 This starts `hitstor-agent daemon` as a long-running service. The agent listens for management commands and polls the server for schedule updates.
 
-#### Timer Mode
+#### Timer Unit
 
-For cron-style execution, use the systemd timer instead:
-
-```bash
-sudo systemctl enable hitstor-agent.timer
-sudo systemctl start hitstor-agent.timer
-```
-
-The timer triggers `hitstor-agent backup` at the configured interval. Edit the timer to customize the schedule:
-
-```bash
-sudo systemctl edit hitstor-agent.timer
-```
-
-```ini
-[Timer]
-OnCalendar=*-*-* 02:00:00
-```
-
-See [Scheduling](scheduling.md) for more details on timer configuration.
+The package also ships `hitstor-agent.timer` (daily at 02:00). It activates `hitstor-agent.service`, the same daemon, rather than running a one-shot backup, so it adds nothing when the daemon is enabled. For OS-scheduled one-shot backups, see [Scheduling → Systemd Timer](scheduling.md#systemd-timer-alternative).
 
 #### Check Agent Status
 
@@ -220,49 +167,52 @@ sudo journalctl -u hitstor-agent -f
 
 ### Install the Agent
 
-Download the Windows installer from the HitStor releases page and run it. The installer places the `hitstor-agent.exe` binary in `C:\Program Files\HitStor\` and adds it to the system PATH.
+Download the Windows agent installer (`hitstor-agent-X.Y.Z-windows-amd64-setup.exe`) from the HitStor releases page and run it as an administrator. The installer:
+
+- Asks for the **listen port** (default `8422`)
+- Installs `hitstor-agent.exe` and adds its folder to the system PATH
+- Writes `C:\ProgramData\HitStor\agent.env` and `agent-config.yaml`, readable only by SYSTEM and Administrators
+- Adds a Windows Firewall rule for the listen port
+- Registers and starts the `HitStorAgent` Windows Service ("HitStor Backup Agent"), which runs the daemon
+- Shows the **agent token**
+
+Then add the agent from the dashboard (**Agents → + Add Agent**) with its IP address and token. See [Windows Agent Installation](../installation/windows-agent.md).
 
 ### Configure the Agent
 
-Create or edit the configuration file at `C:\ProgramData\HitStor\config.yaml`:
+Registration from the dashboard writes the server address and API key to `C:\ProgramData\HitStor\agent.env`, which the service reads. For an agent registered with `hitstor serve agent add`, write that file yourself:
 
-```yaml
-# C:\ProgramData\HitStor\config.yaml
-agent_server: "backup.example.com:8420"
-agent_api_key: "a3f8c1d9e4b7...6f2a0e5d"
-
+```ini
+# C:\ProgramData\HitStor\agent.env
+HITSTOR_AGENT_SERVER=backup.example.com:8420
+HITSTOR_AGENT_API_KEY=a3f8c1d9e4b7...6f2a0e5d
 # Optional: CA certificate for TLS verification
-# agent_ca_cert: "C:\\ProgramData\\HitStor\\ca.crt"
+# HITSTOR_AGENT_CA_CERT=C:\ProgramData\HitStor\ca.crt
 ```
+
+Then restart the service (`hitstor-agent service stop`, `hitstor-agent service start`).
 
 ### Test the Connection
 
-Open a Command Prompt or PowerShell window:
+Open an elevated PowerShell window and pass the server and key (the command line does not read `agent.env`):
 
 ```powershell
-hitstor-agent ping
+hitstor-agent ping --server backup.example.com:8420 --api-key KEY
 ```
 
 ### Run a Manual Backup
 
 ```powershell
-hitstor-agent backup C:\Users C:\Data
+hitstor-agent backup --server backup.example.com:8420 --api-key KEY C:\Users C:\Data
 ```
 
-### Register as a Windows Service
+### Manage the Windows Service
 
-To run the agent as a background Windows Service:
+The installer registers the service. To manage it by hand:
 
 ```powershell
 hitstor-agent service install
 hitstor-agent service start
-```
-
-This registers `hitstor-agent daemon` as a Windows Service that starts automatically on boot.
-
-Manage the service:
-
-```powershell
 hitstor-agent service stop
 hitstor-agent service uninstall
 ```
@@ -273,16 +223,16 @@ You can also manage the service through the Windows Services console (`services.
 
 For large-scale deployments, use configuration management tools (Ansible, Puppet, Chef, or similar) to:
 
-1. Install the `hitstor-agent` package
+1. Install the `hitstor-agent` package and enable the `hitstor-agent` service
 2. The agent automatically generates a token on first start
 3. Collect agent tokens (via `hitstor-agent show-id`) and add agents from the dashboard
-4. Configure backup paths from the dashboard's filesystem browser
+4. Create backup jobs for them in the dashboard (**Backups → + New Backup Job**)
 
 Alternatively, for legacy deployments:
 
 1. Register each agent with `hitstor serve agent add` on the server
-2. Deploy `/etc/hitstor/agent.env` with the machine-specific API key
-3. Deploy the CA certificate file if using self-signed certificates
+2. Deploy `/etc/hitstor/agent.env` with the server address and the machine-specific API key
+3. Deploy the CA certificate file if you do not want the agent to pin the server certificate on first use (see [TLS Certificates](tls-certificates.md#agent-ca-certificate))
 4. Enable and start the `hitstor-agent` systemd service
 
 ## Next Steps

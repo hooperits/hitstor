@@ -25,7 +25,7 @@ plugin_dir: /usr/local/lib/hitstor/plugins
 
 ## Binarios de plugins integrados { #built-in-plugin-binaries }
 
-El **escáner de sistema de archivos** (`hitstor-scanner-builtin`) es el plugin integrado principal y se instala con los paquetes del agente y del servidor en el directorio estándar de plugins. Proporciona el respaldo de sistemas de archivos de Linux y Windows.
+El **escáner de sistema de archivos** (`hitstor-scanner-builtin`) es el plugin integrado principal. El paquete del agente lo instala en `/usr/lib/hitstor/plugins/`. Proporciona el respaldo de sistemas de archivos de Linux y Windows; si no se encuentra su binario, `hitstor` y `hitstor-agent` usan el mismo recorrido integrado en ellos.
 
 Los demás plugins (backend de almacenamiento, notificador, hook) son opcionales y amplían la forma en que se almacenan los respaldos, cómo se generan alertas sobre ellos o qué se ejecuta antes y después de ellos.
 
@@ -76,7 +76,7 @@ Solo **un** plugin escáner puede estar activo a la vez:
 fs_scanner_plugin: builtin   # recorrido predeterminado
 ```
 
-Use `builtin` para el recorrido predeterminado, o el nombre de un plugin escáner de sistema de archivos personalizado que haya instalado.
+Use `builtin` para el recorrido predeterminado, o el nombre de un plugin escáner de sistema de archivos personalizado que haya instalado. Si `fs_scanner_plugin` no está definido, HitStor usa `hitstor-scanner-builtin` cuando lo encuentra (en `plugin_dir` o en `$PATH`) y, si no, su recorrido interno; un nombre definido explícitamente, incluido `builtin`, debe encontrarse o el respaldo falla.
 
 ## Instalación de plugins { #installing-plugins }
 
@@ -85,7 +85,18 @@ cp bin/hitstor-scanner-myfs /usr/local/lib/hitstor/plugins/
 chmod +x /usr/local/lib/hitstor/plugins/hitstor-scanner-myfs
 ```
 
-No es necesario reiniciar: los plugins se inician cuando se necesitan.
+Los plugins de backend de almacenamiento y los escáneres se inician cuando un comando los necesita. Los plugins notificadores y hook que usa el servidor se cargan cuando se inicia `hitstor serve`, así que reinicie el servidor después de cambiar `alert_notifier_plugins` o `hook_plugins`.
+
+## Plugins de carga de trabajo { #workload-plugins }
+
+Los plugins de carga de trabajo enseñan a un agente a respaldar una aplicación, como un motor de base de datos, en lugar de archivos. Son distintos de los plugins anteriores: cada uno es un paquete `.hpk` firmado que se instala por agente con [`hitstor-agent plugin`](../reference/agent-commands/plugin.md) o desde el dashboard (**Configuración → Plugins** y luego la página del agente), y el agente verifica la firma antes de activarlo. Los paquetes se publican como `hitstor-plugin-<id>-<versión>-<so>-<arquitectura>.hpk`.
+
+| Plugin | Paquete | Carga de trabajo |
+|--------|---------|------------------|
+| `mssql` | `hitstor-plugin-mssql-<versión>-windows-amd64.hpk` | Microsoft SQL Server, mediante la Virtual Device Interface. Consulte [SQL Server](sql-server.md). |
+| `example` | `hitstor-plugin-example-<versión>-<so>-amd64.hpk` (Linux y Windows) | Plugin de referencia para desarrolladores; no respalda nada útil. |
+
+Las tareas que usan un plugin de carga de trabajo se crean en el dashboard con un **plan de respaldo**: una programación por cada tipo de respaldo que admite el plugin (para SQL Server: completo, diferencial y de log de transacciones). La página de la tarea muestra el resultado de cada base de datos (objeto) por separado.
 
 ## Ver también { #see-also }
 

@@ -3,7 +3,7 @@
 Pre-built packages for Debian/Ubuntu (`.deb`) and RHEL/Fedora/AlmaLinux (`.rpm`) in amd64 architecture.
 
 !!! tip "Prefer the .run installer for easier setup"
-    The [Linux Quick Install (.run)](linux-installer.md) provides an interactive wizard that configures everything automatically — passwords, ports, repository initialization, and service startup. Packages require manual configuration (see below).
+    The [Linux Quick Install (.run)](linux-installer.md) provides an interactive wizard that configures the dashboard password, ports, advertise address, and service startup for you. Packages require manual configuration (see below).
 
 ## Download
 
@@ -12,9 +12,9 @@ Download the latest packages from the [GitHub Releases](https://github.com/hoope
 | Package | Description |
 |---------|-------------|
 | `hitstor_x.y.z_amd64.deb` | Server -- Debian/Ubuntu |
-| `hitstor-x.y.z.x86_64.rpm` | Server -- RHEL/Fedora/AlmaLinux |
+| `hitstor-x.y.z-1.x86_64.rpm` | Server -- RHEL/Fedora/AlmaLinux |
 | `hitstor-agent_x.y.z_amd64.deb` | Agent -- Debian/Ubuntu |
-| `hitstor-agent-x.y.z.x86_64.rpm` | Agent -- RHEL/Fedora/AlmaLinux |
+| `hitstor-agent-x.y.z-1.x86_64.rpm` | Agent -- RHEL/Fedora/AlmaLinux |
 
 ## Install the Server
 
@@ -27,7 +27,7 @@ Download the latest packages from the [GitHub Releases](https://github.com/hoope
 === "RHEL / Fedora"
 
     ```bash
-    sudo rpm -i hitstor-x.y.z.x86_64.rpm
+    sudo rpm -i hitstor-x.y.z-1.x86_64.rpm
     ```
 
 The package installs:
@@ -50,7 +50,7 @@ The package installs:
 === "RHEL / Fedora"
 
     ```bash
-    sudo rpm -i hitstor-agent-x.y.z.x86_64.rpm
+    sudo rpm -i hitstor-agent-x.y.z-1.x86_64.rpm
     ```
 
 The agent package installs:
@@ -62,38 +62,28 @@ The agent package installs:
 | `/usr/lib/systemd/system/hitstor-agent.timer` | systemd timer for scheduled backups |
 | `/etc/hitstor/agent.env.example` | Environment file template |
 | `/etc/hitstor/agent-config.yaml.example` | Configuration file template |
+| `/usr/lib/hitstor/plugins/hitstor-scanner-builtin` | Built-in filesystem scanner plugin |
+| `/var/lib/hitstor/plugins/` | Store for [workload plugins](../user-guide/plugins.md#workload-plugins) (mode 0700) |
 
 ## Configuration
 
-After installation, create your configuration files from the provided examples.
+The packages' post-install scripts copy the examples to the working files (`server.env`, `config.yaml`, `agent.env`, `agent-config.yaml`) when those do not exist yet, and never overwrite them on upgrade. The server package also creates the `hitstor` system user.
 
 ### Server
 
-```bash
-sudo cp /etc/hitstor/server.env.example /etc/hitstor/server.env
-sudo cp /etc/hitstor/config.yaml.example /etc/hitstor/config.yaml
-```
-
-Edit `/etc/hitstor/server.env` to set the repository path and password:
-
-```bash
-sudo editor /etc/hitstor/server.env
-```
-
-Edit `/etc/hitstor/config.yaml` to configure the server (listen address, TLS certificates, dashboard settings, etc.):
+Edit `/etc/hitstor/config.yaml` to configure the server (ports, advertise address, TLS certificates, dashboard settings, etc.):
 
 ```bash
 sudo editor /etc/hitstor/config.yaml
 ```
 
+Repositories are normally created from the dashboard **Storage** page after the service starts. `/etc/hitstor/server.env` only needs `HITSTOR_REPO` and `HITSTOR_PASSWORD` for the legacy single-repository mode. The first sign-in works as described in [Dashboard Password and First Administrator](quickstart.md#dashboard-password).
+
 ### Agent
 
-```bash
-sudo cp /etc/hitstor/agent.env.example /etc/hitstor/agent.env
-sudo cp /etc/hitstor/agent-config.yaml.example /etc/hitstor/agent-config.yaml
-```
+For a dashboard-managed agent (recommended), keep the copied files as they are: start the service (below), read the token with `sudo hitstor-agent show-id`, and add the agent from the dashboard (**Agents → Add Agent**) with its IP address, listen port (default 8422), and token.
 
-Edit `/etc/hitstor/agent.env` to set the server address and API key:
+Edit `/etc/hitstor/agent.env` only for a manually registered agent, to set `HITSTOR_AGENT_SERVER` and `HITSTOR_AGENT_API_KEY` (the key printed by `hitstor serve agent add <name>`):
 
 ```bash
 sudo editor /etc/hitstor/agent.env

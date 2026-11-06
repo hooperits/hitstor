@@ -18,8 +18,8 @@ docker build -t hitstor:latest .
 To build with a specific version tag:
 
 ```bash
-docker build -t hitstor:1.0.0 \
-  --build-arg VERSION=1.0.0 \
+docker build -t hitstor:0.2.0 \
+  --build-arg VERSION=0.2.0 \
   --build-arg COMMIT=$(git rev-parse --short HEAD) \
   --build-arg DATE=$(date -u +%Y-%m-%d) .
 ```
@@ -27,7 +27,7 @@ docker build -t hitstor:1.0.0 \
 Or use the Makefile target:
 
 ```bash
-make docker-build VERSION=1.0.0
+make docker-build VERSION=0.2.0
 ```
 
 ## Image Details
@@ -35,7 +35,7 @@ make docker-build VERSION=1.0.0
 The Docker image uses a two-stage build:
 
 1. **Builder stage** -- `golang:1.26-alpine` compiles the static binary with `CGO_ENABLED=0`.
-2. **Runtime stage** -- `alpine:3.22` with only `ca-certificates` and `tzdata` installed.
+2. **Runtime stage** -- `alpine:3.22` with only `ca-certificates`, `tzdata`, and `wget` (for the health check) installed. All HitStor binaries from `cmd/` are copied to `/usr/bin`.
 
 The image runs as a non-root `hitstor` user.
 
@@ -64,6 +64,8 @@ docker run -d \
   -e HITSTOR_REPO=/var/lib/hitstor/repo \
   hitstor:latest
 ```
+
+On first start the entrypoint runs `hitstor init` for `HITSTOR_REPO` if no repository exists there, then `hitstor serve`. Open `https://<host>:8421` (self-signed certificate) and create the first administrator as described in [Dashboard Password and First Administrator](quickstart.md#dashboard-password). Without `HITSTOR_DASHBOARD_PASSWORD` the container has no config file to save a generated password to, so read it from `docker logs hitstor`.
 
 ## Docker Compose Deployment
 
@@ -148,8 +150,10 @@ docker compose -f docker-compose.prod.yml logs -f
 | Variable | Description |
 |----------|-------------|
 | `HITSTOR_PASSWORD` | Repository password used for encryption and decryption. |
-| `HITSTOR_REPO` | Path to the repository inside the container (default: `/var/lib/hitstor/repo`). |
-| `HITSTOR_VERSION` | Image version tag used by `docker-compose.prod.yml`. |
+| `HITSTOR_REPO` | Path to the repository inside the container. The compose files set `/var/lib/hitstor/repo`; the image has no default. |
+| `HITSTOR_DASHBOARD_PASSWORD` | Dashboard setup password, used to create the first administrator. The entrypoint writes it to `/etc/hitstor/config.yaml` when that file does not exist yet. |
+| `HITSTOR_AUTO_INIT` | `true` (default) runs `hitstor init` for `HITSTOR_REPO` on start when no repository exists; `false` skips it. |
+| `HITSTOR_VERSION` | Image version tag used by the compose files. |
 
 ## Health Check
 
@@ -157,26 +161,26 @@ The production compose file includes a built-in health check:
 
 ```yaml
 healthcheck:
-  test: ["CMD", "wget", "-qO-", "http://localhost:8421/"]
+  test: ["CMD-SHELL", "wget -q -O /dev/null --no-check-certificate https://localhost:8421/login || wget -q -O /dev/null http://localhost:8421/login"]
   interval: 30s
   timeout: 5s
   retries: 3
 ```
 
-Docker reports the container as `healthy` once the dashboard responds on port 8421. Use `docker inspect` or `docker compose ps` to check the health status.
+Use `docker inspect` or `docker compose ps` to check the health status. The check requests the sign-in page over HTTPS (with the self-signed certificate) and falls back to plain HTTP, which the dashboard serves only while no repository exists.
 
 ## Saving the Image
 
 To export the image as a tarball for offline deployment:
 
 ```bash
-make docker-save VERSION=1.0.0
+make docker-save VERSION=0.2.0
 ```
 
-This writes `dist/hitstor-1.0.0-docker.tar.gz`. Load it on the target host with:
+This writes `dist/hitstor-0.2.0-docker.tar.gz`. Load it on the target host with:
 
 ```bash
-docker load < hitstor-1.0.0-docker.tar.gz
+docker load < hitstor-0.2.0-docker.tar.gz
 ```
 
 ## Next Steps

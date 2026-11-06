@@ -18,7 +18,7 @@ hitstor config repositories list
 
 ## Description
 
-Manage the HitStor configuration file at `~/.config/hitstor/config.yaml` (or `/etc/hitstor/config.yaml` on servers with --config).
+Manage the HitStor configuration file: `--config` if given, else `/etc/hitstor/config.yaml` when it exists and is readable, else `~/.config/hitstor/config.yaml`.
 
 For modern multi-repo management (repositories list, S3 creds, etc.), prefer the `hitstor repo` subcommand. The legacy flat keys here are for backward compat.
 
@@ -91,5 +91,5 @@ hitstor config init
 ## Notes
 
 - Configuration file uses YAML format.
-- Precedence: CLI flags > environment variables > config file > defaults.
+- Precedence: CLI flags > config file > environment variables > defaults. See [Configuration](../../user-guide/configuration.md#precedence).
 - See [Config Reference](../config-reference.md) for the full list of keys.

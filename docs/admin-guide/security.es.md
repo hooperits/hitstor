@@ -6,13 +6,13 @@ Esta página documenta el modelo de seguridad de HitStor: cifrado, gestión de c
 
 ### Cifrado de datos { #data-encryption }
 
-Todos los datos almacenados en el repositorio se cifran con **AES-256-GCM** (Galois/Counter Mode). El cifrado se aplica del lado del cliente antes de que los datos se escriban en el almacenamiento, lo que garantiza que el contenido del repositorio sea ilegible sin la contraseña.
+Todos los datos almacenados en el repositorio se cifran con **AES-256-GCM** (Galois/Counter Mode). El cifrado se aplica antes de que los datos se escriban en el almacenamiento (lo hace `hitstor` en los respaldos locales y el servidor en los respaldos de agentes; los agentes fragmentan y comprimen localmente y envían los fragmentos por TLS), lo que garantiza que el contenido del repositorio sea ilegible sin la contraseña.
 
 Cada blob (fragmento (chunk) de datos) se cifra con un nonce único. El cifrado autenticado que ofrece GCM garantiza tanto la confidencialidad como la integridad: cualquier manipulación de los datos cifrados se detecta al leerlos.
 
 ### Derivación de claves { #key-derivation }
 
-La clave de cifrado se deriva de la contraseña del repositorio mediante **scrypt** con los siguientes parámetros:
+Cada repositorio tiene una **clave maestra** aleatoria de 64 bytes: una **EncKey** (cifrado AES-256-GCM de los blobs) y una **IDKey** (identificación de blobs con HMAC-SHA256). La clave maestra se guarda en el directorio `keys/` del repositorio, cifrada con una clave que se deriva de la contraseña del repositorio mediante **scrypt**, con los siguientes parámetros y una sal aleatoria de 64 bytes:
 
 | Parámetro | Valor | Propósito |
 |-----------|-------|---------|
@@ -20,14 +20,11 @@ La clave de cifrado se deriva de la contraseña del repositorio mediante **scryp
 | r | 8 | Tamaño de bloque |
 | p | 1 | Factor de paralelización |
 
-Estos parámetros están diseñados para que los ataques de fuerza bruta resulten computacionalmente costosos. La salida de scrypt produce dos claves:
-
-- **EncKey**: se usa para el cifrado AES-256-GCM de los blobs de datos
-- **IDKey**: se usa para la identificación de blobs con HMAC-SHA256
+Estos parámetros están diseñados para que los ataques de fuerza bruta resulten computacionalmente costosos. Como las claves de datos son aleatorias y no se derivan de la contraseña, adivinar la contraseña es la única forma de llegar a ellas.
 
 ### Identificación de blobs { #blob-identification }
 
-Los ID de blob se calculan como **HMAC-SHA256** usando la IDKey derivada de la contraseña. Esto evita los ataques de adivinación de contenido: un atacante que conozca el contenido en texto plano de un archivo no puede determinar si existe en el repositorio sin conocer la contraseña.
+Los ID de blob se calculan como **HMAC-SHA256** usando la IDKey del repositorio. Esto evita los ataques de adivinación de contenido: un atacante que conozca el contenido en texto plano de un archivo no puede determinar si existe en el repositorio sin conocer la contraseña.
 
 ```
 BlobID = HMAC-SHA256(IDKey, plaintext)
@@ -43,7 +40,7 @@ Toda la comunicación gRPC entre los agentes y el servidor se cifra con TLS. El 
 
 | Configuración | Cifrado | Verificación del certificado |
 |---------------|-----------|-------------------------|
-| Generado automáticamente (predeterminado) | Sí | El agente debe configurar `agent_ca_cert` |
+| Generado automáticamente (predeterminado) | Sí | El agente fija el certificado del servidor en la primera conexión, o confía en él mediante `agent_ca_cert` |
 | Certificado personalizado | Sí | Verificación estándar de CA o `agent_ca_cert` |
 | Let's Encrypt | Sí | Verificación estándar de CA (sin configuración adicional) |
 
@@ -60,10 +57,10 @@ HitStor usa dos mecanismos de autenticación para los agentes:
 **Tokens de agente** (agentes gestionados desde el dashboard):
 
 - Cadena hexadecimal de 64 caracteres (256 bits de entropía)
-- Se generan automáticamente durante la instalación del agente
-- Se almacenan en `/etc/hitstor/agent-token` en el agente (modo 0600)
+- Se generan automáticamente la primera vez que se inicia el agente
+- Se almacenan en `/etc/hitstor/agent-token` en el agente (modo 0600; `C:\ProgramData\HitStor\agent-token` en Windows, legible solo por SYSTEM y Administradores)
 - Se almacenan cifrados (AES-256-GCM) en el servidor, en el registro de agentes
-- El servidor los usa para autenticar las llamadas gRPC al agente (exploración del sistema de archivos, configuración)
+- El servidor los usa para autenticar las llamadas gRPC al agente (registro, exploración, instalación de plugins, restauraciones)
 - Se pueden recuperar en cualquier momento con `hitstor-agent show-id`
 - Se verifican mediante una comparación de tiempo constante para evitar ataques de temporización
 
@@ -82,8 +79,8 @@ Un agente debe presentar una clave de API válida en cada solicitud gRPC de resp
 
 La contraseña del repositorio es el secreto raíz de todas las operaciones de cifrado. Esta contraseña:
 
-- **Nunca se almacena en disco** en el servidor (se proporciona en tiempo de ejecución mediante una variable de entorno o un archivo de contraseña)
-- Se usa para derivar EncKey e IDKey mediante scrypt
+- Se proporciona en tiempo de ejecución mediante un archivo de contraseña (`password_file` en cada repositorio), la variable de entorno `HITSTOR_PASSWORD` o `--password`/`--password-file`. Los repositorios creados desde el dashboard la guardan en un archivo de contraseña junto al archivo de configuración (`<name>.password`, modo `0600`): proteja ese directorio
+- Se usa, mediante scrypt, para desbloquear la clave maestra (EncKey e IDKey)
 - Es necesaria para leer o escribir cualquier dato en el repositorio
 
 Si se pierde la contraseña, los datos del repositorio son irrecuperables.
@@ -108,28 +105,19 @@ La unidad systemd del servidor HitStor incluye directivas de endurecimiento de s
 
 ```ini
 [Service]
+User=hitstor
+Group=hitstor
+
 # Filesystem protection
 ProtectSystem=strict
+ReadWritePaths=/var/lib/hitstor /var/log/hitstor /etc/hitstor
 ProtectHome=true
-ReadWritePaths=/var/lib/hitstor
+PrivateTmp=true
 
 # Privilege restrictions
 NoNewPrivileges=true
-PrivateTmp=true
 
-# Capability restrictions
-CapabilityBoundingSet=
-AmbientCapabilities=
-
-# Network
-RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
-
-# System call filtering
-SystemCallFilter=@system-service
-SystemCallArchitectures=native
-
-# Namespace isolation
-PrivateDevices=true
+# Kernel protection
 ProtectKernelTunables=true
 ProtectKernelModules=true
 ProtectControlGroups=true
@@ -137,10 +125,12 @@ ProtectControlGroups=true
 
 Estas directivas:
 
-- Impiden que el servidor escriba fuera de su directorio de datos
+- Ejecutan el servidor con el usuario sin privilegios `hitstor`
+- Impiden que el servidor escriba fuera de `/var/lib/hitstor`, `/var/log/hitstor` y `/etc/hitstor`
 - Bloquean la escalada de privilegios
-- Restringen las llamadas al sistema al conjunto mínimo necesario
-- Aíslan el proceso de los parámetros ajustables del kernel y del acceso a dispositivos
+- Aíslan el proceso de los directorios personales, los parámetros ajustables del kernel, los módulos del kernel y los grupos de control
+
+Si el servicio falla con `status=226/NAMESPACE` (algunas VM de Hyper-V, contenedores, WSL), el archivo de la unidad indica qué líneas comentar.
 
 ### Verificar el endurecimiento { #verifying-hardening }
 
@@ -150,7 +140,7 @@ Revise la puntuación de seguridad de la unidad:
 systemd-analyze security hitstor-server
 ```
 
-Una puntuación inferior a 5.0 indica un buen endurecimiento. Revise los elementos marcados como "UNSAFE" y evalúe si son necesarios para su implementación.
+Cuanto menor es la puntuación, más restringido está el servicio. Revise los elementos marcados como "UNSAFE" y evalúe si puede restringirlos más con un archivo complementario (`systemctl edit hitstor-server`).
 
 ## Lista de verificación de seguridad { #security-checklist }
 
@@ -158,14 +148,14 @@ Use esta lista de verificación al implementar HitStor en producción:
 
 - [ ] Use una contraseña de repositorio robusta (al menos 16 caracteres, generada aleatoriamente)
 - [ ] Almacene la contraseña en un archivo con permisos `0600`, no en la línea de comandos
-- [ ] Use certificados TLS personalizados emitidos por una CA de confianza
+- [ ] Use certificados TLS personalizados emitidos por una CA de confianza (el dashboard usa el mismo certificado)
 - [ ] Cree cuentas personales con el menor rol que cada persona necesite y elimine las que ya no se usen
 - [ ] Restrinja el puerto del dashboard (8421) a las redes de administración
 - [ ] Restrinja el endpoint `/metrics` a las IP del recolector de Prometheus
 - [ ] Habilite el endurecimiento con systemd (incluido de forma predeterminada en las unidades empaquetadas)
 - [ ] Asegúrese de que los archivos de token de agente (`/etc/hitstor/agent-token`) tengan permisos `0600`
 - [ ] Restrinja el puerto gRPC del agente (8422) a la dirección IP del servidor
-- [ ] Rote las claves de API si sospecha que fueron comprometidas (elimine y vuelva a registrar el agente)
+- [ ] Rote las claves de API si sospecha que fueron comprometidas (vuelva a registrar el agente; consulte [Gestión de agentes](agent-management.md#rotating-an-api-key))
 - [ ] Ejecute `hitstor check --read-data` periódicamente para verificar la integridad del repositorio
 - [ ] Mantenga HitStor actualizado para recibir las correcciones de seguridad
 

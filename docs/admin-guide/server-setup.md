@@ -28,12 +28,13 @@ Start the HitStor server with gRPC and dashboard ports:
 hitstor serve --repo /var/lib/hitstor/repo --port 8420 --dashboard-port 8421
 ```
 
-The server opens two listeners:
+The server opens these listeners:
 
 | Port | Protocol | Purpose |
 |------|----------|---------|
 | 8420 | gRPC (TLS) | Agent communication -- backups, restores, scheduling |
-| 8421 | HTTP | Web dashboard and JSON API |
+| 8421 | HTTPS | Web dashboard, JSON API and `/metrics` (plain HTTP while no repository exists) |
+| 8422 | HTTP | Redirect to the dashboard's HTTPS port (dashboard port + 1); skipped if the port is busy, for example when an agent runs on the same machine |
 
 The server runs in the foreground. Use systemd (see below) for production deployments.
 
@@ -74,7 +75,8 @@ repo: /var/lib/hitstor/repo
 serve_tls_cert: /etc/hitstor/tls/server.crt
 serve_tls_key: /etc/hitstor/tls/server.key
 
-# Dashboard
+# Dashboard: shared password used only to create the first administrator
+# (generated and logged at first start if omitted; stored as a hash)
 serve_dashboard_password: "DASHBOARD_PASSWORD"
 
 # Alerting
@@ -131,7 +133,7 @@ If the `repositories` list is empty and a `repo` field is present, the server op
 
 ### Assigning Agents to Repositories
 
-Each agent targets a specific repository. Set the target repository from the Agent Detail page in the dashboard, or the agent will use the first configured repository by default.
+Each backup job targets a repository, chosen in step 2 of the **New Backup Job** wizard, so one agent can back up to several repositories through different jobs. The agent registry and the dashboard accounts live in the first repository (by name).
 
 ### Managing Repositories from the Dashboard
 
@@ -148,9 +150,9 @@ If no `--tls-cert` / `--tls-key` flags are provided, the server automatically ge
 - `<repo>/server.crt` — certificate (distribute to agents)
 - `<repo>/server.key` — private key (keep on server only)
 
-The certificate includes all of the server's IP addresses and hostname in its Subject Alternative Names (SANs), so agents can connect by IP or hostname. The certificate is reused across server restarts.
+The certificate includes all of the server's IP addresses and hostname in its Subject Alternative Names (SANs), so agents can connect by IP or hostname. The certificate is reused across server restarts, and the dashboard uses it too.
 
-To distribute the certificate to agents:
+Agents that have no CA certificate configured pin this certificate on their first connection, so distributing it is optional (see [TLS Certificates](tls-certificates.md#without-a-ca-certificate-certificate-pinning)). To distribute the certificate to agents:
 
 ```bash
 scp /var/lib/hitstor/repo/server.crt agent-host:/etc/hitstor/server.crt
@@ -159,7 +161,7 @@ scp /var/lib/hitstor/repo/server.crt agent-host:/etc/hitstor/server.crt
 Then configure each agent to trust it:
 
 ```yaml
-# Agent config.yaml
+# /etc/hitstor/agent-config.yaml
 agent_ca_cert: /etc/hitstor/server.crt
 ```
 
@@ -262,18 +264,20 @@ sudo ufw allow from 10.0.0.0/24 to any port 8421 proto tcp
 
 ## Log Output
 
-HitStor uses Go's `slog` package for structured logging. Log output is JSON by default when running as a systemd service, making it easy to parse with tools like `jq`:
+HitStor uses Go's `slog` package for structured logging. `hitstor serve` writes text lines (`key=value`) to standard error, which systemd sends to the journal. Add `--json` to the `ExecStart` line (with `systemctl edit hitstor-server`) to get JSON lines that tools like `jq` can parse:
 
 ```bash
 sudo journalctl -u hitstor-server -o cat | jq .
 ```
 
-Increase verbosity with the `--verbose` flag:
+The server also keeps recent entries for the dashboard's **Logs** page, and can write a rotating log file (**Settings → General**).
+
+Adjust verbosity with the `--verbose` flag:
 
 | Flag | Level | Description |
 |------|-------|-------------|
-| (none) | warn | Warnings and errors only |
-| `-v` | info | Operational messages (backup started, agent connected) |
+| (none) | info | Operational messages (backup started, agent connected) |
+| `-v` | info | Same as the default for `hitstor serve` |
 | `-vv` | debug | Detailed internal state (chunk processing, pack writes) |
 
 ## Next Steps

@@ -3,7 +3,7 @@
 This page covers what to do on a fresh Ubuntu server **before** installing HitStor. It covers OS-level prerequisites only. For post-installation steps (init, serve, systemd), see [Server Setup](../admin-guide/server-setup.md).
 
 !!! tip "Using the .run installer?"
-    The [Linux Quick Install (.run)](../installation/linux-installer.md) handles user creation, directory setup, configuration, repository initialization, and service startup automatically via an interactive wizard. You only need the **System Updates**, **Firewall**, and **Storage** sections from this page.
+    The [Linux Quick Install (.run)](../installation/linux-installer.md) handles user creation, directory setup, configuration, and service startup automatically via an interactive wizard; the repository is then created from the dashboard. You only need the **System Updates**, **Firewall**, and **Storage** sections from this page.
 
 ## System Updates
 
@@ -92,7 +92,7 @@ sudo mount /var/lib/hitstor
 
 ## TLS Certificates
 
-HitStor generates an in-memory self-signed certificate on startup when no certificate is configured. This is fine for testing, but production deployments should use proper certificates.
+When no certificate is configured, HitStor generates a self-signed certificate on startup and saves it in the repository directory (`server.crt`, `server.key`) so it survives restarts; before the server has a repository, the certificate is kept in memory only. This is fine for testing, but production deployments should use proper certificates.
 
 ### Self-Signed with OpenSSL
 
@@ -123,13 +123,14 @@ For detailed TLS configuration, see [TLS Certificates](../admin-guide/tls-certif
 
 The `.run` installer with the interactive wizard handles everything:
 
-1. Creates system group and user `hitstor`
-2. Creates directories: `/var/lib/hitstor`, `/var/log/hitstor`, `/etc/hitstor`
+1. Creates system group and user `hitstor`, and lets it read the systemd journal
+2. Creates directories: the data directory (default `/var/lib/hitstor`), `/var/log/hitstor`, `/etc/hitstor`
 3. Installs the binary and systemd service
 4. Writes configuration files from wizard answers (mode `600`)
-5. Initializes the backup repository
-6. Enables and starts the service
-7. Verifies the service is running and ports are listening
+5. Enables and starts the service
+6. Verifies the service is running and ports are listening
+
+It does not create a repository: open the dashboard to create or connect one.
 
 ### `.deb` Package
 
@@ -137,12 +138,13 @@ When you install the `.deb` package with `dpkg -i`, the post-install script hand
 
 1. Creates system group `hitstor` (if it does not exist)
 2. Creates system user `hitstor` with home `/var/lib/hitstor` and shell `/usr/sbin/nologin`
-3. Creates directories: `/var/lib/hitstor`, `/var/log/hitstor`, `/etc/hitstor`
-4. Sets ownership to `hitstor:hitstor` and mode `750`
-5. Copies `server.env.example` to `server.env` (mode `600`) if no existing `server.env`
-6. Runs `systemctl daemon-reload` to pick up the new service file
+3. Adds the `hitstor` user to the `systemd-journal` group (for the dashboard **Logs** page)
+4. Creates directories: `/var/lib/hitstor`, `/var/log/hitstor`, `/etc/hitstor`, `/usr/lib/hitstor/plugins`
+5. Sets ownership of `/var/lib/hitstor` and `/var/log/hitstor` to `hitstor:hitstor` and mode `750`
+6. Copies `server.env.example` to `server.env` and `config.yaml.example` to `config.yaml` (mode `600`) if they do not exist
+7. Runs `systemctl daemon-reload` to pick up the new service file
 
-You still need to manually edit configuration files and initialize the repository after package installation.
+After installing the package, review the configuration files and create a repository, from the dashboard or with `hitstor init` (see [Server Setup](../admin-guide/server-setup.md)).
 
 ## Next Steps
 

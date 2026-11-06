@@ -25,7 +25,7 @@ plugin_dir: /usr/local/lib/hitstor/plugins
 
 ## Built-in Plugin Binaries
 
-The **filesystem scanner** (`hitstor-scanner-builtin`) is the core built-in plugin and is installed with the agent/server packages into the standard plugin directory. It provides Linux and Windows filesystem backup.
+The **filesystem scanner** (`hitstor-scanner-builtin`) is the core built-in plugin. The agent package installs it in `/usr/lib/hitstor/plugins/`. It provides Linux and Windows filesystem backup; when its binary is not found, `hitstor` and `hitstor-agent` use the same walker built into them.
 
 Other plugins (storage backend, notifier, hook) are optional and extend how backups are stored, alerted on, or triggered around.
 
@@ -77,7 +77,10 @@ fs_scanner_plugin: builtin   # default walker
 ```
 
 Use `builtin` for the default walker, or the name of a custom filesystem scanner
-plugin you have installed.
+plugin you have installed. With `fs_scanner_plugin` unset, HitStor uses
+`hitstor-scanner-builtin` when it finds it (in `plugin_dir` or `$PATH`) and its
+in-process walker otherwise; a name set explicitly, `builtin` included, must be
+found or the backup fails.
 
 ## Installing Plugins
 
@@ -86,7 +89,18 @@ cp bin/hitstor-scanner-myfs /usr/local/lib/hitstor/plugins/
 chmod +x /usr/local/lib/hitstor/plugins/hitstor-scanner-myfs
 ```
 
-No restart is required — plugins are spawned on demand.
+Storage backend and scanner plugins are started when a command needs them. Notifier and hook plugins used by the server are loaded when `hitstor serve` starts, so restart the server after changing `alert_notifier_plugins` or `hook_plugins`.
+
+## Workload Plugins
+
+Workload plugins teach an agent to back up an application, such as a database engine, instead of files. They are different from the plugins above: each is a signed `.hpk` package, installed per agent with [`hitstor-agent plugin`](../reference/agent-commands/plugin.md) or from the dashboard (**Settings → Plugins**, then the agent's page), and the agent verifies the signature before activating it. Packages are released as `hitstor-plugin-<id>-<version>-<os>-<arch>.hpk`.
+
+| Plugin | Package | Workload |
+|--------|---------|----------|
+| `mssql` | `hitstor-plugin-mssql-<version>-windows-amd64.hpk` | Microsoft SQL Server, through the Virtual Device Interface. See [SQL Server](sql-server.md). |
+| `example` | `hitstor-plugin-example-<version>-<os>-amd64.hpk` (Linux and Windows) | Reference plugin for developers; it backs up nothing useful. |
+
+Jobs that use a workload plugin are created in the dashboard with a **backup plan**: a schedule for each backup kind the plugin supports (for SQL Server: full, differential, and transaction log). The job page shows the result of each database (object) separately.
 
 ## See Also
 

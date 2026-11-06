@@ -17,9 +17,10 @@ Los pasos de contención anteriores solo se ejecutan por encima del umbral de co
 
 ## Señales de telemetría { #telemetry-signals }
 
-- Tasas de compresión de FastCDC (los datos cifrados o aleatorios se comprimen mal)
-- Tasas masivas de modificación o eliminación de archivos
-- Patrones de anomalías a nivel de sesión comparados con el propio historial del host
+- Archivos nuevos frente a archivos sin cambios (modificación masiva)
+- Bytes agregados frente a bytes procesados (los datos cifrados dejan de deduplicarse)
+- Archivos nuevos con extensiones típicas de ransomware
+- Duración de la sesión, comparada con el propio historial del host
 
 ## Configuración { #configuration }
 
@@ -38,7 +39,7 @@ plugin_dir: /usr/local/lib/hitstor/plugins
 
 ## Alertas en el dashboard { #dashboard-alerts }
 
-Las alertas activas de Sentinel se obtienen mediante `GET /api/alerts`. Resuelva los incidentes atendidos con `POST /api/alerts/{id}/resolve`.
+Las alertas activas de Sentinel aparecen en la parte superior de la página **Resumen** del dashboard, con el agente, el host, la confianza y el motivo. **Resolver y reactivar** (administradores) cierra la alerta y reactiva el agente para que pueda volver a respaldar. Mediante la API, liste las alertas con `GET /api/alerts`, cierre una con `POST /api/alerts/{id}/resolve` y reactive el agente por separado con `POST /api/agents/{name}/unsuspend`.
 
 ## Bloqueo de retención { #retention-lock }
 

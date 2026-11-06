@@ -6,11 +6,13 @@ HitStor protege **sistemas de archivos**, no discos sin formato. La recuperació
 
 | Es | No es |
 |----|--------|
-| Restauración completa de todas las tareas de respaldo de un sistema | Creación de imágenes de disco a nivel de bloque |
+| Restauración completa de todas las tareas de respaldo de archivos de un sistema | Creación de imágenes de disco a nivel de bloque |
 | Restauración secuencial de la instantánea (snapshot) más reciente de cada tarea | Reinstalación automática del sistema operativo ni reparación del gestor de arranque |
 | Modos de raíz de staging o de rutas originales | Importación de VM del hipervisor |
 
 Después de instalar el sistema operativo y el agente de HitStor en el host de recuperación, el asistente restaura las rutas de aplicaciones y datos desde el repositorio.
+
+Las tareas de carga de trabajo, como las bases de datos de [SQL Server](sql-server.md), no forman parte del plan: cuando el host y su motor de base de datos estén de nuevo en funcionamiento, restáurelas con la restauración del plugin.
 
 Para una máquina con un **disco en blanco** (sin sistema operativo en el cual instalar
 un agente ni tabla de particiones sobre la cual restaurar), consulte
@@ -29,6 +31,8 @@ Opcional, pero recomendado: tareas con la **verificación de restauración** en 
 ## Asistente del dashboard { #dashboard-wizard }
 
 Abra **Recuperación ante desastres** en la barra lateral (`/disaster`).
+
+![Página Recuperación ante desastres](../assets/screenshots/es/disaster-recovery.webp){ .screenshot }
 
 1. **Seleccionar sistema**: agente protegido (origen) con tareas e instantáneas.
 2. **Revisar plan**: la instantánea más reciente de cada tarea, rutas, tamaño y estado de la última verificación.
@@ -50,7 +54,7 @@ El progreso aparece en la misma página (y en Restauraciones para cada sesión i
 | GET | `/api/disaster/recoveries` | Listar las recuperaciones orquestadas |
 | GET | `/api/disaster/recoveries/{id}` | Estado de una recuperación |
 
-Ejemplo:
+Estos endpoints necesitan la cookie de sesión de un usuario que haya iniciado sesión: consultar planes y recuperaciones requiere un rol sobre todos los agentes, e iniciar una recuperación requiere un administrador con un inicio de sesión reciente (consulte [API HTTP del dashboard](../reference/dashboard-api.md#authentication)). Ejemplo:
 
 ```bash
 curl -sS -X POST "$SERVER/api/disaster/recover" \

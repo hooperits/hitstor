@@ -19,6 +19,10 @@ Se requiere al menos un argumento de ruta (o configurarlas mediante `agent_paths
 | Flag | Tipo | Predeterminado | Descripción |
 |------|------|----------------|-------------|
 | `--exclude` | string | | Excluye los archivos que coincidan con este patrón glob (se puede repetir) |
+| `--tag` | string | | Agrega una etiqueta a la instantánea (se puede repetir) |
+| `--host` | string | nombre de host del sistema o `agent_hostname` | Reemplaza el nombre de host que se envía al servidor |
+| `--parallel` | int | 0 | Workers de archivos en paralelo (0 = cantidad de CPU, como máximo 8) |
+| `--use-vss` | bool | false | Lee desde una instantánea coherente: VSS en Windows, o LVM/btrfs en Linux cuando está disponible |
 
 Además de todos los [flags globales](index.md#global-flags) del agente.
 

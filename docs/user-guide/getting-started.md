@@ -8,13 +8,13 @@ A **repository** is the directory where HitStor stores encrypted, deduplicated b
 
 ```console
 hitstor init --repo /path/to/repo --password "secret"
-created hitstor repository at /path/to/repo
+created new repository 3d3f89b7 at /path/to/repo
 ```
 
 The `--repo` flag points to the target directory (it will be created if it does not exist). The `--password` flag supplies the encryption passphrase that protects all data in the repository.
 
 !!! warning
-    Remember your password. Without it, the data in the repository is unrecoverable. Consider storing the password in a password manager or using `HITSTOR_PASSWORD_FILE` to read it from a file.
+    Remember your password. Without it, the data in the repository is unrecoverable. Consider storing the password in a password manager or using `--password-file` to read it from a file.
 
 ## Create Your First Backup
 
@@ -22,11 +22,13 @@ Back up a directory by passing its path as the final argument:
 
 ```console
 hitstor backup --repo /path/to/repo --password "secret" /data
-snapshot abc12345 saved
-  Files:        1,247 new,     0 changed,     0 unmodified
-  Dirs:            38 new,     0 changed,     0 unmodified
-  Data:       512.00 MiB added
-  Processed:  1,247 files, 512.00 MiB in 0:08
+scanning files...
+scanned 1,247 files in 38 directories
+✓ snapshot abc12345 saved
+  Files:       1,247 new,        0 unchanged
+  Dirs:           38 new
+  Added:    498.2 MiB (512.0 MiB processed)
+  Duration:      8.2s
 ```
 
 HitStor splits every file into variable-length chunks, deduplicates them, compresses them, and encrypts the result before writing it to the repository.
@@ -37,9 +39,9 @@ Each backup produces a **snapshot** -- a point-in-time record of the files that 
 
 ```console
 hitstor snapshots --repo /path/to/repo --password "secret"
-ID        Time                 Host        Tags    Paths
-------------------------------------------------------------------------
-abc12345  2026-02-22 10:00:05  myhost              /data
+ID        Time                 Host    Tags  Files  Size
+────────  ───────────────────  ──────  ────  ─────  ─────────
+abc12345  2026-02-22 10:00:05  myhost        1,247  512.0 MiB
 ```
 
 ## Create a Second Backup (Incremental Behavior)
@@ -48,21 +50,23 @@ Run the same backup command again after making a few changes to `/data`:
 
 ```console
 hitstor backup --repo /path/to/repo --password "secret" /data
-snapshot def67890 saved
-  Files:           3 new,     5 changed, 1,239 unmodified
-  Dirs:            0 new,     2 changed,    36 unmodified
-  Data:        4.20 MiB added
-  Processed:  1,247 files, 512.00 MiB in 0:01
+scanning files...
+scanned 1,247 files in 38 directories
+✓ snapshot def67890 saved
+  Files:           8 new,    1,239 unchanged
+  Dirs:            2 new
+  Added:     4.2 MiB (6.1 MiB processed)
+  Duration:      1.1s
 ```
 
 Notice how much faster the second backup is. HitStor only stores the chunks that are new or modified; unchanged data is deduplicated automatically.
 
 ```console
 hitstor snapshots --repo /path/to/repo --password "secret"
-ID        Time                 Host        Tags    Paths
-------------------------------------------------------------------------
-abc12345  2026-02-22 10:00:05  myhost              /data
-def67890  2026-02-22 10:15:32  myhost              /data
+ID        Time                 Host    Tags  Files  Size
+────────  ───────────────────  ──────  ────  ─────  ─────────
+def67890  2026-02-22 10:15:32  myhost        1,247  512.3 MiB
+abc12345  2026-02-22 10:00:05  myhost        1,247  512.0 MiB
 ```
 
 ## Restore from a Snapshot
@@ -72,11 +76,10 @@ To restore the contents of a snapshot to a target directory, pass the snapshot I
 ```console
 hitstor restore --repo /path/to/repo --password "secret" abc12345 /restore/path
 restoring snapshot abc12345 to /restore/path
-  Files:  1,247 restored
-  Dirs:      38 restored
+✓ restored 1,247 files (512.0 MiB) in 6.3s
 ```
 
-You can use the full snapshot ID or a unique short prefix (the first 8 or more characters). You can also use the keyword `latest` to restore the most recent snapshot:
+You can use the full snapshot ID or any unique prefix of it, such as the 8-character ID that `hitstor snapshots` shows. You can also use the keyword `latest` to restore the most recent snapshot:
 
 ```console
 hitstor restore --repo /path/to/repo --password "secret" latest /restore/path
@@ -84,13 +87,13 @@ hitstor restore --repo /path/to/repo --password "secret" latest /restore/path
 
 ## Verify the Repository
 
-The `check` command verifies the structural integrity of the repository. It reads every pack file, validates checksums, and confirms that all referenced data is present.
+The `check` command verifies the structural integrity of the repository: that its indexes, pack files, and snapshots are consistent and that all referenced data is present. Add `--read-data` to also read and decrypt every blob.
 
 ```console
 hitstor check --repo /path/to/repo --password "secret"
-using temporary cache in /tmp/hitstor-check-123456
-repository structure is ok
-all pack files verified
+checking indexes...
+checking pack files...
+checking snapshots...
 no errors found
 ```
 
@@ -104,11 +107,7 @@ Over time the number of snapshots grows. The `forget` command removes snapshots 
 hitstor forget --repo /path/to/repo --password "secret" \
     --keep-last 7 \
     --keep-daily 30
-Applying retention policy:
-  keep the last 7 snapshots
-  keep daily snapshots for 30 days
-
-remove 0 snapshots
+snapshots: 2 kept, 0 forgotten
 ```
 
 In this example both snapshots are recent enough to be retained. As your snapshot history grows, older snapshots that do not satisfy any policy rule will be removed.
@@ -119,13 +118,13 @@ After `forget` marks snapshots for removal, the underlying data chunks may still
 
 ```console
 hitstor prune --repo /path/to/repo --password "secret"
-counting files in repo
-finding data still in use for 2 snapshots
-[0:00] 100.00%  2 / 2 snapshots
-searching used packs...
-collecting packs for deletion and repacking
-  no packs to delete or repack
-done
+collecting referenced blobs...
+classifying packs...
+nothing to prune
+prune complete
+Packs:      0 deleted,    0 repacked
+Freed:   0 B (repacked 0 B)
+Indexes:    0 deleted,    0 written
 ```
 
 When there is unreferenced data to clean up, `prune` reports exactly how much space was reclaimed.

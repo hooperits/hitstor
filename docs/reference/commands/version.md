@@ -32,7 +32,7 @@ hitstor version
 Output:
 
 ```
-hitstor v1.0.0 (commit a1b2c3d, built 2026-02-27, linux/amd64)
+hitstor v0.2.0 (commit a1b2c3d, built 2026-02-27, linux/amd64)
 ```
 
 ### Check for updates
@@ -44,14 +44,14 @@ hitstor version --check
 Output when an update is available:
 
 ```
-Update available: v1.1.0 (current: v1.0.0)
-Release: https://github.com/hooperits/hitstor/releases/tag/v1.1.0
+Update available: v0.3.0 (current: v0.2.0)
+Release: https://github.com/hooperits/hitstor/releases/tag/v0.3.0
 ```
 
 Output when up to date:
 
 ```
-You are running the latest version (v1.0.0).
+You are running the latest version (v0.2.0).
 ```
 
 Output when the check fails (network error):
@@ -62,6 +62,6 @@ Could not check for updates.
 
 ## Automatic Version Check
 
-When `update_check: true` is set in the server configuration (the default), the server checks for updates every 24 hours. If a newer version is available, a notification banner appears at the top of the web dashboard.
+When `update_check: true` is set in the server configuration (it is off unless set; **Settings → General** in the dashboard also turns it on), the server checks for updates every 24 hours. If a newer version is available, a notification banner appears at the top of the web dashboard.
 
 See [Configuration Reference](../config-reference.md) for the `update_check` and `update_url` settings.

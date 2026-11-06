@@ -7,43 +7,49 @@ HitStor ofrece métricas de Prometheus y alertas por webhook para integrarse con
 El servidor expone un endpoint de métricas compatible con Prometheus en:
 
 ```
-http://SERVER_IP:8421/metrics
+https://SERVER_IP:8421/metrics
 ```
 
-Este endpoint no requiere autenticación, lo que permite que Prometheus recopile métricas sin configurar credenciales. Restrinja el acceso a nivel de red si es necesario.
+Este endpoint no requiere autenticación, lo que permite que Prometheus recopile métricas sin configurar credenciales. Restrinja el acceso a nivel de red si es necesario. Existe cuando el servidor ya tiene un repositorio; las métricas de repositorio describen el primer repositorio del servidor.
 
 ### Métricas disponibles { #available-metrics }
 
-HitStor exporta 14 métricas: 9 gauges, 4 contadores y 1 métrica por agente.
-
-#### Gauges { #gauges }
+#### Gauges de repositorio y agentes { #repository-and-agent-gauges }
 
 | Métrica | Tipo | Descripción |
 |--------|------|-------------|
-| `hitstor_agents_total` | gauge | Número total de agentes registrados |
-| `hitstor_agents_active` | gauge | Número de agentes con respaldos recientes |
-| `hitstor_agents_stale` | gauge | Número de agentes que superaron el umbral de inactividad |
-| `hitstor_snapshots_total` | gauge | Número total de instantáneas (snapshots) en el repositorio |
-| `hitstor_storage_bytes` | gauge | Tamaño total del repositorio en bytes |
-| `hitstor_storage_raw_bytes` | gauge | Tamaño total de los datos originales (antes de la deduplicación) en bytes |
-| `hitstor_dedup_ratio` | gauge | Tasa de deduplicación (original / almacenado) |
-| `hitstor_packs_total` | gauge | Número de archivos de paquete en el repositorio |
-| `hitstor_uptime_seconds` | gauge | Tiempo de actividad del servidor en segundos |
+| `hitstor_snapshots_total` | gauge | Total de instantáneas (snapshots) en el repositorio |
+| `hitstor_packs_total` | gauge | Total de archivos de paquete en el repositorio |
+| `hitstor_indexes_total` | gauge | Total de archivos de índice en el repositorio |
+| `hitstor_repository_size_bytes` | gauge | Tamaño total del repositorio en bytes |
+| `hitstor_active_sessions` | gauge | Sesiones de respaldo activas en este momento |
+| `hitstor_registered_agents` | gauge | Total de agentes registrados |
+| `hitstor_agents_ok` | gauge | Agentes con un respaldo en las últimas 25 horas |
+| `hitstor_agents_stale` | gauge | Agentes cuyo último respaldo tiene más de 25 horas |
+| `hitstor_agents_never` | gauge | Agentes que nunca han realizado un respaldo |
 
 #### Contadores { #counters }
 
+Los contadores se reinician cuando se reinicia el servidor.
+
 | Métrica | Tipo | Descripción |
 |--------|------|-------------|
-| `hitstor_backups_total` | counter | Número total de respaldos completados desde el inicio del servidor |
-| `hitstor_backups_failed_total` | counter | Número total de respaldos fallidos desde el inicio del servidor |
-| `hitstor_restores_total` | counter | Número total de restauraciones completadas desde el inicio del servidor |
-| `hitstor_bytes_received_total` | counter | Total de bytes recibidos de los agentes desde el inicio del servidor |
+| `hitstor_backups_completed_total` | counter | Respaldos exitosos |
+| `hitstor_backups_failed_total` | counter | Sesiones de respaldo fallidas o abortadas |
+| `hitstor_bytes_received_total` | counter | Bytes recibidos de los agentes |
+| `hitstor_chunks_received_total` | counter | Fragmentos (chunks) recibidos de los agentes |
+| `hitstor_checks_total` | counter | Verificaciones de integridad ejecutadas desde el dashboard |
+| `hitstor_check_errors_total` | counter | Errores encontrados por esas verificaciones |
+| `hitstor_prunes_total` | counter | Operaciones de depuración ejecutadas desde el dashboard |
+| `hitstor_prune_freed_bytes_total` | counter | Bytes liberados por esas depuraciones |
 
-#### Métrica por agente { #per-agent-metric }
+#### Métricas por agente { #per-agent-metrics }
 
 | Métrica | Tipo | Etiquetas | Descripción |
 |--------|------|--------|-------------|
-| `hitstor_agent_last_backup_timestamp` | gauge | `agent` | Marca de tiempo Unix del último respaldo exitoso del agente |
+| `hitstor_agent_last_backup_timestamp_seconds` | gauge | `agent` | Marca de tiempo Unix del último respaldo exitoso del agente (0 si nunca) |
+| `hitstor_agent_schedule_enabled` | gauge | `agent` | Indicador heredado de programación por agente (1/0); las tareas de respaldo tienen su propia programación |
+| `hitstor_agent_schedule_interval_hours` | gauge | `agent` | Intervalo heredado por agente, en horas |
 
 ### Configuración de recopilación de Prometheus { #prometheus-scrape-configuration }
 
@@ -53,6 +59,9 @@ Agregue lo siguiente a su `prometheus.yml`:
 scrape_configs:
   - job_name: "hitstor"
     scrape_interval: 30s
+    scheme: https
+    tls_config:
+      ca_file: /etc/prometheus/hitstor-server.crt  # el certificado del servidor o su CA
     static_configs:
       - targets: ["backup.example.com:8421"]
 ```
@@ -63,6 +72,9 @@ Para varios servidores HitStor:
 scrape_configs:
   - job_name: "hitstor"
     scrape_interval: 30s
+    scheme: https
+    tls_config:
+      ca_file: /etc/prometheus/hitstor-ca.crt
     static_configs:
       - targets:
           - "backup-01.example.com:8421"
@@ -80,21 +92,21 @@ Para crear un dashboard de Grafana para HitStor:
 
 | Panel | Consulta | Visualización |
 |-------|-------|---------------|
-| Agentes activos | `hitstor_agents_active` | Stat |
+| Agentes en buen estado | `hitstor_agents_ok` | Stat |
 | Agentes inactivos | `hitstor_agents_stale` | Stat (umbral rojo > 0) |
 | Total de instantáneas | `hitstor_snapshots_total` | Stat |
-| Almacenamiento usado | `hitstor_storage_bytes` | Stat (unidad: bytes) |
-| Tasa de deduplicación | `hitstor_dedup_ratio` | Stat |
-| Ritmo de respaldos | `rate(hitstor_backups_total[1h])` | Time series |
+| Almacenamiento usado | `hitstor_repository_size_bytes` | Stat (unidad: bytes) |
+| Respaldos en ejecución | `hitstor_active_sessions` | Stat |
+| Ritmo de respaldos | `rate(hitstor_backups_completed_total[1h])` | Time series |
 | Respaldos fallidos | `rate(hitstor_backups_failed_total[1h])` | Time series (umbral de alerta) |
 | Ingesta de datos | `rate(hitstor_bytes_received_total[5m])` | Time series (unidad: bytes/s) |
-| Último respaldo por agente | `hitstor_agent_last_backup_timestamp` | Table |
+| Último respaldo por agente | `hitstor_agent_last_backup_timestamp_seconds` | Table |
 
 3. Configure alertas de Grafana para `hitstor_agents_stale > 0` y `rate(hitstor_backups_failed_total[1h]) > 0`.
 
 ## Alertas por webhook { #webhook-alerting }
 
-HitStor puede enviar notificaciones por webhook cuando detecta respaldos fallidos o agentes inactivos.
+HitStor puede enviar notificaciones por webhook cuando fallan sesiones de respaldo, cuando los agentes quedan inactivos o cuando Sentinel detecta una amenaza. Cada evento es un `POST` JSON con `Content-Type: application/json`.
 
 ### Configuración { #configuration }
 
@@ -110,39 +122,48 @@ alert_stale_threshold: 25
 |-----|------|---------|-------------|
 | `alert_webhook_url` | string | (ninguno) | URL a la que se envían (POST) las alertas |
 | `alert_stale_threshold` | integer | 25 | Horas sin respaldo tras las cuales un agente se considera inactivo |
+| `alert_notifier_plugins` | list | (ninguno) | [Plugins notificadores](#notifier-plugins) que se cargan |
+
+Estas claves también se pueden definir en **Configuración → Notificaciones**, que permite enviar un evento de prueba. Se leen al iniciar: reinicie el servidor después de cambiarlas.
 
 ### Eventos de alerta { #alert-events }
 
-HitStor envía alertas para dos tipos de eventos:
+Todos los eventos tienen los mismos campos: `event`, `server` (siempre `hitstor`), `timestamp`, `agent`, `hostname` (cuando se conoce), `message` y `details`.
 
 #### `backup_failed`
 
-Se envía inmediatamente cuando un respaldo falla.
+Se envía inmediatamente cuando una sesión de respaldo falla en el servidor: el agente se desconecta durante la carga o la instantánea no se puede finalizar. Las fallas que el agente informa antes de cargar datos (por ejemplo, una base de datos que no se puede leer) se muestran en la página de la tarea y en los [reportes](reports.md), pero no envían un webhook.
 
 ```json
 {
   "event": "backup_failed",
-  "agent": "web-server-01",
+  "server": "hitstor",
   "timestamp": "2026-02-21T03:05:00Z",
-  "error": "connection reset by peer",
-  "server": "backup.example.com"
+  "agent": "web-server-01",
+  "hostname": "web-server-01",
+  "message": "backup failed: agent disconnected during upload",
+  "details": {"session_id": "3f9a...", "chunks_received": 1520}
 }
 ```
 
 #### `agent_stale`
 
-Se envía cuando un agente no ha completado un respaldo dentro del umbral de inactividad.
+Se envía cuando un agente no ha completado un respaldo dentro del umbral de inactividad. El servidor lo comprueba cada 5 minutos; los agentes que nunca han realizado un respaldo no se notifican.
 
 ```json
 {
   "event": "agent_stale",
-  "agent": "staging-app",
+  "server": "hitstor",
   "timestamp": "2026-02-21T14:00:00Z",
-  "last_backup": "2026-02-19T12:30:00Z",
-  "threshold_hours": 25,
-  "server": "backup.example.com"
+  "agent": "staging-app",
+  "message": "no backup in 2d1h (threshold: 1d1h)",
+  "details": {"last_backup": "2026-02-19T12:30:00Z", "threshold_hours": 25}
 }
 ```
+
+#### `threat_detected`
+
+Lo envía [Ransomware Sentinel](sentinel.md) cuando informa una amenaza con una confianza igual o superior a su umbral.
 
 ### Período de espera y recuperación { #cooldown-and-recovery }
 
@@ -160,12 +181,13 @@ Configure los plugins notificadores en el archivo de configuración:
 
 ```yaml
 # /etc/hitstor/config.yaml
+plugin_dir: /usr/lib/hitstor/plugins
 alert_notifier_plugins:
-  - /usr/lib/hitstor/plugins/slack-notifier
-  - /usr/lib/hitstor/plugins/pagerduty-notifier
+  - slack
+  - pagerduty
 ```
 
-Los plugins notificadores reciben el mismo payload JSON que el webhook y pueden transformarlo para su sistema de destino. Consulte la documentación de [Plugins](../user-guide/plugins.md) para obtener detalles sobre cómo escribir e instalar plugins.
+Cada nombre corresponde a un binario `hitstor-notifier-<name>`, que se busca en `plugin_dir` y luego en el `PATH`. Los plugins notificadores reciben los mismos eventos que el webhook (mediante la interfaz gRPC de plugins) y pueden transformarlos para su sistema de destino. Consulte la documentación de [Plugins](../user-guide/plugins.md) para obtener detalles sobre cómo escribir e instalar plugins.
 
 ## Próximos pasos { #next-steps }
 

@@ -10,7 +10,7 @@ hitstor snapshots [flags]
 
 ## Description
 
-Lists all snapshots stored in the repository, sorted by time (newest first). By default, output is a formatted table showing each snapshot's short ID, timestamp, hostname, paths, file count, and total size.
+Lists all snapshots stored in the repository, sorted by time (newest first). By default, output is a formatted table showing each snapshot's short ID, timestamp, hostname, tags, file count, and total size.
 
 Use `--json` for machine-readable JSON output.
 
@@ -50,9 +50,10 @@ hitstor snapshots --repo /backups/hitstor --password "secret" --json
 ### Table (default)
 
 ```
-ID         Time                 Host         Paths                   Files       Size
-a1b2c3d4   2025-01-15 10:30:00  myhost       /home/user/documents      150     45 MiB
-b5c6d7e8   2025-01-14 10:30:00  myhost       /home/user/documents      148     44 MiB
+ID        Time                 Host    Tags  Files  Size
+────────  ───────────────────  ──────  ────  ─────  ────────
+a1b2c3d4  2025-01-15 10:30:00  myhost          150  45.0 MiB
+b5c6d7e8  2025-01-14 10:30:00  myhost          148  44.0 MiB
 ```
 
 ### JSON (`--json`)

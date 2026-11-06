@@ -2,7 +2,7 @@
 
 El dashboard integrado que sirve `hitstor serve` expone una API JSON en el puerto HTTP (predeterminado **8421**). Las rutas se definen en `internal/dashboard/dashboard.go`.
 
-Salvo que se indique lo contrario, los endpoints requieren autenticación en el dashboard cuando `serve_dashboard_password` está definido. Las cookies de sesión se emiten mediante `POST /login`.
+Salvo que se indique lo contrario, los endpoints requieren una sesión iniciada (consulte [Autenticación](#authentication)), y cada ruta necesita un rol: las lecturas requieren el rol de visualización, los cambios en tareas el rol de operador de respaldo, las restauraciones el rol de operador de restauración, y los usuarios, el almacenamiento, la configuración y los demás cambios de todo el servidor, el de administrador. Las rutas sobre un agente aceptan un rol sobre ese agente; las que abarcan varios agentes necesitan el rol sobre todos. Los cambios sensibles además requieren un inicio de sesión reciente. Consulte [Usuarios y acceso](../admin-guide/users.md#roles).
 
 ## Páginas { #pages }
 
@@ -17,7 +17,13 @@ Salvo que se indique lo contrario, los endpoints requieren autenticación en el 
 | `GET /storage` | Administración de repositorios |
 | `GET /storage/{name}` | Detalle de un repositorio |
 | `GET /restores` | Sesiones de restauración |
-| `GET /settings` | Configuración del servidor (General, Seguridad/TLS, Red, Integraciones, Notificaciones) |
+| `GET /settings` | Configuración del servidor (General, Seguridad/TLS, Red, Integraciones, Notificaciones, Correo, Plugins) |
+| `GET /disaster` | Recuperación ante desastres |
+| `GET /logs` | Registros del servidor y de los agentes |
+| `GET /reports` | Reportes programados |
+| `GET /users`, `GET /users/{name}` | Usuarios y acceso (administradores) |
+| `GET /audit` | Registro de auditoría (administradores) |
+| `GET /account`, `GET /account/password` | Cuenta del usuario que inició sesión y cambio de contraseña |
 
 `GET /snapshots` redirige a `/storage`.
 
@@ -33,6 +39,7 @@ Salvo que se indique lo contrario, los endpoints requieren autenticación en el 
 | `POST` | `/api/agents/{name}/browse` | Explora el sistema de archivos del agente |
 | `POST` | `/api/agents/{name}/configure` | Define las rutas de respaldo y las exclusiones |
 | `GET` | `/api/agents/{name}/info` | Información del agente |
+| `GET` | `/api/agents/{name}/snapshots` | Instantáneas de un agente |
 | `POST` | `/api/agents/{name}/suspend` | Suspende los respaldos del agente |
 | `POST` | `/api/agents/{name}/unsuspend` | Reanuda el agente suspendido |
 
@@ -73,6 +80,10 @@ Salvo que se indique lo contrario, los endpoints requieren autenticación en el 
 | `POST` | `/api/repos/{name}/check` | Inicia una verificación de integridad |
 | `POST` | `/api/repos/{name}/prune` | Inicia una depuración (prune) |
 | `GET` | `/api/repos/{name}/sessions` | Sesiones activas del repositorio |
+| `GET` | `/api/repos/{name}`, `/api/repos/{name}/health`, `/api/repos/{name}/snapshots` | Métricas, estado operativo e instantáneas agrupadas por agente de un repositorio |
+| `GET` | `/api/repos/growth` | Datos de crecimiento de varios repositorios en una sola petición |
+| `POST` | `/api/repos/{name}/forget` | Aplica una política de retención (administradores, inicio de sesión reciente) |
+| `POST` | `/api/repos/detect-s3`, `/api/repos/validate-path` | Detecta un repositorio existente en un bucket; valida una ruta local |
 
 ## Instantáneas y restauración { #snapshots-restore }
 
@@ -82,6 +93,7 @@ Salvo que se indique lo contrario, los endpoints requieren autenticación en el 
 | `GET` | `/api/snapshots/{id}/tree?path=` | Explora el árbol de archivos de una instantánea |
 | `POST` | `/api/snapshots/{id}/restore` | Inicia una restauración en un agente (`agent_name`, `target_path`, `includes` opcional) |
 | `GET` | `/api/restores` | Lista las sesiones de restauración |
+| `GET` | `/api/restores/sources` | Orígenes que se pueden restaurar, tal como se listan en la página Restauraciones |
 | `GET` | `/api/restore/{id}/events` | Progreso de la restauración vía SSE |
 | `GET` | `/api/agents/{name}/plugins/{plugin}/browse?path=` | Lista los objetos que un plugin de carga de trabajo del agente puede respaldar, con `detail`, `status` y si cada uno admite configuración (`configurable`) y la tiene guardada (`configured`) |
 | `GET` | `/api/agents/{name}/plugins/{plugin}/object-config?path=` | Configuración guardada en el agente para un objeto (`configured`, `values` sin contraseñas, `secrets_set`) |
@@ -115,12 +127,71 @@ Salvo que se indique lo contrario, los endpoints requieren autenticación en el 
 | `PUT` | `/api/settings/security` | `dashboard_password` (vacío = conservar la actual); puede establecer `restart_required` |
 | `PUT` | `/api/settings/network` | `serve_port`, `serve_dashboard_port`, `serve_advertise_addr`; puede establecer `restart_required` |
 | `PUT` | `/api/settings/notifications` | `alert_webhook_url`, `alert_stale_threshold`, `alert_notifier_plugins` |
+| `PUT` | `/api/settings/email` | Servidor de correo saliente para invitaciones, enlaces de restablecimiento de contraseña y reportes (inicio de sesión reciente) |
+| `POST` | `/api/settings/email/test` | Envía un correo de prueba con la configuración de la petición |
 | `PUT` | `/api/settings/integrations` | Clave/modelo de Gemini (`gemini_api_key` vacío = conservar la actual) |
 | `POST` | `/api/settings/integrations/import-env` | Migra `GEMINI_API_KEY` al YAML cifrado |
 | `GET` | `/api/settings/tls/status` | Metadatos del certificado TLS (origen, vencimiento, SAN) |
 | `POST` | `/api/settings/tls/upload` | Archivos PEM `cert` + `key` en multipart; establece `restart_required` |
 | `POST` | `/api/settings/test/gemini` | Valida la clave de API de Gemini |
 | `POST` | `/api/settings/test/webhook` | Envía por POST una carga de prueba a la URL del webhook configurado |
+
+## Usuarios, cuenta y auditoría { #users-account-and-audit }
+
+| Método | Ruta | Descripción |
+|--------|------|-------------|
+| `GET` | `/api/users` | Lista los usuarios (administradores) |
+| `POST` | `/api/users` | Crea un usuario: envía una invitación si el correo está configurado; si no, devuelve una contraseña temporal |
+| `GET` / `PUT` / `DELETE` | `/api/users/{name}` | Lee, modifica (roles, estado, perfil) o elimina un usuario |
+| `POST` | `/api/users/{name}/password` | Restablece la contraseña de un usuario (contraseña temporal o enlace por correo) |
+| `DELETE` | `/api/users/{name}/second-factor` | Restablece la verificación en dos pasos de un usuario |
+| `GET` | `/api/users/{name}/sessions` | Sesiones de un usuario |
+| `DELETE` | `/api/users/{name}/sessions/{id}` | Cierra una de las sesiones de un usuario |
+| `POST` | `/api/account/password` | Cambia la contraseña del usuario que inició sesión |
+| `POST` | `/api/account/recovery-codes` | Genera nuevos códigos de recuperación (inicio de sesión reciente) |
+| `PUT` | `/api/account/profile` | Cambia el nombre visible del usuario que inició sesión |
+| `GET` / `DELETE` | `/api/account/sessions` | Lista las sesiones del usuario que inició sesión, o cierra todas salvo la actual |
+| `DELETE` | `/api/account/sessions/{id}` | Cierra una de las sesiones del usuario que inició sesión |
+| `POST` | `/api/reauth` | Confirma la contraseña y un código antes de una acción sensible |
+| `GET` | `/api/session` | Tiempo restante de la sesión (no cuenta como actividad) |
+| `POST` | `/api/session/activity` | Registra actividad del usuario para que la sesión siga abierta |
+| `GET` | `/api/audit`, `/api/audit/export` | Registro de auditoría y su exportación a CSV (administradores) |
+
+Todos los cambios de usuarios requieren un administrador y un inicio de sesión reciente.
+
+## Reportes { #reports }
+
+| Método | Ruta | Descripción |
+|--------|------|-------------|
+| `GET` | `/api/reports` | Lista los reportes programados |
+| `POST` | `/api/reports` | Crea un reporte programado |
+| `PUT` / `DELETE` | `/api/reports/{id}` | Modifica o elimina un reporte |
+| `POST` | `/api/reports/{id}/send` | Envía un reporte ahora |
+| `GET` | `/api/reports/pdf` | Descarga un reporte en PDF, tal como se enviaría ahora |
+
+Los reportes son para administradores. Consulte [Reportes](../admin-guide/reports.md).
+
+## Recuperación ante desastres y bare-metal { #disaster-recovery-and-bare-metal }
+
+| Método | Ruta | Descripción |
+|--------|------|-------------|
+| `GET` | `/api/disaster/plans`, `/api/disaster/plans/{agent}` | Preparación para la recuperación de todos los sistemas, o el plan de uno |
+| `POST` | `/api/disaster/recover` | Inicia una recuperación del sistema completo (administradores, inicio de sesión reciente) |
+| `GET` | `/api/disaster/recoveries`, `/api/disaster/recoveries/{id}` | Recuperaciones orquestadas y su estado |
+| `GET` | `/api/bmr/hosts` | Agentes con el estado de su medio de recuperación |
+| `POST` | `/api/bmr/media/{agent}/build` | Crea el medio de recuperación en un agente |
+| `GET` / `DELETE` | `/api/bmr/media/{agent}/download`, `/api/bmr/media/{agent}` | Descarga o descarta la imagen de recuperación en caché de un host |
+| `POST` | `/api/bmr/prepare/{agent}` | Emite un token de recuperación de un solo uso (administradores, inicio de sesión reciente) |
+| `GET` / `DELETE` | `/api/bmr/tokens`, `/api/bmr/tokens/{id}` | Lista los tokens de recuperación sin usar, o revoca uno |
+
+Consulte [Recuperación ante desastres](../user-guide/disaster-recovery.md) y [Restauración bare-metal](../user-guide/bare-metal-restore.md).
+
+## Registros { #logs }
+
+| Método | Ruta | Descripción |
+|--------|------|-------------|
+| `GET` | `/api/logs` | Entradas de registro del servidor y de los agentes |
+| `GET` | `/api/logs/export` | Exporta entradas de registro |
 
 ## Alertas (Sentinel) { #alerts-sentinel }
 
@@ -139,9 +210,15 @@ Salvo que se indique lo contrario, los endpoints requieren autenticación en el 
 
 | Método | Ruta | Descripción |
 |--------|------|-------------|
-| `GET` | `/login` | Página de inicio de sesión |
-| `POST` | `/login` | Envía la contraseña |
+| `GET` / `POST` | `/login` | Página de inicio de sesión; envía el nombre de usuario y la contraseña (o, antes de que exista alguna cuenta, la contraseña del dashboard) |
+| `GET` / `POST` | `/login/code` | Segundo paso: un código de la app de autenticación o un código de recuperación |
+| `GET` / `POST` | `/login/enroll` | Configura la app de autenticación en el primer inicio de sesión |
+| `GET` / `POST` | `/login/forgot` | Solicita un enlace de restablecimiento de contraseña por correo |
+| `GET` / `POST` | `/login/reset` | Elige una contraseña nueva desde un enlace recibido por correo |
+| `GET` / `POST` | `/setup` | Crea el primer administrador con la contraseña del dashboard |
 | `POST` | `/logout` | Cierra la sesión |
+
+La sesión es la cookie `hitstor_session`, que se emite solo después de los dos pasos del inicio de sesión. No hay tokens de API: los scripts llaman a la API con la cookie de un usuario que inició sesión, y la sesión termina tras el tiempo de inactividad como cualquier otra (consulte [Sesiones y bloqueo](../admin-guide/users.md#sessions)). Una petición que requiere un inicio de sesión reciente responde `403` con `{"error": "reauth_required"}` y el encabezado `X-HitStor-Reauth: 1`; confirme con `POST /api/reauth` y vuelva a intentarlo. Las peticiones que cambian el estado enviadas por un navegador desde otro origen se rechazan.
 
 ## Vea también { #see-also }
 

@@ -6,11 +6,13 @@ HitStor protects **filesystems**, not raw disks. Disaster recovery means rebuild
 
 | Is | Is not |
 |----|--------|
-| Full restore of all backup jobs for a system | Block-level disk imaging |
+| Full restore of all file backup jobs for a system | Block-level disk imaging |
 | Sequential restore of each job’s latest snapshot | Automatic OS reinstall / bootloader repair |
 | Staging root or original-path modes | Hypervisor VM import |
 
 After the OS and HitStor agent are installed on the recovery host, the wizard restores application and data paths from the repository.
+
+Workload jobs, such as [SQL Server](sql-server.md) databases, are not part of the plan: once the host and its database engine are back, restore them with the plugin restore.
 
 For a machine with a **blank disk** — no OS to install an agent onto, no
 partition table to restore into — see [Bare-metal restore](bare-metal-restore.md),
@@ -29,6 +31,8 @@ Optional but recommended: jobs with **restore verification** green (see Backups 
 ## Dashboard wizard
 
 Open **Disaster Recovery** in the sidebar (`/disaster`).
+
+![Disaster recovery page](../assets/screenshots/en/disaster-recovery.webp){ .screenshot }
 
 1. **Select system** — protected agent (source) with jobs/snapshots.
 2. **Review plan** — each job’s latest snapshot, paths, size, last verify status.
@@ -50,7 +54,7 @@ Progress appears on the same page (and under Restores for individual sessions).
 | GET | `/api/disaster/recoveries` | List orchestrated recoveries |
 | GET | `/api/disaster/recoveries/{id}` | One recovery status |
 
-Example:
+These endpoints need the session cookie of a signed-in user: reading plans and recoveries needs a role on every agent, and starting a recovery needs an administrator with a recent sign-in (see [Dashboard HTTP API](../reference/dashboard-api.md#authentication)). Example:
 
 ```bash
 curl -sS -X POST "$SERVER/api/disaster/recover" \

@@ -19,6 +19,8 @@ HitStor usa gRPC sobre TLS para la comunicación entre componentes. Hay dos serv
 | `Ping` | Unaria | Verificación de estado; devuelve la versión del servidor |
 | `GetSchedule` | Unaria | Consulta la programación de respaldos de este agente |
 | `ReportJobFailure` | Unaria | Informa una tarea que falló en el agente: el servidor guarda el error (visible en el dashboard), limpia un "respaldar ahora" pendiente, descarta la sesión abandonada y posterga el siguiente intento |
+| `GetWorkloadKnown` | Unaria | Lista los elementos de carga de trabajo que los repositorios guardan para la selección de una tarea, para que un plugin compruebe que un respaldo diferencial o de log se basa en respaldos que HitStor puede restaurar |
+| `AnnounceForRecovery` | Unaria | Recuperación bare-metal: un agente iniciado desde un medio de rescate presenta un token de recuperación de un solo uso y su dirección actual; luego el servidor le envía la restauración |
 
 ## Autenticación { #authentication }
 
@@ -228,6 +230,10 @@ AgentService se ejecuta en cada agente (puerto predeterminado 8422) y atiende la
 | `RestoreWorkload` | Streaming del cliente | Envía al agente los elementos planificados; el agente verifica el SHA-256 de cada uno y lo pasa al plugin |
 | `InstallPlugin` | Streaming del cliente | Envía un paquete de plugin al agente, que lo verifica y lo instala con su propia configuración de confianza |
 | `RemovePlugin` | Unaria | Desinstala un plugin (se rechaza mientras una tarea lo usa) |
+| `FetchLogs` | Unaria | Devuelve las entradas recientes del registro del agente para la página Registros del dashboard |
+| `DiscoverDatabases` | Unaria | Prueba una conexión de base de datos desde el agente y lista sus bases de datos |
+| `CheckRecoveryMedia` | Unaria | Informa si el host del agente puede crear un medio de recuperación bare-metal |
+| `BuildRecoveryMedia` | Streaming del servidor | Ejecuta ReaR en el host del agente y transmite la ISO resultante al servidor |
 
 ### Autenticación de AgentService { #agentservice-authentication }
 
@@ -338,7 +344,7 @@ Se llama cuando un administrador activa "Respaldar ahora" desde el dashboard, pa
 
 - **Protocolo:** gRPC sobre TLS (autofirmado, generado automáticamente por el agente)
 - **Puerto:** 8422 (predeterminado, configurable mediante `--listen-port` o `HITSTOR_AGENT_LISTEN_PORT`)
-- **TLS:** el agente genera un certificado autofirmado; el servidor usa `InsecureSkipVerify`, ya que el token proporciona la autenticación
+- **TLS:** el agente genera un certificado autofirmado (que se conserva entre reinicios). El servidor fija su huella (fingerprint) al registrar el agente (confianza en el primer uso) y después rechaza un certificado distinto; solo las sondas de descubrimiento previas al registro omiten esa verificación
 
 ## Vea también { #see-also }
 

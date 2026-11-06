@@ -12,8 +12,10 @@ The HitStor User Guide covers everything you need to know to protect your data w
 | [Snapshots](snapshots.md) | List, filter, compare, and inspect snapshots stored in your repository. |
 | [Retention](retention.md) | Define retention policies, remove old snapshots with `forget`, and reclaim space with `prune`. |
 | [Configuration](configuration.md) | Manage the config file, environment variables, and interactive setup wizard. |
-| [Plugins](plugins.md) | Discover, install, and configure storage backends, notifiers, hooks, and scanner plugins. |
-| [SQL Server](sql-server.md) | Back up and restore SQL Server databases through the `mssql` workload plugin. |
+| [Plugins](plugins.md) | Discover, install, and configure storage backends, notifiers, hooks, scanner plugins, and workload plugins. |
+| [SQL Server](sql-server.md) | Back up and restore SQL Server databases through the `mssql` workload plugin, with backup plans of full, differential, and log backups. |
+| [Disaster Recovery](disaster-recovery.md) | Rebuild a whole host from its file backups with the guided dashboard wizard. |
+| [Bare-Metal Restore](bare-metal-restore.md) | Recover a machine with a blank disk from bootable recovery media. |
 
 ## Prerequisites
 

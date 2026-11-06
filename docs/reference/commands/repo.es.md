@@ -13,7 +13,7 @@ hitstor repo [command]
 | Comando | Descripción |
 |---------|-------------|
 | `list` | Lista los repositorios configurados en la configuración de varios repositorios |
-| `create <name> <path>` | Crea e inicializa un nuevo repositorio local |
+| `create <name> <path>` | Crea e inicializa un nuevo repositorio: local (una `<path>` absoluta) o S3 con `--type s3 --endpoint <host> --bucket <bucket> --access-key ... --secret-key ... [--region ...]`. La contraseña del repositorio proviene de `--password` o de las opciones globales de contraseña y se guarda en `<name>.password` junto al archivo de configuración; las claves de S3 se guardan cifradas |
 | `delete <name>` | Quita un repositorio de la configuración (no elimina los datos) |
 | `health` | Muestra el estado operativo del repositorio seleccionado |
 

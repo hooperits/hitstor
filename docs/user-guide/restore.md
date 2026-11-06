@@ -2,6 +2,8 @@
 
 The `hitstor restore` command extracts files from a snapshot and writes them to a target directory. You can restore an entire snapshot or select individual files and directories.
 
+![Restoring selected files from a snapshot in the dashboard](../assets/screenshots/en/restore.webp){ .screenshot }
+
 ## Basic Usage
 
 ```console
@@ -13,8 +15,7 @@ This recreates the full directory tree captured in the specified snapshot under 
 ```console
 hitstor restore --repo /path/to/repo --password "secret" abc12345 /restore/path
 restoring snapshot abc12345 to /restore/path
-  Files:  1,247 restored
-  Dirs:      38 restored
+✓ restored 1,247 files (512.0 MiB) in 6.3s
 ```
 
 ## Snapshot ID Resolution
@@ -32,13 +33,13 @@ hitstor restore --repo /path/to/repo --password "secret" \
 
 ### Short Prefix
 
-Any unique prefix of 8 or more characters:
+Any unique prefix of the ID, such as the 8-character ID that `hitstor snapshots` shows:
 
 ```console
 hitstor restore --repo /path/to/repo --password "secret" abc12345 /target
 ```
 
-If the prefix matches more than one snapshot, HitStor reports an error and asks you to provide a longer prefix.
+If the prefix matches more than one snapshot, HitStor reports an error (`snapshot prefix "abc1" is ambiguous (2 matches)`); provide a longer prefix.
 
 ### The `latest` Keyword
 
@@ -52,20 +53,20 @@ When the repository contains snapshots from multiple hosts or paths, `latest` pi
 
 ## Selective Restore with `--include`
 
-To restore only a subset of files, use `--include` with a glob pattern:
+To restore only part of a snapshot, use `--include` with a path inside the snapshot. The path is relative to the snapshot root, which holds each backed-up directory under its own name (a backup of `/data` stores `/data/reports` as `data/reports`). The path is matched exactly, not as a glob pattern: it restores that file, or that directory with everything under it:
 
 ```console
 hitstor restore --repo /path/to/repo --password "secret" \
-    --include "*.pdf" \
+    --include data/reports \
     abc12345 /target
 ```
 
-Multiple `--include` flags can be combined. A file is restored if it matches **any** of the patterns:
+Multiple `--include` flags can be combined. A file is restored if it is, or is under, **any** of the paths (here from a backup of `/home/user`):
 
 ```console
 hitstor restore --repo /path/to/repo --password "secret" \
-    --include "documents/**" \
-    --include "photos/2026/**" \
+    --include user/documents \
+    --include user/photos/2026 \
     abc12345 /target
 ```
 
@@ -97,30 +98,40 @@ During restore:
 
 ## Progress Display
 
-Restore operations display live progress showing:
+On a terminal, restore operations display a live progress bar showing:
 
-- Number of files restored so far
-- Amount of data written
-- Elapsed time
+- Percentage done
+- Files restored out of the total
+- Throughput
+- Estimated time remaining
 
 Example output during a restore:
 
 ```
-[0:05] 73.20%  912 / 1,247 files  375.00 MiB / 512.00 MiB
+[##############------]  73% | 912/1,247 files | 62.4 MiB/s | ETA 2s
 ```
 
-When output is redirected to a file or pipe, HitStor prints only the final summary.
+When output is redirected to a file or pipe, HitStor prints one `restored <path> (<size>)` line per file instead. Both end with a summary of files and bytes restored.
 
 ## Verifying Restored Data
 
-After a restore it is good practice to verify that the output matches the snapshot contents. Two approaches are available:
+After a restore it is good practice to verify that the output matches the snapshot contents. The following approaches are available.
+
+### Use `hitstor verify-restore`
+
+[`hitstor verify-restore`](../reference/commands/verify-restore.md) restores a snapshot (or a sample of its files) to a temporary directory, re-chunks every file, and compares the result with the snapshot. It is the strongest check that a snapshot is restorable:
+
+```console
+hitstor verify-restore --repo /path/to/repo --password "secret" latest
+```
 
 ### Compare File Counts
 
-List the snapshot contents and compare against the restored tree:
+Compare the number of files recorded in the snapshot with the restored tree:
 
 ```console
-hitstor ls --repo /path/to/repo --password "secret" abc12345 | wc -l
+hitstor snapshots --repo /path/to/repo --password "secret" --json \
+    | jq '.[] | select(.id == "abc12345") | .total_files'
 1247
 
 find /restore/path -type f | wc -l

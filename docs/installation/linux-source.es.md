@@ -54,24 +54,34 @@ Como HitStor se compila con `CGO_ENABLED=0`, la compilación cruzada es sencilla
 make build-arm64
 make agent-arm64
 
-# Windows amd64
+# Windows amd64 (servidor y agente)
+make build-windows
 make agent-windows
 
-# Windows ARM64
+# Windows ARM64 (agente)
 make agent-windows-arm64
 ```
 
-Para compilar de forma cruzada manualmente para cualquier plataforma:
+Para compilar de forma cruzada manualmente, defina `GOOS` y `GOARCH`:
 
 ```bash
-# macOS AMD64
-GOOS=darwin GOARCH=amd64 CGO_ENABLED=0 go build -o bin/hitstor-darwin-amd64 ./cmd/hitstor/
-
-# macOS ARM64 (Apple Silicon)
-GOOS=darwin GOARCH=arm64 CGO_ENABLED=0 go build -o bin/hitstor-darwin-arm64 ./cmd/hitstor/
+GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build -o bin/hitstor.exe ./cmd/hitstor/
 ```
 
+Linux y Windows son los destinos soportados; otros sistemas operativos (por ejemplo, macOS o FreeBSD) no compilan.
+
 El binario resultante es un único archivo estático sin dependencias externas.
+
+## Paquetes de plugins de carga de trabajo { #workload-plugin-packages }
+
+Los plugins de carga de trabajo, como `mssql`, se compilan y empaquetan por separado:
+
+```bash
+make plugin-packages PLUGIN_UNSIGNED=1   # sin firmar, para pruebas locales
+make plugin-packages PLUGIN_KEY_FILE=mykey.key
+```
+
+Esto escribe en `dist/` un paquete `.hpk` por cada destino de `WORKLOAD_PLUGIN_TARGETS`, con el nombre `hitstor-plugin-<id>-<versión>-<so>-<arquitectura>.hpk`. Los agentes aceptan paquetes sin firmar solo con `plugin_allow_unsigned: true`. Consulte [Desarrollo de plugins](../reference/plugin-development.md#packaging-and-signing).
 
 ## Instalar en el PATH { #install-to-path }
 
@@ -112,7 +122,7 @@ make test-integration
 
 ## Compilar todos los targets { #build-all-targets }
 
-Para compilar todos los binarios (servidor, agente y todas las variantes de compilación cruzada) con un solo comando:
+Para compilar el servidor y el agente para Linux (amd64, arm64) y Windows con un solo comando:
 
 ```bash
 make build-all

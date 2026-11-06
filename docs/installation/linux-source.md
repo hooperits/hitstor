@@ -54,24 +54,34 @@ Because HitStor compiles with `CGO_ENABLED=0`, cross-compilation is straightforw
 make build-arm64
 make agent-arm64
 
-# Windows amd64
+# Windows amd64 (server and agent)
+make build-windows
 make agent-windows
 
-# Windows ARM64
+# Windows ARM64 (agent)
 make agent-windows-arm64
 ```
 
-To cross-compile manually for any platform:
+To cross-compile manually, set `GOOS` and `GOARCH`:
 
 ```bash
-# macOS AMD64
-GOOS=darwin GOARCH=amd64 CGO_ENABLED=0 go build -o bin/hitstor-darwin-amd64 ./cmd/hitstor/
-
-# macOS ARM64 (Apple Silicon)
-GOOS=darwin GOARCH=arm64 CGO_ENABLED=0 go build -o bin/hitstor-darwin-arm64 ./cmd/hitstor/
+GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build -o bin/hitstor.exe ./cmd/hitstor/
 ```
 
+Linux and Windows are the supported targets; other operating systems (for example macOS or FreeBSD) do not build.
+
 The resulting binary is a single static file with no external dependencies.
+
+## Workload Plugin Packages
+
+Workload plugins such as `mssql` are built and packaged separately:
+
+```bash
+make plugin-packages PLUGIN_UNSIGNED=1   # unsigned, for local testing
+make plugin-packages PLUGIN_KEY_FILE=mykey.key
+```
+
+This writes one `.hpk` package per target in `WORKLOAD_PLUGIN_TARGETS` to `dist/`, named `hitstor-plugin-<id>-<version>-<os>-<arch>.hpk`. Agents accept unsigned packages only with `plugin_allow_unsigned: true`. See [Plugin Development](../reference/plugin-development.md#packaging-and-signing).
 
 ## Install to PATH
 
@@ -112,7 +122,7 @@ make test-integration
 
 ## Build All Targets
 
-To build all binaries (server, agent, and all cross-compiled variants) in a single command:
+To build the server and agent for Linux (amd64, arm64) and Windows in a single command:
 
 ```bash
 make build-all

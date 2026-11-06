@@ -4,7 +4,9 @@ Esta página cubre los problemas comunes de HitStor, sus causas y sus soluciones
 
 ## Errores del repositorio { #repository-errors }
 
-### "repository not initialized" { #repository-not-initialized }
+### "Repository not found" { #repository-not-found }
+
+El mensaje completo es `Repository not found at PATH`.
 
 **Causa:** El directorio del repositorio no existe o no se ha inicializado con `hitstor init`.
 
@@ -14,9 +16,11 @@ Esta página cubre los problemas comunes de HitStor, sus causas y sus soluciones
 hitstor init --repo /var/lib/hitstor/repo --password "REPO_PASSWORD"
 ```
 
-Si el directorio existe pero parece vacío o dañado, verifique que la ruta sea correcta y que los subdirectorios `keys/`, `data/`, `index/` y `snapshots/` estén presentes.
+Si el directorio existe pero parece vacío o dañado, verifique que la ruta sea correcta y que estén presentes el archivo `config` y el subdirectorio `keys/` (`data/`, `index/` y `snapshots/` aparecen después del primer respaldo).
 
-### "incorrect password" { #incorrect-password }
+### "Incorrect password" { #incorrect-password }
+
+El error subyacente es `wrong password or corrupted key file`.
 
 **Causa:** La contraseña proporcionada no coincide con la contraseña usada al inicializar el repositorio.
 
@@ -43,7 +47,7 @@ Si el directorio existe pero parece vacío o dañado, verifique que la ruta sea 
 
 4. Asegúrese de que no haya espacios adicionales, comillas ni caracteres de escape en el valor de la contraseña.
 
-### "lock repository: repository is locked" { #lock-repository-repository-is-locked }
+### "repository is locked by another process" { #repository-is-locked-by-another-process }
 
 **Causa:** Otro proceso de HitStor está usando el repositorio en este momento, o un proceso anterior terminó sin liberar el bloqueo.
 
@@ -55,10 +59,10 @@ Si el directorio existe pero parece vacío o dañado, verifique que la ruta sea 
     ps aux | grep hitstor
     ```
 
-2. Si no hay ningún otro proceso en ejecución, el bloqueo quedó huérfano. Elimínelo:
+2. Si no hay ningún otro proceso en ejecución, el bloqueo quedó huérfano. Vuelva a ejecutar el comando con `--break-lock`, que elimina los bloqueos huérfanos antes de la operación:
 
     ```bash
-    hitstor unlock --repo /var/lib/hitstor/repo --password "REPO_PASSWORD"
+    hitstor check --repo /var/lib/hitstor/repo --break-lock
     ```
 
 3. Si usa el servidor, asegúrese de que solo un proceso `hitstor serve` se ejecute sobre un repositorio determinado.
@@ -69,9 +73,9 @@ Si el directorio existe pero parece vacío o dañado, verifique que la ruta sea 
 
 **Causa:** El agente no puede verificar el certificado TLS del servidor. Las causas más comunes son:
 
-1. El agente no tiene el certificado del servidor (falta `--ca-cert`)
-2. El certificado no incluye la IP del servidor en sus SAN
-3. El binario del servidor es una versión antigua que genera certificados solo para `127.0.0.1`
+1. El agente está configurado con un certificado de CA (`--ca-cert`, `agent_ca_cert`, `HITSTOR_AGENT_CA_CERT`) que no firmó el certificado del servidor
+2. El certificado no incluye en sus SAN la dirección a la que se conecta el agente (por ejemplo, el servidor obtuvo una IP nueva después de generar el certificado)
+3. El certificado del servidor cambió desde que el agente lo fijó (consulte [más abajo](#peer-certificate-fingerprint-does-not-match-pinned))
 
 **Diagnóstico:** Revise qué IP incluye el certificado:
 
@@ -106,7 +110,7 @@ Si solo aparecen `127.0.0.1` y `localhost`, el certificado no contiene la IP rea
 5. Copie el certificado al agente y configúrelo:
 
     ```bash
-    scp hits@SERVER_IP:/var/lib/hitstor/repo/server.crt /etc/hitstor/server.crt
+    scp USER@SERVER_IP:/var/lib/hitstor/repo/server.crt /etc/hitstor/server.crt
     hitstor-agent --ca-cert /etc/hitstor/server.crt ping
     ```
 
@@ -115,6 +119,12 @@ Si solo aparecen `127.0.0.1` y `localhost`, el certificado no contiene la IP rea
     ```yaml
     agent_ca_cert: /etc/hitstor/server.crt
     ```
+
+### "peer certificate fingerprint ... does not match pinned" { #peer-certificate-fingerprint-does-not-match-pinned }
+
+**Causa:** El agente fijó el certificado del servidor en su primera conexión y ahora el servidor presenta uno distinto (certificado regenerado o reemplazado, o un servidor reinstalado).
+
+**Solución:** Si el cambio fue intencional, elimine el anclaje en el agente y vuelva a conectarse: `/etc/hitstor/server-fingerprint` en Linux, `C:\ProgramData\HitStor\server-fingerprint` en Windows. De lo contrario, investigue un posible ataque de intermediario (man-in-the-middle). Consulte [Certificados TLS](tls-certificates.md#without-a-ca-certificate-certificate-pinning).
 
 ### "certificate signed by unknown authority" { #certificate-signed-by-unknown-authority }
 
@@ -129,7 +139,7 @@ hitstor-agent --ca-cert /etc/hitstor/server.crt ping
 O de forma permanente mediante el archivo de configuración:
 
 ```yaml
-# ~/.config/hitstor/config.yaml
+# /etc/hitstor/agent-config.yaml
 agent_ca_cert: /etc/hitstor/server.crt
 ```
 
@@ -154,11 +164,11 @@ Si falta la IP, elimine el certificado y reinicie el servidor para regenerarlo c
 **Solución:** Verifique que los archivos coincidan:
 
 ```bash
-openssl x509 -noout -modulus -in server.crt | md5sum
-openssl rsa -noout -modulus -in server.key | md5sum
+openssl x509 -noout -pubkey -in server.crt | openssl sha256
+openssl pkey -pubout -in server.key | openssl sha256
 ```
 
-Si las sumas de verificación difieren, los archivos no corresponden. Regenérelos o vuelva a emparejarlos.
+Esto funciona con claves RSA y ECDSA (el certificado generado automáticamente usa ECDSA). Si las sumas de verificación difieren, los archivos no corresponden. Regenérelos o vuelva a emparejarlos.
 
 ## Errores de conexión { #connection-errors }
 
@@ -192,25 +202,27 @@ Si las sumas de verificación difieren, los archivos no corresponden. Regenérel
 
 ### El agente no aparece en el dashboard { #agent-not-appearing-in-dashboard }
 
-**Causa:** El agente no se ha conectado correctamente al servidor o no ha completado un respaldo.
+**Causa:** El agente no se registró, o el registro no llegó al agente.
 
 **Solución:**
 
-1. Verifique que el agente pueda comunicarse con el servidor:
+1. Regístrelo desde **Agentes → + Agregar agente** (consulte [Gestión de agentes](agent-management.md)). El servidor debe poder alcanzar el agente en el puerto 8422.
+
+2. Verifique que el agente pueda comunicarse con el servidor:
 
     ```bash
-    hitstor-agent ping
+    sudo sh -c 'set -a; . /etc/hitstor/agent.env; hitstor-agent ping'
     ```
 
-2. Verifique que la clave de API sea correcta en `/etc/hitstor/agent.env`.
+3. Verifique `HITSTOR_AGENT_SERVER` y `HITSTOR_AGENT_API_KEY` en `/etc/hitstor/agent.env`.
 
-3. Revise los registros del agente en busca de errores:
+4. Revise los registros del agente en busca de errores:
 
     ```bash
     sudo journalctl -u hitstor-agent -n 50
     ```
 
-4. Asegúrese de que el nombre del agente coincida con el que se registró con `hitstor serve agent add`.
+5. En un agente registrado con la CLI, asegúrese de que el nombre del agente coincida con el que se registró con `hitstor serve agent add`.
 
 ## Problemas con las alertas { #alert-issues }
 
@@ -259,7 +271,7 @@ Si las sumas de verificación difieren, los archivos no corresponden. Regenérel
 
 2. Si la operación parece atascada, reinicie el servidor. El bloqueo de mantenimiento en memoria se libera cuando el proceso termina.
 
-3. Si necesita ejecutar una operación de mantenimiento con urgencia, use la opción "Force" del dashboard, que aborta las sesiones de respaldo activas y adquiere el bloqueo.
+3. Si necesita ejecutar una operación de mantenimiento con urgencia, la API acepta `"force": true` en el cuerpo de `POST /api/repos/{name}/check` y `POST /api/repos/{name}/prune`; aborta las sesiones de respaldo activas y adquiere el bloqueo. El dashboard no tiene un botón para esto.
 
 ### "acquire lock: ..." { #acquire-lock }
 
@@ -321,14 +333,14 @@ El flag `--read-data` aumenta considerablemente la duración de la verificación
 Un repositorio en buen estado produce:
 
 ```
-check: no errors found
+no errors found
 ```
 
 Si se encuentran errores, la salida enumera los archivos de paquete o las instantáneas (snapshots) afectados. Comuníquese con soporte o consulte la documentación de recuperación del repositorio.
 
 ## Análisis de registros { #log-analysis }
 
-HitStor usa el paquete `slog` de Go para generar registros estructurados en JSON. Las entradas de registro incluyen campos para la marca de tiempo, el nivel, el mensaje y datos de contexto.
+HitStor usa el paquete `slog` de Go para generar registros estructurados. Las entradas de registro incluyen campos para la marca de tiempo, el nivel, el mensaje y datos de contexto. De forma predeterminada son líneas de texto (`clave=valor`); ejecute el servidor con `--json` (consulte [Puesta en marcha del servidor → Salida de registros](server-setup.md#log-output)) para obtener las líneas JSON que esperan los ejemplos con `jq` de más abajo. La página **Registros** del dashboard muestra las mismas entradas, con filtros y exportación.
 
 ### Ver los registros { #viewing-logs }
 
@@ -342,7 +354,7 @@ sudo journalctl -u hitstor-agent -f
 
 ### Filtrar con jq { #filtering-with-jq }
 
-Analice y filtre los registros estructurados en JSON:
+Analice y filtre los registros JSON (servidor iniciado con `--json`):
 
 ```bash
 # Mostrar solo los errores

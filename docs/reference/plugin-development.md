@@ -600,4 +600,4 @@ go-plugin sets max gRPC message size to ~2 GiB. HitStor pack files cap at 128 Mi
 ## See Also
 
 - [Plugin Usage Guide](../user-guide/plugins.md) -- installing and configuring plugins
-- [API Reference](api-reference.md) -- main gRPC backup protocol
+- [gRPC API Reference](grpc-api.md) -- main gRPC backup protocol

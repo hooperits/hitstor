@@ -9,9 +9,9 @@ HitStor es una plataforma de respaldo cifrado y con deduplicación escrita en Go
 - **Respaldos locales con la CLI**: `hitstor backup` contra un repositorio local, S3 o de plugin
 - **Respaldos centralizados servidor/agente**: diseño de agente grueso (thick agent) sobre gRPC/TLS
 - **Restauración bare-metal**: medios de recuperación basados en ReaR para equipos Linux
-- **Dashboard integrado**: monitoreo, programación y restauración
+- **Dashboard integrado**: monitoreo, programación, restauración, cuentas de usuario con roles y verificación en dos pasos, notificaciones por correo y reportes PDF programados
 
-El núcleo respalda sistemas de archivos (Windows y Linux); las aplicaciones se respaldan mediante plugins de carga de trabajo instalables (`plugins/`, consulte [Arquitectura de plugins de carga de trabajo](plugin-architecture.md)), empezando por SQL Server. Los respaldos de M365, Google Workspace, las integraciones de bases de datos incorporadas y las máquinas virtuales en la nube/VMware se eliminaron en la v2.0.0; consulte la [Hoja de ruta](../admin-guide/roadmap.md#permanently-removed-v200).
+El núcleo respalda sistemas de archivos (Windows y Linux); las aplicaciones se respaldan mediante plugins de carga de trabajo instalables (`plugins/`, consulte [Arquitectura de plugins de carga de trabajo](plugin-architecture.md)), empezando por SQL Server. Los respaldos de M365, Google Workspace, las integraciones de bases de datos incorporadas y las máquinas virtuales en la nube/VMware se eliminaron antes de la primera versión pública (v0.1.0); consulte la [Hoja de ruta](../admin-guide/roadmap.md#permanently-removed).
 
 ## Estructura de directorios { #directory-layout }
 
@@ -27,6 +27,7 @@ cmd/                          # Binarios (puntos de entrada)
 
 plugins/                      # Plugins de carga de trabajo, un directorio por plugin (empaquetados como .hpk)
   example/                    # Plugin de carga de trabajo de referencia
+  mssql/                      # Plugin de SQL Server (VDI; solo Windows)
 
 internal/                     # Bibliotecas principales (no importables desde fuera)
   archiver/                   # Pipeline de respaldo local
@@ -42,7 +43,12 @@ internal/                     # Bibliotecas principales (no importables desde fu
   plugin/                     # Gestor de go-plugin de HashiCorp
   pluginpkg/                  # Formato de paquete de plugins, firma y confianza
   pluginmgr/                  # Almacén de plugins del agente: instalar, actualizar, desinstalar
-  ...                         # chunker, crypto, retention, metrics, etc.
+  users/                      # Cuentas del dashboard, roles, verificación en dos pasos
+  mailer/                     # Correo saliente (relay SMTP, usuario y contraseña, OAuth de Microsoft 365)
+  report/                     # Reportes PDF
+  runlog/                     # Historial de ejecuciones de respaldo (para los reportes)
+  retention/                  # Políticas de retención, incluidas las cadenas de respaldo de cargas de trabajo
+  ...                         # chunker, crypto, cron, metrics, etc.
 
 api/proto/hitstor/plugin/v1/  # Definiciones gRPC públicas de plugins
 internal/proto/hitstor/v1/    # Protos de respaldo servidor/agente (backup.proto, agent.proto)
@@ -62,6 +68,8 @@ specs/                        # Especificaciones de funciones (solo locales: en 
 | `bin/hitstor-notifier-log` | `make notifier-log` | Ejemplo de plugin notificador |
 | `bin/hitstor-hook-log` | `make hook-log` | Ejemplo de plugin hook |
 | `bin/hitstor-scanner-builtin` | `make scanner-builtin` | Plugin escáner de sistema de archivos integrado (incluido con el agente) |
+| `bin/hitstor-pluginkit` | `make pluginkit` | Construye, firma y verifica paquetes `.hpk` |
+| `dist/hitstor-plugin-<id>-<versión>-<os>-<arch>.hpk` | `make plugin-packages` | Paquetes de plugins de carga de trabajo (`plugins/*`) |
 
 Compilar todos los plugins: `make plugins`
 
@@ -96,12 +104,15 @@ El agente escanea, fragmenta y comprime localmente → `CheckBlobs` / `UploadChu
 |---------|--------|-------|
 | Respaldo de sistemas de archivos (CLI + agente) | Estable | Motor principal |
 | Servidor remoto + dashboard | Estable | gRPC + HTTP |
-| Tareas de respaldo + programación | Estable | Cron, intervalo, zona horaria; `job_type` siempre es `files` |
-| Restauración bare-metal | En desarrollo | Medios de recuperación basados en ReaR (Linux); consulte la [Hoja de ruta](../admin-guide/roadmap.md) |
+| Tareas de respaldo + programación | Estable | Cron (incluidos `L`, `D#N`, `DL`), intervalo, zona horaria; `job_type` es `files` o `workload` |
+| Plugins de carga de trabajo | Disponible | Paquetes `.hpk` firmados; respaldos completos, diferenciales y de log de SQL Server (VDI) como plan de respaldo por tipo, con resultados por base de datos y restauración a un punto en el tiempo |
+| Usuarios, roles y verificación en dos pasos | Disponible | Cuentas personales en el dashboard, roles por agente, TOTP obligatorio, registro de auditoría |
+| Correo y reportes PDF | Disponible | SMTP o Microsoft 365 (OAuth 2.0); reportes PDF programados |
+| Restauración bare-metal | Disponible (Linux) | Medios de recuperación basados en ReaR; Windows llegará más adelante; consulte la [Hoja de ruta](../admin-guide/roadmap.md) |
 | Descubrimiento automático de agentes | Estable | Dashboard + `/api/discover/*` |
 | Ransomware Sentinel | Estable | Opcional; Gemini mediante Configuración o `HITSTOR_SENTINEL_API_KEY` |
 
-Los respaldos de M365, Google Workspace, bases de datos y máquinas virtuales en la nube/VMware, junto con el tipo de plugin recolector de cargas de trabajo (workload collector) que los atendía, se eliminaron definitivamente en la v2.0.0. Consulte la [Hoja de ruta](../admin-guide/roadmap.md#permanently-removed-v200).
+Los respaldos de M365, Google Workspace, bases de datos y máquinas virtuales en la nube/VMware, junto con el tipo de plugin recolector de cargas de trabajo (workload collector) que los atendía, se eliminaron definitivamente antes de la primera versión pública (v0.1.0). Consulte la [Hoja de ruta](../admin-guide/roadmap.md#permanently-removed).
 
 ## Fuente de verdad { #source-of-truth }
 
@@ -109,7 +120,7 @@ Al actualizar la documentación, prefiera estos archivos antes que el texto del 
 
 | Tema | Archivo |
 |------|---------|
-| Claves de configuración | `internal/config/config.go` (`Registry`, `RepoConfig`) |
+| Claves de configuración | `internal/config/config.go` (`Config`, `RepoConfig`) e `internal/config/config_registry.go` (`Registry`) |
 | Rutas HTTP del dashboard | `internal/dashboard/dashboard.go` (mux de `Handler()`) |
 | gRPC de respaldo | `internal/proto/hitstor/v1/backup.proto` |
 | gRPC de administración de agentes | `internal/proto/hitstor/v1/agent.proto` |

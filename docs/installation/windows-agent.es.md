@@ -1,12 +1,12 @@
 # Instalación del agente para Windows
 
-El agente de HitStor es un binario liviano que envía respaldos cifrados y deduplicados desde un equipo Windows a un servidor HitStor remoto por gRPC. El instalador NSIS ofrece una casilla opcional para registrar el agente como servicio de Windows y ejecutar respaldos desatendidos.
+El agente de HitStor es un binario liviano que envía respaldos cifrados y deduplicados desde un equipo Windows a un servidor HitStor remoto por gRPC. El instalador NSIS registra el agente como servicio de Windows (opción seleccionada de forma predeterminada), que luego se administra desde el dashboard de HitStor.
 
 ## Requisitos { #requirements }
 
 - Windows 10 (1809+) o Windows Server 2016+
-- Arquitectura: amd64 o arm64
-- Acceso de red al servidor HitStor (puerto predeterminado 8420)
+- Arquitectura: amd64 (el instalador es solo para amd64; un binario arm64 puede compilarse desde el código fuente con `make agent-windows-arm64`)
+- Acceso de red al servidor HitStor (puerto predeterminado 8420), y desde el servidor al puerto de escucha del agente (predeterminado 8422)
 - Privilegios de administrador (necesarios para la instalación y la administración del servicio)
 
 ## Descarga { #download }
@@ -27,32 +27,29 @@ Descargue el instalador del agente desde la página de [GitHub Releases](https:/
 3. Elija el directorio de instalación (predeterminado: `C:\Program Files\HitStor Agent\`).
 4. En la página **Components**, seleccione los componentes que desea instalar:
     - **HitStor Agent** (obligatorio): instala el binario del agente y la configuración.
-    - **Install as Windows Service** (opcional): registra e inicia el agente como servicio de Windows para respaldos programados desatendidos.
-5. Haga clic en **Install**.
+    - **Install as Windows Service** (seleccionado de forma predeterminada): registra e inicia el agente como servicio de Windows y abre su puerto de escucha en el Firewall de Windows.
+5. En la página **Agent Configuration**, conserve el puerto de escucha (predeterminado `8422`) salvo que otro servicio lo use. El servidor se conecta a este puerto para registrar y administrar el agente.
+6. Haga clic en **Install**. La última página muestra el puerto de escucha, el **token del agente** y los pasos siguientes.
 
 El instalador realiza los siguientes pasos:
 
-- Copia `hitstor-agent.exe` al directorio de instalación.
-- Agrega el directorio de instalación al `PATH` del sistema.
-- Crea un directorio de configuración en `%ProgramData%\HitStor\`.
-- Copia `agent-config.yaml.example` al directorio de configuración.
+- Copia `hitstor-agent.exe` al directorio de instalación y agrega el directorio al `PATH` del sistema.
+- Crea `%ProgramData%\HitStor\`, restringido a SYSTEM y Administradores, con `agent-config.yaml.example`, `agent.env` (`HITSTOR_AGENT_LISTEN_PORT`) y un `agent-config.yaml` sin rutas de respaldo (si ya existe, se conserva). Al actualizar, se conservan las credenciales de `agent.env`.
 - Crea un acceso directo en el menú Inicio para el desinstalador.
-- Si se seleccionó el componente de servicio, registra e inicia el servicio de Windows `HitStorAgent`.
+- Si se seleccionó el componente de servicio, registra el servicio de Windows `HitStorAgent` con `--config %ProgramData%\HitStor\agent-config.yaml`, agrega la regla de firewall `HitStor Agent` para el puerto de escucha e inicia el servicio. El servicio genera el token del agente (`%ProgramData%\HitStor\agent-token`) en el primer inicio.
 
-## Configuración { #configuration }
+## Registrar el agente { #register-the-agent }
 
-El agente lee la configuración desde una de estas ubicaciones:
+En el dashboard de HitStor, vaya a **Agentes → Agregar agente** e ingrese la dirección IP de este equipo, el puerto de escucha y el token del agente que se mostró al final de la instalación (`hitstor-agent show-id` lo vuelve a mostrar desde una consola con privilegios elevados). El servidor envía al agente su dirección y una clave de API, que el agente guarda en `agent.env`. Luego cree tareas de respaldo en **Respaldos**; las rutas de respaldo y las programaciones se administran desde el dashboard.
 
-| Ubicación | Alcance |
-|-----------|---------|
-| `%AppData%\hitstor\config.yaml` | Configuración por usuario |
-| `%ProgramData%\HitStor\agent-config.yaml` | Configuración para todo el sistema |
+## Configuración manual { #manual-configuration }
 
-Copie la configuración de ejemplo y edítela:
+Un agente administrado desde el dashboard no necesita editar archivos de configuración. Para usar la CLI del agente con un servidor sin registro desde el dashboard (por ejemplo, con una clave de API de `hitstor serve agent add <nombre>`), use un archivo de configuración. El servicio lee `%ProgramData%\HitStor\agent-config.yaml` (indicado con `--config`) y `%ProgramData%\HitStor\agent.env`; los comandos de la CLI leen `%AppData%\hitstor\config.yaml` salvo que indique `--config`.
+
+Edite el archivo para todo el sistema (`agent-config.yaml.example`, en la misma carpeta, enumera todas las opciones):
 
 ```powershell
-copy "%ProgramData%\HitStor\agent-config.yaml.example" "%ProgramData%\HitStor\agent-config.yaml"
-notepad "%ProgramData%\HitStor\agent-config.yaml"
+notepad "$env:ProgramData\HitStor\agent-config.yaml"
 ```
 
 ### Configuración obligatoria { #required-settings }
@@ -82,10 +79,11 @@ agent_excludes:
 
 ## Verificar la instalación { #verify-the-installation }
 
-Abra una nueva ventana de PowerShell y ejecute:
+Abra una nueva ventana de PowerShell con privilegios elevados y ejecute:
 
 ```powershell
-hitstor-agent version
+Get-Service HitStorAgent
+hitstor-agent show-id
 ```
 
 Pruebe la conectividad con el servidor:
@@ -115,7 +113,7 @@ El agente puede ejecutarse como servicio de Windows para respaldos programados d
 Si no seleccionó el componente de servicio durante la instalación, puede instalarlo manualmente:
 
 ```powershell
-hitstor-agent service install --server backup-server:8420 --api-key <key>
+hitstor-agent service install --config "$env:ProgramData\HitStor\agent-config.yaml"
 ```
 
 Opciones:
@@ -124,7 +122,9 @@ Opciones:
 |------|----------------|-------------|
 | `--name` | `HitStorAgent` | Nombre del servicio de Windows |
 | `--display` | `HitStor Backup Agent` | Nombre visible en la consola de Servicios |
-| `--config` | (detección automática) | Ruta al archivo de configuración |
+| `--config` | (ninguno) | Archivo de configuración con el que se inicia el servicio; sin él se usa el predeterminado de la cuenta del servicio (`%AppData%\hitstor\config.yaml`) |
+
+`--server`, `--api-key` y `--ca-cert` indicados en `service install` también se pasan al servicio.
 
 ### Iniciar y detener { #start-and-stop }
 
@@ -144,7 +144,7 @@ hitstor-agent service uninstall
 
 ### Comportamiento del servicio { #service-behavior }
 
-Cuando se ejecuta como servicio, el agente lee toda la configuración desde el archivo de configuración (`agent_server`, `agent_api_key`, `agent_paths`, etc.) y realiza una sola pasada de respaldo. Para programar respaldos recurrentes, configure el tipo de inicio del servicio o use el Programador de tareas de Windows.
+Cuando se ejecuta como servicio, el agente funciona en [modo daemon](../reference/agent-commands/daemon.md): escucha en el puerto de escucha (`HITSTOR_AGENT_LISTEN_PORT` en `agent.env`, predeterminado 8422) las conexiones del servidor y consulta al servidor cada 5 minutos sus tareas de respaldo, que se ejecutan según las programaciones definidas en el dashboard. Lee `agent.env` desde `%ProgramData%\HitStor\` y escribe su registro en `%ProgramData%\HitStor\logs\agent.log`.
 
 ## Limitaciones conocidas { #known-limitations }
 
@@ -166,7 +166,7 @@ Use **Agregar o quitar programas** en la Configuración de Windows, o ejecute el
 & "$env:ProgramFiles\HitStor Agent\uninstall.exe"
 ```
 
-El desinstalador detiene y elimina el servicio de Windows (si está instalado), y elimina el binario, la entrada del PATH, los accesos directos del menú Inicio y las entradas del registro de Windows.
+El desinstalador detiene y elimina el servicio de Windows (si está instalado) y la regla de firewall `HitStor Agent`; elimina el binario, la entrada del PATH, los accesos directos del menú Inicio y las entradas del registro de Windows, y borra los archivos del agente en `%ProgramData%\HitStor\` (`agent.env`, `agent-config.yaml`, el token del agente y sus certificados). Vuelva a registrar el agente después de reinstalarlo.
 
 ## Próximos pasos { #next-steps }
 

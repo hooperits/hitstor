@@ -2,6 +2,8 @@
 
 El comando `hitstor restore` extrae archivos de una instantánea (snapshot) y los escribe en un directorio de destino. Puede restaurar una instantánea completa o seleccionar archivos y directorios individuales.
 
+![Restauración de archivos seleccionados de una instantánea en el dashboard](../assets/screenshots/es/restore.webp){ .screenshot }
+
 ## Uso básico { #basic-usage }
 
 ```console
@@ -13,8 +15,7 @@ Esto recrea en `/target` el árbol de directorios completo capturado en la insta
 ```console
 hitstor restore --repo /path/to/repo --password "secret" abc12345 /restore/path
 restoring snapshot abc12345 to /restore/path
-  Files:  1,247 restored
-  Dirs:      38 restored
+✓ restored 1,247 files (512.0 MiB) in 6.3s
 ```
 
 ## Resolución del ID de instantánea { #snapshot-id-resolution }
@@ -32,13 +33,13 @@ hitstor restore --repo /path/to/repo --password "secret" \
 
 ### Prefijo corto { #short-prefix }
 
-Cualquier prefijo único de 8 caracteres o más:
+Cualquier prefijo único del ID, como el ID de 8 caracteres que muestra `hitstor snapshots`:
 
 ```console
 hitstor restore --repo /path/to/repo --password "secret" abc12345 /target
 ```
 
-Si el prefijo coincide con más de una instantánea, HitStor informa un error y le pide un prefijo más largo.
+Si el prefijo coincide con más de una instantánea, HitStor informa un error (`snapshot prefix "abc1" is ambiguous (2 matches)`); indique un prefijo más largo.
 
 ### La palabra clave `latest` { #the-latest-keyword }
 
@@ -52,20 +53,20 @@ Cuando el repositorio contiene instantáneas de varios hosts o rutas, `latest` e
 
 ## Restauración selectiva con `--include` { #selective-restore-with-include }
 
-Para restaurar solo un subconjunto de archivos, use `--include` con un patrón glob:
+Para restaurar solo una parte de una instantánea, use `--include` con una ruta dentro de la instantánea. La ruta es relativa a la raíz de la instantánea, que guarda cada directorio respaldado con su propio nombre (un respaldo de `/data` guarda `/data/reports` como `data/reports`). La ruta se compara de forma exacta, no como patrón glob: restaura ese archivo, o ese directorio con todo su contenido:
 
 ```console
 hitstor restore --repo /path/to/repo --password "secret" \
-    --include "*.pdf" \
+    --include data/reports \
     abc12345 /target
 ```
 
-Se pueden combinar varios flags `--include`. Un archivo se restaura si coincide con **cualquiera** de los patrones:
+Se pueden combinar varios flags `--include`. Un archivo se restaura si es **cualquiera** de las rutas o está dentro de ella (aquí, de un respaldo de `/home/user`):
 
 ```console
 hitstor restore --repo /path/to/repo --password "secret" \
-    --include "documents/**" \
-    --include "photos/2026/**" \
+    --include user/documents \
+    --include user/photos/2026 \
     abc12345 /target
 ```
 
@@ -97,30 +98,40 @@ Durante la restauración:
 
 ## Indicador de progreso { #progress-display }
 
-Las operaciones de restauración muestran el progreso en vivo con:
+En una terminal, las operaciones de restauración muestran una barra de progreso en vivo con:
 
-- Cantidad de archivos restaurados hasta el momento
-- Cantidad de datos escritos
-- Tiempo transcurrido
+- Porcentaje completado
+- Archivos restaurados del total
+- Velocidad de transferencia
+- Tiempo restante estimado
 
 Ejemplo de salida durante una restauración:
 
 ```
-[0:05] 73.20%  912 / 1,247 files  375.00 MiB / 512.00 MiB
+[##############------]  73% | 912/1,247 files | 62.4 MiB/s | ETA 2s
 ```
 
-Cuando la salida se redirige a un archivo o a una tubería (pipe), HitStor muestra solo el resumen final.
+Cuando la salida se redirige a un archivo o a una tubería (pipe), HitStor muestra en su lugar una línea `restored <ruta> (<tamaño>)` por archivo. En ambos casos termina con un resumen de los archivos y bytes restaurados.
 
 ## Verificar los datos restaurados { #verifying-restored-data }
 
-Después de una restauración, es buena práctica verificar que el resultado coincida con el contenido de la instantánea. Hay dos enfoques disponibles:
+Después de una restauración, es buena práctica verificar que el resultado coincida con el contenido de la instantánea. Estos son los enfoques disponibles.
+
+### Usar `hitstor verify-restore` { #use-hitstor-verify-restore }
+
+[`hitstor verify-restore`](../reference/commands/verify-restore.md) restaura una instantánea (o una muestra de sus archivos) en un directorio temporal, vuelve a fragmentar cada archivo y compara el resultado con la instantánea. Es la verificación más sólida de que una instantánea puede restaurarse:
+
+```console
+hitstor verify-restore --repo /path/to/repo --password "secret" latest
+```
 
 ### Comparar la cantidad de archivos { #compare-file-counts }
 
-Liste el contenido de la instantánea y compárelo con el árbol restaurado:
+Compare la cantidad de archivos registrada en la instantánea con el árbol restaurado:
 
 ```console
-hitstor ls --repo /path/to/repo --password "secret" abc12345 | wc -l
+hitstor snapshots --repo /path/to/repo --password "secret" --json \
+    | jq '.[] | select(.id == "abc12345") | .total_files'
 1247
 
 find /restore/path -type f | wc -l

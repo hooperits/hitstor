@@ -1,6 +1,6 @@
 # TLS Certificates
 
-All gRPC communication between the HitStor server and agents is encrypted with TLS. This guide covers the default self-signed certificate behavior, custom certificate configuration, and certificate management for agents.
+All gRPC communication between the HitStor server and agents is encrypted with TLS, and the dashboard is served over HTTPS with the same certificate. This guide covers the default self-signed certificate behavior, custom certificate configuration, and certificate management for agents.
 
 ## Default Behavior: Self-Signed Certificates
 
@@ -8,11 +8,12 @@ When the server starts without explicit certificate configuration, it automatica
 
 The auto-generated certificate is:
 
-- Created at server startup and held in memory
-- Valid for the server's hostname and local IP addresses
+- Created at the first startup and saved as `server.crt` and `server.key` in the directory of the server's first repository (for example `/var/lib/hitstor/repo/server.crt`), then reused on every restart
+- Valid for `localhost`, the server's hostname, `127.0.0.1` and the server's local IP addresses at the time it was generated
+- An ECDSA P-256 certificate valid for 10 years
 - Suitable for testing and internal networks
 
-No files are written to disk. A new certificate is generated each time the server restarts.
+If the first repository is not on a local path (for example S3), the certificate is kept in memory and a new one is generated at each restart. To regenerate the saved certificate (for example after the server gets a new IP address), delete both files and restart the server; agents that pinned the old certificate must then forget it (see [below](#without-a-ca-certificate-certificate-pinning)).
 
 ## Custom Certificates
 
@@ -37,13 +38,15 @@ serve_tls_key: /etc/hitstor/tls/server.key
 
 The certificate file should contain the full chain (server certificate followed by any intermediate certificates). The key file must be an unencrypted PEM-encoded private key.
 
+You can also upload the certificate and key from **Settings → Security & TLS** in the dashboard; they are saved as `/etc/hitstor/tls/server.crt` and `server.key` and written to `serve_tls_cert` and `serve_tls_key`. Restart the server to use them.
+
 ### File Permissions
 
-Restrict access to the private key:
+Restrict access to the private key, keeping it readable by the user the server runs as (`hitstor` with the packaged systemd unit):
 
 ```bash
-sudo chmod 0600 /etc/hitstor/tls/server.key
-sudo chown root:root /etc/hitstor/tls/server.key
+sudo chown root:hitstor /etc/hitstor/tls/server.key
+sudo chmod 0640 /etc/hitstor/tls/server.key
 ```
 
 ## Using Let's Encrypt
@@ -61,12 +64,12 @@ This creates certificate files at:
 - `/etc/letsencrypt/live/backup.example.com/fullchain.pem`
 - `/etc/letsencrypt/live/backup.example.com/privkey.pem`
 
-Configure HitStor to use them:
+The private key under `/etc/letsencrypt` is readable only by root, and the packaged server runs as the `hitstor` user, so copy both files to `/etc/hitstor/tls/` (the deploy hook below does it on every renewal) and point HitStor at the copies:
 
 ```yaml
 # /etc/hitstor/config.yaml
-serve_tls_cert: /etc/letsencrypt/live/backup.example.com/fullchain.pem
-serve_tls_key: /etc/letsencrypt/live/backup.example.com/privkey.pem
+serve_tls_cert: /etc/hitstor/tls/server.crt
+serve_tls_key: /etc/hitstor/tls/server.key
 ```
 
 ### Renewal
@@ -82,11 +85,17 @@ To automate this, add a post-renewal hook:
 ```bash
 # /etc/letsencrypt/renewal-hooks/deploy/hitstor-restart.sh
 #!/bin/bash
+set -e
+live=/etc/letsencrypt/live/backup.example.com
+install -o root -g hitstor -m 0644 "$live/fullchain.pem" /etc/hitstor/tls/server.crt
+install -o root -g hitstor -m 0640 "$live/privkey.pem" /etc/hitstor/tls/server.key
 systemctl restart hitstor-server
 ```
 
 ```bash
+sudo mkdir -p /etc/hitstor/tls
 sudo chmod +x /etc/letsencrypt/renewal-hooks/deploy/hitstor-restart.sh
+sudo /etc/letsencrypt/renewal-hooks/deploy/hitstor-restart.sh   # first copy
 ```
 
 ## Certificate Renewal
@@ -119,7 +128,7 @@ Or via environment variable:
 HITSTOR_AGENT_CA_CERT=/etc/hitstor/tls/ca.crt
 ```
 
-The CA certificate file should be the PEM-encoded certificate of the authority that signed the server's certificate. For self-signed certificates, use the server certificate itself.
+The CA certificate file should be the PEM-encoded certificate of the authority that signed the server's certificate. For self-signed certificates, use the server certificate itself (`server.crt` from the repository directory).
 
 ### Without a CA Certificate (Certificate Pinning)
 

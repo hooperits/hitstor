@@ -9,44 +9,37 @@ Los agentes administrados desde el dashboard se agregan directamente desde el da
 ### Requisitos previos { #prerequisites }
 
 1. Instale el agente en el equipo remoto (consulte [Despliegue de agentes](agent-deployment.md))
-2. El agente genera un token durante la instalación; anote el token y la dirección IP del equipo
+2. El agente genera un token la primera vez que se inicia; anote el token (`hitstor-agent show-id`) y la dirección IP del equipo
 3. Asegúrese de que el puerto **8422** (puerto de escucha gRPC del agente) sea accesible desde el servidor
 
 ### Agregar un agente desde el dashboard { #add-an-agent-from-the-dashboard }
 
-1. Abra el dashboard de HitStor en `http://SERVER_IP:8421`
-2. Vaya a **Agentes**
-3. Elija **Descubrimiento de red** para escanear las subredes locales, o **Entrada manual** para agregarlo por dirección
-4. Para la entrada manual, complete:
-    - **Nombre**: identificador descriptivo (por ejemplo, `web-server-01`)
-    - **Dirección del agente**: `host:port` (por ejemplo, `192.168.1.50:8422`)
-    - **Token**: token hexadecimal de 64 caracteres del agente (`hitstor-agent show-id` en el equipo del agente)
-5. Haga clic en **Agregar agente**
+1. Abra el dashboard de HitStor en `https://SERVER_IP:8421` (administradores)
+2. Vaya a **Agentes** y haga clic en **+ Agregar agente**
+3. Elija **Escaneo de red** para escanear una subred local, o **Entrada manual** para escribir la dirección IP del agente y hacer clic en **Conectar**
+4. Haga clic en **Registrar** en el agente encontrado y complete **Registrar agente**:
+    - **Nombre del agente**: identificador descriptivo (por ejemplo, `web-server-01`); letras, números, guiones y guiones bajos
+    - **Dirección del agente**: `host:port`, que se completa desde el escaneo (por ejemplo, `192.168.1.50:8422`)
+    - **Token del agente**: token hexadecimal de 64 caracteres del agente (`hitstor-agent show-id` en el equipo del agente)
+5. Haga clic en **Registrar agente**
 
 Consulte [Descubrimiento de agentes](agent-discovery.md) para ver el flujo de escaneo de red.
 
-El servidor se conecta al agente, verifica el token, envía una clave de API y la dirección del servidor, y el agente comienza a respaldar automáticamente. No es necesario copiar ninguna clave manualmente.
+El servidor se conecta al agente, verifica el token y le envía una clave de API y la dirección del servidor, que el agente escribe en su `agent.env`. No es necesario copiar ninguna clave manualmente. Registrar de nuevo un nombre existente vuelve a registrar ese agente (nueva clave de API) y conserva sus tareas.
 
-### Explorar el sistema de archivos del agente { #browse-agent-filesystem }
+### Elegir qué respaldar { #choose-what-to-back-up }
 
-En los agentes administrados desde el dashboard, la página de detalle del agente incluye una sección **Rutas de respaldo** con un explorador en árbol del sistema de archivos:
-
-1. Haga clic en el nombre del agente en la lista de Agentes
-2. Expanda los directorios del árbol haciendo clic en los íconos de flecha
-3. Marque los directorios que desea respaldar
-4. Haga clic en **Guardar rutas de respaldo**
-
-El servidor se conecta al agente por gRPC para explorar su sistema de archivos en tiempo real. Solo los directorios pueden seleccionarse como rutas de respaldo.
+Lo que respalda un agente se define en cada tarea de respaldo, no en el agente. En **Respaldos → + Nueva tarea de respaldo**, el árbol de selección explora en vivo, por gRPC, el sistema de archivos del agente (y sus plugins instalados); marque las carpetas que desea respaldar. Consulte [Tareas de respaldo](backup-jobs.md).
 
 ### Eliminar un agente { #remove-an-agent }
 
-Desde la lista de Agentes, o mediante la CLI:
+Desde la lista de Agentes o la página del agente (**Eliminar**, administradores), o mediante la CLI:
 
 ```bash
 hitstor serve agent remove AGENT_NAME
 ```
 
-Esto revoca la clave de API del agente. El agente ya no podrá conectarse al servidor. Las instantáneas (snapshots) existentes creadas por el agente no se eliminan.
+Esto revoca la clave de API del agente. El agente ya no podrá conectarse al servidor. Las instantáneas (snapshots) existentes creadas por el agente no se eliminan. El dashboard pregunta si se conservan las tareas de respaldo del agente; la CLI las elimina salvo que agregue `--keep-jobs`.
 
 ## Agentes basados en la CLI (heredado) { #cli-based-agents-legacy }
 
@@ -62,12 +55,12 @@ Si tiene éxito, el comando imprime una clave de API hexadecimal de 64 caractere
 
 ```
 Agent "web-server-01" registered.
-API Key: a3f8c1d9e4b7...6f2a0e5d (64 characters)
+API Key: a3f8c1d9e4b7...6f2a0e5d
 
-Store this key securely. It cannot be displayed again.
+Save this key — it cannot be displayed again.
 ```
 
-Copie esta clave en el archivo `/etc/hitstor/agent.env` del agente.
+Copie esta clave en el archivo `/etc/hitstor/agent.env` del agente como `HITSTOR_AGENT_API_KEY`, junto a `HITSTOR_AGENT_SERVER` (consulte [Despliegue de agentes](agent-deployment.md#manual-cli-registration)).
 
 ### Listar agentes { #list-agents }
 
@@ -80,11 +73,13 @@ hitstor serve agent list
 Salida:
 
 ```
-NAME              STATUS     LAST BACKUP           SNAPSHOTS
-web-server-01     active     2026-02-21 03:00:12   47
-db-primary        active     2026-02-21 03:15:08   47
-staging-app       stale      2026-02-19 12:30:00   23
+NAME                  CREATED               LAST BACKUP           MANAGED   SUSPENDED   ADDR
+web-server-01         2026-02-01 10:12:40   2026-02-21 03:00:12   yes       no          192.168.1.50:8422
+db-primary            2026-02-01 10:20:05   2026-02-21 03:15:08   no        no          -
+staging-app           2026-02-03 09:41:17   never                 yes       yes         192.168.1.52:8422
 ```
+
+`--all-repos` lista los agentes de todos los repositorios configurados; `--json` imprime los registros en JSON.
 
 ### Eliminar un agente { #remove-an-agent_1 }
 
@@ -92,32 +87,37 @@ staging-app       stale      2026-02-19 12:30:00   23
 hitstor serve agent remove AGENT_NAME
 ```
 
-Para eliminar un agente y todas sus instantáneas:
+Para conservar las tareas de respaldo del agente (por ejemplo, para registrarlo de nuevo con el mismo nombre):
 
 ```bash
-hitstor serve agent remove AGENT_NAME --purge-snapshots
+hitstor serve agent remove AGENT_NAME --keep-jobs
 ```
+
+Eliminar un agente nunca elimina sus instantáneas; para eso use [`hitstor forget`](../user-guide/retention.md).
 
 ## Estado del agente { #agent-status }
 
-La columna de estado muestra:
+La página **Agentes** del dashboard muestra el estado de cada agente:
 
 | Estado | Significado |
 |--------|-------------|
-| `active` | El agente realizó un respaldo dentro del umbral de inactividad |
-| `stale` | El agente no ha realizado un respaldo dentro del umbral de inactividad (predeterminado: 25 horas) |
-| `new` | El agente está registrado, pero nunca ha completado un respaldo |
+| `ok` | El agente realizó un respaldo en las últimas 25 horas |
+| `stale` (inactivo) | El agente no ha realizado un respaldo en las últimas 25 horas |
+| `never` (nunca) | El agente está registrado, pero nunca ha completado un respaldo |
+| `suspended` (suspendido) | El agente está suspendido (por un operador o por Sentinel); no puede respaldar |
+
+Las alertas por webhook usan en cambio el umbral configurable `alert_stale_threshold` (predeterminado: 25 horas); consulte [Monitoreo](monitoring.md).
 
 ## Token del agente (administrado desde el dashboard) { #agent-token-dashboard-managed }
 
-Los agentes administrados desde el dashboard se autentican con un **token**: una cadena hexadecimal de 64 caracteres (256 bits de entropía) que se genera durante la instalación del agente.
+Los agentes administrados desde el dashboard se autentican con un **token**: una cadena hexadecimal de 64 caracteres (256 bits de entropía) que se genera la primera vez que se inicia el agente (los instaladores inician el agente, así que existe justo después de la instalación).
 
 **Propiedades del token:**
 
-- Se genera automáticamente durante la instalación y se guarda en `/etc/hitstor/agent-token` (modo 0600)
+- Se genera automáticamente la primera vez que se inicia el agente y se guarda en `/etc/hitstor/agent-token` (modo 0600; `C:\ProgramData\HitStor\agent-token` en Windows)
 - Puede obtenerse en cualquier momento con `sudo hitstor-agent show-id`
 - Se almacena cifrado (AES-256-GCM) en el servidor, en el registro de agentes
-- El servidor lo usa para autenticar las llamadas gRPC al agente (explorar el sistema de archivos, configurar rutas)
+- El servidor lo usa para autenticar las llamadas gRPC al agente (registro, exploración, instalación de plugins, activación inmediata)
 
 ## Seguridad de la clave de API (basado en la CLI) { #api-key-security-cli-based }
 
@@ -128,7 +128,7 @@ Los agentes basados en la CLI se autentican ante el servidor con una **clave de 
 - Una clave por agente
 - Se muestra una sola vez, al momento del registro
 - No puede obtenerse ni mostrarse de nuevo después del registro
-- Se almacena cifrada en el registro de agentes, junto al repositorio
+- Se almacena como hash en el registro de agentes cifrado, junto al repositorio
 
 **Buenas prácticas:**
 
@@ -138,20 +138,24 @@ Los agentes basados en la CLI se autentican ante el servidor con una **clave de 
 
 ### Rotar una clave de API { #rotating-an-api-key }
 
-1. Elimine el agente: `hitstor serve agent remove AGENT_NAME`
+En un agente administrado desde el dashboard, regístrelo de nuevo desde **Agentes → + Agregar agente** con el mismo nombre y su token: el servidor emite una clave nueva, se la envía al agente y conserva las tareas. Desde la CLI, `hitstor serve agent re-register AGENT_NAME --token TOKEN` emite la clave nueva (colóquela en el `agent.env` del agente).
+
+En un agente basado en la CLI:
+
+1. Elimine el agente conservando sus tareas: `hitstor serve agent remove AGENT_NAME --keep-jobs`
 2. Vuelva a registrar el agente: `hitstor serve agent add AGENT_NAME`
 3. Actualice la configuración del agente con la nueva clave
 4. Reinicie el servicio del agente
 
-Las instantáneas existentes se conservan siempre que no se use `--purge-snapshots`.
+Eliminar un agente nunca elimina sus instantáneas.
 
 ## Registro de agentes { #agent-registry }
 
 El registro de agentes es una estructura de datos cifrada que se almacena junto al repositorio. Contiene:
 
 - Nombres de los agentes y hashes de las claves de API
-- Metadatos de los agentes (fecha de registro, fecha del último respaldo, cantidad de instantáneas)
-- Configuración de programación de cada agente
+- Metadatos de los agentes (fecha de registro, fecha del último respaldo, suspensión, plugins instalados)
+- Tareas de respaldo, con su selección, programación o plan de respaldo y sus últimos resultados
 - Para agentes administrados: token cifrado y dirección del agente
 
 El registro está cifrado con la clave del repositorio y no puede leerse sin la contraseña del repositorio.

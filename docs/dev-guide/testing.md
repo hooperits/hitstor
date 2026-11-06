@@ -13,11 +13,12 @@ Runs `go test ./...` across all packages. No external dependencies or built bina
 ## Integration Tests
 
 ```bash
-make build agent
 make test-integration
 ```
 
-Runs `go test -tags integration ./...`. Integration tests require pre-built server and agent binaries.
+Runs `go test -tags integration ./...`. The plugin integration tests build the plugins they need (for example `plugins/example`) with `go build`, so no pre-built binaries are required. Tests that need external services skip themselves when the service is not available: the S3 backend and pruner tests expect MinIO at `localhost:9000`, and the Sentinel cloud tests need cloud credentials and bucket variables such as `HITSTOR_GCS_BUCKET` or `HITSTOR_S3_BUCKET`.
+
+`.github/workflows/release.yml` runs `go test ./...` (unit tests only) before building a release.
 
 ## Linting
 
@@ -36,7 +37,7 @@ go test -coverprofile=coverage.out ./...
 go tool cover -html=coverage.out
 ```
 
-Target: **80%+ per package** (achieved in feature 008).
+Target: **80%+ per package**.
 
 ## Known Gotchas
 
@@ -45,7 +46,7 @@ Issues encountered during development that are worth remembering:
 | Issue | Solution |
 |-------|----------|
 | `go-plugin` v1.7.0 `GRPCClient` signature | First parameter must be `context.Context` |
-| bufconn gRPC tests fail silently on large messages | Add `grpc.MaxRecvMsgSize(math.MaxInt32)` to dial options |
-| Proto cross-file imports fail | Use `-I api/proto` include path (already in Makefile) |
-| Scanner plugin streaming differs from other plugins | Scanner uses server-side streaming; the other 3 plugin types use unary RPCs |
+| bufconn gRPC tests fail silently on large messages | Raise the limits on both sides: `grpc.MaxRecvMsgSize`/`grpc.MaxSendMsgSize` on the test server and `grpc.MaxCallRecvMsgSize`/`grpc.MaxCallSendMsgSize` in the client's default call options (the tests use `math.MaxInt32`) |
+| Plugin proto cross-file imports fail | Use the `-I api/proto` include path (already in the `proto-plugin` Makefile target) |
+| Streaming differs between plugin types | The scanner's `Scan` and the workload `Backup` stream from the plugin, and workload `Restore` streams to it; storage, notifier, and hook plugins use unary RPCs only |
 | Test breakage after scanner type refactor | Use `type ScanResult = scanner.ScanResult` (type alias) instead of a new type |

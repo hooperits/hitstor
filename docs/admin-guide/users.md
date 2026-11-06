@@ -2,14 +2,16 @@
 
 The dashboard uses personal accounts. Each person signs in with their own user name, password and a code from an authenticator app, and only sees and changes what their role allows.
 
+![Users and access page](../assets/screenshots/en/users.webp){ .screenshot }
+
 ## Roles { #roles }
 
 | Role | Can do |
 |------|--------|
-| **Administrator** | Everything, on every agent: users, storage, settings, deleting snapshots, disaster recovery. |
+| **Administrator** | Everything, on every agent: users, storage, settings, reports, deleting snapshots, disaster recovery. |
 | **Backup operator** | Create, edit, schedule, run and cancel backup jobs; suspend and resume agents. Cannot restore. |
 | **Restore operator** | Browse snapshots and restore them. Cannot change jobs. |
-| **Viewer** | Read jobs, results, logs and reports. Changes nothing. |
+| **Viewer** | Read jobs, results and logs. Changes nothing. |
 
 Backup and restore are separate roles on purpose: a person who restores can read any data that was backed up, so give that role only to those who need it.
 
@@ -18,6 +20,8 @@ Every role except Administrator is given either on **all agents** or on a list o
 ## Two-step verification { #two-step-verification }
 
 Two-step verification is mandatory for every account. At the first sign-in each user:
+
+![Setting up two-step verification at the first sign-in](../assets/screenshots/en/two-step-setup.webp){ .screenshot }
 
 1. Installs an authenticator app (Microsoft Authenticator, Google Authenticator, 1Password, Bitwarden...).
 2. Scans the QR code the dashboard shows, or types the key under it.
@@ -38,7 +42,7 @@ Administrators never choose a user's password. With [email](#email) set up, a ne
 
 ## Email { #email }
 
-With an outgoing mail server set up under **Settings → Email**, the dashboard sends two kinds of email:
+With an outgoing mail server set up under **Settings → Email**, the dashboard sends two kinds of account email (it also sends the scheduled [reports](reports.md)):
 
 - **Invitation.** Creating a user with an email address sends them a link to choose their password; it works once and expires after 72 hours. Nobody, not even the administrator, ever sees a temporary password. If the email cannot be sent, the dashboard says why and shows a temporary password instead.
 - **Password reset.** **Forgot your password?** on the sign-in page takes a user name or email address and sends a link to choose a new password, valid for one hour. The page answers the same whether or not the account exists. An administrator can also send the link (or a new invitation, for a user who never signed in) from the user's page with **Password → Reset**.
@@ -87,7 +91,7 @@ The server needs to reach `login.microsoftonline.com:443` (for the token) and `s
 
 When a server is upgraded from a version with a single dashboard password, the dashboard opens at **Create the first administrator**. Enter the current dashboard password (from `serve_dashboard_password`, or the one printed in the server log) and choose the administrator's user name and password. Then set up the authenticator. From that moment the shared password no longer signs in.
 
-Accounts are stored next to the agent registry in the first repository, in `users.json`, encrypted with the repository key. Until the server has a repository, the dashboard still signs in with the shared password.
+Accounts are stored next to the agent registry in the first repository (by name, in alphabetical order), in `users.json`, encrypted with the repository key. Until the server has a repository, the dashboard still signs in with the shared password.
 
 ## Managing users { #managing-users }
 
@@ -124,3 +128,5 @@ hitstor serve user remove ops1
 ## Audit log { #audit-log }
 
 **Audit log** (administrators) lists sign-ins, failed attempts, changes to users, backups, restores, storage and settings, and denied requests, with user, address and time, in plain sentences. It can be filtered by user, type of action, result and period, and exported to CSV. Each entry carries the hash of the previous one, so editing or deleting an entry breaks the chain, and the page says where. The log is `audit.log`, next to `users.json`; changes made with `hitstor serve user` appear as user `console`.
+
+![Audit log page](../assets/screenshots/en/audit-log.webp){ .screenshot }

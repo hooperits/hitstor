@@ -78,3 +78,4 @@ hitstor forget --repo /backups/hitstor --password "secret" \
 
 - After forgetting snapshots without `--prune`, HitStor prints a reminder to run `hitstor prune`.
 - `--keep-tag` keeps any snapshot that has the specified tag, regardless of other retention rules.
+- The policy applies to all in-scope snapshots as one set, not per host or path. For workload snapshots (for example SQL Server), it also applies to each database's own backups, and a kept differential or log backup keeps the backups it needs to restore. See [Workload Backup Chains](../../user-guide/retention.md#workload-backup-chains).

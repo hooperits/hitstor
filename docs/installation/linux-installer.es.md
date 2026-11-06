@@ -21,11 +21,12 @@ sudo ./hitstor-server-X.Y.Z-linux-amd64.run
 El asistente interactivo le solicitará:
 
 1. **Directorio de datos**: dónde HitStor almacena los datos (predeterminado: `/var/lib/hitstor`)
-2. **Contraseña del dashboard**: contraseña de inicio de sesión de la interfaz web (opcional; si se deja vacía, el servidor genera una en el primer inicio; consulte [Contraseña del dashboard](quickstart.md#dashboard-password))
+2. **Contraseña del dashboard**: contraseña de configuración inicial de la interfaz web, que se usa hasta que existe la primera cuenta de administrador (opcional; si se deja vacía, el servidor genera una en el primer inicio; consulte [Contraseña del dashboard y primer administrador](quickstart.md#dashboard-password))
 3. **Puerto gRPC**: para las conexiones de los agentes (predeterminado: 8420)
 4. **Puerto del dashboard**: para la interfaz web (predeterminado: 8421)
+5. **Dirección anunciada del servidor**: la dirección que se envía a los agentes para que puedan llegar al servidor (predeterminada: la IP de salida detectada y el puerto gRPC)
 
-Tras confirmar, el instalador crea el usuario del sistema, inicia el servicio y verifica que todo esté en ejecución. Los repositorios se crean desde el dashboard después de la instalación.
+Tras confirmar, el instalador crea el usuario del sistema, inicia el servicio y verifica que todo esté en ejecución. Los repositorios se crean desde el dashboard después de la instalación; después de crear el primero, reinicie el servicio (`sudo systemctl restart hitstor-server`) y cree el primer administrador.
 
 ### Instalación no interactiva { #non-interactive-install }
 
@@ -36,8 +37,11 @@ sudo HITSTOR_DATA_DIR=/var/lib/hitstor \
      HITSTOR_DASHBOARD_PASSWORD=dashpass \
      HITSTOR_GRPC_PORT=8420 \
      HITSTOR_DASHBOARD_PORT=8421 \
+     HITSTOR_ADVERTISE_ADDR=192.0.2.10:8420 \
      ./hitstor-server-X.Y.Z-linux-amd64.run --no-wizard
 ```
+
+`HITSTOR_ADVERTISE_ADDR` es opcional; si no se define, el instalador detecta la IP de salida.
 
 ### Archivos instalados { #installed-files }
 
@@ -60,28 +64,14 @@ chmod +x hitstor-agent-X.Y.Z-linux-amd64.run
 sudo ./hitstor-agent-X.Y.Z-linux-amd64.run
 ```
 
-El asistente ofrece dos modos de configuración:
+El agente se administra desde el dashboard. El asistente solo pide el **puerto de escucha** (predeterminado: 8422), al que se conecta el servidor para el registro, la exploración de archivos y el inicio de respaldos. Luego instala e inicia el servicio `hitstor-agent`, que genera el token del agente en el primer inicio.
 
-1. **Administrado desde el dashboard (recomendado)**: el agente genera un token y espera a que se registre desde el dashboard del servidor. Solicita el puerto de escucha (predeterminado: 8422) y, opcionalmente, las rutas de respaldo.
-2. **Heredado (manual)**: indique la dirección del servidor y la clave de API obtenida con `hitstor serve agent add <name>`. Incluye una prueba de conexión.
-
-Después de la instalación, los agentes administrados desde el dashboard muestran el **token del agente** y las instrucciones para agregarlo desde el dashboard.
+Después de la instalación, el instalador muestra el **token del agente** y los pasos siguientes: en el dashboard, vaya a **Agentes → Agregar agente** e ingrese la dirección IP de esta máquina, el puerto de escucha y el token. Las rutas de respaldo y las programaciones se configuran desde el dashboard.
 
 ### Instalación no interactiva { #non-interactive-install_1 }
 
-**Modo administrado desde el dashboard** (predeterminado):
-
 ```bash
 sudo HITSTOR_AGENT_LISTEN_PORT=8422 \
-     ./hitstor-agent-X.Y.Z-linux-amd64.run --no-wizard
-```
-
-**Modo heredado** (se activa al definir el servidor y la clave de API):
-
-```bash
-sudo HITSTOR_AGENT_SERVER=backup-server.internal:8420 \
-     HITSTOR_AGENT_API_KEY=your-64-char-hex-key \
-     HITSTOR_AGENT_PATHS=/etc,/home \
      ./hitstor-agent-X.Y.Z-linux-amd64.run --no-wizard
 ```
 
@@ -148,7 +138,7 @@ hitstor version --check
 
 ### Automática (servidor) { #automatic-server }
 
-Cuando `update_check: true` está definido en `/etc/hitstor/config.yaml` (valor predeterminado), el servidor busca actualizaciones cada 24 horas. Si hay una versión más reciente, aparece un banner en la parte superior del dashboard web.
+Cuando `update_check: true` está definido en `/etc/hitstor/config.yaml` (está desactivado si no se define; también puede activarse en **Configuración → General**), el servidor busca actualizaciones cada 24 horas. Si hay una versión más reciente, aparece un banner en la parte superior del dashboard web.
 
 ## Soporte para ARM64 { #arm64-support }
 
@@ -165,7 +155,7 @@ sudo ./hitstor-agent-X.Y.Z-linux-arm64.run
 |------|-------------|
 | `--no-wizard` | Modo no interactivo (lee variables de entorno) |
 | `--uninstall` | Elimina HitStor y todos los archivos asociados |
-| `--yes` | Omite las confirmaciones |
+| `--yes` | Omite las confirmaciones (con `--uninstall`) |
 | `--version` | Imprime la versión del instalador y termina |
 | `--help` | Muestra la ayuda |
 

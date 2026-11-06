@@ -9,44 +9,37 @@ Dashboard-managed agents are added directly from the web dashboard. The server c
 ### Prerequisites
 
 1. Install the agent on the remote machine (see [Agent Deployment](agent-deployment.md))
-2. The agent generates a token during installation — note the token and the machine's IP address
+2. The agent generates a token on its first start — note the token (`hitstor-agent show-id`) and the machine's IP address
 3. Ensure port **8422** (agent gRPC listen port) is reachable from the server
 
 ### Add an Agent from the Dashboard
 
-1. Open the HitStor dashboard at `http://SERVER_IP:8421`
-2. Navigate to **Agents**
-3. Choose **Network Discovery** to scan local subnets, or **Manual Entry** to add by address
-4. For manual entry, fill in:
-    - **Name** — descriptive identifier (for example, `web-server-01`)
-    - **Agent address** — `host:port` (for example, `192.168.1.50:8422`)
-    - **Token** — 64-character hex token from the agent (`hitstor-agent show-id` on the agent machine)
-5. Click **Add Agent**
+1. Open the HitStor dashboard at `https://SERVER_IP:8421` (administrators)
+2. Navigate to **Agents** and click **+ Add Agent**
+3. Choose **Network Scan** to scan a local subnet, or **Manual Entry** to type the agent's IP address and click **Connect**
+4. Click **Register** on the agent found, and fill in **Register Agent**:
+    - **Agent Name** — descriptive identifier (for example, `web-server-01`); letters, numbers, hyphens, and underscores
+    - **Agent Address** — `host:port`, filled in from the scan (for example, `192.168.1.50:8422`)
+    - **Agent Token** — 64-character hex token from the agent (`hitstor-agent show-id` on the agent machine)
+5. Click **Register Agent**
 
 See [Agent Discovery](agent-discovery.md) for the network scan workflow.
 
-The server connects to the agent, verifies the token, sends an API key and server address, and the agent begins backing up automatically. No manual key copy is needed.
+The server connects to the agent, verifies the token, and sends an API key and the server address, which the agent writes to its `agent.env`. No manual key copy is needed. Registering again with an existing name re-registers that agent (new API key) and keeps its jobs.
 
-### Browse Agent Filesystem
+### Choose What to Back Up
 
-For dashboard-managed agents, the Agent Detail page includes a **Backup Paths** section with a filesystem tree browser:
-
-1. Click the agent name in the Agents list
-2. Expand directories in the tree by clicking the arrow icons
-3. Check the directories you want to back up
-4. Click **Save Backup Paths**
-
-The server connects to the agent over gRPC to browse its filesystem in real time. Only directories are selectable as backup paths.
+What an agent backs up is set per backup job, not on the agent. In **Backups → + New Backup Job**, the selection tree browses the agent's filesystem (and its installed plugins) live over gRPC; check the folders to back up. See [Backup Jobs](backup-jobs.md).
 
 ### Remove an Agent
 
-From the Agents list, or via the CLI:
+From the Agents list or the agent's page (**Remove**, administrators), or via the CLI:
 
 ```bash
 hitstor serve agent remove AGENT_NAME
 ```
 
-This revokes the agent's API key. The agent can no longer connect to the server. Existing snapshots created by the agent are not deleted.
+This revokes the agent's API key. The agent can no longer connect to the server. Existing snapshots created by the agent are not deleted. The dashboard asks whether to keep the agent's backup jobs; the CLI deletes them unless you add `--keep-jobs`.
 
 ## CLI-Based Agents (Legacy)
 
@@ -62,12 +55,12 @@ On success, the command prints a 64-character hexadecimal API key:
 
 ```
 Agent "web-server-01" registered.
-API Key: a3f8c1d9e4b7...6f2a0e5d (64 characters)
+API Key: a3f8c1d9e4b7...6f2a0e5d
 
-Store this key securely. It cannot be displayed again.
+Save this key — it cannot be displayed again.
 ```
 
-Copy this key to the agent's `/etc/hitstor/agent.env` file.
+Copy this key to the agent's `/etc/hitstor/agent.env` file as `HITSTOR_AGENT_API_KEY`, next to `HITSTOR_AGENT_SERVER` (see [Agent Deployment](agent-deployment.md#manual-cli-registration)).
 
 ### List Agents
 
@@ -80,11 +73,13 @@ hitstor serve agent list
 Output:
 
 ```
-NAME              STATUS     LAST BACKUP           SNAPSHOTS
-web-server-01     active     2026-02-21 03:00:12   47
-db-primary        active     2026-02-21 03:15:08   47
-staging-app       stale      2026-02-19 12:30:00   23
+NAME                  CREATED               LAST BACKUP           MANAGED   SUSPENDED   ADDR
+web-server-01         2026-02-01 10:12:40   2026-02-21 03:00:12   yes       no          192.168.1.50:8422
+db-primary            2026-02-01 10:20:05   2026-02-21 03:15:08   no        no          -
+staging-app           2026-02-03 09:41:17   never                 yes       yes         192.168.1.52:8422
 ```
+
+`--all-repos` lists the agents of every configured repository; `--json` prints the records as JSON.
 
 ### Remove an Agent
 
@@ -92,32 +87,37 @@ staging-app       stale      2026-02-19 12:30:00   23
 hitstor serve agent remove AGENT_NAME
 ```
 
-To remove an agent and all of its snapshots:
+To keep the agent's backup jobs (for example, to register it again under the same name):
 
 ```bash
-hitstor serve agent remove AGENT_NAME --purge-snapshots
+hitstor serve agent remove AGENT_NAME --keep-jobs
 ```
+
+Removing an agent never deletes its snapshots; use [`hitstor forget`](../user-guide/retention.md) for that.
 
 ## Agent Status
 
-The status column shows:
+The dashboard's **Agents** page shows each agent's status:
 
 | Status | Meaning |
 |--------|---------|
-| `active` | Agent has backed up within the stale threshold |
-| `stale` | Agent has not backed up within the stale threshold (default: 25 hours) |
-| `new` | Agent is registered but has never completed a backup |
+| `ok` | Agent has backed up within the last 25 hours |
+| `stale` | Agent has not backed up within the last 25 hours |
+| `never` | Agent is registered but has never completed a backup |
+| `suspended` | Agent is suspended (by an operator or by Sentinel); it cannot back up |
+
+Webhook alerts use the configurable `alert_stale_threshold` instead (default: 25 hours); see [Monitoring](monitoring.md).
 
 ## Agent Token (Dashboard-Managed)
 
-Dashboard-managed agents authenticate using a **token** — a 64-character hexadecimal string (256 bits of entropy) generated during agent installation.
+Dashboard-managed agents authenticate using a **token** — a 64-character hexadecimal string (256 bits of entropy) generated on the agent's first start (the installers start the agent, so it exists right after installation).
 
 **Token properties:**
 
-- Generated automatically during install, stored at `/etc/hitstor/agent-token` (mode 0600)
+- Generated automatically on the agent's first start, stored at `/etc/hitstor/agent-token` (mode 0600; `C:\ProgramData\HitStor\agent-token` on Windows)
 - Retrievable any time with `sudo hitstor-agent show-id`
 - Stored encrypted (AES-256-GCM) on the server in the agent registry
-- Used by the server to authenticate gRPC calls to the agent (browse filesystem, configure paths)
+- Used by the server to authenticate gRPC calls to the agent (registration, browsing, plugin installation, wake-up)
 
 ## API Key Security (CLI-Based)
 
@@ -128,7 +128,7 @@ CLI-based agents authenticate to the server using a **64-character hexadecimal A
 - One key per agent
 - Displayed only once at registration time
 - Cannot be retrieved or displayed again after registration
-- Stored encrypted in the agent registry alongside the repository
+- Stored as a hash in the encrypted agent registry, alongside the repository
 
 **Best practices:**
 
@@ -138,20 +138,24 @@ CLI-based agents authenticate to the server using a **64-character hexadecimal A
 
 ### Rotating an API Key
 
-1. Remove the agent: `hitstor serve agent remove AGENT_NAME`
-2. Re-register the agent: `hitstor serve agent add AGENT_NAME`
+For a dashboard-managed agent, register it again from **Agents → + Add Agent** with the same name and its token: the server issues a new key, sends it to the agent and keeps the jobs. From the CLI, `hitstor serve agent re-register AGENT_NAME --token TOKEN` issues the new key (put it in the agent's `agent.env`).
+
+For a CLI-based agent:
+
+1. Remove the agent, keeping its jobs: `hitstor serve agent remove AGENT_NAME --keep-jobs`
+2. Register it again: `hitstor serve agent add AGENT_NAME`
 3. Update the agent's configuration with the new key
 4. Restart the agent service
 
-Existing snapshots are preserved as long as `--purge-snapshots` is not used.
+Snapshots are never deleted by removing an agent.
 
 ## Agent Registry
 
 The agent registry is an encrypted data structure stored alongside the repository. It contains:
 
 - Agent names and hashed API keys
-- Agent metadata (registration time, last backup time, snapshot count)
-- Per-agent scheduling configuration
+- Agent metadata (registration time, last backup time, suspension, installed plugins)
+- Backup jobs, with their selection, schedule or backup plan, and latest results
 - For managed agents: encrypted token and agent address
 
 The registry is encrypted with the repository key and cannot be read without the repository password.

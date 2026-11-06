@@ -49,6 +49,11 @@ repositorio y el dashboard de HitStor. Se trata al lector de **usted**.
 | staging | staging | "Staging root" → "raíz de staging" |
 | workers | workers | Se mantiene |
 | thick agent | agente grueso | Primera vez: "agente grueso (thick agent)" |
+| backup plan | plan de respaldo | Programación por tipo de respaldo (completo, diferencial, log) |
+| two-step verification | verificación en dos pasos | |
+| report | reporte | "Scheduled report" → "reporte programado" |
+| email | correo | |
+| workload plugin | plugin de carga de trabajo | |
 
 ## Nombres en el dashboard
 
@@ -61,7 +66,13 @@ repositorio y el dashboard de HitStor. Se trata al lector de **usted**.
 | Disaster Recovery | Recuperación ante desastres |
 | Agents | Agentes |
 | Storage | Almacenamiento |
-| System | Sistema |
+| Protection / Infrastructure / Administration | Protección / Infraestructura / Administración |
+| Users and access | Usuarios y acceso |
+| Audit log | Auditoría |
+| Reports | Reportes |
+| Logs | Registros |
+| My account | Mi cuenta |
+| Sign out | Cerrar sesión |
 | View Logs | Ver registros |
 | Settings | Configuración |
 | Account | Cuenta |
@@ -77,7 +88,7 @@ repositorio y el dashboard de HitStor. Se trata al lector de **usted**.
 | Interval / Cron Expression | Intervalo / Expresión cron |
 | Force full backup | Forzar respaldo completo |
 | Network Discovery / Manual Entry / Scan | Descubrimiento de red / Entrada manual / Escanear |
-| General / Security & TLS / Network / Integrations / Notifications | General / Seguridad y TLS / Red / Integraciones / Notificaciones |
+| General / Security & TLS / Network / Integrations / Notifications / Email / Plugins | General / Seguridad y TLS / Red / Integraciones / Notificaciones / Correo / Plugins |
 | Import from environment | Importar desde el entorno |
 | Save / Cancel / Delete / Edit / Close / Refresh | Guardar / Cancelar / Eliminar / Editar / Cerrar / Actualizar |
 

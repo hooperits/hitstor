@@ -7,7 +7,7 @@
 > arquitectura respalda Microsoft SQL Server mediante la Virtual Device
 > Interface (VDI). Reemplaza la entrada "tipo de plugin
 > recolector de cargas de trabajo" de la sección
-> [Eliminado definitivamente](../admin-guide/roadmap.md#permanently-removed-v200)
+> [Eliminado definitivamente](../admin-guide/roadmap.md#permanently-removed)
 > de la hoja de ruta.
 
 ## Objetivos { #goals }
@@ -82,6 +82,11 @@ entrypoint: bin/hitstor-plugin-mssql.exe
 publisher: hitstor             # selecciona la clave de confianza
 ```
 
+Este es el manifiesto dentro de un paquete. El `plugins/<id>/plugin.yaml` que
+acompaña al código fuente omite `platforms` y `entrypoint`:
+`hitstor-pluginkit pack` los completa para cada destino, de modo que un solo
+manifiesto fuente produce un paquete por plataforma.
+
 Las capacidades (tipos de respaldo, opciones de restauración y campos de
 formulario) no se duplican en el manifiesto. El agente se las pide al plugin
 con `GetMetadata`, de modo que el binario es la única fuente de verdad.
@@ -128,7 +133,7 @@ explícita `plugin_allow_unsigned` (pensado solo para desarrollar plugins).
 
 | Canal | Cómo |
 |-------|------|
-| Local | `hitstor-agent plugin install <archivo.hpk>`, además de `list`, `upgrade` y `remove` |
+| Local | `hitstor-agent plugin install <archivo.hpk>`, además de `list`, `info`, `upgrade` y `remove`; `browse`, `configure`, `test-backup` y `test-restore` ayudan a diagnosticar un plugin en el agente sin el servidor |
 | Remoto | Se sube el paquete al servidor una vez y se instala desde el dashboard en los agentes elegidos. El servidor envía el paquete por un nuevo RPC `AgentService.InstallPlugin` y el agente aplica las mismas verificaciones que en una instalación local. |
 
 ## Protocolo de carga de trabajo { #workload-protocol }
@@ -152,8 +157,9 @@ archivo virtual, bajo `/<id del plugin>/<ruta del objeto>/<nombre del elemento>`
 Por ejemplo:
 
 ```
-/mssql/<instancia>/<base de datos>/full-20260101T020000Z.bak
-/mssql/<instancia>/<base de datos>/full-20260101T020000Z.meta.json
+/mssql/<instancia>/<base de datos>/full-20260101T020000.000Z.bak
+/mssql/<instancia>/<base de datos>/full-20260101T020000.000Z.bak.meta.json
+/mssql/<instancia>/<base de datos>/log-20260101T021500.000Z.trn
 ```
 
 El agente pasa el stream de cada elemento por el mismo pipeline de
@@ -161,7 +167,14 @@ fragmentación, deduplicación, compresión y cifrado que los archivos normales.
 Así, la deduplicación, el cifrado, la retención, la verificación y la
 replicación funcionan sin cambios. El blob de metadatos, que el núcleo nunca
 interpreta, se guarda junto al elemento. La instantánea se etiqueta con
-`plugin:<id>` y el tipo de respaldo.
+`plugin:<id>`, `kind:<tipo>`, `copy-only` si es un completo de solo copia y un
+`obj:<objeto>` por cada objeto que contiene.
+
+Cada ejecución también informa el resultado por objeto: un objeto que el
+plugin dejó fuera (por ejemplo, una base de datos que no admite el tipo de
+respaldo pedido) o uno que falló, con el motivo. El servidor los guarda con la
+tarea, por tipo de respaldo, y una ejecución que guardó algunos objetos y
+falló en otros cuenta como parcial.
 
 Como los elementos son archivos comunes, también se pueden restaurar a una
 carpeta con la restauración normal de archivos. Esa es la alternativa cuando
@@ -185,24 +198,35 @@ LSN y las opciones de recuperación.
 
 Una política de retención no debe eliminar un elemento del que depende otro
 elemento que se conserva (por ejemplo, un respaldo completo que necesitan
-diferenciales o logs posteriores). El agente etiqueta las instantáneas de
-carga de trabajo con `plugin:<id>` y `kind:<tipo>`; cuando una política
-conserva una instantánea cuyo tipo no es `full`, `forget` también conserva las
-instantáneas anteriores del mismo host y plugin hasta el completo previo. La
-regla no necesita conocer nada de cada plugin y, ante la duda, conserva de
-más.
+diferenciales o logs posteriores). Con las etiquetas `plugin:`, `kind:` y
+`obj:`, cuando una política conserva un respaldo diferencial o de log de un
+objeto, `forget` también conserva los respaldos anteriores de ese objeto, en
+el mismo host y plugin, hasta su base: el completo previo que no es de solo
+copia (etiqueta `copy-only`). Un diferencial conservado solo necesita ese
+completo; un log conservado necesita además los logs intermedios. Un completo
+conservado, sea de solo copia o no, se restaura por sí solo. La regla no
+necesita conocer nada de cada plugin y, ante la duda, conserva de más.
 
 ## Servidor y dashboard { #server-and-dashboard }
 
 - Las tareas de carga de trabajo (`job_type: workload`) guardan el id del
-  plugin, los objetos seleccionados, el tipo de respaldo, la configuración del
-  plugin y las opciones de respaldo como valores opacos; solo el plugin los
-  interpreta.
+  plugin, los objetos seleccionados, la configuración del plugin y las
+  opciones de respaldo como valores opacos; solo el plugin los interpreta.
+- Una tarea de carga de trabajo tiene un **plan de respaldo**: cada tipo de
+  respaldo de la misma selección tiene su propia programación (en SQL Server,
+  por ejemplo, completos semanales, diferenciales diarios y respaldos de log
+  cada 15 minutos) o se ejecuta solo a pedido. El servidor elige el tipo que
+  vence primero y se lo entrega al agente como tipo de respaldo de la
+  ejecución, así que los agentes no necesitan conocer los planes. Cuando un
+  completo y un diferencial vencen al mismo tiempo, se ejecuta el completo y
+  cubre ambos turnos.
 - El dashboard dibuja los formularios de tareas, restauraciones y
   configuración a partir de los campos que cada plugin declara en
-  `GetMetadata` (`FieldSpec`: clave, alcance, tipo `string`, `bool`, `number`
-  o `choice`, etiquetas y ayuda por idioma, valor por defecto y opciones). Los
-  plugins nunca traen HTML.
+  `GetMetadata` (`FieldSpec`: clave; alcance `settings`, `object`, `backup` o
+  `restore`; tipo `string`, `bool`, `number`, `choice` o `password`; etiquetas
+  y ayuda por idioma, valor por defecto y opciones). Los campos `password`
+  solo se aceptan con alcance `object`: se quedan en el agente, cifrados, y
+  nunca vuelven al dashboard. Los plugins nunca traen HTML.
 - La página del agente muestra los plugins instalados en ese agente, con
   acciones para instalar, actualizar y desinstalar. **Configuración →
   Plugins** administra los paquetes subidos. Se rechaza quitar un plugin que

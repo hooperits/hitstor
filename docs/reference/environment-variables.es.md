@@ -1,22 +1,38 @@
 # Variables de entorno
 
-HitStor lee las siguientes variables de entorno. Las variables de entorno tienen prioridad sobre los valores del archivo de configuración, pero los flags de la CLI tienen prioridad sobre ellas.
+HitStor lee las siguientes variables de entorno. Los flags de la CLI tienen prioridad sobre ellas. Para la ubicación del repositorio y para el servidor, la clave de API y el certificado de CA del agente, un valor del archivo de configuración también tiene prioridad: la variable de entorno solo se usa cuando ni un flag ni el archivo de configuración lo definen. Las variables `HITSTOR_LOG_*` reemplazan sus claves de configuración.
 
 ## Servidor (`hitstor`) { #server-hitstor }
 
 | Variable | Clave de configuración | Descripción |
 |----------|-----------|-------------|
 | `HITSTOR_REPO` | `repo` | Ubicación del repositorio (ruta local, `s3:endpoint/bucket` o `plugin:name/args`) |
-| `HITSTOR_PASSWORD` | -- | Contraseña del repositorio (sin clave de configuración: solo variable de entorno o solicitud interactiva) |
-| `HITSTOR_PASSWORD_FILE` | `password_file` | Ruta al archivo que contiene la contraseña del repositorio |
+| `HITSTOR_PASSWORD` | -- | Contraseña del repositorio (sin clave de configuración). Se usa cuando no se indica `--password`; tiene prioridad sobre `--password-file` |
+| `HITSTOR_SYNC_WRITES` | `sync_writes` | `1` sincroniza a disco (fsync) los archivos del repositorio local después de cada cambio de nombre atómico |
+| `HITSTOR_LOG_MAX_ENTRIES`, `HITSTOR_LOG_FILE_ENABLED`, `HITSTOR_LOG_FILE_PATH`, `HITSTOR_LOG_ROTATE_MAX_MB`, `HITSTOR_LOG_ROTATE_MAX_FILES` | `log_*` | Retención y rotación de registros (también las lee el agente); consulte la [Referencia de configuración](config-reference.md#logging) |
+| `PORT` | -- | Si está definida, `hitstor serve` sirve gRPC y el dashboard juntos en este único puerto (para plataformas que exponen un solo puerto por contenedor) |
+
+### Imagen de Docker e instalador de Linux { #docker-image-and-linux-installer }
+
+Estas variables las lee el entrypoint del contenedor o el instalador `.run`, no el binario `hitstor`:
+
+| Variable | La lee | Descripción |
+|----------|--------|-------------|
+| `HITSTOR_DASHBOARD_PASSWORD` | Entrypoint de Docker, `.run --no-wizard` del servidor | Contraseña de configuración inicial del dashboard, que se escribe en `serve_dashboard_password` |
+| `HITSTOR_AUTO_INIT` | Entrypoint de Docker | `false` omite el `hitstor init` automático de `HITSTOR_REPO` (predeterminado `true`) |
+| `HITSTOR_DATA_DIR`, `HITSTOR_GRPC_PORT`, `HITSTOR_DASHBOARD_PORT`, `HITSTOR_ADVERTISE_ADDR` | `.run --no-wizard` del servidor | Directorio de datos, puertos y dirección anunciada; consulte [Instalación rápida en Linux](../installation/linux-installer.md#non-interactive-install) |
 
 ## Agente (`hitstor-agent`) { #agent-hitstor-agent }
 
 | Variable | Clave de configuración | Descripción |
 |----------|-----------|-------------|
-| `HITSTOR_AGENT_LISTEN_PORT` | `agent_listen_port` | Puerto gRPC de escucha para la gestión desde el dashboard (predeterminado: 8422) |
-| `HITSTOR_AGENT_SERVER` | `agent_server` | Dirección del servidor remoto (`host:port`); se define automáticamente en los agentes gestionados desde el dashboard |
-| `HITSTOR_AGENT_API_KEY` | `agent_api_key` | Clave de API del agente para la autenticación; se define automáticamente en los agentes gestionados desde el dashboard |
+| `HITSTOR_AGENT_LISTEN_PORT` | -- | Puerto gRPC de escucha para la gestión desde el dashboard (predeterminado: 8422; `--listen-port` en `daemon`) |
+| `HITSTOR_AGENT_SERVER` | `agent_server` | Dirección del servidor remoto (`host:port`); se define automáticamente en `agent.env` en los agentes gestionados desde el dashboard |
+| `HITSTOR_AGENT_API_KEY` | `agent_api_key` | Clave de API del agente para la autenticación; se define automáticamente en `agent.env` en los agentes gestionados desde el dashboard |
+| `HITSTOR_AGENT_CA_CERT` | `agent_ca_cert` | Certificado de CA para verificar el servidor; se define en `agent.env` al registrar el agente cuando el servidor envía su certificado (se guarda como `server-ca.crt`) |
+| `HITSTOR_MSSQL_PASSWORD` | -- | La lee el plugin de carga de trabajo `mssql`: la contraseña del inicio de sesión SQL para las instancias sin configuración guardada (el parámetro `password_env` del plugin indica esta variable) |
+
+En Windows, el servicio del agente las lee de `%ProgramData%\HitStor\agent.env`; en Linux, systemd carga `/etc/hitstor/agent.env` en el entorno del servicio.
 
 ## Ejemplos de uso { #usage-examples }
 
@@ -56,7 +72,7 @@ HITSTOR_AGENT_LISTEN_PORT=8422
 ### Docker { #docker }
 
 ```bash
-docker run -e HITSTOR_REPO=/data/repo \
+docker run -e HITSTOR_REPO=/var/lib/hitstor/repo \
            -e HITSTOR_PASSWORD=mysecretpassword \
            hitstor:latest serve
 ```
@@ -78,10 +94,9 @@ quedan cifrados y las variables de entorno se pueden eliminar.
 
 ### Variables heredadas ignoradas { #ignored-legacy-variables }
 
-`HITSTOR_M365_*`, `HITSTOR_GCP_PROJECT`, `HITSTOR_AWS_ROLE_ARN`,
-`HITSTOR_AWS_REGION` y `HITSTOR_AZURE_SUB` **ya no se leen** desde la
-v2.0.0, cuando se eliminaron del producto los respaldos de SaaS, bases de datos
-y máquinas virtuales en la nube. Definirlas no tiene ningún efecto.
+`HITSTOR_M365_*`, `HITSTOR_GCP_PROJECT` y `HITSTOR_AWS_REGION` **ya no se
+leen**: los respaldos de SaaS y de máquinas virtuales en la nube se eliminaron
+del producto en una versión anterior. Definirlas no tiene ningún efecto.
 
 `HITSTOR_AZURE_TENANT` y `HITSTOR_AZURE_CLIENT` todavía se leen, pero su
 significado cambió: ya no configuran el descubrimiento de máquinas virtuales en
@@ -107,10 +122,12 @@ Gemini se toman de los valores `integrations.*` indicados arriba.
 | `HITSTOR_S3_BUCKET` | | Bucket de S3 que se bloquea (cuando `BACKEND_TYPE=s3`) |
 | `HITSTOR_S3_REGION` | | Región del bucket de S3 |
 | `HITSTOR_S3_ROLE_ARN` | | Rol de AWS que se asume para la llamada a la API de S3 Object Lock |
+| `HITSTOR_AWS_ROLE_ARN` | | Alternativa a `HITSTOR_S3_ROLE_ARN` si esta no está definida |
 | `HITSTOR_AZURE_CONTAINER` | | Contenedor de Azure Blob que se bloquea (cuando `BACKEND_TYPE=azure`) |
 | `HITSTOR_AZURE_STORAGE_ACCOUNT` | | Nombre de la cuenta de almacenamiento de Azure |
 | `HITSTOR_AZURE_TENANT` | | ID de inquilino (tenant) de Azure AD para la llamada a la API de bloqueo de retención |
 | `HITSTOR_AZURE_CLIENT` | | ID de cliente de Azure AD para la llamada a la API de bloqueo de retención |
+| `HITSTOR_AZURE_SUB` | | ID de suscripción de Azure para la llamada a la API de bloqueo de retención |
 
 El bloqueo de retención solo se activa cuando Sentinel detecta una amenaza por
 encima del umbral de confianza; no se ejecuta en cada respaldo. Consulte
@@ -118,9 +135,8 @@ encima del umbral de confianza; no se ejecuta en cada respaldo. Consulte
 
 ## Notas { #notes }
 
-- La contraseña del repositorio se puede proporcionar mediante `--password`, `--password-file`, `HITSTOR_PASSWORD`, `HITSTOR_PASSWORD_FILE` o la clave `password_file` del archivo de configuración. Los flags de la CLI tienen la máxima prioridad.
-- `HITSTOR_PASSWORD_FILE` tiene prioridad sobre `HITSTOR_PASSWORD` si ambas están definidas.
-- Los valores sensibles (`s3_access_key`, `s3_secret_key`, `agent_api_key`, `serve_dashboard_password`) no tienen variables de entorno dedicadas: use el archivo de configuración o los flags de la CLI.
+- La contraseña del repositorio se toma de `--password`, luego de `HITSTOR_PASSWORD`, luego de `--password-file` y, por último, del `password_file` del repositorio seleccionado con `--repo-name`. No existe la variable `HITSTOR_PASSWORD_FILE`.
+- `s3_access_key`, `s3_secret_key` y `serve_dashboard_password` no tienen variables de entorno que lea el binario `hitstor`: use el archivo de configuración o los flags de la CLI.
 
 ## Véase también { #see-also }
 

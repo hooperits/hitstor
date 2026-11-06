@@ -1,6 +1,6 @@
 # Traducciones
 
-El dashboard web de HitStor y esta documentación están disponibles en **inglés** y **español**. Ambos están preparados para agregar más idiomas sin cambiar código. La CLI, los instaladores y los mensajes de registro se mantienen en inglés.
+El dashboard web de HitStor y esta documentación están disponibles en **inglés** y **español**. Ambos están preparados para agregar más idiomas sin cambiar código. Los correos de cuenta (invitaciones, restablecimiento de contraseña) y los reportes PDF usan los mismos catálogos de mensajes: un correo de cuenta se escribe en el idioma de la página del dashboard que lo genera, y cada reporte programado (y su correo) tiene su propio idioma. La CLI, los instaladores y los mensajes de registro se mantienen en inglés.
 
 ## Dashboard { #dashboard }
 

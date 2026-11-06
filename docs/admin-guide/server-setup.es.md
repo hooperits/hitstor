@@ -28,12 +28,13 @@ Inicie el servidor HitStor con los puertos de gRPC y del dashboard:
 hitstor serve --repo /var/lib/hitstor/repo --port 8420 --dashboard-port 8421
 ```
 
-El servidor abre dos puertos de escucha:
+El servidor abre estos puertos de escucha:
 
 | Puerto | Protocolo | Propósito |
 |--------|-----------|-----------|
 | 8420 | gRPC (TLS) | Comunicación con los agentes: respaldos, restauraciones, programación |
-| 8421 | HTTP | Dashboard web y API JSON |
+| 8421 | HTTPS | Dashboard web, API JSON y `/metrics` (HTTP sin cifrar mientras no exista ningún repositorio) |
+| 8422 | HTTP | Redirección al puerto HTTPS del dashboard (puerto del dashboard + 1); no se inicia si el puerto está ocupado, por ejemplo cuando un agente se ejecuta en el mismo equipo |
 
 El servidor se ejecuta en primer plano. Use systemd (vea más abajo) para implementaciones en producción.
 
@@ -74,7 +75,8 @@ repo: /var/lib/hitstor/repo
 serve_tls_cert: /etc/hitstor/tls/server.crt
 serve_tls_key: /etc/hitstor/tls/server.key
 
-# Dashboard
+# Dashboard: contraseña compartida que solo se usa para crear el primer administrador
+# (si se omite, se genera y se registra en el primer inicio; se guarda como hash)
 serve_dashboard_password: "DASHBOARD_PASSWORD"
 
 # Alertas
@@ -131,7 +133,7 @@ Si la lista `repositories` está vacía y existe un campo `repo`, el servidor fu
 
 ### Asignar agentes a repositorios { #assigning-agents-to-repositories }
 
-Cada agente apunta a un repositorio específico. Defina el repositorio de destino desde la página de detalle del agente en el dashboard; de lo contrario, el agente usará por defecto el primer repositorio configurado.
+Cada tarea de respaldo apunta a un repositorio, que se elige en el paso 2 del asistente **Nueva tarea de respaldo**, así que un agente puede respaldar en varios repositorios mediante tareas distintas. El registro de agentes y las cuentas del dashboard se guardan en el primer repositorio (por nombre).
 
 ### Administrar repositorios desde el dashboard { #managing-repositories-from-the-dashboard }
 
@@ -148,9 +150,9 @@ Si no se proporcionan los flags `--tls-cert` / `--tls-key`, el servidor genera a
 - `<repo>/server.crt`: certificado (distribúyalo a los agentes)
 - `<repo>/server.key`: clave privada (consérvela solo en el servidor)
 
-El certificado incluye todas las direcciones IP y el nombre de host del servidor en sus nombres alternativos del sujeto (SAN), de modo que los agentes pueden conectarse por IP o por nombre de host. El certificado se reutiliza entre reinicios del servidor.
+El certificado incluye todas las direcciones IP y el nombre de host del servidor en sus nombres alternativos del sujeto (SAN), de modo que los agentes pueden conectarse por IP o por nombre de host. El certificado se reutiliza entre reinicios del servidor, y el dashboard también lo usa.
 
-Para distribuir el certificado a los agentes:
+Los agentes que no tienen un certificado de CA configurado fijan este certificado en su primera conexión, así que distribuirlo es opcional (consulte [Certificados TLS](tls-certificates.md#without-a-ca-certificate-certificate-pinning)). Para distribuir el certificado a los agentes:
 
 ```bash
 scp /var/lib/hitstor/repo/server.crt agent-host:/etc/hitstor/server.crt
@@ -159,7 +161,7 @@ scp /var/lib/hitstor/repo/server.crt agent-host:/etc/hitstor/server.crt
 Luego configure cada agente para que confíe en él:
 
 ```yaml
-# config.yaml del agente
+# /etc/hitstor/agent-config.yaml
 agent_ca_cert: /etc/hitstor/server.crt
 ```
 
@@ -262,18 +264,20 @@ sudo ufw allow from 10.0.0.0/24 to any port 8421 proto tcp
 
 ## Salida de registros { #log-output }
 
-HitStor usa el paquete `slog` de Go para el registro estructurado. Cuando se ejecuta como servicio de systemd, la salida de registros es JSON de forma predeterminada, lo que facilita procesarla con herramientas como `jq`:
+HitStor usa el paquete `slog` de Go para el registro estructurado. `hitstor serve` escribe líneas de texto (`clave=valor`) en la salida de error estándar, que systemd envía al journal. Agregue `--json` a la línea `ExecStart` (con `systemctl edit hitstor-server`) para obtener líneas JSON que herramientas como `jq` pueden procesar:
 
 ```bash
 sudo journalctl -u hitstor-server -o cat | jq .
 ```
 
-Aumente el nivel de detalle con el flag `--verbose`:
+El servidor también conserva las entradas recientes para la página **Registros** del dashboard y puede escribir un archivo de registro rotativo (**Configuración → General**).
+
+Ajuste el nivel de detalle con el flag `--verbose`:
 
 | Flag | Nivel | Descripción |
 |------|-------|-------------|
-| (ninguno) | warn | Solo advertencias y errores |
-| `-v` | info | Mensajes operativos (respaldo iniciado, agente conectado) |
+| (ninguno) | info | Mensajes operativos (respaldo iniciado, agente conectado) |
+| `-v` | info | Igual que el valor predeterminado de `hitstor serve` |
 | `-vv` | debug | Estado interno detallado (procesamiento de fragmentos, escritura de paquetes) |
 
 ## Próximos pasos { #next-steps }

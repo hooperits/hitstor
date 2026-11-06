@@ -32,7 +32,7 @@ Install the Protocol Buffers compiler:
 ```bash
 sudo apt install -y protobuf-compiler
 protoc --version
-libprotoc 27.3
+libprotoc 3.21.12
 ```
 
 ### Go Plugins
@@ -41,6 +41,8 @@ libprotoc 27.3
 go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
 go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
 ```
+
+The checked-in `.pb.go` files were generated with `protoc` 3.21.12, `protoc-gen-go` v1.36.11 and `protoc-gen-go-grpc` v1.6.2 (see the header of each generated file); use the same versions to keep regeneration diffs small.
 
 Verify both are on your `PATH`:
 
@@ -59,9 +61,11 @@ which protoc-gen-go-grpc
 [nfpm](https://nfpm.goreleaser.com/) builds `.deb` and `.rpm` packages from YAML configuration files.
 
 ```bash
-go install github.com/goreleaser/nfpm/v2/cmd/nfpm@latest
+go install github.com/goreleaser/nfpm/v2/cmd/nfpm@v2.44.0
 nfpm --version
 ```
+
+The release workflow pins nfpm v2.44.0.
 
 !!! warning
     `go install` places the binary in `$GOPATH/bin`, **not** `$(go env GOROOT)/bin`. Make sure `$GOPATH/bin` is on your `PATH`.
@@ -71,9 +75,11 @@ nfpm --version
 Required only when building Windows `.exe` installers.
 
 ```bash
-sudo apt install -y nsis
+sudo apt install -y nsis python3-pil
 makensis -VERSION
 ```
+
+The Windows targets first run `make render-windows-icon` (`scripts/render-windows-icon.sh`), which uses Python with Pillow (`python3-pil`) to generate `packaging/nsis/hitstor.ico` from `assets/icon.png`.
 
 ## Docker
 
@@ -90,11 +96,11 @@ docker --version
 [MkDocs](https://www.mkdocs.org/) with the [Material](https://squidfunk.github.io/mkdocs-material/) theme generates the documentation site.
 
 ```bash
-pip install mkdocs-material
+pip install -r requirements-docs.txt
 mkdocs --version
 ```
 
-This also installs all required Markdown extensions (admonitions, tabbed, superfences, etc.).
+`requirements-docs.txt` pins MkDocs, Material, and [mkdocs-static-i18n](https://ultrabug.github.io/mkdocs-static-i18n/) (the English/Spanish site). Material brings the Markdown extensions the site uses (admonitions, tabbed, superfences, etc.).
 
 ## Summary
 
@@ -106,6 +112,7 @@ This also installs all required Markdown extensions (admonitions, tabbed, superf
 | `protoc-gen-go-grpc` | Go gRPC plugin | `which protoc-gen-go-grpc` |
 | `nfpm` | `.deb` / `.rpm` packaging | `nfpm --version` |
 | `makensis` | Windows installers | `makensis -VERSION` |
+| `python3` + Pillow | Windows installer icon | `python3 -c 'import PIL'` |
 | `docker` | Container builds | `docker --version` |
 | `mkdocs` | Documentation site | `mkdocs --version` |
 | `git` | Source control | `git --version` |

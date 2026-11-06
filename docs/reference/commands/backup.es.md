@@ -20,10 +20,11 @@ Se adquiere un bloqueo exclusivo sobre el repositorio mientras dura el respaldo.
 
 | Flag | Tipo | Predeterminado | Descripción |
 |------|------|---------|-------------|
-| `--exclude` | string | | Excluye los archivos que coinciden con este patrón glob (repetible) |
+| `--exclude` | string | | Excluye los archivos que coinciden con este patrón glob (repetible). Se compara con el nombre y con la ruta relativa a la raíz del respaldo; `**` no está soportado. Consulte [Patrones de exclusión](../../user-guide/backup.md#exclude-patterns) |
 | `--tag` | string | | Agrega una etiqueta a la instantánea (repetible) |
 | `--host` | string | nombre de host del sistema | Reemplaza el nombre de host almacenado en la instantánea |
 | `--dry-run` | bool | false | Muestra una vista previa de lo que se respaldaría sin escribir datos |
+| `--bare-metal` | bool | false | Captura además lo que necesita una restauración bare-metal: atributos extendidos (etiquetas SELinux, capacidades, ACL) y la disposición de discos y arranque del host. Consulte [Restauración bare-metal](../../user-guide/bare-metal-restore.md) |
 
 Además de todos los [flags globales](index.md#global-flags), incluido `--repo-name` para configuraciones con varios repositorios.
 
@@ -47,7 +48,7 @@ Respaldar varias rutas con exclusiones:
 ```bash
 hitstor backup --repo /backups/hitstor --password "secret" \
   /home/user/documents /home/user/photos \
-  --exclude "*.tmp" --exclude ".cache/**"
+  --exclude "*.tmp" --exclude ".cache"
 ```
 
 Etiquetar un respaldo para identificarlo:

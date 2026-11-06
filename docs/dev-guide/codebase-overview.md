@@ -9,9 +9,9 @@ HitStor is an encrypted, deduplicated backup platform written in Go (`CGO_ENABLE
 - **Local CLI backups** — `hitstor backup` against a local, S3, or plugin repository
 - **Centralized server/agent backups** — thick-agent design over gRPC/TLS
 - **Bare-metal restore** — ReaR-based recovery media for Linux hosts
-- **Embedded dashboard** — monitoring, scheduling, restore
+- **Embedded dashboard** — monitoring, scheduling, restore, user accounts with roles and two-step verification, email notifications, and scheduled PDF reports
 
-The core backs up filesystems (Windows and Linux); applications are backed up through installable workload plugins (`plugins/`, see [Workload Plugin Architecture](plugin-architecture.md)), starting with SQL Server. M365, Google Workspace, the built-in database integrations, and cloud-VM/VMware backup were removed in v2.0.0 — see [Roadmap](../admin-guide/roadmap.md#permanently-removed-v200).
+The core backs up filesystems (Windows and Linux); applications are backed up through installable workload plugins (`plugins/`, see [Workload Plugin Architecture](plugin-architecture.md)), starting with SQL Server. M365, Google Workspace, the built-in database integrations, and cloud-VM/VMware backup were removed before the first public release (v0.1.0) — see [Roadmap](../admin-guide/roadmap.md#permanently-removed).
 
 ## Directory Layout
 
@@ -27,6 +27,7 @@ cmd/                          # Binaries (entry points)
 
 plugins/                      # Workload plugins, one directory each (packaged as .hpk)
   example/                    # Reference workload plugin
+  mssql/                      # SQL Server plugin (VDI; Windows only)
 
 internal/                     # Core libraries (not importable externally)
   archiver/                   # Local backup pipeline
@@ -42,7 +43,12 @@ internal/                     # Core libraries (not importable externally)
   plugin/                     # HashiCorp go-plugin manager
   pluginpkg/                  # Plugin package format, signing, and trust
   pluginmgr/                  # Agent plugin store: install, upgrade, remove
-  ...                         # chunker, crypto, retention, metrics, etc.
+  users/                      # Dashboard accounts, roles, two-step verification
+  mailer/                     # Outgoing email (SMTP relay, user/password, Microsoft 365 OAuth)
+  report/                     # PDF reports
+  runlog/                     # History of backup runs (for reports)
+  retention/                  # Retention policies, incl. workload backup chains
+  ...                         # chunker, crypto, cron, metrics, etc.
 
 api/proto/hitstor/plugin/v1/  # Public plugin gRPC definitions
 internal/proto/hitstor/v1/    # Server/agent backup protos (backup.proto, agent.proto)
@@ -62,6 +68,8 @@ specs/                        # Feature specs (local only — gitignored, not pa
 | `bin/hitstor-notifier-log` | `make notifier-log` | Notifier plugin example |
 | `bin/hitstor-hook-log` | `make hook-log` | Hook plugin example |
 | `bin/hitstor-scanner-builtin` | `make scanner-builtin` | Built-in FS scanner plugin (ships with agent) |
+| `bin/hitstor-pluginkit` | `make pluginkit` | Builds, signs, and verifies `.hpk` packages |
+| `dist/hitstor-plugin-<id>-<version>-<os>-<arch>.hpk` | `make plugin-packages` | Workload plugin packages (`plugins/*`) |
 
 Build all plugins: `make plugins`
 
@@ -96,12 +104,15 @@ Agent scans/chunks/compresses locally → `CheckBlobs` / `UploadChunks` over gRP
 |---------|--------|-------|
 | Filesystem backup (CLI + agent) | Stable | Core engine |
 | Remote server + dashboard | Stable | gRPC + HTTP |
-| Backup jobs + scheduling | Stable | Cron, interval, timezone; `job_type` is always `files` |
-| Bare-metal restore | In progress | ReaR-based recovery media (Linux); see [Roadmap](../admin-guide/roadmap.md) |
+| Backup jobs + scheduling | Stable | Cron (incl. `L`, `D#N`, `DL`), interval, timezone; `job_type` is `files` or `workload` |
+| Workload plugins | Available | Signed `.hpk` packages; SQL Server (VDI) full, differential, and log backups as a per-kind backup plan, with per-database results and point-in-time restore |
+| Users, roles, two-step verification | Available | Personal dashboard accounts, per-agent roles, mandatory TOTP, audit log |
+| Email and PDF reports | Available | SMTP or Microsoft 365 (OAuth 2.0); scheduled PDF reports |
+| Bare-metal restore | Available (Linux) | ReaR-based recovery media; Windows comes later — see [Roadmap](../admin-guide/roadmap.md) |
 | Agent auto-discovery | Stable | Dashboard + `/api/discover/*` |
 | Ransomware Sentinel | Stable | Optional; Gemini via Settings or `HITSTOR_SENTINEL_API_KEY` |
 
-M365, Google Workspace, database, and cloud-VM/VMware backup — along with the workload collector plugin type that served them — were permanently removed in v2.0.0. See [Roadmap](../admin-guide/roadmap.md#permanently-removed-v200).
+M365, Google Workspace, database, and cloud-VM/VMware backup — along with the workload collector plugin type that served them — were permanently removed before the first public release (v0.1.0). See [Roadmap](../admin-guide/roadmap.md#permanently-removed).
 
 ## Source of Truth
 
@@ -109,7 +120,7 @@ When updating docs, prefer these files over README prose:
 
 | Topic | File |
 |-------|------|
-| Config keys | `internal/config/config.go` (`Registry`, `RepoConfig`) |
+| Config keys | `internal/config/config.go` (`Config`, `RepoConfig`) and `internal/config/config_registry.go` (`Registry`) |
 | Dashboard HTTP routes | `internal/dashboard/dashboard.go` (`Handler()` mux) |
 | Backup gRPC | `internal/proto/hitstor/v1/backup.proto` |
 | Agent management gRPC | `internal/proto/hitstor/v1/agent.proto` |

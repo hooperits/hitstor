@@ -3,7 +3,7 @@
 Esta página describe qué hacer en un servidor Ubuntu recién instalado **antes** de instalar HitStor. Solo cubre los requisitos previos del sistema operativo. Para los pasos posteriores a la instalación (init, serve, systemd), consulte [Configuración del servidor](../admin-guide/server-setup.md).
 
 !!! tip "¿Usa el instalador .run?"
-    La [instalación rápida en Linux (.run)](../installation/linux-installer.md) se encarga automáticamente, mediante un asistente interactivo, de crear el usuario, preparar los directorios, configurar, inicializar el repositorio e iniciar el servicio. De esta página solo necesita las secciones **Actualizaciones del sistema**, **Firewall** y **Almacenamiento**.
+    La [instalación rápida en Linux (.run)](../installation/linux-installer.md) se encarga automáticamente, mediante un asistente interactivo, de crear el usuario, preparar los directorios, configurar e iniciar el servicio; después, el repositorio se crea desde el dashboard. De esta página solo necesita las secciones **Actualizaciones del sistema**, **Firewall** y **Almacenamiento**.
 
 ## Actualizaciones del sistema { #system-updates }
 
@@ -92,7 +92,7 @@ sudo mount /var/lib/hitstor
 
 ## Certificados TLS { #tls-certificates }
 
-Cuando no hay ningún certificado configurado, HitStor genera al iniciar un certificado autofirmado en memoria. Esto sirve para pruebas, pero las implementaciones en producción deben usar certificados adecuados.
+Cuando no hay ningún certificado configurado, HitStor genera al iniciar un certificado autofirmado y lo guarda en el directorio del repositorio (`server.crt`, `server.key`) para que se conserve entre reinicios; mientras el servidor no tiene repositorio, el certificado solo se mantiene en memoria. Esto sirve para pruebas, pero las implementaciones en producción deben usar certificados adecuados.
 
 ### Autofirmado con OpenSSL { #self-signed-with-openssl }
 
@@ -123,13 +123,14 @@ Para una configuración detallada de TLS, consulte [Certificados TLS](../admin-g
 
 El instalador `.run`, con su asistente interactivo, se encarga de todo:
 
-1. Crea el grupo y el usuario de sistema `hitstor`
-2. Crea los directorios: `/var/lib/hitstor`, `/var/log/hitstor`, `/etc/hitstor`
+1. Crea el grupo y el usuario de sistema `hitstor` y le permite leer el journal de systemd
+2. Crea los directorios: el directorio de datos (por defecto `/var/lib/hitstor`), `/var/log/hitstor`, `/etc/hitstor`
 3. Instala el binario y el servicio de systemd
 4. Escribe los archivos de configuración a partir de las respuestas del asistente (modo `600`)
-5. Inicializa el repositorio de respaldos
-6. Habilita e inicia el servicio
-7. Verifica que el servicio esté en ejecución y que los puertos estén escuchando
+5. Habilita e inicia el servicio
+6. Verifica que el servicio esté en ejecución y que los puertos estén escuchando
+
+No crea ningún repositorio: abra el dashboard para crearlo o conectarlo.
 
 ### Paquete `.deb` { #deb-package }
 
@@ -137,12 +138,13 @@ Cuando instala el paquete `.deb` con `dpkg -i`, el script posterior a la instala
 
 1. Crea el grupo de sistema `hitstor` (si no existe)
 2. Crea el usuario de sistema `hitstor` con directorio personal `/var/lib/hitstor` y shell `/usr/sbin/nologin`
-3. Crea los directorios: `/var/lib/hitstor`, `/var/log/hitstor`, `/etc/hitstor`
-4. Asigna la propiedad a `hitstor:hitstor` y el modo `750`
-5. Copia `server.env.example` a `server.env` (modo `600`) si no existe un `server.env`
-6. Ejecuta `systemctl daemon-reload` para que se reconozca el nuevo archivo de servicio
+3. Agrega el usuario `hitstor` al grupo `systemd-journal` (para la página **Registros** del dashboard)
+4. Crea los directorios: `/var/lib/hitstor`, `/var/log/hitstor`, `/etc/hitstor`, `/usr/lib/hitstor/plugins`
+5. Asigna la propiedad de `/var/lib/hitstor` y `/var/log/hitstor` a `hitstor:hitstor` y el modo `750`
+6. Copia `server.env.example` a `server.env` y `config.yaml.example` a `config.yaml` (modo `600`) si no existen
+7. Ejecuta `systemctl daemon-reload` para que se reconozca el nuevo archivo de servicio
 
-Después de instalar el paquete, aún debe editar manualmente los archivos de configuración e inicializar el repositorio.
+Después de instalar el paquete, revise los archivos de configuración y cree un repositorio desde el dashboard o con `hitstor init` (consulte [Configuración del servidor](../admin-guide/server-setup.md)).
 
 ## Próximos pasos { #next-steps }
 

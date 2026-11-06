@@ -36,25 +36,26 @@ hitstor backup --repo /path/to/repo --password "secret" \
     /home/user/projects
 ```
 
-Patterns follow standard glob syntax:
+Patterns use Go's `filepath.Match` glob syntax (`*`, `?`, `[...]`). Each pattern is matched against the file or directory name and against its path relative to the backup root; an excluded directory is skipped with everything under it:
 
 | Pattern | Matches |
 |---------|---------|
 | `*.log` | All files ending in `.log` |
-| `cache/` | Any directory named `cache` |
-| `/data/temp` | The exact path `/data/temp` relative to the backup root |
-| `**/build` | A directory named `build` at any depth |
+| `cache/` | Any directory named `cache` (a trailing `/` matches directories only) |
+| `build` | Any file or directory named `build`, at any depth |
+| `data/temp` | The path `data/temp` relative to the backup root (no leading `/`) |
+
+`**` is not supported: `*` does not cross `/`, and a name pattern such as `build` already matches at any depth.
 
 ### Config File Excludes
 
-You can also define excludes in the configuration file (`~/.config/hitstor/config.yaml`):
+You can also define excludes with the top-level `exclude` key of the configuration file (see [Configuration](configuration.md#config-file-location)):
 
 ```yaml
-backup:
-  exclude:
-    - "*.tmp"
-    - ".cache"
-    - "node_modules"
+exclude:
+  - "*.tmp"
+  - ".cache"
+  - "node_modules"
 ```
 
 ### Merging Behavior
@@ -119,14 +120,14 @@ The default behavior auto-detects the number of CPUs and caps at **8** workers. 
 
 ## Progress Display
 
-While the backup runs, HitStor prints a live progress line showing:
+While the backup runs on a terminal, HitStor prints a live progress bar showing:
 
-- Number of files scanned
-- Amount of data processed
-- Amount of new data added to the repository
-- Elapsed time and estimated time remaining
+- Percentage done
+- Files processed out of the total scanned
+- Throughput
+- Estimated time remaining
 
-The progress display updates in place on terminals that support carriage returns. When the output is redirected to a file or pipe, HitStor disables the live updates and prints a final summary instead.
+The bar updates in place. When the output is redirected to a file or pipe, HitStor prints one line per file instead (`new` or `unchanged`, with its size). Both end with a summary of new and unchanged files, data added, and duration.
 
 ## How Deduplication Works
 
@@ -152,33 +153,38 @@ Together these layers mean that:
 
 ## S3 Backend Usage
 
-HitStor supports Amazon S3 (and S3-compatible services) as a backend. To back up to an S3 bucket:
+HitStor supports Amazon S3 (and S3-compatible services) as a backend. The repository location is `s3:<endpoint>/<bucket>`: the repository uses the whole bucket. Include `https://` in the endpoint; without a scheme HitStor connects over plain `http://`. To back up to an S3 bucket:
 
 ```console
-hitstor init --repo s3:s3.amazonaws.com/my-bucket/hitstor-repo --password "secret"
+hitstor init --repo s3:https://s3.amazonaws.com/my-bucket --password "secret" \
+    --s3-access-key AKIAIOSFODNN7EXAMPLE \
+    --s3-secret-key wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY \
+    --s3-region us-east-1
 ```
 
 Then run backups against the same repo URI:
 
 ```console
-hitstor backup --repo s3:s3.amazonaws.com/my-bucket/hitstor-repo \
+hitstor backup --repo s3:https://s3.amazonaws.com/my-bucket \
     --password "secret" \
+    --s3-access-key AKIAIOSFODNN7EXAMPLE \
+    --s3-secret-key wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY \
     /data
 ```
 
-Configure credentials through standard AWS environment variables or the shared credentials file:
+Credentials are not read from the AWS environment variables or shared credentials file. Pass them with flags or set them in the configuration file:
 
-| Variable | Purpose |
-|----------|---------|
-| `AWS_ACCESS_KEY_ID` | Access key |
-| `AWS_SECRET_ACCESS_KEY` | Secret key |
-| `AWS_DEFAULT_REGION` | Bucket region |
+| Flag | Config key | Purpose |
+|------|------------|---------|
+| `--s3-access-key` | `s3_access_key` | Access key |
+| `--s3-secret-key` | `s3_secret_key` | Secret key |
+| `--s3-region` | `s3_region` | Bucket region (default `us-east-1`) |
 
 For S3-compatible services (MinIO, Backblaze B2, Wasabi), point the URI to the appropriate endpoint:
 
 ```console
-hitstor init --repo s3:https://s3.us-west-001.backblazeb2.com/my-bucket/hitstor-repo \
-    --password "secret"
+hitstor init --repo s3:https://s3.us-west-001.backblazeb2.com/my-bucket \
+    --password "secret" --s3-access-key KEY_ID --s3-secret-key APPLICATION_KEY
 ```
 
 !!! tip

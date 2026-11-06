@@ -34,7 +34,7 @@ Outputs: `results.md` and `results.json` in the work directory printed at the en
 
 ## What “good” looks like for product messaging
 
-HitStor is a filesystem backup product ([Roadmap](../admin-guide/roadmap.md)), so quote numbers that matter to filesystem buyers:
+This harness measures filesystem backup, the core of HitStor ([Roadmap](../admin-guide/roadmap.md)), so quote numbers that matter to filesystem buyers:
 
 1. **Full backup MiB/s** on local disk
 2. **Incremental** wall time after small change set

@@ -36,25 +36,26 @@ hitstor backup --repo /path/to/repo --password "secret" \
     /home/user/projects
 ```
 
-Los patrones siguen la sintaxis glob estándar:
+Los patrones usan la sintaxis glob de `filepath.Match` de Go (`*`, `?`, `[...]`). Cada patrón se compara con el nombre del archivo o directorio y con su ruta relativa a la raíz del respaldo; un directorio excluido se omite con todo su contenido:
 
 | Patrón | Coincide con |
 |---------|---------|
 | `*.log` | Todos los archivos que terminan en `.log` |
-| `cache/` | Cualquier directorio llamado `cache` |
-| `/data/temp` | La ruta exacta `/data/temp` relativa a la raíz del respaldo |
-| `**/build` | Un directorio llamado `build` a cualquier profundidad |
+| `cache/` | Cualquier directorio llamado `cache` (una `/` final solo coincide con directorios) |
+| `build` | Cualquier archivo o directorio llamado `build`, a cualquier profundidad |
+| `data/temp` | La ruta `data/temp` relativa a la raíz del respaldo (sin `/` inicial) |
+
+`**` no está soportado: `*` no cruza `/`, y un patrón de nombre como `build` ya coincide a cualquier profundidad.
 
 ### Exclusiones en el archivo de configuración { #config-file-excludes }
 
-También puede definir exclusiones en el archivo de configuración (`~/.config/hitstor/config.yaml`):
+También puede definir exclusiones con la clave de primer nivel `exclude` del archivo de configuración (consulte [Configuración](configuration.md#config-file-location)):
 
 ```yaml
-backup:
-  exclude:
-    - "*.tmp"
-    - ".cache"
-    - "node_modules"
+exclude:
+  - "*.tmp"
+  - ".cache"
+  - "node_modules"
 ```
 
 ### Comportamiento de combinación { #merging-behavior }
@@ -119,14 +120,14 @@ De forma predeterminada, se detecta automáticamente el número de CPU, con un m
 
 ## Indicador de progreso { #progress-display }
 
-Mientras se ejecuta el respaldo, HitStor muestra una línea de progreso en vivo con:
+Mientras se ejecuta el respaldo en una terminal, HitStor muestra una barra de progreso en vivo con:
 
-- Número de archivos analizados
-- Cantidad de datos procesados
-- Cantidad de datos nuevos agregados al repositorio
-- Tiempo transcurrido y tiempo restante estimado
+- Porcentaje completado
+- Archivos procesados del total analizado
+- Velocidad de transferencia
+- Tiempo restante estimado
 
-El indicador de progreso se actualiza en el mismo lugar en las terminales que admiten retornos de carro. Cuando la salida se redirige a un archivo o a una tubería (pipe), HitStor desactiva las actualizaciones en vivo y, en su lugar, muestra un resumen final.
+La barra se actualiza en el mismo lugar. Cuando la salida se redirige a un archivo o a una tubería (pipe), HitStor muestra en su lugar una línea por archivo (`new` o `unchanged`, con su tamaño). En ambos casos termina con un resumen de archivos nuevos y sin cambios, datos agregados y duración.
 
 ## Cómo funciona la deduplicación { #how-deduplication-works }
 
@@ -152,33 +153,38 @@ En conjunto, estas capas hacen que:
 
 ## Uso del backend S3 { #s3-backend-usage }
 
-HitStor admite Amazon S3 (y servicios compatibles con S3) como backend. Para respaldar en un bucket de S3:
+HitStor admite Amazon S3 (y servicios compatibles con S3) como backend. La ubicación del repositorio es `s3:<endpoint>/<bucket>`: el repositorio usa el bucket completo. Incluya `https://` en el endpoint; sin esquema, HitStor se conecta por `http://` sin cifrar. Para respaldar en un bucket de S3:
 
 ```console
-hitstor init --repo s3:s3.amazonaws.com/my-bucket/hitstor-repo --password "secret"
+hitstor init --repo s3:https://s3.amazonaws.com/my-bucket --password "secret" \
+    --s3-access-key AKIAIOSFODNN7EXAMPLE \
+    --s3-secret-key wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY \
+    --s3-region us-east-1
 ```
 
 Luego ejecute los respaldos con el mismo URI de repositorio:
 
 ```console
-hitstor backup --repo s3:s3.amazonaws.com/my-bucket/hitstor-repo \
+hitstor backup --repo s3:https://s3.amazonaws.com/my-bucket \
     --password "secret" \
+    --s3-access-key AKIAIOSFODNN7EXAMPLE \
+    --s3-secret-key wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY \
     /data
 ```
 
-Configure las credenciales mediante las variables de entorno estándar de AWS o el archivo de credenciales compartido:
+Las credenciales no se leen de las variables de entorno de AWS ni del archivo de credenciales compartido. Indíquelas con flags o defínalas en el archivo de configuración:
 
-| Variable | Propósito |
-|----------|---------|
-| `AWS_ACCESS_KEY_ID` | Clave de acceso |
-| `AWS_SECRET_ACCESS_KEY` | Clave secreta |
-| `AWS_DEFAULT_REGION` | Región del bucket |
+| Flag | Clave de configuración | Propósito |
+|------|------------------------|---------|
+| `--s3-access-key` | `s3_access_key` | Clave de acceso |
+| `--s3-secret-key` | `s3_secret_key` | Clave secreta |
+| `--s3-region` | `s3_region` | Región del bucket (predeterminada `us-east-1`) |
 
 Para servicios compatibles con S3 (MinIO, Backblaze B2, Wasabi), apunte el URI al endpoint correspondiente:
 
 ```console
-hitstor init --repo s3:https://s3.us-west-001.backblazeb2.com/my-bucket/hitstor-repo \
-    --password "secret"
+hitstor init --repo s3:https://s3.us-west-001.backblazeb2.com/my-bucket \
+    --password "secret" --s3-access-key KEY_ID --s3-secret-key APPLICATION_KEY
 ```
 
 !!! tip "Consejo"

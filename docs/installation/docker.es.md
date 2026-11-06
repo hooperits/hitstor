@@ -18,8 +18,8 @@ docker build -t hitstor:latest .
 Para construirla con una etiqueta de versión específica:
 
 ```bash
-docker build -t hitstor:1.0.0 \
-  --build-arg VERSION=1.0.0 \
+docker build -t hitstor:0.2.0 \
+  --build-arg VERSION=0.2.0 \
   --build-arg COMMIT=$(git rev-parse --short HEAD) \
   --build-arg DATE=$(date -u +%Y-%m-%d) .
 ```
@@ -27,7 +27,7 @@ docker build -t hitstor:1.0.0 \
 O use el target del Makefile:
 
 ```bash
-make docker-build VERSION=1.0.0
+make docker-build VERSION=0.2.0
 ```
 
 ## Detalles de la imagen { #image-details }
@@ -35,7 +35,7 @@ make docker-build VERSION=1.0.0
 La imagen Docker usa una construcción en dos etapas:
 
 1. **Etapa de compilación** -- `golang:1.26-alpine` compila el binario estático con `CGO_ENABLED=0`.
-2. **Etapa de ejecución** -- `alpine:3.22` con solo `ca-certificates` y `tzdata` instalados.
+2. **Etapa de ejecución** -- `alpine:3.22` con solo `ca-certificates`, `tzdata` y `wget` (para la verificación de estado) instalados. Todos los binarios de HitStor de `cmd/` se copian a `/usr/bin`.
 
 La imagen se ejecuta con un usuario `hitstor` sin privilegios de root.
 
@@ -64,6 +64,8 @@ docker run -d \
   -e HITSTOR_REPO=/var/lib/hitstor/repo \
   hitstor:latest
 ```
+
+En el primer inicio, el entrypoint ejecuta `hitstor init` para `HITSTOR_REPO` si allí no existe un repositorio, y luego `hitstor serve`. Abra `https://<host>:8421` (certificado autofirmado) y cree el primer administrador como se describe en [Contraseña del dashboard y primer administrador](quickstart.md#dashboard-password). Sin `HITSTOR_DASHBOARD_PASSWORD`, el contenedor no tiene un archivo de configuración donde guardar la contraseña generada, así que léala con `docker logs hitstor`.
 
 ## Despliegue con Docker Compose { #docker-compose-deployment }
 
@@ -148,8 +150,10 @@ docker compose -f docker-compose.prod.yml logs -f
 | Variable | Descripción |
 |----------|-------------|
 | `HITSTOR_PASSWORD` | Contraseña del repositorio usada para cifrar y descifrar. |
-| `HITSTOR_REPO` | Ruta del repositorio dentro del contenedor (predeterminada: `/var/lib/hitstor/repo`). |
-| `HITSTOR_VERSION` | Etiqueta de versión de la imagen que usa `docker-compose.prod.yml`. |
+| `HITSTOR_REPO` | Ruta del repositorio dentro del contenedor. Los archivos compose definen `/var/lib/hitstor/repo`; la imagen no tiene valor predeterminado. |
+| `HITSTOR_DASHBOARD_PASSWORD` | Contraseña de configuración inicial del dashboard, para crear el primer administrador. El entrypoint la escribe en `/etc/hitstor/config.yaml` cuando ese archivo todavía no existe. |
+| `HITSTOR_AUTO_INIT` | `true` (predeterminado) ejecuta `hitstor init` para `HITSTOR_REPO` al iniciar si no existe un repositorio; `false` lo omite. |
+| `HITSTOR_VERSION` | Etiqueta de versión de la imagen que usan los archivos compose. |
 
 ## Verificación de estado { #health-check }
 
@@ -157,26 +161,26 @@ El archivo compose de producción incluye una verificación de estado integrada:
 
 ```yaml
 healthcheck:
-  test: ["CMD", "wget", "-qO-", "http://localhost:8421/"]
+  test: ["CMD-SHELL", "wget -q -O /dev/null --no-check-certificate https://localhost:8421/login || wget -q -O /dev/null http://localhost:8421/login"]
   interval: 30s
   timeout: 5s
   retries: 3
 ```
 
-Docker informa el contenedor como `healthy` en cuanto el dashboard responde en el puerto 8421. Use `docker inspect` o `docker compose ps` para consultar el estado.
+Use `docker inspect` o `docker compose ps` para consultar el estado. La verificación solicita la página de inicio de sesión por HTTPS (con el certificado autofirmado) y, si falla, por HTTP sin cifrar, que el dashboard solo sirve mientras no existe un repositorio.
 
 ## Guardar la imagen { #saving-the-image }
 
 Para exportar la imagen como tarball para un despliegue sin conexión:
 
 ```bash
-make docker-save VERSION=1.0.0
+make docker-save VERSION=0.2.0
 ```
 
-Esto genera `dist/hitstor-1.0.0-docker.tar.gz`. Cárguela en el host de destino con:
+Esto genera `dist/hitstor-0.2.0-docker.tar.gz`. Cárguela en el host de destino con:
 
 ```bash
-docker load < hitstor-1.0.0-docker.tar.gz
+docker load < hitstor-0.2.0-docker.tar.gz
 ```
 
 ## Próximos pasos { #next-steps }

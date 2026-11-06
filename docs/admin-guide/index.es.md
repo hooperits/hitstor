@@ -10,12 +10,14 @@ Si busca instrucciones para crear y restaurar respaldos, consulte la [Guía del 
 |-------|-------------|
 | [Puesta en marcha del servidor](server-setup.md) | Inicializar un repositorio, iniciar el servidor, configurar systemd y gestionar las reglas de firewall. |
 | [Certificados TLS](tls-certificates.md) | Configurar certificados TLS generados automáticamente o personalizados para la comunicación gRPC y del dashboard. |
-| [Tareas de respaldo](backup-jobs.md) | Tareas de respaldo del sistema de archivos, programación y retención. |
+| [Tareas de respaldo](backup-jobs.md) | Tareas de respaldo del sistema de archivos y de carga de trabajo, planes de respaldo, programación y retención. |
 | [Gestión de agentes](agent-management.md) | Registrar, configurar y eliminar agentes de respaldo. |
 | [Descubrimiento de agentes](agent-discovery.md) | Escaneo de red en busca de agentes no registrados. |
 | [Despliegue de agentes](agent-deployment.md) | Instalar y configurar el binario `hitstor-agent` en equipos Linux y Windows. |
-| [Dashboard](dashboard.md) | Acceder al dashboard web, gestionar programaciones y usar la API JSON. |
-| [Configuración del servidor](settings.md) | Centro de configuración: TLS, red, integraciones (Gemini), notificaciones. |
+| [Dashboard](dashboard.md) | Acceder al dashboard web, sus páginas y la API JSON. |
+| [Usuarios y acceso](users.md) | Cuentas, roles, verificación en dos pasos, correo y registro de auditoría. |
+| [Reportes](reports.md) | Reportes PDF enviados por correo según una programación o descargados. |
+| [Configuración del servidor](settings.md) | Centro de configuración: TLS, red, integraciones (Gemini), notificaciones, correo, paquetes de plugins. |
 | [Monitoreo](monitoring.md) | Métricas de Prometheus, alertas por webhook e integración con Grafana. |
 | [Programación](scheduling.md) | Configurar programaciones gestionadas por el servidor, el modo daemon y los temporizadores de systemd. |
 | [Sentinel](sentinel.md) | Telemetría y alertas de ransomware. |

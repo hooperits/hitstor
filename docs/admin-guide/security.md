@@ -6,13 +6,13 @@ This page documents the HitStor security model, covering encryption, key managem
 
 ### Data Encryption
 
-All data stored in the repository is encrypted with **AES-256-GCM** (Galois/Counter Mode). Encryption is applied client-side before data is written to storage, ensuring that the repository contents are unreadable without the password.
+All data stored in the repository is encrypted with **AES-256-GCM** (Galois/Counter Mode). Encryption is applied before data is written to storage — by `hitstor` for local backups, and by the server for agent backups (agents chunk and compress locally and send the chunks over TLS) — ensuring that the repository contents are unreadable without the password.
 
 Each blob (chunk of data) is encrypted with a unique nonce. The authenticated encryption provided by GCM ensures both confidentiality and integrity -- any tampering with encrypted data is detected on read.
 
 ### Key Derivation
 
-The encryption key is derived from the repository password using **scrypt** with the following parameters:
+Each repository has a random 64-byte **master key**: an **EncKey** (AES-256-GCM encryption of blobs) and an **IDKey** (HMAC-SHA256 blob identification). The master key is stored in the repository's `keys/` directory, encrypted with a key derived from the repository password using **scrypt** with the following parameters and a random 64-byte salt:
 
 | Parameter | Value | Purpose |
 |-----------|-------|---------|
@@ -20,14 +20,11 @@ The encryption key is derived from the repository password using **scrypt** with
 | r | 8 | Block size |
 | p | 1 | Parallelization factor |
 
-These parameters are designed to make brute-force attacks computationally expensive. The scrypt output produces two keys:
-
-- **EncKey** -- used for AES-256-GCM encryption of data blobs
-- **IDKey** -- used for HMAC-SHA256 blob identification
+These parameters are designed to make brute-force attacks computationally expensive. Because the data keys are random rather than derived from the password, guessing the password is the only way to reach them.
 
 ### Blob Identification
 
-Blob IDs are computed as **HMAC-SHA256** using the IDKey derived from the password. This prevents content-guessing attacks: an attacker who knows the plaintext content of a file cannot determine whether it exists in the repository without knowing the password.
+Blob IDs are computed as **HMAC-SHA256** using the repository's IDKey. This prevents content-guessing attacks: an attacker who knows the plaintext content of a file cannot determine whether it exists in the repository without knowing the password.
 
 ```
 BlobID = HMAC-SHA256(IDKey, plaintext)
@@ -43,7 +40,7 @@ All gRPC communication between agents and the server is encrypted with TLS. The 
 
 | Configuration | Encryption | Certificate Verification |
 |---------------|-----------|-------------------------|
-| Auto-generated (default) | Yes | Agent must set `agent_ca_cert` |
+| Auto-generated (default) | Yes | Agent pins the server certificate on first connection, or trusts it via `agent_ca_cert` |
 | Custom certificate | Yes | Standard CA verification or `agent_ca_cert` |
 | Let's Encrypt | Yes | Standard CA verification (no extra config) |
 
@@ -60,10 +57,10 @@ HitStor uses two authentication mechanisms for agents:
 **Agent tokens** (dashboard-managed agents):
 
 - 64-character hexadecimal string (256 bits of entropy)
-- Generated automatically during agent installation
-- Stored at `/etc/hitstor/agent-token` on the agent (mode 0600)
+- Generated automatically on the agent's first start
+- Stored at `/etc/hitstor/agent-token` on the agent (mode 0600; `C:\ProgramData\HitStor\agent-token` on Windows, readable only by SYSTEM and Administrators)
 - Stored encrypted (AES-256-GCM) on the server in the agent registry
-- Used by the server to authenticate gRPC calls to the agent (filesystem browsing, configuration)
+- Used by the server to authenticate gRPC calls to the agent (registration, browsing, plugin installation, restores)
 - Retrievable any time with `hitstor-agent show-id`
 - Verified using constant-time comparison to prevent timing attacks
 
@@ -82,8 +79,8 @@ An agent must present a valid API key with every backup gRPC request. The server
 
 The repository password is the root secret for all encryption operations. It is:
 
-- **Never stored on disk** by the server (provided at runtime via environment variable or password file)
-- Used to derive EncKey and IDKey through scrypt
+- Provided at runtime through a password file (`password_file` per repository), the `HITSTOR_PASSWORD` environment variable, or `--password`/`--password-file`. Repositories created from the dashboard store it in a password file next to the config file (`<name>.password`, mode `0600`): protect that directory
+- Used, through scrypt, to unlock the master key (EncKey and IDKey)
 - Required to read or write any data in the repository
 
 If the password is lost, the repository data is irrecoverable.
@@ -108,28 +105,19 @@ The HitStor server systemd unit includes security hardening directives that rest
 
 ```ini
 [Service]
+User=hitstor
+Group=hitstor
+
 # Filesystem protection
 ProtectSystem=strict
+ReadWritePaths=/var/lib/hitstor /var/log/hitstor /etc/hitstor
 ProtectHome=true
-ReadWritePaths=/var/lib/hitstor
+PrivateTmp=true
 
 # Privilege restrictions
 NoNewPrivileges=true
-PrivateTmp=true
 
-# Capability restrictions
-CapabilityBoundingSet=
-AmbientCapabilities=
-
-# Network
-RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
-
-# System call filtering
-SystemCallFilter=@system-service
-SystemCallArchitectures=native
-
-# Namespace isolation
-PrivateDevices=true
+# Kernel protection
 ProtectKernelTunables=true
 ProtectKernelModules=true
 ProtectControlGroups=true
@@ -137,10 +125,12 @@ ProtectControlGroups=true
 
 These directives:
 
-- Prevent the server from writing outside its data directory
+- Run the server as the unprivileged `hitstor` user
+- Prevent the server from writing outside `/var/lib/hitstor`, `/var/log/hitstor` and `/etc/hitstor`
 - Block privilege escalation
-- Restrict system calls to the minimum required set
-- Isolate the process from kernel tunables and device access
+- Isolate the process from home directories, kernel tunables, kernel modules and control groups
+
+If the service fails with `status=226/NAMESPACE` (some Hyper-V VMs, containers, WSL), the unit file says which lines to comment out.
 
 ### Verifying Hardening
 
@@ -150,7 +140,7 @@ Check the security score of the unit:
 systemd-analyze security hitstor-server
 ```
 
-A score below 5.0 indicates good hardening. Review any items marked as "UNSAFE" and assess whether they are required for your deployment.
+Lower scores mean a more restricted service. Review any items marked as "UNSAFE" and assess whether you can restrict them further with a drop-in (`systemctl edit hitstor-server`).
 
 ## Security Checklist
 
@@ -158,14 +148,14 @@ Use this checklist when deploying HitStor in production:
 
 - [ ] Use a strong repository password (at least 16 characters, randomly generated)
 - [ ] Store the password in a file with `0600` permissions, not on the command line
-- [ ] Use custom TLS certificates from a trusted CA
+- [ ] Use custom TLS certificates from a trusted CA (the dashboard uses the same certificate)
 - [ ] Create personal accounts with the least role each person needs, and remove the ones no longer used
 - [ ] Restrict dashboard port (8421) to management networks
 - [ ] Restrict the `/metrics` endpoint to Prometheus scraper IPs
 - [ ] Enable systemd hardening (included by default in packaged units)
 - [ ] Ensure agent token files (`/etc/hitstor/agent-token`) have `0600` permissions
 - [ ] Restrict agent gRPC port (8422) to the server's IP address
-- [ ] Rotate API keys if compromise is suspected (remove and re-register the agent)
+- [ ] Rotate API keys if compromise is suspected (re-register the agent; see [Agent Management](agent-management.md#rotating-an-api-key))
 - [ ] Run `hitstor check --read-data` periodically to verify repository integrity
 - [ ] Keep HitStor updated to receive security fixes
 

@@ -24,7 +24,7 @@ cd hitstor
 cp .env.example .env
 ```
 
-Edite `.env` y defina un `HITSTOR_PASSWORD` robusto (cifrado del repositorio) y un `HITSTOR_DASHBOARD_PASSWORD` (inicio de sesión en la interfaz web). Si deja `HITSTOR_DASHBOARD_PASSWORD` vacío, el servidor genera una nueva contraseña aleatoria del dashboard cada vez que se inicia el contenedor; consulte [Contraseña del dashboard](#dashboard-password).
+Edite `.env` y defina un `HITSTOR_PASSWORD` robusto (cifrado del repositorio) y un `HITSTOR_DASHBOARD_PASSWORD` (la contraseña de configuración inicial que usará una sola vez para crear el primer administrador del dashboard). Si deja `HITSTOR_DASHBOARD_PASSWORD` vacío, el servidor genera una nueva aleatoria cada vez que se inicia el contenedor; consulte [Contraseña del dashboard y primer administrador](#dashboard-password).
 
 ### 2. Iniciar el servidor { #2-start-the-server }
 
@@ -36,7 +36,9 @@ En el primer inicio, el contenedor ejecuta automáticamente `hitstor init` y lue
 
 ### 3. Abrir el dashboard { #3-open-the-dashboard }
 
-Vaya a [http://localhost:8421](http://localhost:8421) e inicie sesión con `HITSTOR_DASHBOARD_PASSWORD` (o con la contraseña generada; consulte [Contraseña del dashboard](#dashboard-password)).
+Vaya a [https://localhost:8421](https://localhost:8421) (el certificado es autofirmado, por lo que el navegador muestra una advertencia la primera vez). El dashboard se abre en **Cree el primer administrador**: ingrese `HITSTOR_DASHBOARD_PASSWORD` (o la contraseña generada), elija su nombre de usuario y contraseña, y configure una app de autenticación. Consulte [Contraseña del dashboard y primer administrador](#dashboard-password).
+
+![Página de inicio de sesión del dashboard](../assets/screenshots/es/login.webp){ .screenshot }
 
 | Puerto | Servicio |
 |------|---------|
@@ -62,7 +64,7 @@ Esto inicia HitStor con `s3:http://minio:9000/hitstor-backups` y una instancia d
 
 ### Descargar una imagen precompilada { #pull-a-pre-built-image }
 
-Cuando se publiquen imágenes de versión en GHCR:
+Las imágenes de cada versión se publican en GHCR (`ghcr.io/hooperits/hitstor`, con la etiqueta de la versión y `latest`):
 
 ```bash
 export HITSTOR_IMAGE=ghcr.io/hooperits/hitstor
@@ -100,11 +102,11 @@ chmod +x hitstor-server-*.run
 sudo ./hitstor-server-*.run
 ```
 
-El asistente interactivo inicializa el repositorio, configura systemd e inicia el servidor.
+El asistente interactivo pide el directorio de datos, una contraseña opcional de configuración inicial del dashboard, los puertos y la dirección que usan los agentes para llegar al servidor; luego configura systemd e inicia el servidor. No crea un repositorio: eso se hace desde el dashboard.
 
 ### 2. Abrir el dashboard { #2-open-the-dashboard }
 
-URL predeterminada: `https://<server-ip>:8421` (TLS autofirmado) o `http://<server-ip>:8421`, según la configuración del asistente. Inicie sesión con la contraseña del dashboard que ingresó en el asistente; si la dejó vacía, consulte [Contraseña del dashboard](#dashboard-password).
+Abra `http://<server-ip>:8421` e inicie sesión con la contraseña del dashboard que ingresó en el asistente (si la dejó vacía, consulte [Contraseña del dashboard y primer administrador](#dashboard-password)). Mientras no exista un repositorio, el servidor funciona en modo de configuración inicial por HTTP sin cifrar. Cree un repositorio desde la página **Almacenamiento** y reinicie el servicio (`sudo systemctl restart hitstor-server`): el dashboard pasa a HTTPS (`https://<server-ip>:8421`, autofirmado de forma predeterminada) y se abre en **Cree el primer administrador**.
 
 Consulte [Instalación rápida para Linux](linux-installer.md) para conocer los detalles del asistente y [Configuración del servidor](../admin-guide/server-setup.md) para el endurecimiento en producción.
 
@@ -130,11 +132,11 @@ El instalador copia `hitstor.exe` a `C:\Program Files\HitStor`, crea `C:\Program
 
 ### 2. Obtener la contraseña del dashboard { #2-get-the-dashboard-password }
 
-El servidor genera una contraseña aleatoria del dashboard en el primer inicio. Léala en el servidor como se describe en [Contraseña del dashboard](#dashboard-password).
+El servidor genera una contraseña aleatoria de configuración inicial del dashboard en el primer inicio. Léala en el servidor como se describe en [Contraseña del dashboard y primer administrador](#dashboard-password).
 
 ### 3. Abrir el dashboard { #3-open-the-dashboard_1 }
 
-Abra `http://<server-ip>:8421`, inicie sesión y cambie la contraseña en **Configuración**. Luego cree un repositorio desde la página **Almacenamiento**. Mientras no exista un repositorio, el servidor funciona en modo de configuración inicial y sirve el dashboard por HTTP sin cifrar; HTTPS (autofirmado de forma predeterminada) se habilita después de configurar un repositorio y reiniciar el servicio (`Restart-Service HitStor`).
+Abra `http://<server-ip>:8421`, inicie sesión con esa contraseña y cree un repositorio desde la página **Almacenamiento**. Mientras no exista un repositorio, el servidor funciona en modo de configuración inicial y sirve el dashboard por HTTP sin cifrar; HTTPS (autofirmado de forma predeterminada) se habilita después de configurar un repositorio y reiniciar el servicio (`Restart-Service HitStor`). Después del reinicio, abra `https://<server-ip>:8421` y cree el primer administrador (consulte [Contraseña del dashboard y primer administrador](#dashboard-password)).
 
 Consulte [Windows Server](windows-server.md) para la gestión del servicio y los detalles del firewall.
 
@@ -156,10 +158,10 @@ chmod +x hitstor-agent-*.run
 sudo ./hitstor-agent-*.run
 ```
 
-Elija el modo de **registro desde el dashboard**. El asistente muestra un token del agente. En el dashboard de HitStor:
+El asistente solo pide el puerto de escucha del agente (de forma predeterminada, **8422**), instala el servicio y muestra el token del agente. En el dashboard de HitStor:
 
 1. Vaya a **Agentes** → **Agregar agente**
-2. Ingrese el token y la dirección IP del agente
+2. Ingrese la dirección IP del agente, su puerto de escucha y el token
 3. Cree una tarea de respaldo en **Respaldos**
 
 Para instalaciones mediante scripts:
@@ -168,11 +170,11 @@ Para instalaciones mediante scripts:
 curl -fsSL https://raw.githubusercontent.com/hooperits/hitstor/master/scripts/install-agent.sh | sudo bash
 ```
 
-Consulte [Despliegue de agentes](../admin-guide/agent-deployment.md) para el modo daemon, las tareas de bases de datos y Windows.
+Consulte [Despliegue de agentes](../admin-guide/agent-deployment.md) para el modo daemon y Windows, y [SQL Server](../user-guide/sql-server.md) para los respaldos de bases de datos mediante el plugin de carga de trabajo `mssql`.
 
 ### Windows { #windows }
 
-Descargue `hitstor-agent-X.Y.Z-windows-amd64.exe` desde Releases y ejecute el instalador. Consulte [Agente de Windows](windows-agent.md).
+Descargue `hitstor-agent-X.Y.Z-windows-amd64-setup.exe` desde Releases y ejecute el instalador. Consulte [Agente de Windows](windows-agent.md).
 
 ### Verificar la conectividad { #verify-connectivity }
 
@@ -180,7 +182,13 @@ Desde el host del agente, el puerto gRPC del servidor debe ser accesible (de for
 
 ---
 
-## Contraseña del dashboard { #dashboard-password }
+## Contraseña del dashboard y primer administrador { #dashboard-password }
+
+El dashboard usa cuentas personales, cada una con su propia contraseña, sus roles y verificación en dos pasos obligatoria (consulte [Usuarios y acceso](../admin-guide/users.md)). Un servidor nuevo todavía no tiene cuentas, así que arranca con una única **contraseña del dashboard** (el parámetro `serve_dashboard_password`) que solo sirve para llegar al primer administrador:
+
+1. **Todavía sin repositorio** (modo de configuración inicial): inicie sesión con la contraseña del dashboard, cree un repositorio en **Almacenamiento** y reinicie el servidor. Las cuentas se guardan junto al primer repositorio, por lo que solo pueden existir cuando este existe.
+2. **Con repositorio y sin cuentas**: todas las páginas llevan a **Cree el primer administrador** (`/setup`). Ingrese la contraseña actual del dashboard, elija el nombre de usuario y la contraseña del administrador (al menos 12 caracteres), escanee el código QR con una app de autenticación y guarde los códigos de recuperación.
+3. **Con cuentas**: cada persona inicia sesión con su propio nombre de usuario, contraseña y un código. La contraseña del dashboard ya no permite iniciar sesión. Agregue más usuarios en **Usuarios y acceso**.
 
 HitStor **no tiene una contraseña predeterminada del dashboard**. La contraseña proviene de:
 
@@ -190,7 +198,7 @@ HitStor **no tiene una contraseña predeterminada del dashboard**. La contraseñ
 | Instalador para VM Linux | La contraseña ingresada en el asistente |
 | Instalador para Windows | Se genera en el primer inicio |
 
-Cuando el archivo de configuración no tiene contraseña del dashboard, `hitstor serve` genera una aleatoria al iniciar, guarda su hash en el archivo de configuración y escribe el texto plano **una sola vez** en el registro del servidor, en una entrada que contiene `no dashboard password configured; generated one`. No necesita acceso al dashboard para leerla: lea el registro en el servidor.
+Cuando el archivo de configuración no tiene contraseña del dashboard, `hitstor serve` genera una aleatoria al iniciar, guarda su hash en el archivo de configuración (si el servidor tiene uno; si no, se genera una contraseña nueva en cada inicio) y escribe el texto plano **una sola vez** en el registro del servidor, en una entrada que contiene `no dashboard password configured; generated one`. No necesita acceso al dashboard para leerla: lea el registro en el servidor.
 
 ### Leer la contraseña generada { #read-the-generated-password }
 
@@ -218,9 +226,25 @@ docker compose -f docker-compose.quickstart.yml logs hitstor | grep 'generated o
 
 Copie y pegue el valor en lugar de escribirlo: las contraseñas generadas mezclan caracteres que se parecen (`l`/`I`, `O`/`0`).
 
-Inicie sesión y cambie la contraseña en **Configuración** de inmediato. El registro conserva la entrada original, por lo que después de cambiar la contraseña el valor registrado deja de funcionar.
+Úsela para iniciar sesión mientras el servidor no tiene repositorio y para crear el primer administrador. El registro conserva la entrada original, por lo que si cambia la contraseña en **Configuración** antes de eso, el valor registrado deja de funcionar.
+
+### Crear el primer administrador desde la consola { #first-administrator-console }
+
+En lugar de la página `/setup`, puede crear el primer administrador en el servidor con [`hitstor serve user add`](../admin-guide/users.md#cli). Ejecútelo con la misma configuración que el servicio: usa el repositorio donde el servidor guarda sus usuarios (el primero por nombre) y muestra una contraseña temporal y, en el primer inicio de sesión, el usuario elige su propia contraseña y configura la app de autenticación:
+
+```bash
+# Linux
+sudo -u hitstor hitstor --config /etc/hitstor/config.yaml serve user add admin --grant admin
+
+# Inicio rápido con Docker (el contenedor ya tiene HITSTOR_REPO y HITSTOR_PASSWORD)
+docker compose -f docker-compose.quickstart.yml exec hitstor hitstor serve user add admin --grant admin
+```
+
+La misma familia de comandos restablece una contraseña (`serve user passwd`) o la verificación en dos pasos (`serve user reset-2fa`) cuando ningún administrador puede iniciar sesión.
 
 ### Restablecer una contraseña perdida { #reset-a-lost-password }
+
+Esto se aplica a la contraseña del dashboard, antes de que exista el primer administrador. Cuando ya hay cuentas, restablezca la contraseña de un usuario con `hitstor serve user passwd <nombre>` (consulte [Usuarios y acceso](../admin-guide/users.md#cli)).
 
 Elimine la contraseña almacenada del archivo de configuración y reinicie el servidor; se genera una contraseña nueva y se registra como se indicó arriba.
 
@@ -248,9 +272,9 @@ sudo systemctl restart hitstor-server
 
 Una vez conectados el servidor y al menos un agente:
 
-1. **Almacenamiento**: confirme que existe un repositorio (el inicio rápido con Docker crea uno automáticamente; el asistente de la VM crea uno durante la instalación)
+1. **Almacenamiento**: confirme que existe un repositorio (el inicio rápido con Docker crea uno automáticamente; con los instaladores para VM y Windows se crea desde el dashboard)
 2. **Agentes**: el agente aparece como conectado en el dashboard
-3. **Respaldos**: cree una tarea (`files`, `database`, etc.) y asígnela al agente
+3. **Respaldos**: cree una tarea y asígnela al agente: un respaldo de archivos o una tarea de carga de trabajo como [SQL Server](../user-guide/sql-server.md), con un plan de respaldo con programaciones completa, diferencial y de log
 4. **Ejecutar**: haga clic en **Respaldar ahora** o espere a la programación
 5. **Restaurar**: pruebe una restauración desde el dashboard o la CLI
 

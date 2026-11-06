@@ -2,22 +2,26 @@
 
 El dashboard usa cuentas personales. Cada persona inicia sesión con su propio usuario, su contraseña y un código de una app de autenticación, y solo ve y cambia lo que su rol permite.
 
+![Página Usuarios y acceso](../assets/screenshots/es/users.webp){ .screenshot }
+
 ## Roles { #roles }
 
 | Rol | Puede |
 |-----|-------|
-| **Administrador** | Todo, en todos los agentes: usuarios, almacenamiento, configuración, eliminar snapshots, recuperación ante desastres. |
-| **Operador de respaldos** | Crear, editar, programar, ejecutar y cancelar trabajos de respaldo; suspender y reanudar agentes. No puede restaurar. |
-| **Operador de restauraciones** | Explorar snapshots y restaurarlos. No puede cambiar trabajos. |
-| **Consulta** | Ver trabajos, resultados, registros y reportes. No cambia nada. |
+| **Administrador** | Todo, en todos los agentes: usuarios, almacenamiento, configuración, reportes, eliminar instantáneas (snapshots), recuperación ante desastres. |
+| **Operador de respaldos** | Crear, editar, programar, ejecutar y cancelar tareas de respaldo; suspender y reanudar agentes. No puede restaurar. |
+| **Operador de restauraciones** | Explorar instantáneas y restaurarlas. No puede cambiar tareas. |
+| **Consulta** | Ver tareas, resultados y registros. No cambia nada. |
 
 Respaldar y restaurar son roles separados a propósito: quien restaura puede leer cualquier dato respaldado, así que asigne ese rol solo a quien lo necesite.
 
-Cada rol, salvo Administrador, se asigna en **todos los agentes** o en una lista de agentes. Un operador de respaldos de `web01` solo ve `web01`, sus trabajos y sus resultados; las páginas que abarcan todos los agentes (Resumen, Almacenamiento, Recuperación ante desastres, Registros) requieren el rol en todos los agentes. Un usuario puede tener varios roles, por ejemplo operador de respaldos en dos agentes y consulta en todos.
+Cada rol, salvo Administrador, se asigna en **todos los agentes** o en una lista de agentes. Un operador de respaldos de `web01` solo ve `web01`, sus tareas y sus resultados; las páginas que abarcan todos los agentes (Resumen, Almacenamiento, Recuperación ante desastres, Registros) requieren el rol en todos los agentes. Un usuario puede tener varios roles, por ejemplo operador de respaldos en dos agentes y consulta en todos.
 
 ## Verificación en dos pasos { #two-step-verification }
 
 La verificación en dos pasos es obligatoria para todas las cuentas. En el primer inicio de sesión cada usuario:
+
+![Configuración de la verificación en dos pasos en el primer inicio de sesión](../assets/screenshots/es/two-step-setup.webp){ .screenshot }
 
 1. Instala una app de autenticación (Microsoft Authenticator, Google Authenticator, 1Password, Bitwarden...).
 2. Escanea el código QR que muestra el dashboard, o escribe la clave que aparece debajo.
@@ -38,7 +42,7 @@ Los administradores nunca eligen la contraseña de un usuario. Con el [correo](#
 
 ## Correo { #email }
 
-Con un servidor de correo saliente configurado en **Configuración → Correo**, el dashboard envía dos tipos de correo:
+Con un servidor de correo saliente configurado en **Configuración → Correo**, el dashboard envía dos tipos de correo de cuenta (además envía los [reportes](reports.md) programados):
 
 - **Invitación.** Crear un usuario con dirección de correo le envía un enlace para elegir su contraseña; sirve una sola vez y vence a las 72 horas. Nadie, ni siquiera el administrador, ve nunca una contraseña temporal. Si el correo no se puede enviar, el dashboard dice por qué y muestra una contraseña temporal en su lugar.
 - **Restablecimiento de contraseña.** **¿Olvidó su contraseña?** en la página de inicio de sesión pide el nombre de usuario o la dirección de correo y envía un enlace para elegir una nueva contraseña, válido durante una hora. La página responde igual exista o no la cuenta. Un administrador también puede enviar el enlace (o una nueva invitación, a un usuario que nunca inició sesión) desde la página del usuario con **Contraseña → Restablecer**.
@@ -79,7 +83,7 @@ El servidor necesita llegar a `login.microsoftonline.com:443` (para el token) y 
 ## Sesiones y bloqueo { #sessions }
 
 - Una sesión termina tras 30 minutos sin actividad (15 para administradores) y, en todo caso, a las 12 horas. Solo cuenta como actividad lo que hace el usuario: abrir páginas, escribir, hacer clic. Las actualizaciones automáticas no cuentan, así que una página abierta en un equipo desatendido igual expira. Dos minutos antes, el dashboard avisa y ofrece seguir conectado.
-- Eliminar usuarios, cambiar roles, restablecer contraseñas, eliminar snapshots, depurar el repositorio, recuperar un servidor y cambios similares vuelven a pedir la contraseña y un código si el último inicio de sesión fue hace más de 15 minutos.
+- Eliminar usuarios, cambiar roles, restablecer contraseñas, eliminar instantáneas, depurar el repositorio, recuperar un servidor y cambios similares vuelven a pedir la contraseña y un código si el último inicio de sesión fue hace más de 15 minutos.
 - Tras 10 contraseñas o códigos incorrectos la cuenta se bloquea 15 minutos. Los fallos repetidos desde una misma dirección también se frenan.
 - **Mi cuenta** lista las sesiones abiertas del usuario y permite cerrar cualquiera. Los administradores pueden cerrar las sesiones de cualquier usuario en **Usuarios**.
 
@@ -87,7 +91,7 @@ El servidor necesita llegar a `login.microsoftonline.com:443` (para el token) y 
 
 Al actualizar un servidor desde una versión con una única contraseña de dashboard, el dashboard abre en **Cree el primer administrador**. Ingrese la contraseña actual del dashboard (la de `serve_dashboard_password`, o la que se imprimió en el registro del servidor) y elija el usuario y la contraseña del administrador. Luego configure el autenticador. Desde ese momento la contraseña compartida ya no permite iniciar sesión.
 
-Las cuentas se guardan junto al registro de agentes en el primer repositorio, en `users.json`, cifradas con la clave del repositorio. Mientras el servidor no tenga repositorio, el dashboard sigue usando la contraseña compartida.
+Las cuentas se guardan junto al registro de agentes en el primer repositorio (por orden alfabético de nombre), en `users.json`, cifradas con la clave del repositorio. Mientras el servidor no tenga repositorio, el dashboard sigue usando la contraseña compartida.
 
 ## Administrar usuarios { #managing-users }
 
@@ -124,3 +128,5 @@ hitstor serve user remove ops1
 ## Auditoría { #audit-log }
 
 **Auditoría** (administradores) lista los inicios de sesión, intentos fallidos, cambios de usuarios, respaldos, restauraciones, almacenamiento y configuración, y las solicitudes denegadas, con usuario, dirección y hora, en frases legibles. Se puede filtrar por usuario, tipo de acción, resultado y período, y exportar a CSV. Cada entrada lleva el hash de la anterior, de modo que editar o borrar una entrada rompe la cadena y la página indica dónde. El registro es `audit.log`, junto a `users.json`; los cambios hechos con `hitstor serve user` aparecen con el usuario `console`.
+
+![Página de auditoría](../assets/screenshots/es/audit-log.webp){ .screenshot }

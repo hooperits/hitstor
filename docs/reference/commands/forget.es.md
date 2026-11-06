@@ -78,3 +78,4 @@ hitstor forget --repo /backups/hitstor --password "secret" \
 
 - Después de olvidar instantáneas sin `--prune`, HitStor muestra un recordatorio para ejecutar `hitstor prune`.
 - `--keep-tag` conserva cualquier instantánea que tenga la etiqueta indicada, independientemente de las demás reglas de retención.
+- La política se aplica a todas las instantáneas dentro del alcance como un solo conjunto, no por host ni por ruta. En las instantáneas de cargas de trabajo (por ejemplo, SQL Server) también se aplica a los respaldos propios de cada base de datos, y un diferencial o log que se conserva mantiene los respaldos que necesita para restaurarse. Consulte [Cadenas de respaldo de cargas de trabajo](../../user-guide/retention.md#workload-backup-chains).

@@ -69,7 +69,7 @@ Select-String -Path "$env:ProgramData\HitStor\logs\server.log" -Pattern "generat
   ForEach-Object { ($_.Line | ConvertFrom-Json).fields.password }
 ```
 
-Log in with it and change it under **Settings**. Then create a repository from the **Storage** page. To reset a lost password, see [Dashboard Password](quickstart.md#dashboard-password).
+Sign in with it and create a repository from the **Storage** page, then restart the service (`Restart-Service HitStor`). Open `https://<server>:8421`: the dashboard now asks you to **Create the first administrator**. Enter the same password, choose the administrator's user name and password, and set up an authenticator app. From then on everyone signs in with a personal account and the generated password no longer signs in. See [Dashboard Password and First Administrator](quickstart.md#dashboard-password), which also covers resetting a lost password and creating the administrator from the console with `hitstor serve user add`.
 
 ## Configuration
 

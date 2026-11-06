@@ -18,7 +18,7 @@ Both arguments are required: the snapshot ID and the target path where files wil
 
 | Flag | Type | Default | Description |
 |------|------|---------|-------------|
-| `--include` | string | | Restore only files matching this path (repeatable) |
+| `--include` | string | | Restore only this path, relative to the snapshot root (for example `documents/important.pdf` from a backup of `/home/user/documents`), and everything under it. Exact path, not a glob (repeatable) |
 
 Plus all [global flags](index.md#global-flags), including `--repo-name` for multi-repo setups.
 
@@ -48,5 +48,5 @@ Restore only specific files:
 
 ```bash
 hitstor restore --repo /backups/hitstor --password "secret" latest /tmp/restore \
-  --include "/home/user/documents/important.pdf"
+  --include "documents/important.pdf"
 ```

@@ -6,12 +6,12 @@ Cada vez que ejecuta `hitstor backup`, se crea una nueva **instantánea (snapsho
 
 ```console
 hitstor snapshots --repo /path/to/repo --password "secret"
-ID        Time                 Host        Tags        Paths
-----------------------------------------------------------------------------
-abc12345  2026-02-20 08:00:12  webserver   daily       /var/www
-bcd23456  2026-02-21 08:00:09  webserver   daily       /var/www
-cde34567  2026-02-22 08:00:11  webserver   daily       /var/www
-def45678  2026-02-22 10:30:00  laptop      manual      /home/user
+ID        Time                 Host       Tags    Files  Size
+────────  ───────────────────  ─────────  ──────  ─────  ─────────
+def45678  2026-02-22 10:30:00  laptop     manual  8,312  2.1 GiB
+cde34567  2026-02-22 08:00:11  webserver  daily   1,204  96.4 MiB
+bcd23456  2026-02-21 08:00:09  webserver  daily   1,201  96.1 MiB
+abc12345  2026-02-20 08:00:12  webserver  daily   1,198  95.8 MiB
 ```
 
 El alias `hitstor ls` funciona exactamente igual:
@@ -28,11 +28,11 @@ Muestre solo las instantáneas registradas desde un host específico:
 
 ```console
 hitstor snapshots --repo /path/to/repo --password "secret" --host webserver
-ID        Time                 Host        Tags        Paths
-----------------------------------------------------------------------------
-abc12345  2026-02-20 08:00:12  webserver   daily       /var/www
-bcd23456  2026-02-21 08:00:09  webserver   daily       /var/www
-cde34567  2026-02-22 08:00:11  webserver   daily       /var/www
+ID        Time                 Host       Tags    Files  Size
+────────  ───────────────────  ─────────  ──────  ─────  ─────────
+cde34567  2026-02-22 08:00:11  webserver  daily   1,204  96.4 MiB
+bcd23456  2026-02-21 08:00:09  webserver  daily   1,201  96.1 MiB
+abc12345  2026-02-20 08:00:12  webserver  daily   1,198  95.8 MiB
 ```
 
 ### Por ruta { #by-path }
@@ -41,9 +41,9 @@ Muestre solo las instantáneas que incluyen una ruta de respaldo específica:
 
 ```console
 hitstor snapshots --repo /path/to/repo --password "secret" --path /home/user
-ID        Time                 Host        Tags        Paths
-----------------------------------------------------------------------------
-def45678  2026-02-22 10:30:00  laptop      manual      /home/user
+ID        Time                 Host       Tags    Files  Size
+────────  ───────────────────  ─────────  ──────  ─────  ─────────
+def45678  2026-02-22 10:30:00  laptop     manual  8,312  2.1 GiB
 ```
 
 ### Combinar filtros { #combining-filters }
@@ -63,11 +63,13 @@ La salida es un arreglo JSON de objetos de instantánea:
 ```json
 [
   {
-    "id": "abc12345...",
+    "id": "abc12345",
     "time": "2026-02-20T08:00:12Z",
-    "host": "webserver",
+    "hostname": "webserver",
     "tags": ["daily"],
-    "paths": ["/var/www"]
+    "paths": ["/var/www"],
+    "total_files": 1198,
+    "total_size": 100453171
   },
   ...
 ]
@@ -86,17 +88,17 @@ Cada instantánea se identifica mediante una cadena hexadecimal derivada de un h
 
 ### Coincidencia por prefijo corto { #short-prefix-matching }
 
-Siempre que un comando acepta un ID de instantánea, puede indicar un prefijo corto en lugar de la cadena hexadecimal completa. El prefijo debe ser lo bastante largo para identificar de forma única una instantánea del repositorio. Si el prefijo es ambiguo, HitStor muestra un error con la lista de instantáneas coincidentes para que usted indique un prefijo más largo.
+Siempre que un comando acepta un ID de instantánea, puede indicar un prefijo corto en lugar de la cadena hexadecimal completa. El prefijo debe ser lo bastante largo para identificar de forma única una instantánea del repositorio. Si el prefijo es ambiguo, HitStor informa cuántas instantáneas coinciden para que usted indique un prefijo más largo.
 
 ```console
 hitstor snapshots --repo /path/to/repo --password "secret"
 ID        ...
---------  ...
+────────  ...
 abc12345  ...
 abc12399  ...
 
 hitstor restore --repo /path/to/repo --password "secret" abc123 /target
-Fatal: prefix "abc123" matches multiple snapshots: abc12345, abc12399
+Error: snapshot prefix "abc123" is ambiguous (2 matches)
 
 hitstor restore --repo /path/to/repo --password "secret" abc12345 /target
 restoring snapshot abc12345 ...
@@ -114,13 +116,17 @@ El comando `hitstor diff` muestra qué cambió entre dos instantáneas:
 hitstor diff --repo /path/to/repo --password "secret" abc12345 bcd23456
 ```
 
-La salida lista los archivos agregados, eliminados o modificados:
+La salida lista los archivos agregados, eliminados o modificados, con rutas relativas a la raíz de la instantánea (un respaldo de `/var/www` guarda sus archivos bajo `www/`), seguidos de un resumen:
 
 ```
-+    /var/www/blog/new-post.html
--    /var/www/old-page.html
-M    /var/www/index.html
-M    /var/www/css/style.css
+comparing snapshots abc12345 ↔ bcd23456
+
++  www/blog/new-post.html
+-  www/old-page.html
+M  www/index.html
+M  www/css/style.css
+
+4 differences (1 added, 1 removed, 2 modified)
 ```
 
 | Prefijo | Significado |
@@ -133,21 +139,17 @@ Esto es útil para auditar qué cambió entre respaldos o para verificar que se 
 
 ## Uso de disco { #disk-usage }
 
-El comando `hitstor du` informa cuánto espacio del repositorio ocupan una o más instantáneas:
+El comando `hitstor du` informa la cantidad de instantáneas, archivos de paquete y archivos de índice del repositorio, y el espacio total que ocupan:
 
 ```console
 hitstor du --repo /path/to/repo --password "secret"
-Snapshot    Size
----------------------
-abc12345    512.00 MiB
-bcd23456      4.20 MiB
-cde34567      3.80 MiB
-def45678    128.00 MiB
----------------------
-Total:      648.00 MiB
+Snapshots:     4
+Packs:        38
+Indexes:       4
+Total size: 2.2 GiB
 ```
 
-Debido a la deduplicación, los tamaños por instantánea reflejan solo los datos **únicos** que aporta cada instantánea. El total puede ser mucho menor que la suma de los tamaños de los archivos originales de todas las instantáneas.
+Debido a la deduplicación, el total puede ser mucho menor que la suma de la columna `Size` de `hitstor snapshots`, que muestra el tamaño original de los archivos de cada instantánea. Use `--json` para obtener una salida legible por máquina.
 
 !!! note "Nota"
-    `hitstor du` lee el índice del repositorio y no descarga ni descifra los datos reales, por lo que es rápido incluso con repositorios grandes.
+    `hitstor du` lista los archivos del repositorio y suma sus tamaños; no descarga ni descifra los datos reales, por lo que es rápido incluso con repositorios grandes.

@@ -1,14 +1,14 @@
 # Referencia de configuración
 
-Referencia completa de todas las claves de configuración de HitStor. La configuración se almacena en formato YAML en `~/.config/hitstor/config.yaml` (Linux) o `%AppData%\hitstor\config.yaml` (Windows).
+Referencia completa de todas las claves de configuración de HitStor. La configuración se almacena en formato YAML. Sin `--config`, HitStor usa `/etc/hitstor/config.yaml` cuando existe y puede leerse y, si no, `~/.config/hitstor/config.yaml` (`%AppData%\hitstor\config.yaml` en Windows). El servicio del servidor en Windows usa `%ProgramData%\HitStor\config.yaml`.
 
 ## Precedencia { #precedence }
 
 Los valores se resuelven en este orden (de mayor a menor prioridad):
 
 1. **Flag de la CLI** -- `--repo /path`
-2. **Variable de entorno** -- `HITSTOR_REPO=/path`
-3. **Archivo de configuración** -- `repo: /path`
+2. **Archivo de configuración** -- `repo: /path`
+3. **Variable de entorno** -- `HITSTOR_REPO=/path` (solo se usa cuando ni un flag ni el archivo de configuración definen el valor)
 4. **Valor predeterminado**
 
 ## Claves de configuración { #configuration-keys }
@@ -21,6 +21,8 @@ Los valores se resuelven en este orden (de mayor a menor prioridad):
 | `password_file` | string | | `--password-file` | | Ruta al archivo que contiene la contraseña del repositorio |
 | `parallel` | int | `0` | `--parallel` | | Número de workers en paralelo (`0` = detección automática según la cantidad de CPU) |
 | `exclude` | list | | | | Patrones de exclusión globales (se aplican a todos los respaldos) |
+| `sync_writes` | bool | `false` | | `HITSTOR_SYNC_WRITES=1` | Sincroniza a disco (fsync) los archivos del repositorio local después de cada cambio de nombre atómico (durabilidad antes que velocidad) |
+| `min_free_reserve_bytes` | int | `1073741824` (1 GiB) | | | Espacio libre mínimo en disco requerido antes de escribir archivos de paquete en un repositorio local |
 
 ### Backend S3 { #s3-backend }
 
@@ -40,10 +42,10 @@ La usa `hitstor serve` para configurar el servidor gRPC y el dashboard web.
 | `serve_tls_cert` | string | | `--tls-cert` | Ruta al archivo del certificado TLS |
 | `serve_tls_key` | string | | `--tls-key` | Ruta al archivo de la clave privada TLS |
 | `serve_dashboard_port` | int | `8421` | `--dashboard-port` | Puerto de escucha HTTP del dashboard |
-| `serve_dashboard_password` | string | | | Contraseña de inicio de sesión del dashboard (sensible -- si está vacía, se genera una aleatoria al iniciar y se escribe una vez en el registro; consulte [Contraseña del dashboard](../installation/quickstart.md#dashboard-password)) |
+| `serve_dashboard_password` | string | | | Contraseña de configuración inicial del dashboard (sensible). Permite iniciar sesión mientras el servidor no tiene repositorio y se pide una vez para crear el primer administrador; después, cada persona inicia sesión con su propia cuenta. Si está vacía, se genera una aleatoria al iniciar y se escribe una vez en el registro; consulte [Contraseña del dashboard y primer administrador](../installation/quickstart.md#dashboard-password) |
 | `serve_dashboard_language` | string | | | Código del idioma por defecto del dashboard (`en`, `es`). Vacío usa el idioma del navegador; cada usuario puede cambiarlo con el selector. Consulte [Traducciones](../dev-guide/translations.md#choosing-the-language) |
 | `serve_advertise_addr` | string | | `--advertise-addr` | Dirección que se anuncia a los agentes para el registro (úsela cuando el servidor está detrás de NAT) |
-| `update_check` | bool | `true` | | Habilita la comprobación automática de versiones. Si está habilitada, el servidor busca actualizaciones cada 24 horas y muestra un banner en el dashboard. |
+| `update_check` | bool | `false` | | Habilita la comprobación automática de versiones. Si está habilitada, el servidor busca actualizaciones cada 24 horas y muestra un banner en el dashboard. También puede activarse en **Configuración → General**. |
 | `update_url` | string | | | URL personalizada para la comprobación de actualizaciones (vacía = API de GitHub Releases) |
 
 ### Alertas { #alerting }
@@ -63,7 +65,7 @@ La usa `hitstor-agent` para configurar el agente de respaldo remoto.
 | `agent_server` | string | | `--server` | `HITSTOR_AGENT_SERVER` | Dirección del servidor remoto (`host:port`) |
 | `agent_api_key` | string | | `--api-key` | `HITSTOR_AGENT_API_KEY` | Clave de API del agente para la autenticación (sensible -- hexadecimal de 64 caracteres) |
 | `agent_ca_cert` | string | | `--ca-cert` | | Ruta al certificado de la CA para la verificación TLS |
-| `agent_hostname` | string | | `--hostname` | | Reemplaza el nombre de host enviado al servidor (por defecto, el nombre de host del sistema) |
+| `agent_hostname` | string | | `backup --host` | | Reemplaza el nombre de host enviado al servidor (por defecto, el nombre de host del sistema) |
 | `agent_paths` | list | | | | Rutas de respaldo predeterminadas (se usan cuando no se indican rutas en la línea de comandos) |
 | `agent_excludes` | list | | | | Patrones de exclusión predeterminados para los respaldos del agente |
 
@@ -96,7 +98,7 @@ el entorno** en Configuración para migrarla a YAML cifrado.
 
 Las claves de Microsoft 365 (`m365_*`), de proveedores de nube (`gcp_project`, `aws_role_arn`,
 `aws_region`, `azure_tenant`, `azure_client`, `azure_sub`) y
-`collector_plugins` se eliminaron del esquema de configuración en v2.0.0. Los archivos
+`collector_plugins` se eliminaron del esquema de configuración en una versión anterior. Los archivos
 `config.yaml` existentes que las contengan siguen cargándose (YAML ignora en silencio las claves
 desconocidas), pero sus valores nunca se leen. Elimine estas claves cuando le resulte conveniente.
 
@@ -140,6 +142,18 @@ Los reportes enviados por correo según una programación, en una lista. Se pued
 | `language` | string | `en` o `es`; vacío: el idioma predeterminado del dashboard |
 | `enabled` | bool | Enviarlo según la programación |
 | `created`, `last_sent`, `last_error` | | Los mantiene el servidor |
+
+### Registros { #logging }
+
+Retención de los registros del servidor y del agente: el búfer en memoria que usa la página **Registros** del dashboard y el archivo de registro rotado. Cada clave tiene una variable de entorno que la reemplaza.
+
+| Clave | Tipo | Predeterminado | Variable de entorno | Descripción |
+|-------|------|----------------|---------------------|-------------|
+| `log_max_entries` | int | `5000` | `HITSTOR_LOG_MAX_ENTRIES` | Entradas que se conservan en memoria (500-50000) |
+| `log_file_enabled` | bool | `true` | `HITSTOR_LOG_FILE_ENABLED` | Escribe el archivo de registro |
+| `log_file_path` | string | `/var/log/hitstor/server.log` (`C:\ProgramData\HitStor\logs\server.log` en Windows); el agente escribe `agent.log` en la misma carpeta | `HITSTOR_LOG_FILE_PATH` | Ruta del archivo de registro |
+| `log_rotate_max_mb` | int | `50` | `HITSTOR_LOG_ROTATE_MAX_MB` | Rota el archivo al alcanzar este tamaño (como máximo 500) |
+| `log_rotate_max_files` | int | `5` | `HITSTOR_LOG_ROTATE_MAX_FILES` | Archivos rotados que se conservan (como máximo 20) |
 
 ### Sentinel (`sentinel`) { #sentinel-sentinel }
 
@@ -192,7 +206,6 @@ serve_port: 8420
 serve_tls_cert: /etc/hitstor/tls/cert.pem
 serve_tls_key: /etc/hitstor/tls/key.pem
 serve_dashboard_port: 8421
-serve_dashboard_password: changeme
 alert_webhook_url: https://hooks.slack.com/services/T.../B.../xxx
 alert_stale_threshold: 25
 ```
@@ -209,13 +222,13 @@ agent_paths:
   - /var/lib
 agent_excludes:
   - "*.log"
-  - "/home/*/.cache"
+  - ".cache"
 ```
 
 ### Backend S3 { #s3-backend_1 }
 
 ```yaml
-repo: s3:s3.amazonaws.com/my-backup-bucket
+repo: s3:https://s3.amazonaws.com/my-backup-bucket
 s3_access_key: AKIAIOSFODNN7EXAMPLE
 s3_secret_key: wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
 s3_region: us-west-2

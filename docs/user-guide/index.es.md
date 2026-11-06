@@ -12,8 +12,10 @@ La Guía del usuario de HitStor cubre todo lo que necesita saber para proteger s
 | [Instantáneas](snapshots.md) | Liste, filtre, compare e inspeccione las instantáneas almacenadas en su repositorio. |
 | [Retención](retention.md) | Defina políticas de retención, elimine instantáneas antiguas con `forget` y recupere espacio con `prune`. |
 | [Configuración](configuration.md) | Administre el archivo de configuración, las variables de entorno y el asistente interactivo de configuración. |
-| [Plugins](plugins.md) | Descubra, instale y configure plugins de backends de almacenamiento, notificadores, hooks y escáneres. |
-| [SQL Server](sql-server.md) | Respalde y restaure bases de datos de SQL Server con el plugin de carga de trabajo `mssql`. |
+| [Plugins](plugins.md) | Descubra, instale y configure plugins de backends de almacenamiento, notificadores, hooks, escáneres y plugins de carga de trabajo. |
+| [SQL Server](sql-server.md) | Respalde y restaure bases de datos de SQL Server con el plugin de carga de trabajo `mssql`, con planes de respaldo completos, diferenciales y de log. |
+| [Recuperación ante desastres](disaster-recovery.md) | Reconstruya un host completo a partir de sus respaldos de archivos con el asistente guiado del dashboard. |
+| [Restauración bare-metal](bare-metal-restore.md) | Recupere un equipo con el disco vacío mediante un medio de recuperación arrancable. |
 
 ## Requisitos previos { #prerequisites }
 

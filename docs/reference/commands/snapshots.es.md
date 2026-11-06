@@ -10,7 +10,7 @@ hitstor snapshots [flags]
 
 ## Descripción { #description }
 
-Lista todas las instantáneas (snapshots) almacenadas en el repositorio, ordenadas por fecha (las más recientes primero). De forma predeterminada, la salida es una tabla con el ID corto, la marca de tiempo, el nombre de host, las rutas, la cantidad de archivos y el tamaño total de cada instantánea.
+Lista todas las instantáneas (snapshots) almacenadas en el repositorio, ordenadas por fecha (las más recientes primero). De forma predeterminada, la salida es una tabla con el ID corto, la marca de tiempo, el nombre de host, las etiquetas, la cantidad de archivos y el tamaño total de cada instantánea.
 
 Use `--json` para obtener una salida JSON legible por máquinas.
 
@@ -50,9 +50,10 @@ hitstor snapshots --repo /backups/hitstor --password "secret" --json
 ### Tabla (predeterminado) { #table-default }
 
 ```
-ID         Time                 Host         Paths                   Files       Size
-a1b2c3d4   2025-01-15 10:30:00  myhost       /home/user/documents      150     45 MiB
-b5c6d7e8   2025-01-14 10:30:00  myhost       /home/user/documents      148     44 MiB
+ID        Time                 Host    Tags  Files  Size
+────────  ───────────────────  ──────  ────  ─────  ────────
+a1b2c3d4  2025-01-15 10:30:00  myhost          150  45.0 MiB
+b5c6d7e8  2025-01-14 10:30:00  myhost          148  44.0 MiB
 ```
 
 ### JSON (`--json`) { #json-json }

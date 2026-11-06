@@ -13,4 +13,4 @@ Technical reference documentation for HitStor.
 | [Environment Variables](environment-variables.md) | Environment variables recognized by HitStor |
 | [gRPC API](grpc-api.md) | BackupService and AgentService protocols |
 | [Dashboard HTTP API](dashboard-api.md) | Embedded dashboard JSON and SSE endpoints |
-| [Plugin Development](plugin-development.md) | Guide for developing storage, notifier, hook, and scanner plugins |
+| [Plugin Development](plugin-development.md) | Guide for developing storage, notifier, hook, scanner, and workload plugins |

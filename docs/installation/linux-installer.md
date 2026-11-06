@@ -21,11 +21,12 @@ sudo ./hitstor-server-X.Y.Z-linux-amd64.run
 The interactive wizard will prompt for:
 
 1. **Data directory** — where HitStor stores data (default: `/var/lib/hitstor`)
-2. **Dashboard password** — web UI login password (optional; if empty, the server generates one on first start — see [Dashboard Password](quickstart.md#dashboard-password))
+2. **Dashboard password** — the setup password for the web UI, used until the first administrator account exists (optional; if empty, the server generates one on first start — see [Dashboard Password and First Administrator](quickstart.md#dashboard-password))
 3. **gRPC port** — for agent connections (default: 8420)
 4. **Dashboard port** — for the web UI (default: 8421)
+5. **Server advertise address** — the address sent to agents so they can reach the server (default: the detected outbound IP and the gRPC port)
 
-After confirming, the installer creates the system user, starts the service, and verifies everything is running. Repositories are created from the dashboard after installation.
+After confirming, the installer creates the system user, starts the service, and verifies everything is running. Repositories are created from the dashboard after installation; after creating the first one, restart the service (`sudo systemctl restart hitstor-server`) and create the first administrator.
 
 ### Non-Interactive Install
 
@@ -36,8 +37,11 @@ sudo HITSTOR_DATA_DIR=/var/lib/hitstor \
      HITSTOR_DASHBOARD_PASSWORD=dashpass \
      HITSTOR_GRPC_PORT=8420 \
      HITSTOR_DASHBOARD_PORT=8421 \
+     HITSTOR_ADVERTISE_ADDR=192.0.2.10:8420 \
      ./hitstor-server-X.Y.Z-linux-amd64.run --no-wizard
 ```
+
+`HITSTOR_ADVERTISE_ADDR` is optional; when unset, the installer detects the outbound IP.
 
 ### Installed Files
 
@@ -60,28 +64,14 @@ chmod +x hitstor-agent-X.Y.Z-linux-amd64.run
 sudo ./hitstor-agent-X.Y.Z-linux-amd64.run
 ```
 
-The wizard offers two setup modes:
+The agent is managed from the dashboard. The wizard asks only for the **listen port** (default: 8422), the port the server connects to for registration, browsing, and backup triggers. It then installs and starts the `hitstor-agent` service, which generates the agent token on first start.
 
-1. **Dashboard-managed (recommended)** — the agent generates a token and waits for registration from the server dashboard. Prompts for listen port (default: 8422) and optional backup paths.
-2. **Legacy (manual)** — provide server address and API key from `hitstor serve agent add <name>`. Includes a connection test.
-
-After installation, dashboard-managed agents display the **agent token** and instructions for adding the agent from the dashboard.
+After installation the installer displays the **agent token** and the next steps: in the dashboard, go to **Agents → Add Agent** and enter this machine's IP address, the listen port, and the token. Backup paths and schedules are configured from the dashboard.
 
 ### Non-Interactive Install
 
-**Dashboard-managed mode** (default):
-
 ```bash
 sudo HITSTOR_AGENT_LISTEN_PORT=8422 \
-     ./hitstor-agent-X.Y.Z-linux-amd64.run --no-wizard
-```
-
-**Legacy mode** (set server and API key to trigger):
-
-```bash
-sudo HITSTOR_AGENT_SERVER=backup-server.internal:8420 \
-     HITSTOR_AGENT_API_KEY=your-64-char-hex-key \
-     HITSTOR_AGENT_PATHS=/etc,/home \
      ./hitstor-agent-X.Y.Z-linux-amd64.run --no-wizard
 ```
 
@@ -148,7 +138,7 @@ hitstor version --check
 
 ### Automatic (Server)
 
-When `update_check: true` is set in `/etc/hitstor/config.yaml` (the default), the server checks for updates every 24 hours. If a newer version is available, a banner appears at the top of the web dashboard.
+When `update_check: true` is set in `/etc/hitstor/config.yaml` (it is off unless set; it can also be turned on under **Settings → General**), the server checks for updates every 24 hours. If a newer version is available, a banner appears at the top of the web dashboard.
 
 ## ARM64 Support
 
@@ -165,7 +155,7 @@ sudo ./hitstor-agent-X.Y.Z-linux-arm64.run
 |------|-------------|
 | `--no-wizard` | Non-interactive mode (reads from environment variables) |
 | `--uninstall` | Remove HitStor and all associated files |
-| `--yes` | Skip confirmation prompts |
+| `--yes` | Skip confirmation prompts (with `--uninstall`) |
 | `--version` | Print installer version and exit |
 | `--help` | Show help |
 

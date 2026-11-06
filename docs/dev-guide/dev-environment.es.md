@@ -32,7 +32,7 @@ Instale el compilador de Protocol Buffers:
 ```bash
 sudo apt install -y protobuf-compiler
 protoc --version
-libprotoc 27.3
+libprotoc 3.21.12
 ```
 
 ### Plugins de Go { #go-plugins }
@@ -41,6 +41,8 @@ libprotoc 27.3
 go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
 go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
 ```
+
+Los archivos `.pb.go` del repositorio se generaron con `protoc` 3.21.12, `protoc-gen-go` v1.36.11 y `protoc-gen-go-grpc` v1.6.2 (consulte el encabezado de cada archivo generado); use las mismas versiones para que las diferencias al regenerar sean mínimas.
 
 Verifique que ambos estén en su `PATH`:
 
@@ -59,9 +61,11 @@ which protoc-gen-go-grpc
 [nfpm](https://nfpm.goreleaser.com/) genera paquetes `.deb` y `.rpm` a partir de archivos de configuración YAML.
 
 ```bash
-go install github.com/goreleaser/nfpm/v2/cmd/nfpm@latest
+go install github.com/goreleaser/nfpm/v2/cmd/nfpm@v2.44.0
 nfpm --version
 ```
+
+El flujo de publicación fija nfpm v2.44.0.
 
 !!! warning "Advertencia"
     `go install` coloca el binario en `$GOPATH/bin`, **no** en `$(go env GOROOT)/bin`. Asegúrese de que `$GOPATH/bin` esté en su `PATH`.
@@ -71,9 +75,11 @@ nfpm --version
 Solo es necesario al compilar instaladores `.exe` para Windows.
 
 ```bash
-sudo apt install -y nsis
+sudo apt install -y nsis python3-pil
 makensis -VERSION
 ```
+
+Los targets de Windows ejecutan primero `make render-windows-icon` (`scripts/render-windows-icon.sh`), que usa Python con Pillow (`python3-pil`) para generar `packaging/nsis/hitstor.ico` a partir de `assets/icon.png`.
 
 ## Docker { #docker }
 
@@ -90,11 +96,11 @@ docker --version
 [MkDocs](https://www.mkdocs.org/) con el tema [Material](https://squidfunk.github.io/mkdocs-material/) genera el sitio de documentación.
 
 ```bash
-pip install mkdocs-material
+pip install -r requirements-docs.txt
 mkdocs --version
 ```
 
-Esto también instala todas las extensiones de Markdown necesarias (admonitions, tabbed, superfences, etc.).
+`requirements-docs.txt` fija las versiones de MkDocs, Material y [mkdocs-static-i18n](https://ultrabug.github.io/mkdocs-static-i18n/) (el sitio en inglés y español). Material incluye las extensiones de Markdown que usa el sitio (admonitions, tabbed, superfences, etc.).
 
 ## Resumen { #summary }
 
@@ -106,6 +112,7 @@ Esto también instala todas las extensiones de Markdown necesarias (admonitions,
 | `protoc-gen-go-grpc` | Plugin de gRPC para Go | `which protoc-gen-go-grpc` |
 | `nfpm` | Empaquetado `.deb` / `.rpm` | `nfpm --version` |
 | `makensis` | Instaladores de Windows | `makensis -VERSION` |
+| `python3` + Pillow | Ícono del instalador de Windows | `python3 -c 'import PIL'` |
 | `docker` | Compilación de contenedores | `docker --version` |
 | `mkdocs` | Sitio de documentación | `mkdocs --version` |
 | `git` | Control de versiones | `git --version` |

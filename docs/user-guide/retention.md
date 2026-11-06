@@ -59,16 +59,22 @@ For example, with `--keep-last 3 --keep-daily 7`:
 
 ## Workload Backup Chains
 
-Differential and log backups taken by workload plugins (for example
-[SQL Server](sql-server.md)) are only restorable together with the backups
-before them. When a policy keeps such a snapshot, HitStor also keeps the
-earlier snapshots of the same host and plugin back to the most recent full
-backup, even if the policy alone would forget them. Snapshots are recognized
-by their `plugin:<id>` and `kind:<kind>` tags.
+Workload snapshots (for example from [SQL Server](sql-server.md)) carry
+`plugin:<id>` and `kind:<kind>` tags and one `obj:<object>` tag per object
+(database) they hold. The policy is applied to the snapshots as a whole and
+also to each object's own backups, so every database keeps its last N
+backups, its dailies, and so on, whatever the other databases did.
+
+Differential and log backups are only restorable together with the backups
+they build on. When a policy keeps one, HitStor also keeps, for the same host,
+plugin, and object, the backups it needs, even if the policy alone would
+forget them: a differential keeps its base full backup; a log backup keeps the
+earlier log backups back to its base full. Copy-only full backups are never
+used as a base.
 
 ## Host and Path Filtering
 
-By default, `forget` applies the retention policy across **all** snapshots in the repository, grouped by host and path. You can narrow the scope with filters:
+By default, `forget` applies the retention policy to **all** snapshots in the repository as one set: snapshots are not grouped by host or path, so `--keep-last 7` keeps the 7 most recent snapshots overall. To apply a policy to one host or path, narrow the scope with filters:
 
 ### Filter by Host
 
@@ -103,18 +109,18 @@ hitstor forget --repo /path/to/repo --password "secret" \
     --dry-run
 ```
 
-The command prints exactly which snapshots would be kept and which would be removed, without actually deleting anything. Always run `--dry-run` first when tuning a new policy.
+The command prints each snapshot with `keep` or `forget`, without actually deleting anything. Always run `--dry-run` first when tuning a new policy.
 
 Example dry-run output:
 
 ```
-Applying retention policy to 15 snapshots:
-  keep 7 snapshots:
-    abc12345  bcd23456  cde34567  def45678  efg56789  fgh67890  ghi78901
-  remove 8 snapshots:
-    hij89012  ijk90123  jkl01234  klm12345  lmn23456  mno34567  nop45678  opq56789
-
-Dry run -- no snapshots removed.
+keep   abc12345 2026-02-22 08:00:11
+keep   bcd23456 2026-02-21 08:00:09
+...
+keep   cde34567 2026-01-24 08:00:12
+forget def45678 2026-01-23 08:00:10
+forget ef567890 2026-01-22 08:00:07
+snapshots: 30 kept, 2 forgotten
 ```
 
 ## Automatic Prune
@@ -146,7 +152,7 @@ For very large repositories, repacking can involve significant I/O. Use `--max-r
 
 ```console
 hitstor prune --repo /path/to/repo --password "secret" \
-    --max-repack-size 5G
+    --max-repack-size 5GiB
 ```
 
 This processes up to 5 GiB of pack data per invocation. Run `prune` again later to continue where it left off. This approach is useful for spreading the I/O cost over multiple maintenance windows.

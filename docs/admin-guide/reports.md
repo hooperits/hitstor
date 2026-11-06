@@ -2,7 +2,11 @@
 
 HitStor emails PDF reports on a schedule, and any of them can be downloaded at any time. Administrators manage them under **Administration → Reports**. Sending needs [email](users.md#email) set up; downloading does not.
 
+![Reports page with scheduled reports](../assets/screenshots/en/reports.webp){ .screenshot }
+
 ## Types { #types }
+
+![First page of a protection summary PDF](../assets/screenshots/en/report-pdf.webp){ .screenshot }
 
 | Report | Covers | For |
 |--------|--------|-----|

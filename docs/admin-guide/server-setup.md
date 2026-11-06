@@ -33,8 +33,7 @@ The server opens these listeners:
 | Port | Protocol | Purpose |
 |------|----------|---------|
 | 8420 | gRPC (TLS) | Agent communication -- backups, restores, scheduling |
-| 8421 | HTTPS | Web dashboard, JSON API and `/metrics` (plain HTTP while no repository exists) |
-| 8422 | HTTP | Redirect to the dashboard's HTTPS port (dashboard port + 1); skipped if the port is busy, for example when an agent runs on the same machine |
+| 8421 | HTTPS | Web dashboard, JSON API and `/metrics`; plain HTTP requests are redirected to HTTPS (plain HTTP only while no repository exists) |
 
 The server runs in the foreground. Use systemd (see below) for production deployments.
 

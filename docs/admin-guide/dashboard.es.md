@@ -12,7 +12,7 @@ https://SERVER_IP:8421
 
 Reemplace `SERVER_IP` por el nombre de host o la dirección IP del servidor HitStor. El puerto predeterminado del dashboard es `8421` y se puede cambiar con `--dashboard-port`.
 
-Cuando el servidor ya tiene un repositorio, el dashboard usa HTTPS con el mismo certificado que el puerto gRPC (consulte [Certificados TLS](tls-certificates.md)); con el certificado autofirmado predeterminado, el navegador muestra una advertencia hasta que usted lo acepte. Un listener HTTP sin cifrar en el puerto siguiente (`8422` con el puerto predeterminado del dashboard) redirige a HTTPS; no se inicia si ese puerto ya está en uso, por ejemplo por un agente en la misma máquina. Mientras no exista ningún repositorio, el servidor está en modo de configuración inicial y sirve el dashboard por HTTP sin cifrar.
+Cuando el servidor ya tiene un repositorio, el dashboard usa HTTPS con el mismo certificado que el puerto gRPC (consulte [Certificados TLS](tls-certificates.md)); con el certificado autofirmado predeterminado, el navegador muestra una advertencia hasta que usted lo acepte. Las peticiones HTTP sin cifrar al mismo puerto se redirigen a HTTPS, de modo que `http://<servidor>:8421` también funciona. Mientras no exista ningún repositorio, el servidor está en modo de configuración inicial y sirve el dashboard por HTTP sin cifrar.
 
 ## Inicio de sesión { #signing-in }
 

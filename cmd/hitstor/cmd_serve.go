@@ -29,6 +29,7 @@ import (
 	"github.com/hooperits/hitstor/internal/runlog"
 	"github.com/hooperits/hitstor/internal/sentinel"
 	"github.com/hooperits/hitstor/internal/server"
+	"github.com/hooperits/hitstor/internal/tlsutil"
 	"github.com/hooperits/hitstor/internal/ui"
 	"github.com/hooperits/hitstor/internal/update"
 	"github.com/hooperits/hitstor/internal/users"
@@ -378,7 +379,8 @@ func runServe(cmd *cobra.Command, args []string) error {
 		return nil
 	}
 
-	// Start HTTPS dashboard server.
+	// Start the dashboard. With TLS, plain HTTP requests on the same port are
+	// redirected to HTTPS, so no second port is needed.
 	httpSrv := &http.Server{
 		Addr:      fmt.Sprintf(":%d", serveDashboardPortFlag),
 		Handler:   dash.Handler(),
@@ -388,8 +390,16 @@ func runServe(cmd *cobra.Command, args []string) error {
 	}
 	go func() {
 		if httpSrv.TLSConfig != nil {
-			slog.Info("dashboard listening", "port", serveDashboardPortFlag, "tls", true)
-			if err := httpSrv.ListenAndServeTLS("", ""); err != nil && err != http.ErrServerClosed {
+			ln, err := net.Listen("tcp", httpSrv.Addr)
+			if err != nil {
+				slog.Error("dashboard server error", "error", err)
+				return
+			}
+			dual := tlsutil.NewDualListener(ln, httpSrv.TLSConfig)
+			httpSrv.TLSConfig = dual.TLSConfig()
+			httpSrv.Handler = tlsutil.RedirectPlainHTTP(httpSrv.Handler)
+			slog.Info("dashboard listening", "port", serveDashboardPortFlag, "tls", true, "http_redirect", true)
+			if err := httpSrv.Serve(dual); err != nil && err != http.ErrServerClosed {
 				slog.Error("dashboard server error", "error", err)
 			}
 		} else {
@@ -399,31 +409,6 @@ func runServe(cmd *cobra.Command, args []string) error {
 			}
 		}
 	}()
-
-	// Start HTTP→HTTPS redirect server when TLS is active.
-	if httpSrv.TLSConfig != nil {
-		redirectPort := serveDashboardPortFlag + 1
-		redirectSrv := &http.Server{
-			Addr:              fmt.Sprintf(":%d", redirectPort),
-			ReadHeaderTimeout: readHeaderTimeout,
-			Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				target := fmt.Sprintf("https://%s:%d%s", r.Host, serveDashboardPortFlag, r.URL.RequestURI())
-				// Strip port from Host if present (avoid host:8422:8421).
-				if h, _, err := net.SplitHostPort(r.Host); err == nil {
-					target = fmt.Sprintf("https://%s:%d%s", h, serveDashboardPortFlag, r.URL.RequestURI())
-				} else {
-					target = fmt.Sprintf("https://%s:%d%s", r.Host, serveDashboardPortFlag, r.URL.RequestURI())
-				}
-				http.Redirect(w, r, target, http.StatusMovedPermanently)
-			}),
-		}
-		go func() {
-			slog.Info("HTTP redirect listening", "port", redirectPort, "target_port", serveDashboardPortFlag)
-			if err := redirectSrv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-				slog.Warn("HTTP redirect server not started", "error", err)
-			}
-		}()
-	}
 
 	// Graceful shutdown on SIGINT/SIGTERM, or when the command context is
 	// cancelled (Windows Service stop request).

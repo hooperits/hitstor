@@ -12,7 +12,7 @@ https://SERVER_IP:8421
 
 Replace `SERVER_IP` with the hostname or IP address of the HitStor server. The default dashboard port is `8421`, configurable with `--dashboard-port`.
 
-Once the server has a repository, the dashboard uses HTTPS with the same certificate as the gRPC port (see [TLS Certificates](tls-certificates.md)); with the default self-signed certificate the browser shows a warning until you trust it. A plain-HTTP listener on the next port (`8422` with the default dashboard port) redirects to HTTPS; it is skipped when that port is already in use, for example by an agent on the same machine. Before any repository exists, the server is in setup mode and serves the dashboard over plain HTTP.
+Once the server has a repository, the dashboard uses HTTPS with the same certificate as the gRPC port (see [TLS Certificates](tls-certificates.md)); with the default self-signed certificate the browser shows a warning until you trust it. Plain-HTTP requests to the same port are redirected to HTTPS, so `http://<server>:8421` also works. Before any repository exists, the server is in setup mode and serves the dashboard over plain HTTP.
 
 ## Signing In
 

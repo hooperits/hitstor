@@ -33,8 +33,7 @@ El servidor abre estos puertos de escucha:
 | Puerto | Protocolo | Propósito |
 |--------|-----------|-----------|
 | 8420 | gRPC (TLS) | Comunicación con los agentes: respaldos, restauraciones, programación |
-| 8421 | HTTPS | Dashboard web, API JSON y `/metrics` (HTTP sin cifrar mientras no exista ningún repositorio) |
-| 8422 | HTTP | Redirección al puerto HTTPS del dashboard (puerto del dashboard + 1); no se inicia si el puerto está ocupado, por ejemplo cuando un agente se ejecuta en el mismo equipo |
+| 8421 | HTTPS | Dashboard web, API JSON y `/metrics`; las peticiones HTTP sin cifrar se redirigen a HTTPS (solo HTTP sin cifrar mientras no exista ningún repositorio) |
 
 El servidor se ejecuta en primer plano. Use systemd (vea más abajo) para implementaciones en producción.
 

@@ -3,7 +3,7 @@
   "Encrypted, deduplicated backups for your infrastructure.": "Respaldos cifrados y deduplicados para su infraestructura.",
   "Agent-based file protection for Windows and Linux": "Protección de archivos mediante agentes para Windows y Linux",
   "Live progress and restore from the dashboard": "Progreso en vivo y restauración desde el dashboard",
-  "Client-side encryption before data leaves the host": "Cifrado en el origen antes de que los datos salgan del equipo",
+  "AES-256-GCM encryption before data reaches storage": "Cifrado AES-256-GCM antes de que los datos lleguen al almacenamiento",
   "Sign in": "Iniciar sesión",
   "Enter your dashboard password to continue.": "Ingrese la contraseña del dashboard para continuar.",
   "Invalid password": "Contraseña incorrecta",

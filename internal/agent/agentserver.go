@@ -158,8 +158,9 @@ func (s *AgentServer) Register(ctx context.Context, req *pb.RegisterRequest) (*p
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	// Write server address and API key to agent.env.
-	envContent := fmt.Sprintf("HITSTOR_AGENT_SERVER=%s\nHITSTOR_AGENT_API_KEY=%s\n", req.ServerAddr, req.ApiKey)
+	// Write server address and API key to agent.env, keeping its other
+	// settings (such as HITSTOR_AGENT_LISTEN_PORT).
+	set := map[string]string{"HITSTOR_AGENT_SERVER": req.ServerAddr, "HITSTOR_AGENT_API_KEY": req.ApiKey}
 
 	// Write server CA cert if provided, and include its path in agent.env.
 	var caCertPath string
@@ -172,14 +173,14 @@ func (s *AgentServer) Register(ctx context.Context, req *pb.RegisterRequest) (*p
 			slog.Warn("failed to write server CA cert", "error", err)
 			caCertPath = ""
 		} else {
-			envContent += fmt.Sprintf("HITSTOR_AGENT_CA_CERT=%s\n", caCertPath)
+			set["HITSTOR_AGENT_CA_CERT"] = caCertPath
 		}
 	}
 
 	if err := os.MkdirAll(filepath.Dir(s.envPath), 0755); err != nil {
 		return nil, fmt.Errorf("create env dir: %w", err)
 	}
-	if err := os.WriteFile(s.envPath, []byte(envContent), 0600); err != nil {
+	if err := UpdateEnvFile(s.envPath, set, registrationEnvKeys); err != nil {
 		return nil, fmt.Errorf("write agent.env: %w", err)
 	}
 

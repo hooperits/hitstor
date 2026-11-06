@@ -22,6 +22,13 @@ func loadEnvFile(path string) {
 		if !ok {
 			continue
 		}
+		k, v = strings.TrimSpace(k), strings.TrimSpace(v)
+		// Like systemd's EnvironmentFile: every setting reaches the process
+		// environment (HITSTOR_AGENT_LISTEN_PORT, plugin settings), without
+		// overriding a variable that is already set.
+		if _, set := os.LookupEnv(k); !set && k != "" {
+			os.Setenv(k, v)
+		}
 		switch k {
 		case "HITSTOR_AGENT_SERVER":
 			if serverFlag == "" {

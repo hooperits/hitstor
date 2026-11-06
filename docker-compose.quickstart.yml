@@ -27,7 +27,7 @@ services:
       HITSTOR_DASHBOARD_PASSWORD: ${HITSTOR_DASHBOARD_PASSWORD:-}
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:8421/"]
+      test: ["CMD-SHELL", "wget -q -O /dev/null --no-check-certificate https://localhost:8421/login || wget -q -O /dev/null http://localhost:8421/login"]
       interval: 30s
       timeout: 5s
       retries: 3
@@ -54,7 +54,7 @@ services:
       HITSTOR_AUTO_INIT: ${HITSTOR_AUTO_INIT:-true}
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:8421/"]
+      test: ["CMD-SHELL", "wget -q -O /dev/null --no-check-certificate https://localhost:8421/login || wget -q -O /dev/null http://localhost:8421/login"]
       interval: 30s
       timeout: 5s
       retries: 3

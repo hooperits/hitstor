@@ -16,7 +16,7 @@ services:
       - HITSTOR_REPO=/var/lib/hitstor/repo
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:8421/"]
+      test: ["CMD-SHELL", "wget -q -O /dev/null --no-check-certificate https://localhost:8421/login || wget -q -O /dev/null http://localhost:8421/login"]
       interval: 30s
       timeout: 5s
       retries: 3

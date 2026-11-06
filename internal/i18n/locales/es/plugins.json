@@ -18,7 +18,7 @@
   "Plugin": "Plugin",
   "Plugins": "Plugins",
   "Point in time": "Punto en el tiempo",
-  "Remove plugin {id} from {agent}? Its snapshots stay in the repository.": "¿Quitar el plugin {id} de {agent}? Sus snapshots permanecen en el repositorio.",
+  "Remove plugin {id} from {agent}? Its snapshots stay in the repository.": "¿Quitar el plugin {id} de {agent}? Sus instantáneas permanecen en el repositorio.",
   "Restore from a Plugin Backup": "Restaurar desde un respaldo con plugin",
   "Restore on agent": "Restaurar en el agente",
   "Signed": "Firma",

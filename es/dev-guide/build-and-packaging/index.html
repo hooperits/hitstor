@@ -4294,11 +4294,6 @@
 <td>Unidad de systemd</td>
 </tr>
 <tr>
-<td><code>packaging/systemd/hitstor-agent.timer</code></td>
-<td><code>/usr/lib/systemd/system/hitstor-agent.timer</code></td>
-<td>Temporizador de respaldo diario</td>
-</tr>
-<tr>
 <td><code>packaging/systemd/hitstor-agent.env.example</code></td>
 <td><code>/etc/hitstor/agent.env.example</code></td>
 <td>Plantilla del archivo de entorno</td>
@@ -4326,7 +4321,7 @@
 <li>Copia <code>agent.env.example</code> a <code>agent.env</code> y <code>agent-config.yaml.example</code> a <code>agent-config.yaml</code> (modo <code>600</code>) si no existen</li>
 <li>Ejecuta <code>systemctl daemon-reload</code></li>
 </ul>
-<p>El <code>hitstor-agent.timer</code> incluido (diario a las 02:00) activa <code>hitstor-agent.service</code>, que ejecuta <code>hitstor-agent daemon</code>; no ejecuta un respaldo único.</p>
+<p>El paquete del agente no incluye un timer de systemd: el servidor programa los respaldos. El script postinstall desactiva un <code>hitstor-agent.timer</code> que haya quedado de versiones anteriores a la 0.2.1.</p>
 <h3 id="nfpm-configuration-files">Archivos de configuración de nfpm<a class="headerlink" href="#nfpm-configuration-files" title="Permanent link">&para;</a></h3>
 <ul>
 <li><code>packaging/nfpm/hitstor-server.yaml</code> — definición del paquete del servidor</li>
@@ -4575,10 +4570,6 @@
 <tr>
 <td><code>hitstor-agent.service</code></td>
 <td><code>/usr/lib/systemd/system/hitstor-agent.service</code></td>
-</tr>
-<tr>
-<td><code>hitstor-agent.timer</code></td>
-<td><code>/usr/lib/systemd/system/hitstor-agent.timer</code></td>
 </tr>
 <tr>
 <td><code>agent-config.yaml.example</code></td>

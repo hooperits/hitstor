@@ -3982,7 +3982,7 @@ repeating or off (on demand only).</p>
 <p>If you prefer cron-style scheduling managed at the OS level rather than server-managed scheduling, use a systemd timer that runs a one-shot <code>hitstor-agent backup</code>.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>The agent package also installs a <code>hitstor-agent.timer</code> (daily at 02:00). It activates <code>hitstor-agent.service</code>, which runs the <strong>daemon</strong>, not a single backup: with the daemon already enabled the timer has no effect. Use your own units, as below, for one-shot backups.</p>
+<p>Versions before 0.2.1 installed a <code>hitstor-agent.timer</code> that only started the daemon again; current packages remove it. Use your own units, as below, for one-shot backups.</p>
 </div>
 <h3 id="create-the-units">Create the Units<a class="headerlink" href="#create-the-units" title="Permanent link">&para;</a></h3>
 <p>The agent must already be able to reach the server: <code>/etc/hitstor/agent.env</code> holds <code>HITSTOR_AGENT_SERVER</code> and <code>HITSTOR_AGENT_API_KEY</code> once the agent is registered.</p>

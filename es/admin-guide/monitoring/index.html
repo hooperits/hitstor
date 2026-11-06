@@ -3714,12 +3714,12 @@
 <tr>
 <td><code>hitstor_agents_ok</code></td>
 <td>gauge</td>
-<td>Agentes con un respaldo en las últimas 25 horas</td>
+<td>Agentes con un respaldo dentro de <code>alert_stale_threshold</code> (25 horas de forma predeterminada)</td>
 </tr>
 <tr>
 <td><code>hitstor_agents_stale</code></td>
 <td>gauge</td>
-<td>Agentes cuyo último respaldo tiene más de 25 horas</td>
+<td>Agentes cuyo último respaldo es anterior a <code>alert_stale_threshold</code></td>
 </tr>
 <tr>
 <td><code>hitstor_agents_never</code></td>
@@ -3943,7 +3943,7 @@
 <h3 id="alert-events">Eventos de alerta<a class="headerlink" href="#alert-events" title="Permanent link">&para;</a></h3>
 <p>Todos los eventos tienen los mismos campos: <code>event</code>, <code>server</code> (siempre <code>hitstor</code>), <code>timestamp</code>, <code>agent</code>, <code>hostname</code> (cuando se conoce), <code>message</code> y <code>details</code>.</p>
 <h4 id="backup_failed"><code>backup_failed</code><a class="headerlink" href="#backup_failed" title="Permanent link">&para;</a></h4>
-<p>Se envía inmediatamente cuando una sesión de respaldo falla en el servidor: el agente se desconecta durante la carga o la instantánea no se puede finalizar. Las fallas que el agente informa antes de cargar datos (por ejemplo, una base de datos que no se puede leer) se muestran en la página de la tarea y en los <a href="../reports/">reportes</a>, pero no envían un webhook.</p>
+<p>Se envía inmediatamente cuando falla un respaldo: el agente informa que la tarea falló (por ejemplo, una base de datos que no se puede leer), el agente se desconecta durante la carga o la instantánea no se puede finalizar. En las fallas informadas por el agente, <code>details</code> incluye <code>job</code>, <code>job_id</code> y <code>kind</code>, y <code>hostname</code> queda vacío.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="p">{</span>
 <a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">  </span><span class="nt">"event"</span><span class="p">:</span><span class="w"> </span><span class="s2">"backup_failed"</span><span class="p">,</span>
 <a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="w">  </span><span class="nt">"server"</span><span class="p">:</span><span class="w"> </span><span class="s2">"hitstor"</span><span class="p">,</span>

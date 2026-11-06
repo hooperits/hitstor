@@ -3753,12 +3753,7 @@
 <tr>
 <td>8421</td>
 <td>HTTPS</td>
-<td>Web dashboard, JSON API and <code>/metrics</code> (plain HTTP while no repository exists)</td>
-</tr>
-<tr>
-<td>8422</td>
-<td>HTTP</td>
-<td>Redirect to the dashboard's HTTPS port (dashboard port + 1); skipped if the port is busy, for example when an agent runs on the same machine</td>
+<td>Web dashboard, JSON API and <code>/metrics</code>; plain HTTP requests are redirected to HTTPS (plain HTTP only while no repository exists)</td>
 </tr>
 </tbody>
 </table>

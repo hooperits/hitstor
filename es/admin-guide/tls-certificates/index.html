@@ -3655,7 +3655,7 @@
 <a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="nt">serve_tls_key</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/etc/hitstor/tls/server.key</span>
 </code></pre></div>
 <p>El archivo de certificado debe contener la cadena completa (el certificado del servidor seguido de los certificados intermedios). El archivo de clave debe ser una clave privada codificada en PEM y sin cifrar.</p>
-<p>También puede cargar el certificado y la clave desde <strong>Configuración → Seguridad y TLS</strong> en el dashboard; se guardan como <code>/etc/hitstor/tls/server.crt</code> y <code>server.key</code> y se escriben en <code>serve_tls_cert</code> y <code>serve_tls_key</code>. Reinicie el servidor para usarlos.</p>
+<p>También puede cargar el certificado y la clave desde <strong>Configuración → Seguridad y TLS</strong> en el dashboard; se guardan como <code>server.crt</code> y <code>server.key</code> en <code>/etc/hitstor/tls/</code> (Linux) o <code>%ProgramData%\HitStor\tls\</code> (Windows) y se escriben en <code>serve_tls_cert</code> y <code>serve_tls_key</code>. Reinicie el servidor para usarlos.</p>
 <h3 id="file-permissions">Permisos de archivos<a class="headerlink" href="#file-permissions" title="Permanent link">&para;</a></h3>
 <p>Restrinja el acceso a la clave privada, pero manténgala legible para el usuario con el que se ejecuta el servidor (<code>hitstor</code> con la unidad de systemd empaquetada):</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>sudo<span class="w"> </span>chown<span class="w"> </span>root:hitstor<span class="w"> </span>/etc/hitstor/tls/server.key

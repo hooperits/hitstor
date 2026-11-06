@@ -3844,7 +3844,7 @@
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>https://SERVER_IP:8421
 </code></pre></div>
 <p>Reemplace <code>SERVER_IP</code> por el nombre de host o la dirección IP del servidor HitStor. El puerto predeterminado del dashboard es <code>8421</code> y se puede cambiar con <code>--dashboard-port</code>.</p>
-<p>Cuando el servidor ya tiene un repositorio, el dashboard usa HTTPS con el mismo certificado que el puerto gRPC (consulte <a href="../tls-certificates/">Certificados TLS</a>); con el certificado autofirmado predeterminado, el navegador muestra una advertencia hasta que usted lo acepte. Un listener HTTP sin cifrar en el puerto siguiente (<code>8422</code> con el puerto predeterminado del dashboard) redirige a HTTPS; no se inicia si ese puerto ya está en uso, por ejemplo por un agente en la misma máquina. Mientras no exista ningún repositorio, el servidor está en modo de configuración inicial y sirve el dashboard por HTTP sin cifrar.</p>
+<p>Cuando el servidor ya tiene un repositorio, el dashboard usa HTTPS con el mismo certificado que el puerto gRPC (consulte <a href="../tls-certificates/">Certificados TLS</a>); con el certificado autofirmado predeterminado, el navegador muestra una advertencia hasta que usted lo acepte. Las peticiones HTTP sin cifrar al mismo puerto se redirigen a HTTPS, de modo que <code>http://&lt;servidor&gt;:8421</code> también funciona. Mientras no exista ningún repositorio, el servidor está en modo de configuración inicial y sirve el dashboard por HTTP sin cifrar.</p>
 <h2 id="signing-in">Inicio de sesión<a class="headerlink" href="#signing-in" title="Permanent link">&para;</a></h2>
 <p>Cada persona inicia sesión con una cuenta personal: usuario, contraseña y un código de una app de autenticación. Los roles deciden qué páginas, agentes y acciones tiene cada uno. Consulte <a href="../users/">Usuarios y acceso</a>.</p>
 <p>En un servidor nuevo, o al actualizar desde una versión con una única contraseña de dashboard, el dashboard pide primero crear el administrador confirmando la contraseña compartida del dashboard. Esa contraseña proviene de la clave de configuración <code>serve_dashboard_password</code>; si no hay ninguna, <code>hitstor serve</code> genera una al iniciar, guarda su hash en el archivo de configuración e imprime el texto plano una sola vez en el registro del servidor (busque <code>no dashboard password configured</code>). Una vez que existe el primer administrador, la contraseña compartida ya no permite iniciar sesión.</p>
@@ -3866,8 +3866,8 @@
 <p>Los botones de acciones que su rol no permite (por ejemplo, eliminar un agente o ejecutar una tarea en un agente que no opera) no se muestran.</p>
 <h2 id="dashboard-pages">Páginas del dashboard<a class="headerlink" href="#dashboard-pages" title="Permanent link">&para;</a></h2>
 <h3 id="overview">Resumen<a class="headerlink" href="#overview" title="Permanent link">&para;</a></h3>
-<p>La página principal muestra un resumen de la infraestructura de respaldo:</p>
 <p><img alt="Página Resumen" class="screenshot" src="../../../assets/screenshots/es/overview.webp" /></p>
+<p>La página principal muestra un resumen de la infraestructura de respaldo:</p>
 <ul>
 <li>Número de agentes e instantáneas (snapshots), respaldos en ejecución, hora del último respaldo y uso del almacenamiento</li>
 <li>Desglose del estado de los agentes (OK, inactivo, nunca respaldado)</li>
@@ -3875,10 +3875,10 @@
 <li>Accesos rápidos a las páginas Agentes y Almacenamiento</li>
 </ul>
 <h3 id="backups">Respaldos<a class="headerlink" href="#backups" title="Permanent link">&para;</a></h3>
+<p><img alt="Página Respaldos" class="screenshot" src="../../../assets/screenshots/es/backups.webp" /></p>
 <p>Lista las tareas de respaldo con su agente, última ejecución, verificación de
 restauración y estado. <strong>+ Nueva tarea de respaldo</strong> abre un asistente de tres
 pasos inspirado en las tareas de las herramientas de respaldo empresariales:</p>
-<p><img alt="Página Respaldos" class="screenshot" src="../../../assets/screenshots/es/backups.webp" /></p>
 <ol>
 <li><strong>Selección.</strong> Un árbol muestra cada máquina registrada con su estado y su
    sistema operativo. Al expandir una máquina aparecen sus orígenes: el
@@ -3900,6 +3900,10 @@ pasos inspirado en las tareas de las herramientas de respaldo empresariales:</p>
 <li><strong>Revisar.</strong> Un resumen de la tarea, con la programación en palabras y su
    próxima ejecución, y un nombre sugerido.</li>
 </ol>
+<p>Una tarea programada aparece como <strong>Atrasada</strong> cuando su último respaldo es
+más antiguo de lo que permite su programación: el mayor intervalo entre dos
+ejecuciones más la mitad de ese intervalo (para una tarea semanal, unos 10½
+días). Los reportes usan la misma regla.</p>
 <p>Las máquinas sin conexión o suspendidas aparecen en el árbol pero no se pueden
 expandir. En la página de una tarea, <strong>Editar selección</strong> abre el mismo árbol
 para la máquina y el origen de esa tarea, con la selección actual marcada; ahí
@@ -3932,8 +3936,8 @@ origen, cree otra tarea.</p>
 </ul>
 <p>Lo que respalda una tarea (carpetas, bases de datos) se elige en el árbol de selección de la tarea, no en la página del agente.</p>
 <h3 id="storage">Almacenamiento<a class="headerlink" href="#storage" title="Permanent link">&para;</a></h3>
-<p>La página Almacenamiento ofrece administración completa de repositorios:</p>
 <p><img alt="Página Almacenamiento" class="screenshot" src="../../../assets/screenshots/es/storage.webp" /></p>
+<p>La página Almacenamiento ofrece administración completa de repositorios:</p>
 <ul>
 <li><strong>Lista de repositorios</strong>: muestra todos los repositorios configurados (locales y S3) con insignias de estado, barras de uso de disco, cantidad de instantáneas y estadísticas de paquetes e índices</li>
 <li><strong>Crear repositorio</strong>: inicializa un nuevo repositorio local o compatible con S3 directamente desde el dashboard. Los repositorios locales muestran el espacio en disco disponible y detectan repositorios existentes en la ruta indicada</li>

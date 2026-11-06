@@ -3714,12 +3714,12 @@
 <tr>
 <td><code>hitstor_agents_ok</code></td>
 <td>gauge</td>
-<td>Agents with a backup in the last 25 hours</td>
+<td>Agents with a backup within <code>alert_stale_threshold</code> (default 25 hours)</td>
 </tr>
 <tr>
 <td><code>hitstor_agents_stale</code></td>
 <td>gauge</td>
-<td>Agents whose last backup is older than 25 hours</td>
+<td>Agents whose last backup is older than <code>alert_stale_threshold</code></td>
 </tr>
 <tr>
 <td><code>hitstor_agents_never</code></td>
@@ -3943,7 +3943,7 @@
 <h3 id="alert-events">Alert Events<a class="headerlink" href="#alert-events" title="Permanent link">&para;</a></h3>
 <p>Every event has the same fields: <code>event</code>, <code>server</code> (always <code>hitstor</code>), <code>timestamp</code>, <code>agent</code>, <code>hostname</code> (when known), <code>message</code>, and <code>details</code>.</p>
 <h4 id="backup_failed"><code>backup_failed</code><a class="headerlink" href="#backup_failed" title="Permanent link">&para;</a></h4>
-<p>Sent immediately when a backup session fails on the server: the agent disconnects during the upload, or the snapshot cannot be finalized. Failures the agent reports before uploading (for example, a database that cannot be read) show on the job page and in <a href="../reports/">reports</a>, but do not send a webhook.</p>
+<p>Sent immediately when a backup fails: the agent reports that the job failed (for example, a database that cannot be read), the agent disconnects during the upload, or the snapshot cannot be finalized. For failures reported by the agent, <code>details</code> carries <code>job</code>, <code>job_id</code> and <code>kind</code>, and <code>hostname</code> is empty.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="p">{</span>
 <a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">  </span><span class="nt">"event"</span><span class="p">:</span><span class="w"> </span><span class="s2">"backup_failed"</span><span class="p">,</span>
 <a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="w">  </span><span class="nt">"server"</span><span class="p">:</span><span class="w"> </span><span class="s2">"hitstor"</span><span class="p">,</span>

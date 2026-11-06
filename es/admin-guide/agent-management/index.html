@@ -3703,11 +3703,11 @@
 <tbody>
 <tr>
 <td><code>ok</code></td>
-<td>El agente realizó un respaldo en las últimas 25 horas</td>
+<td>El agente realizó un respaldo dentro del umbral de inactividad (<code>alert_stale_threshold</code>, 25 horas de forma predeterminada)</td>
 </tr>
 <tr>
 <td><code>stale</code> (inactivo)</td>
-<td>El agente no ha realizado un respaldo en las últimas 25 horas</td>
+<td>El agente no ha realizado un respaldo dentro del umbral de inactividad</td>
 </tr>
 <tr>
 <td><code>never</code> (nunca)</td>
@@ -3719,7 +3719,7 @@
 </tr>
 </tbody>
 </table>
-<p>Las alertas por webhook usan en cambio el umbral configurable <code>alert_stale_threshold</code> (predeterminado: 25 horas); consulte <a href="../monitoring/">Monitoreo</a>.</p>
+<p>El dashboard, las métricas de Prometheus y las alertas por webhook usan el mismo <code>alert_stale_threshold</code>; consulte <a href="../monitoring/">Monitoreo</a>.</p>
 <h2 id="agent-token-dashboard-managed">Token del agente (administrado desde el dashboard)<a class="headerlink" href="#agent-token-dashboard-managed" title="Permanent link">&para;</a></h2>
 <p>Los agentes administrados desde el dashboard se autentican con un <strong>token</strong>: una cadena hexadecimal de 64 caracteres (256 bits de entropía) que se genera la primera vez que se inicia el agente (los instaladores inician el agente, así que existe justo después de la instalación).</p>
 <p><strong>Propiedades del token:</strong></p>

@@ -3539,7 +3539,7 @@ entorno, haga clic en <strong>Importar desde el entorno</strong> para migrarlo a
 <h2 id="dashboard-password">Contraseña del dashboard<a class="headerlink" href="#dashboard-password" title="Permanent link">&para;</a></h2>
 <p>Las personas inician sesión con cuentas personales (consulte <a href="../users/">Usuarios y acceso</a>). El campo <strong>Contraseña del dashboard</strong> cambia la contraseña compartida <code>serve_dashboard_password</code>, que solo se usa para crear el primer administrador o para iniciar sesión mientras el servidor aún no tiene repositorio. Se aplica al reiniciar.</p>
 <h2 id="tls-certificates">Certificados TLS<a class="headerlink" href="#tls-certificates" title="Permanent link">&para;</a></h2>
-<p>Cargue un certificado PEM y su clave privada desde <strong>Seguridad y TLS</strong>. Los archivos se guardan en <code>/etc/hitstor/tls/</code> (Linux) y sus rutas se escriben en <code>serve_tls_cert</code> y <code>serve_tls_key</code> en el archivo de configuración.</p>
+<p>Cargue un certificado PEM y su clave privada desde <strong>Seguridad y TLS</strong>. Los archivos se guardan en <code>/etc/hitstor/tls/</code> (Linux) o <code>%ProgramData%\HitStor\tls\</code> (Windows) y sus rutas se escriben en <code>serve_tls_cert</code> y <code>serve_tls_key</code> en el archivo de configuración.</p>
 <p><strong>Se requiere reiniciar</strong> después de la carga: TLS se carga al iniciar el servidor.</p>
 <p>La tarjeta de estado muestra el origen (personalizado, generado automáticamente por el repositorio o autofirmado), el sujeto, el emisor, el vencimiento y los SAN.</p>
 <h2 id="notifications">Notificaciones<a class="headerlink" href="#notifications" title="Permanent link">&para;</a></h2>

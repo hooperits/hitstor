@@ -3844,7 +3844,7 @@
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>https://SERVER_IP:8421
 </code></pre></div>
 <p>Replace <code>SERVER_IP</code> with the hostname or IP address of the HitStor server. The default dashboard port is <code>8421</code>, configurable with <code>--dashboard-port</code>.</p>
-<p>Once the server has a repository, the dashboard uses HTTPS with the same certificate as the gRPC port (see <a href="../tls-certificates/">TLS Certificates</a>); with the default self-signed certificate the browser shows a warning until you trust it. A plain-HTTP listener on the next port (<code>8422</code> with the default dashboard port) redirects to HTTPS; it is skipped when that port is already in use, for example by an agent on the same machine. Before any repository exists, the server is in setup mode and serves the dashboard over plain HTTP.</p>
+<p>Once the server has a repository, the dashboard uses HTTPS with the same certificate as the gRPC port (see <a href="../tls-certificates/">TLS Certificates</a>); with the default self-signed certificate the browser shows a warning until you trust it. Plain-HTTP requests to the same port are redirected to HTTPS, so <code>http://&lt;server&gt;:8421</code> also works. Before any repository exists, the server is in setup mode and serves the dashboard over plain HTTP.</p>
 <h2 id="signing-in">Signing In<a class="headerlink" href="#signing-in" title="Permanent link">&para;</a></h2>
 <p>Everyone signs in with a personal account: user name, password and a code from an authenticator app. Roles decide which pages, agents and actions each person gets. See <a href="../users/">Users and Access</a>.</p>
 <p>On a new server, or after upgrading from a version with a single dashboard password, the dashboard first asks to create the administrator, confirming the shared dashboard password. That password comes from the <code>serve_dashboard_password</code> configuration key; if none is configured, <code>hitstor serve</code> generates one at startup, stores its hash in the config file and prints the plaintext once in the server log (look for <code>no dashboard password configured</code>). Once the first administrator exists, the shared password no longer signs in.</p>
@@ -3866,8 +3866,8 @@
 <p>Buttons for actions your role does not allow (for example removing an agent, or running a job on an agent you do not operate) are not shown.</p>
 <h2 id="dashboard-pages">Dashboard Pages<a class="headerlink" href="#dashboard-pages" title="Permanent link">&para;</a></h2>
 <h3 id="overview">Overview<a class="headerlink" href="#overview" title="Permanent link">&para;</a></h3>
-<p>The main page displays a summary of the backup infrastructure:</p>
 <p><img alt="Overview page" class="screenshot" src="../../assets/screenshots/en/overview.webp" /></p>
+<p>The main page displays a summary of the backup infrastructure:</p>
 <ul>
 <li>Number of agents and snapshots, backups running, last backup time, and storage usage</li>
 <li>Agent health breakdown (OK, stale, never backed up)</li>
@@ -3875,10 +3875,10 @@
 <li>Quick links to the Agents and Storage pages</li>
 </ul>
 <h3 id="backups">Backups<a class="headerlink" href="#backups" title="Permanent link">&para;</a></h3>
+<p><img alt="Backups page" class="screenshot" src="../../assets/screenshots/en/backups.webp" /></p>
 <p>Lists the backup jobs with their agent, last run, restore verification, and
 status. <strong>+ New Backup Job</strong> opens a three-step wizard modeled on the backup
 jobs of enterprise backup tools:</p>
-<p><img alt="Backups page" class="screenshot" src="../../assets/screenshots/en/backups.webp" /></p>
 <ol>
 <li><strong>Selection.</strong> A tree shows every registered machine with its status and
    operating system. Expanding a machine lists its sources: the <strong>File
@@ -3898,6 +3898,9 @@ jobs of enterprise backup tools:</p>
 <li><strong>Review.</strong> A summary of the job, with the schedule in words and its next
    run, and a suggested name.</li>
 </ol>
+<p>A scheduled job shows <strong>Overdue</strong> when its latest backup is older than its
+schedule allows: the longest gap between two runs of its schedule plus half
+of it (for a weekly job, about 10½ days). Reports use the same rule.</p>
 <p>Machines that are offline or suspended appear in the tree but cannot be
 expanded. On a job's page, <strong>Edit selection</strong> opens the same tree for that
 job's machine and source, with the current selection checked; the source
@@ -3929,8 +3932,8 @@ options can change there too. <strong>Edit schedule</strong> (files) or <strong>
 </ul>
 <p>What a job backs up (folders, databases) is chosen in the job's selection tree, not on the agent page.</p>
 <h3 id="storage">Storage<a class="headerlink" href="#storage" title="Permanent link">&para;</a></h3>
-<p>The Storage page provides full repository management:</p>
 <p><img alt="Storage page" class="screenshot" src="../../assets/screenshots/en/storage.webp" /></p>
+<p>The Storage page provides full repository management:</p>
 <ul>
 <li><strong>Repository list</strong> — view all configured repositories (local and S3) with status badges, disk usage bars, snapshot counts, and pack/index statistics</li>
 <li><strong>Create repository</strong> — initialize a new local or S3-compatible repository directly from the dashboard. Local repositories show available disk space and detect existing repos at the given path</li>

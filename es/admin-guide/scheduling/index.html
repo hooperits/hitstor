@@ -3984,7 +3984,7 @@ demanda).</p>
 <p>Si prefiere una programación de estilo cron gestionada a nivel del sistema operativo en lugar de la programación gestionada por el servidor, use un temporizador de systemd que ejecute un <code>hitstor-agent backup</code> puntual.</p>
 <div class="admonition note">
 <p class="admonition-title">Nota</p>
-<p>El paquete del agente también instala un <code>hitstor-agent.timer</code> (diario a las 02:00). Este activa <code>hitstor-agent.service</code>, que ejecuta el <strong>daemon</strong>, no un respaldo puntual: si el daemon ya está habilitado, el temporizador no tiene efecto. Para respaldos puntuales, use sus propias unidades, como se muestra a continuación.</p>
+<p>Las versiones anteriores a la 0.2.1 instalaban un <code>hitstor-agent.timer</code> que solo volvía a iniciar el daemon; los paquetes actuales lo eliminan. Use sus propias unidades, como se muestra abajo, para respaldos puntuales.</p>
 </div>
 <h3 id="create-the-units">Crear las unidades<a class="headerlink" href="#create-the-units" title="Permanent link">&para;</a></h3>
 <p>El agente ya debe poder conectarse al servidor: <code>/etc/hitstor/agent.env</code> contiene <code>HITSTOR_AGENT_SERVER</code> y <code>HITSTOR_AGENT_API_KEY</code> una vez registrado el agente.</p>

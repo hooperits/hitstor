@@ -3539,7 +3539,7 @@ variable, click <strong>Import from environment</strong> to migrate it into encr
 <h2 id="dashboard-password">Dashboard password<a class="headerlink" href="#dashboard-password" title="Permanent link">&para;</a></h2>
 <p>People sign in with personal accounts (see <a href="../users/">Users and Access</a>). The <strong>Dashboard password</strong> field changes the shared <code>serve_dashboard_password</code>, which is used only to create the first administrator, or to sign in while the server has no repository yet. A restart applies it.</p>
 <h2 id="tls-certificates">TLS certificates<a class="headerlink" href="#tls-certificates" title="Permanent link">&para;</a></h2>
-<p>Upload a PEM certificate and private key from <strong>Security &amp; TLS</strong>. Files are stored under <code>/etc/hitstor/tls/</code> (Linux) and paths are written to <code>serve_tls_cert</code> and <code>serve_tls_key</code> in the config file.</p>
+<p>Upload a PEM certificate and private key from <strong>Security &amp; TLS</strong>. Files are stored under <code>/etc/hitstor/tls/</code> (Linux) or <code>%ProgramData%\HitStor\tls\</code> (Windows) and paths are written to <code>serve_tls_cert</code> and <code>serve_tls_key</code> in the config file.</p>
 <p><strong>Restart required</strong> after upload — TLS is loaded at server startup.</p>
 <p>The status card shows source (custom, repository auto-generated, or self-signed), subject, issuer, expiry, and SANs.</p>
 <h2 id="notifications">Notifications<a class="headerlink" href="#notifications" title="Permanent link">&para;</a></h2>

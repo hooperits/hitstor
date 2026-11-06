@@ -3948,7 +3948,7 @@
 </code></pre></div>
 <p>Esto inicia <code>hitstor-agent daemon</code> como un servicio de larga duración. El agente escucha los comandos de administración y consulta al servidor si hay cambios en la programación.</p>
 <h4 id="timer-unit">Unidad timer<a class="headerlink" href="#timer-unit" title="Permanent link">&para;</a></h4>
-<p>El paquete también incluye <code>hitstor-agent.timer</code> (diario a las 02:00). Este activa <code>hitstor-agent.service</code>, el mismo daemon, en lugar de ejecutar un respaldo puntual, así que no aporta nada si el daemon está habilitado. Para respaldos puntuales programados por el sistema operativo, consulte <a href="../scheduling/#systemd-timer-alternative">Programación → Temporizador de systemd</a>.</p>
+<p>Las versiones anteriores a la 0.2.1 incluían un <code>hitstor-agent.timer</code> que solo volvía a iniciar el daemon; los paquetes e instaladores ahora lo eliminan, porque el servidor programa todos los respaldos. Para respaldos puntuales programados por el sistema operativo, consulte <a href="../scheduling/#systemd-timer-alternative">Programación → Temporizador de systemd (alternativa)</a>.</p>
 <h4 id="check-agent-status">Verificar el estado del agente<a class="headerlink" href="#check-agent-status" title="Permanent link">&para;</a></h4>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>sudo<span class="w"> </span>systemctl<span class="w"> </span>status<span class="w"> </span>hitstor-agent
 <a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>sudo<span class="w"> </span>journalctl<span class="w"> </span>-u<span class="w"> </span>hitstor-agent<span class="w"> </span>-f

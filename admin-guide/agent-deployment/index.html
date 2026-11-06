@@ -3948,7 +3948,7 @@
 </code></pre></div>
 <p>This starts <code>hitstor-agent daemon</code> as a long-running service. The agent listens for management commands and polls the server for schedule updates.</p>
 <h4 id="timer-unit">Timer Unit<a class="headerlink" href="#timer-unit" title="Permanent link">&para;</a></h4>
-<p>The package also ships <code>hitstor-agent.timer</code> (daily at 02:00). It activates <code>hitstor-agent.service</code>, the same daemon, rather than running a one-shot backup, so it adds nothing when the daemon is enabled. For OS-scheduled one-shot backups, see <a href="../scheduling/#systemd-timer-alternative">Scheduling → Systemd Timer</a>.</p>
+<p>Versions before 0.2.1 shipped a <code>hitstor-agent.timer</code> that only started the daemon again; packages and installers now remove it, since the server schedules every backup. For OS-scheduled one-shot backups, see <a href="../scheduling/#systemd-timer-alternative">Scheduling → systemd Timer (alternative)</a>.</p>
 <h4 id="check-agent-status">Check Agent Status<a class="headerlink" href="#check-agent-status" title="Permanent link">&para;</a></h4>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>sudo<span class="w"> </span>systemctl<span class="w"> </span>status<span class="w"> </span>hitstor-agent
 <a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>sudo<span class="w"> </span>journalctl<span class="w"> </span>-u<span class="w"> </span>hitstor-agent<span class="w"> </span>-f

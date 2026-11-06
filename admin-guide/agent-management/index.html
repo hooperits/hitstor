@@ -3703,11 +3703,11 @@
 <tbody>
 <tr>
 <td><code>ok</code></td>
-<td>Agent has backed up within the last 25 hours</td>
+<td>Agent has backed up within the stale threshold (<code>alert_stale_threshold</code>, default 25 hours)</td>
 </tr>
 <tr>
 <td><code>stale</code></td>
-<td>Agent has not backed up within the last 25 hours</td>
+<td>Agent has not backed up within the stale threshold</td>
 </tr>
 <tr>
 <td><code>never</code></td>
@@ -3719,7 +3719,7 @@
 </tr>
 </tbody>
 </table>
-<p>Webhook alerts use the configurable <code>alert_stale_threshold</code> instead (default: 25 hours); see <a href="../monitoring/">Monitoring</a>.</p>
+<p>The dashboard, the Prometheus metrics and the webhook alerts all use the same <code>alert_stale_threshold</code>; see <a href="../monitoring/">Monitoring</a>.</p>
 <h2 id="agent-token-dashboard-managed">Agent Token (Dashboard-Managed)<a class="headerlink" href="#agent-token-dashboard-managed" title="Permanent link">&para;</a></h2>
 <p>Dashboard-managed agents authenticate using a <strong>token</strong> — a 64-character hexadecimal string (256 bits of entropy) generated on the agent's first start (the installers start the agent, so it exists right after installation).</p>
 <p><strong>Token properties:</strong></p>

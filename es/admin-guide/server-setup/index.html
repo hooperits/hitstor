@@ -3753,12 +3753,7 @@
 <tr>
 <td>8421</td>
 <td>HTTPS</td>
-<td>Dashboard web, API JSON y <code>/metrics</code> (HTTP sin cifrar mientras no exista ningún repositorio)</td>
-</tr>
-<tr>
-<td>8422</td>
-<td>HTTP</td>
-<td>Redirección al puerto HTTPS del dashboard (puerto del dashboard + 1); no se inicia si el puerto está ocupado, por ejemplo cuando un agente se ejecuta en el mismo equipo</td>
+<td>Dashboard web, API JSON y <code>/metrics</code>; las peticiones HTTP sin cifrar se redirigen a HTTPS (solo HTTP sin cifrar mientras no exista ningún repositorio)</td>
 </tr>
 </tbody>
 </table>

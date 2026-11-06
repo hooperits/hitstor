@@ -24,9 +24,6 @@ contents:
   - src: ../systemd/hitstor-agent.service
     dst: /usr/lib/systemd/system/hitstor-agent.service
 
-  - src: ../systemd/hitstor-agent.timer
-    dst: /usr/lib/systemd/system/hitstor-agent.timer
-
   - src: ../systemd/hitstor-agent.env.example
     dst: /etc/hitstor/agent.env.example
     type: config|noreplace

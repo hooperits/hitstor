@@ -59,7 +59,6 @@ El paquete del agente instala:
 |------|-------------|
 | `/usr/bin/hitstor-agent` | Binario del agente |
 | `/usr/lib/systemd/system/hitstor-agent.service` | Unidad de servicio de systemd |
-| `/usr/lib/systemd/system/hitstor-agent.timer` | Temporizador de systemd para respaldos programados |
 | `/etc/hitstor/agent.env.example` | Plantilla del archivo de entorno |
 | `/etc/hitstor/agent-config.yaml.example` | Plantilla del archivo de configuración |
 | `/usr/lib/hitstor/plugins/hitstor-scanner-builtin` | Plugin de escáner de sistema de archivos integrado |
@@ -117,12 +116,6 @@ Habilite e inicie el agente de HitStor:
 
 ```bash
 sudo systemctl enable --now hitstor-agent
-```
-
-Para habilitar el temporizador de respaldos programados en lugar de ejecutar el agente de forma continua:
-
-```bash
-sudo systemctl enable --now hitstor-agent.timer
 ```
 
 ## Verificar la instalación { #verify-the-installation }

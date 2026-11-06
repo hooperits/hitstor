@@ -154,7 +154,7 @@ Esto inicia `hitstor-agent daemon` como un servicio de larga duración. El agent
 
 #### Unidad timer { #timer-unit }
 
-El paquete también incluye `hitstor-agent.timer` (diario a las 02:00). Este activa `hitstor-agent.service`, el mismo daemon, en lugar de ejecutar un respaldo puntual, así que no aporta nada si el daemon está habilitado. Para respaldos puntuales programados por el sistema operativo, consulte [Programación → Temporizador de systemd](scheduling.md#systemd-timer-alternative).
+Las versiones anteriores a la 0.2.1 incluían un `hitstor-agent.timer` que solo volvía a iniciar el daemon; los paquetes e instaladores ahora lo eliminan, porque el servidor programa todos los respaldos. Para respaldos puntuales programados por el sistema operativo, consulte [Programación → Temporizador de systemd (alternativa)](scheduling.md#systemd-timer-alternative).
 
 #### Verificar el estado del agente { #check-agent-status }
 

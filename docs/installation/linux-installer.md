@@ -81,7 +81,6 @@ sudo HITSTOR_AGENT_LISTEN_PORT=8422 \
 |------|-------------|
 | `/usr/bin/hitstor-agent` | Agent binary |
 | `/usr/lib/systemd/system/hitstor-agent.service` | systemd service unit |
-| `/usr/lib/systemd/system/hitstor-agent.timer` | Daily backup timer |
 | `/etc/hitstor/agent-config.yaml` | Agent configuration |
 | `/etc/hitstor/agent.env` | Environment variables (listen port, server address) |
 | `/etc/hitstor/agent-token` | Agent token for dashboard registration (mode 0600) |

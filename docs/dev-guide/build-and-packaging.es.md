@@ -134,7 +134,6 @@ Script posterior a la instalación (`packaging/scripts/server-postinstall.sh`):
 | `bin/hitstor-agent` | `/usr/bin/hitstor-agent` | Binario del agente |
 | `bin/hitstor-scanner-builtin` | `/usr/lib/hitstor/plugins/hitstor-scanner-builtin` | Plugin escáner de sistema de archivos incorporado |
 | `packaging/systemd/hitstor-agent.service` | `/usr/lib/systemd/system/hitstor-agent.service` | Unidad de systemd |
-| `packaging/systemd/hitstor-agent.timer` | `/usr/lib/systemd/system/hitstor-agent.timer` | Temporizador de respaldo diario |
 | `packaging/systemd/hitstor-agent.env.example` | `/etc/hitstor/agent.env.example` | Plantilla del archivo de entorno |
 | `packaging/config/agent-config.yaml.example` | `/etc/hitstor/agent-config.yaml.example` | Plantilla de configuración |
 | (directorio) | `/usr/share/hitstor/bmr`, `/var/lib/hitstor/bmr` | Hook y medios de recuperación bare-metal (`/var/lib/hitstor/bmr` solo para root) |
@@ -146,7 +145,7 @@ Script posterior a la instalación (`packaging/scripts/agent-postinstall.sh`):
 - Copia `agent.env.example` a `agent.env` y `agent-config.yaml.example` a `agent-config.yaml` (modo `600`) si no existen
 - Ejecuta `systemctl daemon-reload`
 
-El `hitstor-agent.timer` incluido (diario a las 02:00) activa `hitstor-agent.service`, que ejecuta `hitstor-agent daemon`; no ejecuta un respaldo único.
+El paquete del agente no incluye un timer de systemd: el servidor programa los respaldos. El script postinstall desactiva un `hitstor-agent.timer` que haya quedado de versiones anteriores a la 0.2.1.
 
 ### Archivos de configuración de nfpm { #nfpm-configuration-files }
 
@@ -301,7 +300,6 @@ Detiene y deshabilita el servicio, elimina el binario y las unidades de systemd 
 |----------------|-------------|
 | `hitstor-agent` | `/usr/bin/hitstor-agent` |
 | `hitstor-agent.service` | `/usr/lib/systemd/system/hitstor-agent.service` |
-| `hitstor-agent.timer` | `/usr/lib/systemd/system/hitstor-agent.timer` |
 | `agent-config.yaml.example` | `/etc/hitstor/agent-config.yaml.example` + `/etc/hitstor/agent-config.yaml` |
 | `agent.env.example` | `/etc/hitstor/agent.env.example` |
 

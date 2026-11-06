@@ -16,8 +16,11 @@ if [ ! -f /etc/hitstor/agent-config.yaml ]; then
     chmod 600 /etc/hitstor/agent-config.yaml
 fi
 
-# Reload systemd to pick up new service/timer files.
+# Reload systemd to pick up the service. Earlier versions shipped a
+# hitstor-agent.timer that only restarted the daemon (the server schedules
+# backups); the package no longer contains it, so disable a leftover one.
 if command -v systemctl >/dev/null 2>&1; then
+    systemctl disable hitstor-agent.timer 2>/dev/null || true
     systemctl daemon-reload
 fi
 
@@ -27,5 +30,4 @@ echo ""
 echo "Next steps:"
 echo "  1. Edit configuration:       sudo nano /etc/hitstor/agent.env"
 echo "  2. Start daemon mode:        sudo systemctl enable --now hitstor-agent"
-echo "     Or use timer mode:        sudo systemctl enable --now hitstor-agent.timer"
 echo ""

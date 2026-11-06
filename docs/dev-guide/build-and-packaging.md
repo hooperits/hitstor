@@ -134,7 +134,6 @@ Post-install script (`packaging/scripts/server-postinstall.sh`):
 | `bin/hitstor-agent` | `/usr/bin/hitstor-agent` | Agent binary |
 | `bin/hitstor-scanner-builtin` | `/usr/lib/hitstor/plugins/hitstor-scanner-builtin` | Built-in filesystem scanner plugin |
 | `packaging/systemd/hitstor-agent.service` | `/usr/lib/systemd/system/hitstor-agent.service` | systemd unit |
-| `packaging/systemd/hitstor-agent.timer` | `/usr/lib/systemd/system/hitstor-agent.timer` | Daily backup timer |
 | `packaging/systemd/hitstor-agent.env.example` | `/etc/hitstor/agent.env.example` | Environment file template |
 | `packaging/config/agent-config.yaml.example` | `/etc/hitstor/agent-config.yaml.example` | Configuration template |
 | (directory) | `/usr/share/hitstor/bmr`, `/var/lib/hitstor/bmr` | Bare-metal recovery hook and media (`/var/lib/hitstor/bmr` is root-only) |
@@ -146,7 +145,7 @@ Post-install script (`packaging/scripts/agent-postinstall.sh`):
 - Copies `agent.env.example` to `agent.env` and `agent-config.yaml.example` to `agent-config.yaml` (mode `600`) if they do not exist
 - Runs `systemctl daemon-reload`
 
-The packaged `hitstor-agent.timer` (daily at 02:00) activates `hitstor-agent.service`, which runs `hitstor-agent daemon`; it does not run a one-shot backup.
+The agent package ships no systemd timer: the server schedules backups. The postinstall script disables a `hitstor-agent.timer` left by versions before 0.2.1.
 
 ### nfpm Configuration Files
 
@@ -301,7 +300,6 @@ Stops and disables the service, removes the binary, systemd units, and optionall
 |----------------|-------------|
 | `hitstor-agent` | `/usr/bin/hitstor-agent` |
 | `hitstor-agent.service` | `/usr/lib/systemd/system/hitstor-agent.service` |
-| `hitstor-agent.timer` | `/usr/lib/systemd/system/hitstor-agent.timer` |
 | `agent-config.yaml.example` | `/etc/hitstor/agent-config.yaml.example` + `/etc/hitstor/agent-config.yaml` |
 | `agent.env.example` | `/etc/hitstor/agent.env.example` |
 

@@ -163,7 +163,11 @@ upgrade_agent() {
 
     # Update systemd units.
     install -m 644 "$TMPDIR/hitstor-agent.service" /usr/lib/systemd/system/
-    install -m 644 "$TMPDIR/hitstor-agent.timer" /usr/lib/systemd/system/
+    if [ -f /usr/lib/systemd/system/hitstor-agent.timer ]; then
+        # Scheduling is done by the server; the old timer only restarted the daemon.
+        systemctl disable --now hitstor-agent.timer 2>/dev/null || true
+        rm -f /usr/lib/systemd/system/hitstor-agent.timer
+    fi
     systemctl daemon-reload
     color_print green "[+] Systemd units updated"
 

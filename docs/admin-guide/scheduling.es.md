@@ -168,7 +168,7 @@ El instalador de Windows ya lo hace. El servicio se inicia automáticamente al a
 Si prefiere una programación de estilo cron gestionada a nivel del sistema operativo en lugar de la programación gestionada por el servidor, use un temporizador de systemd que ejecute un `hitstor-agent backup` puntual.
 
 !!! note "Nota"
-    El paquete del agente también instala un `hitstor-agent.timer` (diario a las 02:00). Este activa `hitstor-agent.service`, que ejecuta el **daemon**, no un respaldo puntual: si el daemon ya está habilitado, el temporizador no tiene efecto. Para respaldos puntuales, use sus propias unidades, como se muestra a continuación.
+    Las versiones anteriores a la 0.2.1 instalaban un `hitstor-agent.timer` que solo volvía a iniciar el daemon; los paquetes actuales lo eliminan. Use sus propias unidades, como se muestra abajo, para respaldos puntuales.
 
 ### Crear las unidades { #create-the-units }
 

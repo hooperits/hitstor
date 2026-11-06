@@ -54,7 +54,6 @@ case "$TYPE" in
         fi
         cp "$BINARY" "$PAYLOAD_DIR/hitstor-agent"
         cp "$SCRIPT_DIR/../systemd/hitstor-agent.service" "$PAYLOAD_DIR/"
-        cp "$SCRIPT_DIR/../systemd/hitstor-agent.timer" "$PAYLOAD_DIR/"
         cp "$SCRIPT_DIR/../config/agent-config.yaml.example" "$PAYLOAD_DIR/agent-config.yaml.example"
         cp "$SCRIPT_DIR/../systemd/hitstor-agent.env.example" "$PAYLOAD_DIR/agent.env.example"
         HEADER="$SCRIPT_DIR/agent-installer-v2.sh.in"

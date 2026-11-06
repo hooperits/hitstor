@@ -166,7 +166,7 @@ The Windows installer already does this. The service starts automatically on boo
 If you prefer cron-style scheduling managed at the OS level rather than server-managed scheduling, use a systemd timer that runs a one-shot `hitstor-agent backup`.
 
 !!! note
-    The agent package also installs a `hitstor-agent.timer` (daily at 02:00). It activates `hitstor-agent.service`, which runs the **daemon**, not a single backup: with the daemon already enabled the timer has no effect. Use your own units, as below, for one-shot backups.
+    Versions before 0.2.1 installed a `hitstor-agent.timer` that only started the daemon again; current packages remove it. Use your own units, as below, for one-shot backups.
 
 ### Create the Units
 

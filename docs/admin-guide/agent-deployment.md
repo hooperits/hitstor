@@ -154,7 +154,7 @@ This starts `hitstor-agent daemon` as a long-running service. The agent listens 
 
 #### Timer Unit
 
-The package also ships `hitstor-agent.timer` (daily at 02:00). It activates `hitstor-agent.service`, the same daemon, rather than running a one-shot backup, so it adds nothing when the daemon is enabled. For OS-scheduled one-shot backups, see [Scheduling → Systemd Timer](scheduling.md#systemd-timer-alternative).
+Versions before 0.2.1 shipped a `hitstor-agent.timer` that only started the daemon again; packages and installers now remove it, since the server schedules every backup. For OS-scheduled one-shot backups, see [Scheduling → systemd Timer (alternative)](scheduling.md#systemd-timer-alternative).
 
 #### Check Agent Status
 

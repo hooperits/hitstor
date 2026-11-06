@@ -48,11 +48,14 @@ install_agent_files() {
     install -m 755 "$TMPDIR/hitstor-agent" /usr/bin/hitstor-agent
     color_print green "[+] Installed binary to /usr/bin/hitstor-agent"
 
-    # Install systemd service and timer.
+    # Install the systemd service; the server schedules backups.
     install -m 644 "$TMPDIR/hitstor-agent.service" /usr/lib/systemd/system/
-    install -m 644 "$TMPDIR/hitstor-agent.timer" /usr/lib/systemd/system/
+    if [ -f /usr/lib/systemd/system/hitstor-agent.timer ]; then
+        systemctl disable --now hitstor-agent.timer 2>/dev/null || true
+        rm -f /usr/lib/systemd/system/hitstor-agent.timer
+    fi
     systemctl daemon-reload
-    color_print green "[+] Systemd service and timer installed"
+    color_print green "[+] Systemd service installed"
 
     # Install config examples (always overwrite on upgrade).
     install -m 644 "$TMPDIR/agent-config.yaml.example" /etc/hitstor/

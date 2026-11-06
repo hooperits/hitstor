@@ -139,7 +139,7 @@ uninstall_agent() {
     echo "  The following will be removed:"
     echo "    - Binary:         /usr/bin/hitstor-agent"
     echo "    - Service:        hitstor-agent.service"
-    echo "    - Timer:          hitstor-agent.timer"
+    echo "    - Timer:          hitstor-agent.timer (older versions)"
     echo "    - Configuration:  /etc/hitstor/"
     echo ""
 

@@ -59,7 +59,6 @@ The agent package installs:
 |------|-------------|
 | `/usr/bin/hitstor-agent` | Agent binary |
 | `/usr/lib/systemd/system/hitstor-agent.service` | systemd service unit |
-| `/usr/lib/systemd/system/hitstor-agent.timer` | systemd timer for scheduled backups |
 | `/etc/hitstor/agent.env.example` | Environment file template |
 | `/etc/hitstor/agent-config.yaml.example` | Configuration file template |
 | `/usr/lib/hitstor/plugins/hitstor-scanner-builtin` | Built-in filesystem scanner plugin |
@@ -117,12 +116,6 @@ Enable and start the HitStor agent:
 
 ```bash
 sudo systemctl enable --now hitstor-agent
-```
-
-To enable the timer for scheduled backups instead of running the agent continuously:
-
-```bash
-sudo systemctl enable --now hitstor-agent.timer
 ```
 
 ## Verify the Installation

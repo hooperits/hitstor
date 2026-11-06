@@ -76,9 +76,18 @@ func (s *Server) runSentinelCheck(sess *Session, resp *pb.FinalizeBackupResponse
 	// 2. Perform safety audit.
 	analysis, err := s.sentinel.CheckSession(ctx, sess.AgentName, current, history)
 	if err != nil {
-		slog.Error("sentinel: safety check failed", "agent", sess.AgentName, "error", err)
+		// Without credentials every check fails the same way: say so once
+		// instead of logging an error after every backup.
+		if s.sentinelFailed.CompareAndSwap(false, true) {
+			slog.Warn("sentinel: safety check unavailable; backups are not being checked",
+				"agent", sess.AgentName, "error", err,
+				"hint", "add a Gemini API key under Settings > Integrations, or set HITSTOR_SENTINEL_ENABLED=false")
+		} else {
+			slog.Debug("sentinel: safety check failed", "agent", sess.AgentName, "error", err)
+		}
 		return
 	}
+	s.sentinelFailed.Store(false)
 
 	slog.Info("sentinel: safety check complete", "agent", sess.AgentName, "threat_detected", analysis.ThreatDetected, "confidence", analysis.Confidence)
 

@@ -67,6 +67,9 @@ type Server struct {
 	hooks []hook.Hook
 
 	sentinel *sentinel.Sentinel
+	// sentinelFailed is set after a failed check is reported, so repeated
+	// failures (no credentials) are not logged as errors after every backup.
+	sentinelFailed atomic.Bool
 
 	// background tracks post-backup work (sentinel check, restore
 	// verification) so Stop can let it finish before returning.

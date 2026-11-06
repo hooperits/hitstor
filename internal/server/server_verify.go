@@ -4,6 +4,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"log/slog"
+	"strings"
 	"time"
 
 	"github.com/hooperits/hitstor/internal/backend"
@@ -38,18 +39,17 @@ func (s *Server) runRestoreVerify(jobID, repoName, snapshotIDHex string) {
 		return
 	}
 
-	raw, err := hex.DecodeString(snapshotIDHex)
-	if err != nil || len(raw) != 32 {
+	snapID, err := resolveSnapshotID(repo, snapshotIDHex)
+	if err != nil {
 		_ = s.registry.UpdateJobVerifyResult(jobID, JobVerifyResult{
 			At:       time.Now(),
 			Status:   verifyrestore.StatusError,
 			Snapshot: snapshotIDHex,
-			Detail:   fmt.Sprintf("invalid snapshot id: %v", err),
+			Detail:   err.Error(),
 		})
 		return
 	}
-	var snapID backend.ID
-	copy(snapID[:], raw)
+	snapshotIDHex = snapID.String()
 
 	slog.Info("restore verification started",
 		"job", jobID,
@@ -125,4 +125,36 @@ func (s *Server) resolveRepo(name string) *repository.Repository {
 		return list[0].Repo
 	}
 	return nil
+}
+
+// resolveSnapshotID turns a snapshot ID, full or the short prefix that
+// FinalizeBackup reports, into the full ID of a snapshot in repo.
+func resolveSnapshotID(repo *repository.Repository, idHex string) (backend.ID, error) {
+	var id backend.ID
+	raw, err := hex.DecodeString(idHex)
+	if err != nil || len(raw) == 0 || len(raw) > len(id) {
+		return id, fmt.Errorf("invalid snapshot id %q", idHex)
+	}
+	if len(raw) == len(id) {
+		copy(id[:], raw)
+		return id, nil
+	}
+	ids, err := repo.ListSnapshots()
+	if err != nil {
+		return id, fmt.Errorf("list snapshots: %w", err)
+	}
+	found := 0
+	for _, sid := range ids {
+		if strings.HasPrefix(sid.String(), idHex) {
+			id = sid
+			found++
+		}
+	}
+	switch found {
+	case 0:
+		return id, fmt.Errorf("snapshot %s not found", idHex)
+	case 1:
+		return id, nil
+	}
+	return backend.ID{}, fmt.Errorf("snapshot id %s is ambiguous", idHex)
 }

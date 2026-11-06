@@ -196,11 +196,7 @@ func buildJobView(c *i18n.Catalog, j server.BackupJob, sess *server.SessionInfo,
 	} else if !j.ScheduleEnabled {
 		status = "disabled"
 	} else if j.LastBackup != nil {
-		window := time.Duration(j.ScheduleHours)*time.Hour + time.Hour
-		if j.CronExpression != "" {
-			window = 25 * time.Hour
-		}
-		if now.Sub(*j.LastBackup) > window {
+		if jobOverdue(j, now) {
 			status = "overdue"
 		} else {
 			status = "ok"
@@ -379,7 +375,7 @@ func (d *Dashboard) handleOverview(w http.ResponseWriter, r *http.Request) {
 
 	// Count stale/ok agents.
 	now := time.Now()
-	staleThreshold := 25 * time.Hour
+	staleThreshold := d.staleThreshold()
 	var okCount, staleCount, neverCount int
 	for _, a := range agents {
 		if a.LastBackup == nil {
@@ -444,7 +440,7 @@ type agentView struct {
 	BackupStatus string
 }
 
-func buildAgentView(a server.AgentRecord, jobCount int, now time.Time) agentView {
+func buildAgentView(a server.AgentRecord, jobCount int, now time.Time, staleAfter time.Duration) agentView {
 	typeLabel := "cli"
 	if a.Managed {
 		typeLabel = "managed"
@@ -455,7 +451,7 @@ func buildAgentView(a server.AgentRecord, jobCount int, now time.Time) agentView
 		status = "suspended"
 	} else if a.LastBackup == nil {
 		status = "never"
-	} else if now.Sub(*a.LastBackup) > 25*time.Hour {
+	} else if now.Sub(*a.LastBackup) > staleAfter {
 		status = "stale"
 	}
 
@@ -484,7 +480,7 @@ func (d *Dashboard) handleAgents(w http.ResponseWriter, r *http.Request) {
 	views := make([]agentView, 0, len(agents))
 	var okCount, staleCount, neverCount, suspendedCount, managedCount int
 	for _, a := range agents {
-		v := buildAgentView(a, jobCounts[a.Name], now)
+		v := buildAgentView(a, jobCounts[a.Name], now, d.staleThreshold())
 		views = append(views, v)
 		if v.Managed {
 			managedCount++
@@ -556,7 +552,7 @@ func (d *Dashboard) handleAgentDetail(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	av := buildAgentView(*agent, len(jobs), now)
+	av := buildAgentView(*agent, len(jobs), now, d.staleThreshold())
 
 	data := d.newPageData(name, "Agent information", "agents", map[string]any{
 		"Agent":        av,

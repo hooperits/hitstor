@@ -24,8 +24,8 @@ This endpoint is unauthenticated, allowing Prometheus to scrape without credenti
 | `hitstor_repository_size_bytes` | gauge | Total repository size in bytes |
 | `hitstor_active_sessions` | gauge | Current active backup sessions |
 | `hitstor_registered_agents` | gauge | Total registered agents |
-| `hitstor_agents_ok` | gauge | Agents with a backup in the last 25 hours |
-| `hitstor_agents_stale` | gauge | Agents whose last backup is older than 25 hours |
+| `hitstor_agents_ok` | gauge | Agents with a backup within `alert_stale_threshold` (default 25 hours) |
+| `hitstor_agents_stale` | gauge | Agents whose last backup is older than `alert_stale_threshold` |
 | `hitstor_agents_never` | gauge | Agents that have never backed up |
 
 #### Counters

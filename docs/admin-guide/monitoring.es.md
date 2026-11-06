@@ -24,8 +24,8 @@ Este endpoint no requiere autenticación, lo que permite que Prometheus recopile
 | `hitstor_repository_size_bytes` | gauge | Tamaño total del repositorio en bytes |
 | `hitstor_active_sessions` | gauge | Sesiones de respaldo activas en este momento |
 | `hitstor_registered_agents` | gauge | Total de agentes registrados |
-| `hitstor_agents_ok` | gauge | Agentes con un respaldo en las últimas 25 horas |
-| `hitstor_agents_stale` | gauge | Agentes cuyo último respaldo tiene más de 25 horas |
+| `hitstor_agents_ok` | gauge | Agentes con un respaldo dentro de `alert_stale_threshold` (25 horas de forma predeterminada) |
+| `hitstor_agents_stale` | gauge | Agentes cuyo último respaldo es anterior a `alert_stale_threshold` |
 | `hitstor_agents_never` | gauge | Agentes que nunca han realizado un respaldo |
 
 #### Contadores { #counters }

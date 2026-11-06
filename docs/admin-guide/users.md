@@ -19,9 +19,9 @@ Every role except Administrator is given either on **all agents** or on a list o
 
 ## Two-step verification { #two-step-verification }
 
-Two-step verification is mandatory for every account. At the first sign-in each user:
-
 ![Setting up two-step verification at the first sign-in](../assets/screenshots/en/two-step-setup.webp){ .screenshot }
+
+Two-step verification is mandatory for every account. At the first sign-in each user:
 
 1. Installs an authenticator app (Microsoft Authenticator, Google Authenticator, 1Password, Bitwarden...).
 2. Scans the QR code the dashboard shows, or types the key under it.

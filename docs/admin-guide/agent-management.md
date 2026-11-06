@@ -101,12 +101,12 @@ The dashboard's **Agents** page shows each agent's status:
 
 | Status | Meaning |
 |--------|---------|
-| `ok` | Agent has backed up within the last 25 hours |
-| `stale` | Agent has not backed up within the last 25 hours |
+| `ok` | Agent has backed up within the stale threshold (`alert_stale_threshold`, default 25 hours) |
+| `stale` | Agent has not backed up within the stale threshold |
 | `never` | Agent is registered but has never completed a backup |
 | `suspended` | Agent is suspended (by an operator or by Sentinel); it cannot back up |
 
-Webhook alerts use the configurable `alert_stale_threshold` instead (default: 25 hours); see [Monitoring](monitoring.md).
+The dashboard, the Prometheus metrics and the webhook alerts all use the same `alert_stale_threshold`; see [Monitoring](monitoring.md).
 
 ## Agent Token (Dashboard-Managed)
 

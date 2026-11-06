@@ -101,12 +101,12 @@ La página **Agentes** del dashboard muestra el estado de cada agente:
 
 | Estado | Significado |
 |--------|-------------|
-| `ok` | El agente realizó un respaldo en las últimas 25 horas |
-| `stale` (inactivo) | El agente no ha realizado un respaldo en las últimas 25 horas |
+| `ok` | El agente realizó un respaldo dentro del umbral de inactividad (`alert_stale_threshold`, 25 horas de forma predeterminada) |
+| `stale` (inactivo) | El agente no ha realizado un respaldo dentro del umbral de inactividad |
 | `never` (nunca) | El agente está registrado, pero nunca ha completado un respaldo |
 | `suspended` (suspendido) | El agente está suspendido (por un operador o por Sentinel); no puede respaldar |
 
-Las alertas por webhook usan en cambio el umbral configurable `alert_stale_threshold` (predeterminado: 25 horas); consulte [Monitoreo](monitoring.md).
+El dashboard, las métricas de Prometheus y las alertas por webhook usan el mismo `alert_stale_threshold`; consulte [Monitoreo](monitoring.md).
 
 ## Token del agente (administrado desde el dashboard) { #agent-token-dashboard-managed }
 

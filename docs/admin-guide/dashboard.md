@@ -46,9 +46,9 @@ Buttons for actions your role does not allow (for example removing an agent, or 
 
 ### Overview
 
-The main page displays a summary of the backup infrastructure:
-
 ![Overview page](../assets/screenshots/en/overview.webp){ .screenshot }
+
+The main page displays a summary of the backup infrastructure:
 
 - Number of agents and snapshots, backups running, last backup time, and storage usage
 - Agent health breakdown (OK, stale, never backed up)
@@ -57,11 +57,11 @@ The main page displays a summary of the backup infrastructure:
 
 ### Backups { #backups }
 
+![Backups page](../assets/screenshots/en/backups.webp){ .screenshot }
+
 Lists the backup jobs with their agent, last run, restore verification, and
 status. **+ New Backup Job** opens a three-step wizard modeled on the backup
 jobs of enterprise backup tools:
-
-![Backups page](../assets/screenshots/en/backups.webp){ .screenshot }
 
 1. **Selection.** A tree shows every registered machine with its status and
    operating system. Expanding a machine lists its sources: the **File
@@ -80,6 +80,10 @@ jobs of enterprise backup tools:
    [Backup Jobs](backup-jobs.md#backup-plans)).
 3. **Review.** A summary of the job, with the schedule in words and its next
    run, and a suggested name.
+
+A scheduled job shows **Overdue** when its latest backup is older than its
+schedule allows: the longest gap between two runs of its schedule plus half
+of it (for a weekly job, about 10½ days). Reports use the same rule.
 
 Machines that are offline or suspended appear in the tree but cannot be
 expanded. On a job's page, **Edit selection** opens the same tree for that
@@ -125,9 +129,9 @@ What a job backs up (folders, databases) is chosen in the job's selection tree, 
 
 ### Storage
 
-The Storage page provides full repository management:
-
 ![Storage page](../assets/screenshots/en/storage.webp){ .screenshot }
+
+The Storage page provides full repository management:
 
 - **Repository list** — view all configured repositories (local and S3) with status badges, disk usage bars, snapshot counts, and pack/index statistics
 - **Create repository** — initialize a new local or S3-compatible repository directly from the dashboard. Local repositories show available disk space and detect existing repos at the given path

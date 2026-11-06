@@ -296,6 +296,9 @@ func runServe(cmd *cobra.Command, args []string) error {
 	if firstRepo != nil {
 		met := metrics.New(firstRepo.Repo, registry, firstRepo.Backend, srv.ActiveSessionCount, srv.Counters)
 		met.SetMaintenanceCounters(dash.MaintenanceCounters)
+		if loadedConfig.AlertStaleThreshold > 0 {
+			met.SetStaleThreshold(time.Duration(loadedConfig.AlertStaleThreshold) * time.Hour)
+		}
 		dash.SetMetricsHandler(met.Handler())
 	}
 

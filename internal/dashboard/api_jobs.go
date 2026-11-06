@@ -82,12 +82,7 @@ func jobToJSON(c *i18n.Catalog, j server.BackupJob) backupJobJSON {
 	} else if !j.ScheduleEnabled {
 		status = "disabled"
 	} else if j.LastBackup != nil {
-		window := time.Duration(j.ScheduleHours)*time.Hour + time.Hour
-		if j.CronExpression != "" {
-			// For cron jobs, use 2x the interval to the next occurrence as the overdue window.
-			window = 25 * time.Hour
-		}
-		if time.Since(*j.LastBackup) > window {
+		if jobOverdue(j, time.Now()) {
 			status = "overdue"
 		} else {
 			status = "ok"

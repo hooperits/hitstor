@@ -46,9 +46,9 @@ Los botones de acciones que su rol no permite (por ejemplo, eliminar un agente o
 
 ### Resumen { #overview }
 
-La página principal muestra un resumen de la infraestructura de respaldo:
-
 ![Página Resumen](../assets/screenshots/es/overview.webp){ .screenshot }
+
+La página principal muestra un resumen de la infraestructura de respaldo:
 
 - Número de agentes e instantáneas (snapshots), respaldos en ejecución, hora del último respaldo y uso del almacenamiento
 - Desglose del estado de los agentes (OK, inactivo, nunca respaldado)
@@ -57,11 +57,11 @@ La página principal muestra un resumen de la infraestructura de respaldo:
 
 ### Respaldos { #backups }
 
+![Página Respaldos](../assets/screenshots/es/backups.webp){ .screenshot }
+
 Lista las tareas de respaldo con su agente, última ejecución, verificación de
 restauración y estado. **+ Nueva tarea de respaldo** abre un asistente de tres
 pasos inspirado en las tareas de las herramientas de respaldo empresariales:
-
-![Página Respaldos](../assets/screenshots/es/backups.webp){ .screenshot }
 
 1. **Selección.** Un árbol muestra cada máquina registrada con su estado y su
    sistema operativo. Al expandir una máquina aparecen sus orígenes: el
@@ -82,6 +82,11 @@ pasos inspirado en las tareas de las herramientas de respaldo empresariales:
    desactivados (consulte [Tareas de respaldo](backup-jobs.md#backup-plans)).
 3. **Revisar.** Un resumen de la tarea, con la programación en palabras y su
    próxima ejecución, y un nombre sugerido.
+
+Una tarea programada aparece como **Atrasada** cuando su último respaldo es
+más antiguo de lo que permite su programación: el mayor intervalo entre dos
+ejecuciones más la mitad de ese intervalo (para una tarea semanal, unos 10½
+días). Los reportes usan la misma regla.
 
 Las máquinas sin conexión o suspendidas aparecen en el árbol pero no se pueden
 expandir. En la página de una tarea, **Editar selección** abre el mismo árbol
@@ -128,9 +133,9 @@ Lo que respalda una tarea (carpetas, bases de datos) se elige en el árbol de se
 
 ### Almacenamiento { #storage }
 
-La página Almacenamiento ofrece administración completa de repositorios:
-
 ![Página Almacenamiento](../assets/screenshots/es/storage.webp){ .screenshot }
+
+La página Almacenamiento ofrece administración completa de repositorios:
 
 - **Lista de repositorios**: muestra todos los repositorios configurados (locales y S3) con insignias de estado, barras de uso de disco, cantidad de instantáneas y estadísticas de paquetes e índices
 - **Crear repositorio**: inicializa un nuevo repositorio local o compatible con S3 directamente desde el dashboard. Los repositorios locales muestran el espacio en disco disponible y detectan repositorios existentes en la ruta indicada

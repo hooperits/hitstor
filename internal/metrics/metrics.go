@@ -13,8 +13,9 @@ import (
 )
 
 const (
-	contentType    = "text/plain; version=0.0.4; charset=utf-8"
-	staleThreshold = 25 * time.Hour
+	contentType = "text/plain; version=0.0.4; charset=utf-8"
+	// defaultStaleThreshold applies unless SetStaleThreshold is called.
+	defaultStaleThreshold = 25 * time.Hour
 )
 
 // Metrics collects and serves Prometheus-compatible metrics for the HitStor server.
@@ -25,6 +26,7 @@ type Metrics struct {
 	activeSessionsFn   func() int
 	countersFn         func() (completed, failed, bytesRecv, chunksRecv uint64)
 	maintenanceCountFn func() (checks, checkErrors, prunes, pruneFreedBytes uint64)
+	staleThreshold     time.Duration
 }
 
 // New creates a Metrics instance.
@@ -41,6 +43,15 @@ func New(
 		be:               be,
 		activeSessionsFn: activeSessionsFn,
 		countersFn:       countersFn,
+		staleThreshold:   defaultStaleThreshold,
+	}
+}
+
+// SetStaleThreshold sets how long an agent may go without a backup before
+// it counts as stale (alert_stale_threshold).
+func (m *Metrics) SetStaleThreshold(d time.Duration) {
+	if d > 0 {
+		m.staleThreshold = d
 	}
 }
 
@@ -104,7 +115,7 @@ func (m *Metrics) writeMetrics(w io.Writer) {
 	for _, a := range agents {
 		if a.LastBackup == nil {
 			neverCount++
-		} else if now.Sub(*a.LastBackup) > staleThreshold {
+		} else if now.Sub(*a.LastBackup) > m.staleThreshold {
 			staleCount++
 		} else {
 			okCount++

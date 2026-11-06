@@ -19,9 +19,9 @@ Cada rol, salvo Administrador, se asigna en **todos los agentes** o en una lista
 
 ## Verificación en dos pasos { #two-step-verification }
 
-La verificación en dos pasos es obligatoria para todas las cuentas. En el primer inicio de sesión cada usuario:
-
 ![Configuración de la verificación en dos pasos en el primer inicio de sesión](../assets/screenshots/es/two-step-setup.webp){ .screenshot }
+
+La verificación en dos pasos es obligatoria para todas las cuentas. En el primer inicio de sesión cada usuario:
 
 1. Instala una app de autenticación (Microsoft Authenticator, Google Authenticator, 1Password, Bitwarden...).
 2. Escanea el código QR que muestra el dashboard, o escribe la clave que aparece debajo.

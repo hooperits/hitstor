@@ -22,4 +22,5 @@ NODE
 cp assets/icon.svg assets/icon.png assets/favicon.svg assets/favicon.png assets/logo.png internal/dashboard/static/
 cp assets/logo.png assets/logo-dark.png assets/favicon.png docs/assets/
 sh "$(dirname "$0")/render-windows-icon.sh"
+bash "$(dirname "$0")/render-installer-art.sh"
 echo "Logo assets synced."

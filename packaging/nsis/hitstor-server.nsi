@@ -178,7 +178,7 @@ Section "HitStor Server" SecMain
   WriteRegStr HKLM "${ARP_KEY}" "UninstallString" "$\"$INSTDIR\uninstall.exe$\""
   WriteRegStr HKLM "${ARP_KEY}" "QuietUninstallString" "$\"$INSTDIR\uninstall.exe$\" /S"
   WriteRegStr HKLM "${ARP_KEY}" "DisplayIcon" "$INSTDIR\hitstor.ico"
-  WriteRegStr HKLM "${ARP_KEY}" "Publisher" "HOOPER IT SERVICES"
+  WriteRegStr HKLM "${ARP_KEY}" "Publisher" "HOOPERITS"
   WriteRegStr HKLM "${ARP_KEY}" "InstallLocation" "$INSTDIR"
   WriteRegDWORD HKLM "${ARP_KEY}" "NoModify" 1
   WriteRegDWORD HKLM "${ARP_KEY}" "NoRepair" 1

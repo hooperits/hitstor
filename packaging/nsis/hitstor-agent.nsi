@@ -304,7 +304,7 @@ Section "HitStor Agent" SecMain
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\HitStorAgent" \
     "DisplayIcon" "$INSTDIR\hitstor.ico"
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\HitStorAgent" \
-    "Publisher" "HOOPER IT SERVICES"
+    "Publisher" "HOOPERITS"
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\HitStorAgent" \
     "InstallLocation" "$INSTDIR"
   WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\HitStorAgent" \

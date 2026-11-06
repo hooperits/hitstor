@@ -3,7 +3,7 @@
   "Actions": "Acciones",
   "Advertise address (host:port for agents)": "Dirección anunciada (host:puerto para los agentes)",
   "Agent: {name}": "Agente: {name}",
-  "Alert webhook and stale-agent threshold (also used by DR auto-failover).": "Webhook de alertas y umbral de inactividad de agentes (también lo usa la conmutación automática de DR).",
+  "Alert webhook, notifier plugins and stale-agent threshold.": "Webhook de alertas, plugins notificadores y umbral de inactividad de agentes.",
   "All levels": "Todos los niveles",
   "All sources": "Todos los orígenes",
   "All time": "Todo el período",

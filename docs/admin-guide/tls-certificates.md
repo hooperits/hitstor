@@ -38,7 +38,7 @@ serve_tls_key: /etc/hitstor/tls/server.key
 
 The certificate file should contain the full chain (server certificate followed by any intermediate certificates). The key file must be an unencrypted PEM-encoded private key.
 
-You can also upload the certificate and key from **Settings → Security & TLS** in the dashboard; they are saved as `/etc/hitstor/tls/server.crt` and `server.key` and written to `serve_tls_cert` and `serve_tls_key`. Restart the server to use them.
+You can also upload the certificate and key from **Settings → Security & TLS** in the dashboard; they are saved as `server.crt` and `server.key` in `/etc/hitstor/tls/` (Linux) or `%ProgramData%\HitStor\tls\` (Windows) and written to `serve_tls_cert` and `serve_tls_key`. Restart the server to use them.
 
 ### File Permissions
 

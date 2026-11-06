@@ -38,7 +38,7 @@ serve_tls_key: /etc/hitstor/tls/server.key
 
 El archivo de certificado debe contener la cadena completa (el certificado del servidor seguido de los certificados intermedios). El archivo de clave debe ser una clave privada codificada en PEM y sin cifrar.
 
-También puede cargar el certificado y la clave desde **Configuración → Seguridad y TLS** en el dashboard; se guardan como `/etc/hitstor/tls/server.crt` y `server.key` y se escriben en `serve_tls_cert` y `serve_tls_key`. Reinicie el servidor para usarlos.
+También puede cargar el certificado y la clave desde **Configuración → Seguridad y TLS** en el dashboard; se guardan como `server.crt` y `server.key` en `/etc/hitstor/tls/` (Linux) o `%ProgramData%\HitStor\tls\` (Windows) y se escriben en `serve_tls_cert` y `serve_tls_key`. Reinicie el servidor para usarlos.
 
 ### Permisos de archivos { #file-permissions }
 

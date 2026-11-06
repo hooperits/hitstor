@@ -37,7 +37,7 @@ People sign in with personal accounts (see [Users and Access](users.md)). The **
 
 ## TLS certificates
 
-Upload a PEM certificate and private key from **Security & TLS**. Files are stored under `/etc/hitstor/tls/` (Linux) and paths are written to `serve_tls_cert` and `serve_tls_key` in the config file.
+Upload a PEM certificate and private key from **Security & TLS**. Files are stored under `/etc/hitstor/tls/` (Linux) or `%ProgramData%\HitStor\tls\` (Windows) and paths are written to `serve_tls_cert` and `serve_tls_key` in the config file.
 
 **Restart required** after upload — TLS is loaded at server startup.
 

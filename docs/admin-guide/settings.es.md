@@ -37,7 +37,7 @@ Las personas inician sesión con cuentas personales (consulte [Usuarios y acceso
 
 ## Certificados TLS { #tls-certificates }
 
-Cargue un certificado PEM y su clave privada desde **Seguridad y TLS**. Los archivos se guardan en `/etc/hitstor/tls/` (Linux) y sus rutas se escriben en `serve_tls_cert` y `serve_tls_key` en el archivo de configuración.
+Cargue un certificado PEM y su clave privada desde **Seguridad y TLS**. Los archivos se guardan en `/etc/hitstor/tls/` (Linux) o `%ProgramData%\HitStor\tls\` (Windows) y sus rutas se escriben en `serve_tls_cert` y `serve_tls_key` en el archivo de configuración.
 
 **Se requiere reiniciar** después de la carga: TLS se carga al iniciar el servidor.
 

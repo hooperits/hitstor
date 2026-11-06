@@ -132,7 +132,7 @@ Todos los eventos tienen los mismos campos: `event`, `server` (siempre `hitstor`
 
 #### `backup_failed`
 
-Se envía inmediatamente cuando una sesión de respaldo falla en el servidor: el agente se desconecta durante la carga o la instantánea no se puede finalizar. Las fallas que el agente informa antes de cargar datos (por ejemplo, una base de datos que no se puede leer) se muestran en la página de la tarea y en los [reportes](reports.md), pero no envían un webhook.
+Se envía inmediatamente cuando falla un respaldo: el agente informa que la tarea falló (por ejemplo, una base de datos que no se puede leer), el agente se desconecta durante la carga o la instantánea no se puede finalizar. En las fallas informadas por el agente, `details` incluye `job`, `job_id` y `kind`, y `hostname` queda vacío.
 
 ```json
 {

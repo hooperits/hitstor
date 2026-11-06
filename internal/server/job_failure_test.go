@@ -88,3 +88,37 @@ func TestFailedCronJobWaitsForNextSlot(t *testing.T) {
 		t.Fatalf("next run %v should be after the failure at %v, not overdue", next, failedAt)
 	}
 }
+
+func TestReportJobFailureSendsAlert(t *testing.T) {
+	client, srv, _, registry, cleanup := testSetupWithServer(t)
+	defer cleanup()
+	apiKey, _ := registry.AddAgent("sql-agent")
+	if err := registry.AddJob(BackupJob{ID: "job-a", Name: "sql logs", AgentName: "sql-agent", RepoName: "default",
+		ScheduleEnabled: true, ScheduleHours: 1}); err != nil {
+		t.Fatal(err)
+	}
+	type alert struct {
+		agent, reason string
+		details       map[string]any
+	}
+	got := make(chan alert, 1)
+	srv.SetBackupFailedHandler(func(agentName, _, reason string, details map[string]any) {
+		got <- alert{agentName, reason, details}
+	})
+	failedBefore, _, _, _ := srv.Counters()
+
+	if _, err := client.ReportJobFailure(context.Background(), &pb.ReportJobFailureRequest{ApiKey: apiKey, JobId: "job-a", Error: "VDI timeout"}); err != nil {
+		t.Fatal(err)
+	}
+	select {
+	case a := <-got:
+		if a.agent != "sql-agent" || a.reason != "VDI timeout" || a.details["job"] != "sql logs" {
+			t.Fatalf("alert = %+v", a)
+		}
+	case <-time.After(5 * time.Second):
+		t.Fatal("no backup_failed alert for an agent-reported failure")
+	}
+	if _, failed, _, _ := srv.Counters(); failed != failedBefore+1 {
+		t.Fatalf("failed backups counter = %d, want %d", failed, failedBefore+1)
+	}
+}

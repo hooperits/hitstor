@@ -15,7 +15,6 @@ import (
 )
 
 const (
-	defaultTLSDir    = "/etc/hitstor/tls"
 	maxTLSCertUpload = 256 * 1024
 	maxTLSKeyUpload  = 64 * 1024
 )
@@ -176,7 +175,7 @@ func (d *Dashboard) handleAPITLSUpload(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tlsDir := defaultTLSDir
+	tlsDir := defaultTLSDir()
 	if err := os.MkdirAll(tlsDir, 0700); err != nil {
 		http.Error(w, fmt.Sprintf("create tls dir: %v", err), http.StatusInternalServerError)
 		return

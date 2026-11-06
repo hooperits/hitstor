@@ -672,5 +672,11 @@ func (s *Server) ReportJobFailure(ctx context.Context, req *pb.ReportJobFailureR
 	dropped := s.CancelSessionByJobID(req.JobId)
 	slog.Warn("backup job failed on agent", "agent", agentName, "job", job.Name, "job_id", req.JobId,
 		"session_dropped", dropped, "error", req.Error)
+	s.backupsFailed.Add(1)
+	s.notifyBackupFailed(agentName, "", req.Error, map[string]any{
+		"job":    job.Name,
+		"job_id": job.ID,
+		"kind":   kind,
+	})
 	return &pb.ReportJobFailureResponse{}, nil
 }

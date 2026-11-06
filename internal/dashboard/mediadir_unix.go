@@ -35,3 +35,6 @@ func defaultPluginPackageDir() string {
 	}
 	return systemDir
 }
+
+// defaultTLSDir is where an uploaded dashboard certificate is stored.
+func defaultTLSDir() string { return "/etc/hitstor/tls" }

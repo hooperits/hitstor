@@ -25,3 +25,11 @@ func defaultPluginPackageDir() string {
 	}
 	return filepath.Join(os.TempDir(), "hitstor-plugin-packages")
 }
+
+// defaultTLSDir is where an uploaded dashboard certificate is stored.
+func defaultTLSDir() string {
+	if programData := os.Getenv("ProgramData"); programData != "" {
+		return filepath.Join(programData, "HitStor", "tls")
+	}
+	return filepath.Join(os.TempDir(), "hitstor-tls")
+}

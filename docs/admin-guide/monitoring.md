@@ -132,7 +132,7 @@ Every event has the same fields: `event`, `server` (always `hitstor`), `timestam
 
 #### `backup_failed`
 
-Sent immediately when a backup session fails on the server: the agent disconnects during the upload, or the snapshot cannot be finalized. Failures the agent reports before uploading (for example, a database that cannot be read) show on the job page and in [reports](reports.md), but do not send a webhook.
+Sent immediately when a backup fails: the agent reports that the job failed (for example, a database that cannot be read), the agent disconnects during the upload, or the snapshot cannot be finalized. For failures reported by the agent, `details` carries `job`, `job_id` and `kind`, and `hostname` is empty.
 
 ```json
 {

@@ -14,7 +14,7 @@ hide:
 
 [Inicio rápido](installation/quickstart.md){ .md-button .md-button--primary }
 [Descargas](https://github.com/hooperits/hitstor/releases/latest){ .md-button }
-[Novedades de la 0.2.0](https://github.com/hooperits/hitstor/blob/master/CHANGELOG.md){ .md-button }
+[Novedades](https://github.com/hooperits/hitstor/blob/master/CHANGELOG.md){ .md-button }
 
 </div>
 

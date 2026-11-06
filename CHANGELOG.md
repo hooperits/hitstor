@@ -5,6 +5,39 @@ All notable changes to HitStor are documented here. The format follows
 [Semantic Versioning](https://semver.org/). Before 1.0, minor versions may
 include breaking changes; they are listed under **Upgrade notes**.
 
+## [0.2.1] — 2026-11-06
+
+### Upgrade notes
+
+- The dashboard no longer listens on port 8422 for the HTTP→HTTPS redirect:
+  plain HTTP requests to port 8421 are redirected instead. Firewall rules
+  for 8422 on the server can be removed (8422 stays the agent's port).
+- The agent packages no longer ship `hitstor-agent.timer`; upgrades disable
+  and remove it. Backups are scheduled by the server.
+
+### Fixed
+
+- The HTTP→HTTPS redirect listened on port 8422, the agent's default port,
+  so a server and an agent on the same machine competed for it.
+- Registering an agent from the dashboard rewrote `agent.env` and dropped a
+  custom `HITSTOR_AGENT_LISTEN_PORT`; on Windows the agent never applied the
+  listen port set in the installer.
+- `hitstor jobs create --repo-name X` wrote the job where the server never
+  reads it unless X was its first repository; the `jobs` commands now always
+  use the server's job registry.
+- Agents showed as stale after a fixed 25 hours in the dashboard and the
+  metrics, ignoring `alert_stale_threshold`.
+- Jobs with a cron schedule showed as overdue 25 hours after their last
+  backup whatever the schedule (a weekly job looked overdue most of the
+  week). Jobs are now overdue by the same rule the reports use.
+- Job failures reported by the agent (for example a database that cannot be
+  read) sent no `backup_failed` alert and were not counted in
+  `hitstor_backups_failed_total`.
+- On Windows, a certificate uploaded from the dashboard was stored under
+  `/etc/hitstor/tls`; it now goes to `%ProgramData%\HitStor\tls`.
+- The Spanish dashboard and reports said "snapshot" instead of
+  "instantánea".
+
 ## [0.2.0] — 2026-11-06
 
 ### Upgrade notes
@@ -80,5 +113,6 @@ First public release: encrypted, deduplicated backup engine; server and agents
 over gRPC/TLS; embedded web dashboard in English and Spanish; Windows service
 and installers; Linux packages and installers; Docker image.
 
+[0.2.1]: https://github.com/hooperits/hitstor/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/hooperits/hitstor/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/hooperits/hitstor/releases/tag/v0.1.0

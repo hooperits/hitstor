@@ -117,7 +117,7 @@ docker compose -f docker-compose.quickstart.yml up -d
 
 ```bash
 # Linux VM: interactive installer that sets up a systemd service
-VERSION=0.2.0
+VERSION=0.2.1
 curl -LO https://github.com/hooperits/hitstor/releases/download/v$VERSION/hitstor-server-$VERSION-linux-amd64.run
 chmod +x hitstor-server-$VERSION-linux-amd64.run
 sudo ./hitstor-server-$VERSION-linux-amd64.run
@@ -125,7 +125,7 @@ sudo ./hitstor-server-$VERSION-linux-amd64.run
 
 ```powershell
 # Windows Server: installs and starts the HitStor service (elevated PowerShell)
-.\hitstor-0.2.0-windows-amd64-setup.exe /S
+.\hitstor-0.2.1-windows-amd64-setup.exe /S
 ```
 
 **2. Create the first administrator.** Open `https://<server>:8421`. A new
@@ -180,7 +180,7 @@ Requires Go 1.26 or later.
 make build            # bin/hitstor
 make agent            # bin/hitstor-agent
 make test             # go test ./...
-make release-assets VERSION=0.2.0   # packages and installers (needs nfpm and NSIS)
+make release-assets VERSION=0.2.1   # packages and installers (needs nfpm and NSIS)
 ```
 
 See [Build and packaging](https://hooperits.github.io/hitstor/dev-guide/build-and-packaging/)

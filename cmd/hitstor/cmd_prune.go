@@ -79,19 +79,24 @@ func runPrune(cmd *cobra.Command, args []string) error {
 func parseSize(s string) (uint64, error) {
 	s = strings.TrimSpace(s)
 
-	multipliers := map[string]uint64{
-		"B":   1,
-		"KiB": 1024,
-		"MiB": 1024 * 1024,
-		"GiB": 1024 * 1024 * 1024,
-		"TiB": 1024 * 1024 * 1024 * 1024,
-		"KB":  1000,
-		"MB":  1000 * 1000,
-		"GB":  1000 * 1000 * 1000,
-		"TB":  1000 * 1000 * 1000 * 1000,
+	// Longest suffixes first: "B" must not match "MiB" or "GB".
+	multipliers := []struct {
+		suffix string
+		mult   uint64
+	}{
+		{"KiB", 1024},
+		{"MiB", 1024 * 1024},
+		{"GiB", 1024 * 1024 * 1024},
+		{"TiB", 1024 * 1024 * 1024 * 1024},
+		{"KB", 1000},
+		{"MB", 1000 * 1000},
+		{"GB", 1000 * 1000 * 1000},
+		{"TB", 1000 * 1000 * 1000 * 1000},
+		{"B", 1},
 	}
 
-	for suffix, mult := range multipliers {
+	for _, m := range multipliers {
+		suffix, mult := m.suffix, m.mult
 		if strings.HasSuffix(s, suffix) {
 			numStr := strings.TrimSpace(strings.TrimSuffix(s, suffix))
 			n, err := strconv.ParseFloat(numStr, 64)

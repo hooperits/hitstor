@@ -89,6 +89,7 @@ func runDaemon(cmd *cobra.Command, args []string) error {
 		EnvPath:    agent.DefaultEnvPath,
 		ConfigPath: configFlag,
 		Version:    Version,
+		TLSDir:     agent.DefaultConfigDir,
 	})
 
 	enablePlugins(agentSrv)

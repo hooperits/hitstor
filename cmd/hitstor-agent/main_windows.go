@@ -78,6 +78,7 @@ func serviceBackup(ctx context.Context) error {
 		EnvPath:    agent.DefaultEnvPath,
 		ConfigPath: configFlag,
 		Version:    Version,
+		TLSDir:     agent.DefaultConfigDir,
 	})
 	enablePlugins(agentSrv)
 

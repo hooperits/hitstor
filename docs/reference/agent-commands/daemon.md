@@ -58,6 +58,8 @@ sudo systemctl enable --now hitstor-agent
 ## Notes
 
 - On first start, the daemon generates an agent token at `/etc/hitstor/agent-token` if one does not exist
+- The agent logs to `agent.log` in the log folder (`/var/log/hitstor/` on Linux, `C:\ProgramData\HitStor\logs\` on Windows, including when it runs as a Windows Service); `log_file_path` overrides it
+- When a job fails, the agent reports the error to the server: the dashboard shows the job as failed with the message, and the job is retried at its next scheduled time (interval jobs wait at least 15 minutes) instead of on every poll
 - The management server uses self-signed TLS (auto-generated)
 - If no schedule is configured, the daemon polls every 5 minutes and logs a message
 - Alternative to daemon mode: use systemd timers with `hitstor-agent backup` for cron-style scheduling

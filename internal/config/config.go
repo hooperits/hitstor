@@ -98,6 +98,9 @@ type Config struct {
 	HookPlugins            []string `yaml:"hook_plugins,omitempty"`
 	FsScannerPlugin        string   `yaml:"fs_scanner_plugin,omitempty"`
 	PluginDir              string   `yaml:"plugin_dir,omitempty"`
+	PluginStoreDir         string   `yaml:"plugin_store_dir,omitempty"`
+	PluginTrustedKeys      []string `yaml:"plugin_trusted_keys,omitempty"`
+	PluginAllowUnsigned    bool     `yaml:"plugin_allow_unsigned,omitempty"`
 	UpdateCheck            bool     `yaml:"update_check,omitempty"`
 	UpdateURL              string   `yaml:"update_url,omitempty"`
 
@@ -121,6 +124,12 @@ type Config struct {
 
 	// Sentinel holds Sentinel telemetry integration settings.
 	Sentinel SentinelConfig `yaml:"sentinel,omitempty"`
+
+	// Email is the outgoing mail server for account emails.
+	Email EmailConfig `yaml:"email,omitempty"`
+
+	// Reports are the reports emailed on a schedule.
+	Reports []ReportConfig `yaml:"reports,omitempty"`
 
 	// Path is the resolved file path (not persisted in YAML).
 	Path string `yaml:"-"`

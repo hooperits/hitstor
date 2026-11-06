@@ -95,3 +95,9 @@ func versionParts(v string) []int {
 	}
 	return out
 }
+
+// CompareVersions returns -1 if a<b, 0 if equal, 1 if a>b, using the same
+// rules as the compatibility check.
+func CompareVersions(a, b string) int {
+	return compareVersions(a, b)
+}

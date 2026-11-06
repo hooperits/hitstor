@@ -5,6 +5,7 @@ import (
 	"io"
 	"log/slog"
 	"os"
+	"path/filepath"
 
 	"github.com/hooperits/hitstor/internal/bmr/bmrcli"
 	"github.com/hooperits/hitstor/internal/config"
@@ -71,6 +72,7 @@ func init() {
 	rootCmd.AddCommand(newDaemonCmd())
 	rootCmd.AddCommand(newShowIDCmd())
 	rootCmd.AddCommand(newRecoverCmd())
+	rootCmd.AddCommand(newPluginCmd())
 	// Recovery media can only be built on the host it protects, and the agent
 	// package is what protected hosts actually install.
 	rootCmd.AddCommand(bmrcli.New(bmrcli.Options{
@@ -108,7 +110,13 @@ func initAgentLogStore(cfg config.Config) {
 	if quietFlag {
 		return
 	}
-	if err := logstore.InitFromConfig(config.LogStoreConfig(cfg)); err != nil {
+	lc := config.LogStoreConfig(cfg)
+	// The default log file is shared with the server's; an agent on the
+	// same host writes its own agent.log next to it unless configured.
+	if cfg.LogFilePath == "" && os.Getenv("HITSTOR_LOG_FILE_PATH") == "" {
+		lc.FilePath = filepath.Join(filepath.Dir(lc.FilePath), "agent.log")
+	}
+	if err := logstore.InitFromConfig(lc); err != nil {
 		slog.Warn("logstore init failed", "error", err)
 		return
 	}

@@ -6,16 +6,19 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"sort"
 	"time"
 
 	"log/slog"
+	"strconv"
 	"strings"
 
 	"github.com/hooperits/hitstor/internal/cron"
 	"github.com/hooperits/hitstor/internal/i18n"
 	"github.com/hooperits/hitstor/internal/server"
+	"github.com/hooperits/hitstor/internal/users"
 )
 
 type backupJobJSON struct {
@@ -46,6 +49,20 @@ type backupJobJSON struct {
 	LastVerifyDetail  string   `json:"last_verify_detail,omitempty"`
 	LastVerifyFiles   int      `json:"last_verify_files,omitempty"`
 	LastVerifyBytes   uint64   `json:"last_verify_bytes,omitempty"`
+
+	// Workload jobs only.
+	Plugin         string            `json:"plugin,omitempty"`
+	PluginSettings map[string]string `json:"plugin_settings,omitempty"`
+	Selection      []string          `json:"selection,omitempty"`
+	BackupKind     string            `json:"backup_kind,omitempty"`
+	BackupOptions  map[string]string `json:"backup_options,omitempty"`
+
+	LastError   string  `json:"last_error,omitempty"`
+	LastErrorAt *string `json:"last_error_at,omitempty"`
+
+	// Plan describes each backup kind of a workload job (see plan_view.go).
+	Plan       []planKindView `json:"plan,omitempty"`
+	RunNowKind string         `json:"run_now_kind,omitempty"`
 }
 
 func jobToJSON(c *i18n.Catalog, j server.BackupJob) backupJobJSON {
@@ -76,6 +93,9 @@ func jobToJSON(c *i18n.Catalog, j server.BackupJob) backupJobJSON {
 			status = "ok"
 		}
 	}
+	if !j.RunNow && server.JobFailedSinceLastBackup(j) {
+		status = "failed"
+	}
 
 	result := backupJobJSON{
 		ID:                j.ID,
@@ -102,10 +122,19 @@ func jobToJSON(c *i18n.Catalog, j server.BackupJob) backupJobJSON {
 		LastVerifyDetail:  j.LastVerifyDetail,
 		LastVerifyFiles:   j.LastVerifyFiles,
 		LastVerifyBytes:   j.LastVerifyBytes,
+		Plugin:            j.Plugin,
+		PluginSettings:    j.PluginSettings,
+		Selection:         j.Selection,
+		BackupKind:        j.BackupKind,
+		BackupOptions:     j.BackupOptions,
 	}
 	if j.LastVerifyAt != nil {
 		ts := j.LastVerifyAt.Format(time.RFC3339)
 		result.LastVerifyAt = &ts
+	}
+	if j.LastErrorAt != nil {
+		ts := j.LastErrorAt.Format(time.RFC3339)
+		result.LastError, result.LastErrorAt = j.LastError, &ts
 	}
 
 	// Compute cron description and next run time.
@@ -135,11 +164,24 @@ func jobToJSON(c *i18n.Catalog, j server.BackupJob) backupJobJSON {
 		result.NextRun = nextRun.Format(time.RFC3339)
 	}
 
+	if st, _, _, ok := legacyWorkloadOutcome(c, j); ok {
+		result.Status = st
+	}
+	if plan := buildPlanView(c, j, time.Now()); plan != nil {
+		result.Plan, result.RunNowKind = plan, j.RunNowKind
+		result.Status = planStatus(j, plan, time.Now())
+		result.CronDescription, result.NextRun = planSummary(c, plan)
+		for _, k := range plan {
+			if k.Next {
+				result.NextRun = k.NextRunAt.Format(time.RFC3339)
+			}
+		}
+	}
 	return result
 }
 
 func (d *Dashboard) handleAPIBackupJobs(w http.ResponseWriter, r *http.Request) {
-	jobs := d.registry.ListJobs()
+	jobs := d.visibleJobs(r)
 	result := make([]backupJobJSON, 0, len(jobs))
 	for _, j := range jobs {
 		result = append(result, jobToJSON(d.catalog(r), j))
@@ -160,15 +202,81 @@ type createBackupJobRequest struct {
 	FullRescanDays  int      `json:"full_rescan_days"`
 	UseVSS          bool     `json:"use_vss"`
 	JobType         string   `json:"job_type"`
+
+	// Workload jobs only.
+	Plugin         string            `json:"plugin"`
+	PluginSettings map[string]string `json:"plugin_settings"`
+	Selection      []string          `json:"selection"`
+	BackupKind     string            `json:"backup_kind"`
+	BackupOptions  map[string]string `json:"backup_options"`
+	// Plan schedules each backup kind of the selection; it replaces
+	// backup_kind and the job's own schedule.
+	Plan []server.PlanEntry `json:"plan"`
 }
 
-// validateJobType rejects anything but filesystem jobs: HitStor backs up
-// filesystems only.
-func validateJobType(jobType string) error {
-	if jobType != "" && jobType != "files" {
-		return fmt.Errorf("unsupported job type %q: HitStor supports filesystem backup jobs only", jobType)
+// pluginKinds returns the backup kinds an agent's plugin offers (its
+// "backup.<kind>" capabilities).
+func pluginKinds(a *server.AgentRecord, id string) []string {
+	if a == nil {
+		return nil
+	}
+	var kinds []string
+	for _, p := range a.Plugins {
+		if p.ID != id {
+			continue
+		}
+		for _, cap := range p.Capabilities {
+			if k, ok := strings.CutPrefix(cap, "backup."); ok {
+				kinds = append(kinds, k)
+			}
+		}
+	}
+	return kinds
+}
+
+// applyPlan sets a workload job's plan. The job's own kind and schedule
+// follow the plan's first kind, for agents and views that know one kind.
+func applyPlan(j *server.BackupJob, plan []server.PlanEntry) {
+	j.Plan = plan
+	j.BackupKind = plan[0].Kind
+	j.ScheduleEnabled = false
+	for _, e := range plan {
+		j.ScheduleEnabled = j.ScheduleEnabled || e.Enabled
+	}
+	j.CronExpression, j.Timezone, j.ScheduleHours = "", "", 0
+}
+
+// checkPlanOptions rejects plans their backup options defeat: copy-only
+// fulls are never the base of a differential.
+func checkPlanOptions(plan []server.PlanEntry, opts map[string]string) error {
+	if copyOnly, _ := strconv.ParseBool(opts["copy_only"]); !copyOnly {
+		return nil
+	}
+	for _, e := range plan {
+		if e.Kind == "differential" && e.Enabled {
+			return fmt.Errorf("copy-only full backups cannot be the base of differential backups: turn off copy-only or the differential schedule")
+		}
 	}
 	return nil
+}
+
+// validateJobType accepts filesystem and workload plugin jobs.
+func validateJobType(jobType string) error {
+	if !server.IsSupportedJobType(jobType) {
+		return fmt.Errorf("unsupported job type %q (want %q or %q)", jobType, server.JobTypeFiles, server.JobTypeWorkload)
+	}
+	return nil
+}
+
+// agentHasPlugin reports whether the agent's last reported inventory
+// includes an active plugin with this id.
+func agentHasPlugin(a *server.AgentRecord, id string) bool {
+	for _, p := range a.Plugins {
+		if p.ID == id && p.Status == "active" {
+			return true
+		}
+	}
+	return false
 }
 
 func (d *Dashboard) handleAPICreateBackupJob(w http.ResponseWriter, r *http.Request) {
@@ -190,14 +298,23 @@ func (d *Dashboard) handleAPICreateBackupJob(w http.ResponseWriter, r *http.Requ
 		http.Error(w, "agent_name is required for backup jobs", http.StatusBadRequest)
 		return
 	}
-	if len(req.Paths) == 0 {
+	if !d.requireAgent(w, r, users.PermBackup, req.AgentName) {
+		return
+	}
+	workload := server.IsWorkloadJobType(req.JobType)
+	if !workload && len(req.Paths) == 0 {
 		http.Error(w, "paths are required for filesystem backup jobs", http.StatusBadRequest)
 		return
 	}
 
 	// Validate agent exists.
-	if d.registry.GetAgent(req.AgentName) == nil {
+	agentRec := d.registry.GetAgent(req.AgentName)
+	if agentRec == nil {
 		http.Error(w, "agent not found", http.StatusBadRequest)
+		return
+	}
+	if workload && !agentHasPlugin(agentRec, req.Plugin) {
+		http.Error(w, fmt.Sprintf("agent %q has not reported plugin %q; install it on the agent with: hitstor-agent plugin install", req.AgentName, req.Plugin), http.StatusBadRequest)
 		return
 	}
 	// Validate repo exists.
@@ -239,7 +356,31 @@ func (d *Dashboard) handleAPICreateBackupJob(w http.ResponseWriter, r *http.Requ
 		Timezone:        req.Timezone,
 		UseVSS:          req.UseVSS,
 		CreatedAt:       time.Now(),
-		JobType:         "files",
+		JobType:         server.JobTypeFiles,
+	}
+	if workload {
+		job.JobType = server.JobTypeWorkload
+		job.Paths, job.Excludes, job.UseVSS = nil, nil, false
+		job.Plugin = req.Plugin
+		job.PluginSettings = req.PluginSettings
+		job.Selection = req.Selection
+		job.BackupKind = req.BackupKind
+		job.BackupOptions = req.BackupOptions
+		if len(req.Plan) > 0 {
+			if err := server.ValidatePlan(req.Plan, pluginKinds(agentRec, req.Plugin)); err != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
+			if err := checkPlanOptions(req.Plan, req.BackupOptions); err != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
+			applyPlan(&job, req.Plan)
+		}
+	}
+	if err := server.ValidateJob(job); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
 	}
 
 	if err := d.registry.AddJob(job); err != nil {
@@ -269,10 +410,42 @@ func (d *Dashboard) handleAPIUpdateBackupJob(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	var req createBackupJobRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	// Fields left out of the request keep their current values, so saving
+	// one part of a job (its schedule, its selection) leaves the rest alone.
+	// Slices and maps are taken from the request only when present, never
+	// decoded over the registry's own.
+	body, err := io.ReadAll(io.LimitReader(r.Body, 1<<20))
+	if err != nil {
 		http.Error(w, "invalid JSON", http.StatusBadRequest)
 		return
+	}
+	var present map[string]json.RawMessage
+	req := createBackupJobRequest{
+		Name: existing.Name, AgentName: existing.AgentName, RepoName: existing.RepoName,
+		ScheduleEnabled: existing.ScheduleEnabled, ScheduleHours: existing.ScheduleHours,
+		CronExpression: existing.CronExpression, Timezone: existing.Timezone,
+		FullRescanDays: existing.FullRescanDays, UseVSS: existing.UseVSS, JobType: existing.JobType,
+		Plugin: existing.Plugin, BackupKind: existing.BackupKind,
+	}
+	if json.Unmarshal(body, &present) != nil || json.Unmarshal(body, &req) != nil {
+		http.Error(w, "invalid JSON", http.StatusBadRequest)
+		return
+	}
+	keep := func(key string) bool { _, ok := present[key]; return !ok }
+	if keep("paths") {
+		req.Paths = existing.Paths
+	}
+	if keep("excludes") {
+		req.Excludes = existing.Excludes
+	}
+	if keep("selection") {
+		req.Selection = existing.Selection
+	}
+	if keep("plugin_settings") {
+		req.PluginSettings = existing.PluginSettings
+	}
+	if keep("backup_options") {
+		req.BackupOptions = existing.BackupOptions
 	}
 	if err := validateJobType(req.JobType); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -314,8 +487,44 @@ func (d *Dashboard) handleAPIUpdateBackupJob(w http.ResponseWriter, r *http.Requ
 	updated.CronExpression = req.CronExpression
 	updated.Timezone = req.Timezone
 	updated.FullRescanDays = req.FullRescanDays
-	updated.UseVSS = req.UseVSS
-	updated.JobType = "files"
+	// The job type and plugin are fixed at creation; only the workload
+	// parameters can change.
+	if server.IsWorkloadJobType(existing.JobType) {
+		if req.PluginSettings != nil {
+			updated.PluginSettings = req.PluginSettings
+		}
+		if len(req.Selection) > 0 {
+			updated.Selection = req.Selection
+		}
+		if req.BackupKind != "" {
+			updated.BackupKind = req.BackupKind
+		}
+		if req.BackupOptions != nil {
+			updated.BackupOptions = req.BackupOptions
+		}
+		if len(req.Plan) > 0 {
+			if err := server.ValidatePlan(req.Plan, pluginKinds(d.registry.GetAgent(existing.AgentName), existing.Plugin)); err != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
+			applyPlan(&updated, req.Plan)
+		} else if len(existing.Plan) > 0 {
+			// A request without a plan leaves the job's plan as it is.
+			updated.Plan, updated.ScheduleEnabled = existing.Plan, existing.ScheduleEnabled
+			updated.CronExpression, updated.Timezone, updated.BackupKind = "", "", existing.BackupKind
+		}
+		if err := checkPlanOptions(updated.Plan, updated.BackupOptions); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+	} else {
+		updated.UseVSS = req.UseVSS
+		updated.JobType = server.JobTypeFiles
+	}
+	if err := server.ValidateJob(updated); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
 
 	if err := d.registry.UpdateJob(updated); err != nil {
 		http.Error(w, fmt.Sprintf("update job: %v", err), http.StatusInternalServerError)
@@ -342,8 +551,8 @@ func (d *Dashboard) handleAPIRunBackupJob(w http.ResponseWriter, r *http.Request
 		http.Error(w, "job not found", http.StatusNotFound)
 		return
 	}
-	if len(job.Paths) == 0 {
-		http.Error(w, "job has no paths configured", http.StatusBadRequest)
+	if err := server.ValidateJob(*job); err != nil || (!server.IsWorkloadJobType(job.JobType) && len(job.Paths) == 0) {
+		http.Error(w, "job has nothing to back up (no paths or selected objects)", http.StatusBadRequest)
 		return
 	}
 	if job.RunNow {
@@ -352,10 +561,21 @@ func (d *Dashboard) handleAPIRunBackupJob(w http.ResponseWriter, r *http.Request
 	}
 
 	var body struct {
-		ForceFull bool `json:"force_full"`
+		ForceFull bool   `json:"force_full"`
+		Kind      string `json:"kind"` // workload jobs: which kind of the plan
 	}
 	// Body is optional; ignore decode errors for empty body.
 	_ = json.NewDecoder(r.Body).Decode(&body)
+	if body.Kind != "" {
+		known := false
+		for _, e := range server.EffectivePlan(*job) {
+			known = known || e.Kind == body.Kind
+		}
+		if !known {
+			http.Error(w, fmt.Sprintf("this job does not take %s backups", body.Kind), http.StatusBadRequest)
+			return
+		}
+	}
 
 	if body.ForceFull {
 		if err := d.registry.SetJobForceFullScan(id, true); err != nil {
@@ -364,7 +584,7 @@ func (d *Dashboard) handleAPIRunBackupJob(w http.ResponseWriter, r *http.Request
 		}
 	}
 
-	if err := d.registry.SetJobRunNow(id, true); err != nil {
+	if err := d.registry.SetJobRunNowKind(id, true, body.Kind); err != nil {
 		http.Error(w, fmt.Sprintf("set run now: %v", err), http.StatusInternalServerError)
 		return
 	}

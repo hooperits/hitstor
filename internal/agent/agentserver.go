@@ -55,6 +55,18 @@ type AgentServer struct {
 	// process serving the restore already knows when the restore is done, so
 	// it needs no separate heartbeat or poll channel.
 	OnRestoreFinished func(RestoreOutcome)
+
+	// OpenWorkload launches installed workload plugins for browse and
+	// restore requests from the server. Nil disables those RPCs.
+	OpenWorkload WorkloadOpener
+
+	// Plugins installs and removes plugins pushed by the server. Nil
+	// disables those RPCs.
+	Plugins PluginInstaller
+
+	// PluginObjects keeps per-object plugin settings, such as instance
+	// credentials. Nil disables those RPCs.
+	PluginObjects PluginObjectStore
 }
 
 // RestoreOutcome summarizes one completed RestoreData stream.

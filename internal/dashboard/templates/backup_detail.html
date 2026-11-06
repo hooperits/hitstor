@@ -18,6 +18,8 @@
                 {{else if eq $v.Status "overdue"}}<span class="badge badge-stale backup-detail-status-badge">{{t "overdue"}}</span>
                 {{else if eq $v.Status "pending"}}<span class="badge badge-pending backup-detail-status-badge">{{t "pending"}}</span>
                 {{else if eq $v.Status "disabled"}}<span class="badge badge-disabled backup-detail-status-badge">{{t "disabled"}}</span>
+                {{else if eq $v.Status "failed"}}<span class="badge badge-failed backup-detail-status-badge">{{t "failed"}}</span>
+                {{else if eq $v.Status "partial"}}<span class="badge badge-stale backup-detail-status-badge">{{t "partial"}}</span>
                 {{else}}<span class="badge badge-never backup-detail-status-badge">{{t "never run"}}</span>{{end}}
                 <span class="job-type-chip">{{t $v.JobTypeLabel}}</span>
             </div>
@@ -25,13 +27,24 @@
             <p class="backup-detail-subtitle">{{$v.SourceLabel}}</p>
         </div>
             <div class="backup-detail-hero__actions">
+            {{if $.Nav.Backup $job.AgentName}}
+            {{if $v.Plan}}
+            <div class="run-menu" id="run-menu">
+                <button class="btn" id="run-now-btn" type="button" aria-haspopup="menu" aria-expanded="false" onclick="toggleRunMenu()" {{if $job.RunNow}}disabled{{end}}>{{if $job.RunNow}}{{tf "{kind} pending..." "kind" $v.RunNowKind}}{{else}}{{t "Backup Now"}} <span class="run-menu__caret" aria-hidden="true">▾</span>{{end}}</button>
+                <div class="run-menu__list" role="menu" hidden>
+                    {{range $v.Plan}}<button type="button" role="menuitem" class="run-menu__item" onclick="runNow('{{.Kind}}')"><span class="bp-badge bp-badge--{{.Kind}}" aria-hidden="true">{{if eq .Kind "full"}}F{{else if eq .Kind "differential"}}D{{else if eq .Kind "log"}}L{{end}}</span>{{.Label}}</button>{{end}}
+                </div>
+            </div>
+            {{else}}
             <button class="btn" id="run-now-btn" onclick="runNow()" {{if $job.RunNow}}disabled{{end}}>{{if $job.RunNow}}{{t "Backup Pending..."}}{{else}}{{t "Backup Now"}}{{end}}</button>
+            {{end}}
             <button class="btn btn-danger" id="cancel-btn" onclick="cancelBackup()" {{if not (or $job.RunNow $v.Running)}}hidden{{end}}>{{t "Cancel Backup"}}</button>
             <button class="btn backup-detail-delete-btn" onclick="deleteJob()">{{t "Delete"}}</button>
+            {{end}}
         </div>
     </div>
     <div class="backup-detail-stats">
-        <div class="detail-stat-tile detail-stat-tile--last detail-stat-tile--{{if eq $v.Status "never"}}never{{else if eq $v.Status "overdue"}}stale{{else if or (eq $v.Status "running") (eq $v.Status "pending")}}running{{else}}ok{{end}}">
+        <div class="detail-stat-tile detail-stat-tile--last detail-stat-tile--{{if eq $v.Status "never"}}never{{else if or (eq $v.Status "overdue") (eq $v.Status "partial") (eq $v.Status "failed")}}stale{{else if or (eq $v.Status "running") (eq $v.Status "pending")}}running{{else}}ok{{end}}">
             <div class="detail-stat-tile__top">
                 <span class="detail-stat-tile__label">{{t "Last Run"}}</span>
                 <span class="detail-stat-tile__icon" aria-hidden="true">
@@ -85,6 +98,50 @@
         </div>
     </div>
 </section>
+
+{{if or $v.FullRequired $v.Failures}}
+<section class="fullreq{{if not $v.FullRequired}} fullreq--error{{end}}" role="alert">
+    <div class="fullreq__icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+    </div>
+    <div class="fullreq__body">
+        <h2 class="fullreq__title">{{if $v.FullRequired}}{{t "A full backup is required"}}{{else if $v.Partial}}{{tf "The {kind} backup was partial" "kind" $v.FailedKind}}{{else}}{{tf "The last {kind} backup failed" "kind" $v.FailedKind}}{{end}}</h2>
+        <p class="fullreq__lead">{{if $v.Partial}}{{tf "The {kind} backup stored the other databases; these were not backed up:" "kind" $v.FailedKind}}{{else if $v.FullRequired}}{{tf "The {kind} backup did not run, so as not to store a backup HitStor could not restore." "kind" $v.FailedKind}}{{else}}{{t "No database could be backed up:"}}{{end}}</p>
+        <ul class="fullreq__list">
+            {{range $v.FullRequired}}
+            <li>
+                <code class="path-chip">{{.Object}}</code>
+                <span>{{.Message}}</span>
+                {{if .When}}<div class="fullreq__other">
+                    <span><b>{{t "When"}}</b> {{.When}}</span>
+                    <span><b>{{t "By"}}</b> {{.By}}</span>
+                    <span><b>{{t "Where"}}</b> <code>{{.Where}}</code></span>
+                </div>{{end}}
+            </li>
+            {{end}}
+            {{range $v.Failures}}
+            <li>
+                <code class="path-chip">{{.Object}}</code>
+                <span>{{.Message}}</span>
+                {{if .Detail}}<div class="fullreq__other"><code>{{.Detail}}</code></div>{{end}}
+            </li>
+            {{end}}
+        </ul>
+        {{if $v.FullRequired}}<p class="fullreq__hint">{{t "Run a full backup now; the next differential and log backups will build on it."}}</p>{{end}}
+    </div>
+    {{if and $v.FullRequired ($.Nav.Backup $job.AgentName)}}<button class="btn fullreq__action" type="button" onclick="runNow('full')" {{if $job.RunNow}}disabled{{end}}>{{t "Run full backup now"}}</button>{{end}}
+</section>
+{{else if and $v.LastError (eq $v.Status "failed")}}
+<section class="fullreq fullreq--error" role="alert">
+    <div class="fullreq__icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+    </div>
+    <div class="fullreq__body">
+        <h2 class="fullreq__title">{{if $v.FailedKind}}{{tf "The last {kind} backup failed" "kind" $v.FailedKind}}{{else}}{{t "The last backup failed"}}{{end}}</h2>
+        <p class="fullreq__error">{{$v.LastError}}</p>
+    </div>
+</section>
+{{end}}
 
 <!-- Live Progress Panel (SSE-driven) -->
 <div class="card backup-detail-progress" id="progress-panel" hidden>
@@ -159,6 +216,42 @@
         </div>
 
         
+        {{if eq $job.JobType "workload"}}
+        <div class="detail-paths-tile">
+            <div class="detail-paths-tile__label">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 1.7 3.6 3 8 3s8-1.3 8-3V5"/><path d="M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></svg>
+                {{index $data "PluginName"}}
+            </div>
+            <div class="backup-detail-paths detail-paths-tile__content">
+                {{range $job.Selection}}<code class="path-chip">{{.}}</code>{{else}}<span class="text-muted">—</span>{{end}}
+            </div>
+            {{if $job.BackupOptions}}
+            <div class="detail-paths-tile__excludes">
+                <span class="detail-paths-tile__excludes-label">{{t "Options"}}</span>
+                <div class="backup-detail-paths">
+                    {{range $k, $v := $job.BackupOptions}}<code class="path-chip">{{$k}}={{$v}}</code>{{end}}
+                </div>
+            </div>
+            {{end}}
+        </div>
+
+        <div class="detail-meta-tiles">
+            {{if not $v.Plan}}
+            <div class="detail-meta-tile">
+                <span class="detail-meta-tile__label">{{t "Backup kind"}}</span>
+                <span class="detail-meta-tile__value"><span class="badge badge-ok">{{t $job.BackupKind}}</span></span>
+            </div>
+            {{end}}
+            <div class="detail-meta-tile">
+                <span class="detail-meta-tile__label">{{t "Agent"}}</span>
+                <span class="detail-meta-tile__value"><a href="/agents/{{$v.AgentName}}" class="agent-chip">{{$v.AgentName}}</a></span>
+            </div>
+            <div class="detail-meta-tile detail-meta-tile--wide">
+                <span class="detail-meta-tile__label">{{t "Repository"}}</span>
+                <span class="detail-meta-tile__value"><span class="repo-chip">{{$v.RepoName}}</span></span>
+            </div>
+        </div>
+        {{else}}
         <div class="detail-paths-tile">
             <div class="detail-paths-tile__label">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
@@ -193,27 +286,20 @@
                 <span class="detail-meta-tile__value"><span class="repo-chip">{{$v.RepoName}}</span></span>
             </div>
         </div>
+        {{end}}
 
         {{if index $data "Managed"}}
         <div class="detail-accordion" id="paths-accordion">
             <button type="button" class="detail-accordion__toggle" onclick="toggleDetailAccordion('paths-accordion')" aria-expanded="false" aria-controls="paths-accordion-body">
-                <span>{{t "Edit backup paths"}}</span>
+                <span>{{t "Edit selection"}}</span>
                 <svg class="detail-accordion__chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
             </button>
             <div class="detail-accordion__body" id="paths-accordion-body">
-                <p class="detail-accordion__hint">{{t "Browse the agent filesystem and update paths for this job."}}</p>
-                <div id="edit-fs-tree" class="fs-tree backup-detail-fs-tree">
-                    <div class="text-muted backup-detail-fs-loading">{{t "Loading filesystem..."}}</div>
-                </div>
-                <div class="detail-accordion__actions">
-                    <button type="button" class="btn" onclick="saveEditedPaths()">{{t "Save Paths"}}</button>
-                    <span id="edit-paths-status"></span>
-                </div>
-                <div id="edit-selected-summary" class="detail-accordion__summary"></div>
+                <p class="detail-accordion__hint">{{t "Change what this job backs up. The machine and the source stay the same; to back up another source, create another job."}}</p>
+                <div id="edit-selection"></div>
             </div>
         </div>
         {{end}}
-        
     </div>
 
     <div class="backup-detail-panel card backup-detail-panel--schedule">
@@ -221,9 +307,44 @@
             <span class="backup-detail-panel__icon backup-detail-panel__icon--schedule" aria-hidden="true">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
             </span>
-            <h2 class="backup-detail-panel__title">{{t "Schedule & settings"}}</h2>
+            <h2 class="backup-detail-panel__title">{{if $v.Plan}}{{t "Backup plan"}}{{else}}{{t "Schedule & settings"}}{{end}}</h2>
         </div>
 
+        {{if $v.Plan}}
+        <div class="plan-rows">
+            {{range $v.Plan}}
+            <div class="plan-row{{if not .Enabled}} plan-row--off{{end}}{{if .Failed}} plan-row--failed{{end}}{{if .Partial}} plan-row--partial{{end}}{{if .Next}} plan-row--next{{end}}">
+                <span class="bp-badge bp-badge--{{.Kind}}" aria-hidden="true">{{if eq .Kind "full"}}F{{else if eq .Kind "differential"}}D{{else if eq .Kind "log"}}L{{end}}</span>
+                <div class="plan-row__main">
+                    <div class="plan-row__title"><strong>{{.Label}}</strong>{{if .Next}}<span class="plan-row__tag">{{t "next"}}</span>{{end}}</div>
+                    <div class="plan-row__schedule">{{.Schedule}}</div>
+                    <div class="plan-row__meta">
+                        {{if .NextRun}}<span>{{tf "Next {when}" "when" .NextRun}}</span>{{end}}
+                        <span>{{t "Last success"}}: {{if .LastBackup}}{{timeAgo .LastBackup}}{{else}}{{t "never"}}{{end}}</span>
+                        {{if .Failed}}<span class="plan-row__error">{{if .FullRequired}}{{t "needs a full backup"}}{{else}}{{t "failed"}}{{end}} · {{timeAgo .LastErrorAt}}</span>{{end}}
+                        {{if .Partial}}<span class="plan-row__warn">{{t "partial"}}{{if .FullRequired}} · {{t "needs a full backup"}}{{end}}</span>{{end}}
+                    </div>
+                    {{if .Excluded}}<div class="plan-row__excluded"><span>{{t "Not included"}}:</span>{{range .Excluded}}<code class="path-chip" title="{{.Message}}{{if .Detail}} ({{.Detail}}){{end}}">{{.Object}}</code>{{end}}</div>{{end}}
+                </div>
+                {{if $.Nav.Backup $job.AgentName}}<button type="button" class="btn btn-secondary plan-row__run" onclick="runNow('{{.Kind}}')" {{if $job.RunNow}}disabled{{end}}>{{t "Run now"}}</button>{{end}}
+            </div>
+            {{end}}
+            <p class="detail-schedule-tile__meta">{{tf "Created {when}" "when" (timeFormat $v.CreatedAt)}}</p>
+        </div>
+        <div class="detail-accordion" id="plan-accordion">
+            <button type="button" class="detail-accordion__toggle" onclick="toggleDetailAccordion('plan-accordion')" aria-expanded="false" aria-controls="plan-accordion-body">
+                <span>{{t "Edit plan"}}</span>
+                <svg class="detail-accordion__chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+            <div class="detail-accordion__body" id="plan-accordion-body">
+                <div id="edit-plan"></div>
+                <div class="detail-accordion__actions">
+                    {{if $.Nav.Backup $job.AgentName}}<button type="button" class="btn" onclick="savePlan()">{{t "Save plan"}}</button>{{end}}
+                    <span id="edit-plan-status" class="detail-form-status"></span>
+                </div>
+            </div>
+        </div>
+        {{else}}
         <div class="detail-schedule-tile{{if not $v.ScheduleEnabled}} detail-schedule-tile--off{{end}}">
             <span class="detail-schedule-tile__icon" aria-hidden="true">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
@@ -246,160 +367,45 @@
             </button>
             <div class="detail-accordion__body" id="schedule-accordion-body">
     <form id="edit-schedule-form" onsubmit="saveSchedule(event)">
-        <label style="display:flex; align-items:center; gap:0.5rem; margin-bottom:1rem;">
-            <input type="checkbox" id="edit-sched-enabled"
-                   {{if $job.ScheduleEnabled}}checked{{end}}
-                   onchange="toggleScheduleInputs();">
-            {{t "Enable scheduled backups"}}
-        </label>
-        <div style="display:flex; gap:1rem; margin-bottom:1rem;">
-            <label style="display:flex; align-items:center; gap:0.3rem;">
-                <input type="radio" name="sched-mode" value="interval"
-                       {{if not $job.CronExpression}}checked{{end}}
-                       onchange="toggleScheduleMode();">
-                {{t "Interval"}}
-            </label>
-            <label style="display:flex; align-items:center; gap:0.3rem;">
-                <input type="radio" name="sched-mode" value="schedule"
-                       onchange="toggleScheduleMode();">
-                {{t "Schedule"}}
-            </label>
-            <label style="display:flex; align-items:center; gap:0.3rem;">
-                <input type="radio" name="sched-mode" value="cron"
-                       {{if $job.CronExpression}}checked{{end}}
-                       onchange="toggleScheduleMode();">
-                {{t "Advanced"}}
-            </label>
+        {{if and $job.ScheduleEnabled (not $job.CronExpression)}}
+        <p class="form-hint">{{tf "Runs every {hours} hours after the last backup. Saving replaces it with the schedule below." "hours" $job.ScheduleHours}}</p>
+        {{end}}
+        <div id="edit-schedule" style="margin-bottom:1rem;"></div>
+        {{if ne $job.JobType "workload"}}
+        <div class="sched-row" style="margin-bottom:0.25rem;">
+            <label>{{t "Full re-scan every"}}
+                <input type="number" id="edit-rescan-days" value="{{$job.FullRescanDays}}" min="0" max="365" style="width:5rem;">
+                {{t "days"}}</label>
         </div>
-        <div id="interval-inputs" style="{{if $job.CronExpression}}display:none;{{end}}">
-            <label style="display:flex; align-items:center; gap:0.5rem; margin-bottom:1rem;">
-                {{t "Every"}}
-                <input type="number" id="edit-sched-hours"
-                       value="{{if $job.ScheduleHours}}{{$job.ScheduleHours}}{{else}}24{{end}}"
-                       min="1" max="8760" style="width:5rem;">
-                {{t "hours"}}
-            </label>
-        </div>
-        <div id="schedule-inputs" style="display:none;">
-            <label style="display:flex; align-items:center; gap:0.5rem; margin-bottom:1rem;">
-                {{t "Frequency"}}
-                <select id="sched-frequency" style="width:10rem;" onchange="toggleFrequencyDetails(); updateSchedulePreview();">
-                    <option value="daily">{{t "Daily"}}</option>
-                    <option value="weekly">{{t "Weekly"}}</option>
-                    <option value="monthly">{{t "Monthly"}}</option>
-                </select>
-            </label>
-            <label style="display:flex; align-items:center; gap:0.5rem; margin-bottom:1rem;">
-                {{t "Time"}}
-                <select id="sched-hour" style="width:4rem;" onchange="updateSchedulePreview();">
-                    <option value="12">12</option>
-                    <option value="1">1</option>
-                    <option value="2" selected>2</option>
-                    <option value="3">3</option>
-                    <option value="4">4</option>
-                    <option value="5">5</option>
-                    <option value="6">6</option>
-                    <option value="7">7</option>
-                    <option value="8">8</option>
-                    <option value="9">9</option>
-                    <option value="10">10</option>
-                    <option value="11">11</option>
-                </select>
-                :
-                <select id="sched-minute" style="width:4.5rem;" onchange="updateSchedulePreview();">
-                    <option value="0">00</option>
-                    <option value="15">15</option>
-                    <option value="30">30</option>
-                    <option value="45">45</option>
-                </select>
-                <select id="sched-ampm" style="width:4.5rem;" onchange="updateSchedulePreview();">
-                    <option value="AM" selected>AM</option>
-                    <option value="PM">PM</option>
-                </select>
-            </label>
-            <div id="sched-dow-group" style="display:none; margin-bottom:1rem;">
-                <div style="font-size:0.85rem; color:var(--text-muted); margin-bottom:0.4rem;">{{t "Days of week"}}</div>
-                <div style="display:flex; gap:0.3rem; flex-wrap:wrap;">
-                    <label class="dow-toggle" style="display:inline-flex; align-items:center; justify-content:center; width:2.8rem; height:2rem; border-radius:4px; cursor:pointer; border:1px solid var(--border); font-size:0.8rem; user-select:none; background:transparent; color:var(--text);">
-                        <input type="checkbox" value="1" onchange="updateDowStyle(this); updateSchedulePreview();" style="display:none;">
-                        <span>{{t "Mon"}}</span>
-                    </label>
-                    <label class="dow-toggle" style="display:inline-flex; align-items:center; justify-content:center; width:2.8rem; height:2rem; border-radius:4px; cursor:pointer; border:1px solid var(--border); font-size:0.8rem; user-select:none; background:transparent; color:var(--text);">
-                        <input type="checkbox" value="2" onchange="updateDowStyle(this); updateSchedulePreview();" style="display:none;">
-                        <span>{{t "Tue"}}</span>
-                    </label>
-                    <label class="dow-toggle" style="display:inline-flex; align-items:center; justify-content:center; width:2.8rem; height:2rem; border-radius:4px; cursor:pointer; border:1px solid var(--border); font-size:0.8rem; user-select:none; background:transparent; color:var(--text);">
-                        <input type="checkbox" value="3" onchange="updateDowStyle(this); updateSchedulePreview();" style="display:none;">
-                        <span>{{t "Wed"}}</span>
-                    </label>
-                    <label class="dow-toggle" style="display:inline-flex; align-items:center; justify-content:center; width:2.8rem; height:2rem; border-radius:4px; cursor:pointer; border:1px solid var(--border); font-size:0.8rem; user-select:none; background:transparent; color:var(--text);">
-                        <input type="checkbox" value="4" onchange="updateDowStyle(this); updateSchedulePreview();" style="display:none;">
-                        <span>{{t "Thu"}}</span>
-                    </label>
-                    <label class="dow-toggle" style="display:inline-flex; align-items:center; justify-content:center; width:2.8rem; height:2rem; border-radius:4px; cursor:pointer; border:1px solid var(--border); font-size:0.8rem; user-select:none; background:transparent; color:var(--text);">
-                        <input type="checkbox" value="5" onchange="updateDowStyle(this); updateSchedulePreview();" style="display:none;">
-                        <span>{{t "Fri"}}</span>
-                    </label>
-                    <label class="dow-toggle" style="display:inline-flex; align-items:center; justify-content:center; width:2.8rem; height:2rem; border-radius:4px; cursor:pointer; border:1px solid var(--border); font-size:0.8rem; user-select:none; background:transparent; color:var(--text);">
-                        <input type="checkbox" value="6" onchange="updateDowStyle(this); updateSchedulePreview();" style="display:none;">
-                        <span>{{t "Sat"}}</span>
-                    </label>
-                    <label class="dow-toggle" style="display:inline-flex; align-items:center; justify-content:center; width:2.8rem; height:2rem; border-radius:4px; cursor:pointer; border:1px solid var(--border); font-size:0.8rem; user-select:none; background:transparent; color:var(--text);">
-                        <input type="checkbox" value="0" onchange="updateDowStyle(this); updateSchedulePreview();" style="display:none;">
-                        <span>{{t "Sun"}}</span>
-                    </label>
-                </div>
-                <div id="sched-dow-error" style="font-size:0.8rem; color:var(--danger); margin-top:0.3rem; display:none;">{{t "Select at least one day."}}</div>
-            </div>
-            <div id="sched-dom-group" style="display:none; margin-bottom:1rem;">
-                <label style="display:flex; align-items:center; gap:0.5rem;">
-                    {{t "Day of month"}}
-                    <select id="sched-dom" style="width:5rem;" onchange="updateSchedulePreview();"></select>
-                </label>
-            </div>
-            <div id="schedule-preview" style="font-size:0.85rem; color:var(--text-muted); margin:0 0 0.75rem 0;"></div>
-        </div>
-        <div id="cron-inputs" style="{{if not $job.CronExpression}}display:none;{{end}}">
-            <label style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.5rem;">
-                {{t "Expression"}}
-                <input type="text" id="edit-cron-expr"
-                       value="{{$job.CronExpression}}"
-                       placeholder="0 2 * * *"
-                       style="width:12rem; font-family:monospace;"
-                       onblur="validateCron();">
-            </label>
-            <div id="cron-preview" style="font-size:0.85rem; color:var(--text-muted); margin:0 0 0.75rem 0;"></div>
-        </div>
-        <div id="tz-inputs" style="{{if not $job.CronExpression}}display:none;{{end}}">
-            <label style="display:flex; align-items:center; gap:0.5rem; margin-bottom:1rem;">
-                {{t "Timezone"}}
-                <select id="edit-timezone" style="width:16rem;">
-                    <option value="">{{t "Server local"}}</option>
-                </select>
-            </label>
-        </div>
-        <label style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.5rem;">
-            {{t "Full re-scan every"}}
-            <input type="number" id="edit-rescan-days"
-                   value="{{$job.FullRescanDays}}"
-                   min="0" max="365"
-                   style="width:5rem;">
-            {{t "days"}}
-        </label>
         <p style="color:var(--text-muted); font-size:0.8rem; margin:0 0 1rem 0;">{{t "Set to 0 to disable periodic full re-scans."}}{{if $job.LastFullBackup}} {{tf "Last full backup: {when}" "when" (timeAgo $job.LastFullBackup)}}{{end}}</p>
-        <label style="display:flex; align-items:center; gap:0.5rem; margin-bottom:1rem;">
-            <input type="checkbox" id="edit-use-vss" {{if $job.UseVSS}}checked{{end}}>
-            {{t "Consistent snapshot (VSS / LVM / btrfs)"}}
-        </label>
-        <p style="color:var(--text-muted); font-size:0.8rem; margin:-0.5rem 0 1rem 0;">{{t "Windows only. Creates a consistent snapshot before backup for open files and databases."}}</p>
-        <button type="submit" class="btn">{{t "Save Schedule"}}</button>
+        {{end}}
+        {{if $.Nav.Backup $job.AgentName}}<button type="submit" class="btn">{{t "Save Schedule"}}</button>{{end}}
         <span id="edit-sched-status" class="detail-form-status"></span>
     </form>
             </div>
         </div>
+        {{end}}
     </div>
 </div>
 
+{{if eq $job.JobType "workload"}}
+<section class="card chain-panel">
+    <div class="backup-detail-panel__head">
+        <span class="backup-detail-panel__icon backup-detail-panel__icon--schedule" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+        </span>
+        <h2 class="backup-detail-panel__title">{{t "Backup chain"}}</h2>
+    </div>
+    <p class="chain-panel__lead">{{t "Each full backup starts a chain: the differentials based on it and the log backups that follow. A restore uses one chain."}}</p>
+    <div id="chains" class="chains"><p class="text-muted">{{t "Loading..."}}</p></div>
+</section>
+{{end}}
+
+<script src="/static/schedule.js"></script>
+<script src="/static/backup_plan.js"></script>
+<script src="/static/backup_chains.js"></script>
+<script src="/static/plugins.js"></script>
+<script src="/static/backup_job.js"></script>
 <script>
 function toggleDetailAccordion(id) {
     var el = document.getElementById(id);
@@ -727,23 +733,35 @@ var backupProgress = (function() {
     return { showPending: showPending };
 })();
 
-function runNow() {
-    var forceFull = confirm(t('Force a full re-scan? (OK = full re-scan, Cancel = incremental)'));
-    if (!confirm(forceFull
-        ? t('Trigger an immediate full backup for "{name}"?', {name: '{{$job.Name}}'})
-        : t('Trigger an immediate incremental backup for "{name}"?', {name: '{{$job.Name}}'}))) return;
+// runNow triggers a backup now: of one kind of the plan for workload jobs,
+// a full or incremental scan for file systems.
+function runNow(kind) {
+    closeRunMenu();
+    var body = {};
+    if (kind) {
+        var label = {{if $v.Plan}}{ {{range $i, $k := $v.Plan}}{{if $i}}, {{end}}{{$k.Kind}}: {{$k.Label}}{{end}} }[kind] || kind{{else}}kind{{end}};
+        if (!confirm(t('Run a {kind} backup of "{name}" now?', {kind: label, name: '{{$job.Name}}'}))) return;
+        body.kind = kind;
+    } else {
+        var forceFull = confirm(t('Force a full re-scan? (OK = full re-scan, Cancel = incremental)'));
+        if (!confirm(forceFull
+            ? t('Trigger an immediate full backup for "{name}"?', {name: '{{$job.Name}}'})
+            : t('Trigger an immediate incremental backup for "{name}"?', {name: '{{$job.Name}}'}))) return;
+        body.force_full = forceFull;
+    }
     var btn = document.getElementById('run-now-btn');
     btn.disabled = true;
     btn.textContent = t('Triggering...');
     fetch('/api/backups/' + jobID + '/run', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({force_full: forceFull})
+        body: JSON.stringify(body)
     })
     .then(function(r) {
         if (!r.ok) return r.text().then(function(t) { throw new Error(t); });
-        btn.textContent = t('Backup Pending...');
+        btn.textContent = kind ? t('{kind} pending...', {kind: label}) : t('Backup Pending...');
         btn.style.opacity = '0.6';
+        document.querySelectorAll('.plan-row__run, .fullreq__action').forEach(function(b) { b.disabled = true; });
         // Immediately show progress panel in pending state.
         backupProgress.showPending();
     })
@@ -753,6 +771,22 @@ function runNow() {
         btn.textContent = t('Backup Now');
     });
 }
+
+function toggleRunMenu() {
+    var list = document.querySelector('.run-menu__list');
+    if (!list) return;
+    list.hidden = !list.hidden;
+    document.getElementById('run-now-btn').setAttribute('aria-expanded', String(!list.hidden));
+}
+
+function closeRunMenu() {
+    var list = document.querySelector('.run-menu__list');
+    if (list) list.hidden = true;
+}
+
+document.addEventListener('click', function(e) {
+    if (!e.target.closest('#run-menu')) closeRunMenu();
+});
 
 function cancelBackup() {
     if (!confirm(t('Cancel the running backup for "{name}"?', {name: '{{$job.Name}}'}))) return;
@@ -795,236 +829,33 @@ function deleteJob() {
     .catch(function(err) { alert(t('Error: {message}', {message: err.message})); });
 }
 
-function toggleScheduleMode() {
-    var mode = document.querySelector('input[name="sched-mode"]:checked').value;
-    document.getElementById('interval-inputs').style.display = mode === 'interval' ? '' : 'none';
-    document.getElementById('schedule-inputs').style.display = mode === 'schedule' ? '' : 'none';
-    document.getElementById('cron-inputs').style.display = mode === 'cron' ? '' : 'none';
-    document.getElementById('tz-inputs').style.display = mode === 'interval' ? 'none' : '';
-    if (mode === 'schedule') updateSchedulePreview();
-    if (mode === 'cron') validateCron();
-}
-
-function toggleScheduleInputs() {
-    // No-op for now; mode toggle handles visibility.
-}
-
-function toggleFrequencyDetails() {
-    var freq = document.getElementById('sched-frequency').value;
-    document.getElementById('sched-dow-group').style.display = freq === 'weekly' ? '' : 'none';
-    document.getElementById('sched-dom-group').style.display = freq === 'monthly' ? '' : 'none';
-}
-
-function buildCronFromVisual() {
-    var freq = document.getElementById('sched-frequency').value;
-    var hour = parseInt(document.getElementById('sched-hour').value);
-    var minute = document.getElementById('sched-minute').value;
-    var ampm = document.getElementById('sched-ampm').value;
-    if (ampm === 'AM' && hour === 12) hour = 0;
-    else if (ampm === 'PM' && hour !== 12) hour += 12;
-
-    if (freq === 'daily') return minute + ' ' + hour + ' * * *';
-    if (freq === 'weekly') {
-        var days = [];
-        document.querySelectorAll('#sched-dow-group input:checked').forEach(function(cb) {
-            days.push(cb.value);
-        });
-        if (days.length === 0) return null;
-        return minute + ' ' + hour + ' * * ' + days.join(',');
+// The same schedule picker as the new-job wizard. Jobs from before cron
+// schedules ran every N hours; they start from the nearest cron.
+var editSchedule = (function() {
+    var cron = '{{$job.CronExpression}}';
+    var hours = {{$job.ScheduleHours}};
+    if (!cron && {{$job.ScheduleEnabled}} && hours > 0) {
+        cron = hours < 24 ? '0 */' + hours + ' * * *' : '0 2 * * *';
     }
-    if (freq === 'monthly') {
-        var dom = document.getElementById('sched-dom').value;
-        return minute + ' ' + hour + ' ' + dom + ' * *';
-    }
-    return minute + ' ' + hour + ' * * *';
-}
-
-function parseVisualFromCron(expr) {
-    var parts = expr.trim().split(/\s+/);
-    if (parts.length !== 5) return false;
-    var minute = parts[0], hour = parts[1], dom = parts[2], month = parts[3], dow = parts[4];
-    if (!/^\d+$/.test(minute) || !/^\d+$/.test(hour)) return false;
-    if (month !== '*') return false;
-    var h = parseInt(hour), m = parseInt(minute);
-    if ([0, 15, 30, 45].indexOf(m) === -1) return false;
-    if (h < 0 || h > 23) return false;
-    var ampm = h >= 12 ? 'PM' : 'AM';
-    var h12 = h % 12; if (h12 === 0) h12 = 12;
-
-    if (dom === '*' && dow === '*') {
-        setVisualControls('daily', h12, m, ampm, [], 1);
-        return true;
-    }
-    if (dom === '*' && /^[0-6](,[0-6])*$/.test(dow)) {
-        setVisualControls('weekly', h12, m, ampm, dow.split(','), 1);
-        return true;
-    }
-    if (/^\d+$/.test(dom) && dow === '*') {
-        var d = parseInt(dom);
-        if (d < 1 || d > 31) return false;
-        setVisualControls('monthly', h12, m, ampm, [], d);
-        return true;
-    }
-    return false;
-}
-
-function setVisualControls(freq, hour, minute, ampm, dowDays, dom) {
-    document.getElementById('sched-frequency').value = freq;
-    document.getElementById('sched-hour').value = hour;
-    document.getElementById('sched-minute').value = minute;
-    document.getElementById('sched-ampm').value = ampm;
-    document.querySelectorAll('#sched-dow-group input').forEach(function(cb) {
-        cb.checked = dowDays.indexOf(cb.value) >= 0;
-        updateDowStyle(cb);
-    });
-    document.getElementById('sched-dom').value = dom;
-    toggleFrequencyDetails();
-}
-
-function updateDowStyle(cb) {
-    var label = cb.closest('.dow-toggle');
-    if (!label) return;
-    if (cb.checked) {
-        label.style.background = 'var(--primary)';
-        label.style.color = '#fff';
-        label.style.borderColor = 'var(--primary)';
-    } else {
-        label.style.background = 'transparent';
-        label.style.color = 'var(--text)';
-        label.style.borderColor = 'var(--border)';
-    }
-    // Validate at least one day selected for weekly.
-    var freq = document.getElementById('sched-frequency').value;
-    if (freq === 'weekly') {
-        var any = document.querySelector('#sched-dow-group input:checked');
-        document.getElementById('sched-dow-error').style.display = any ? 'none' : '';
-    }
-}
-
-function updateSchedulePreview() {
-    var expr = buildCronFromVisual();
-    var preview = document.getElementById('schedule-preview');
-    if (!expr) {
-        preview.style.color = 'var(--danger)';
-        preview.textContent = t('Select at least one day.');
-        return;
-    }
-    var tz = document.getElementById('edit-timezone').value;
-    var url = '/api/backups/validate-cron?expr=' + encodeURIComponent(expr);
-    if (tz) url += '&tz=' + encodeURIComponent(tz);
-    fetch(url)
-    .then(function(r) { return r.json(); })
-    .then(function(data) {
-        if (data.valid) {
-            preview.style.color = 'var(--ok)';
-            var text = data.description;
-            if (data.next_3 && data.next_3.length > 0) {
-                text += ' — ' + t('Next: {when}', {when: new Date(data.next_3[0]).toLocaleString()});
-            }
-            preview.textContent = text;
-        } else {
-            preview.style.color = 'var(--danger)';
-            preview.textContent = data.error;
-        }
-    })
-    .catch(function() { preview.textContent = ''; });
-}
-
-function validateCron() {
-    var expr = document.getElementById('edit-cron-expr').value.trim();
-    var preview = document.getElementById('cron-preview');
-    if (!expr) { preview.textContent = ''; return; }
-    var tz = document.getElementById('edit-timezone').value;
-    var url = '/api/backups/validate-cron?expr=' + encodeURIComponent(expr);
-    if (tz) url += '&tz=' + encodeURIComponent(tz);
-    fetch(url)
-    .then(function(r) { return r.json(); })
-    .then(function(data) {
-        if (data.valid) {
-            preview.style.color = 'var(--ok)';
-            var text = data.description;
-            if (data.next_3 && data.next_3.length > 0) {
-                text += ' — ' + t('Next: {when}', {when: new Date(data.next_3[0]).toLocaleString()});
-            }
-            preview.textContent = text;
-        } else {
-            preview.style.color = 'var(--danger)';
-            preview.textContent = data.error;
-        }
-    })
-    .catch(function() { preview.textContent = ''; });
-}
-
-function loadTimezones() {
-    fetch('/api/timezones')
-    .then(function(r) { return r.json(); })
-    .then(function(zones) {
-        var sel = document.getElementById('edit-timezone');
-        var current = '{{$job.Timezone}}';
-        zones.forEach(function(tz) {
-            var opt = document.createElement('option');
-            opt.value = tz;
-            opt.textContent = tz;
-            if (tz === current) opt.selected = true;
-            sel.appendChild(opt);
-        });
-    });
-}
-loadTimezones();
-
-// Populate day-of-month dropdown.
-(function() {
-    var sel = document.getElementById('sched-dom');
-    for (var i = 1; i <= 31; i++) {
-        var opt = document.createElement('option');
-        opt.value = i;
-        opt.textContent = i;
-        sel.appendChild(opt);
-    }
-})();
-
-// On load: detect correct schedule mode.
-(function() {
-    var cronExpr = '{{$job.CronExpression}}';
-    if (cronExpr) {
-        if (parseVisualFromCron(cronExpr)) {
-            document.querySelector('input[name="sched-mode"][value="schedule"]').checked = true;
-            toggleScheduleMode();
-            updateSchedulePreview();
-        } else {
-            validateCron();
-        }
-    }
+    var host = document.getElementById('edit-schedule');
+    return host && HitStorSchedule.mount(host, {cron: cron, timezone: '{{$job.Timezone}}'});
 })();
 
 function saveSchedule(e) {
     e.preventDefault();
     var status = document.getElementById('edit-sched-status');
+    var body;
+    try {
+        body = editSchedule.value();
+    } catch (err) {
+        status.textContent = err.message;
+        status.style.color = 'var(--danger)';
+        return;
+    }
+    var rescanDays = document.getElementById('edit-rescan-days');
+    if (rescanDays) body.full_rescan_days = parseInt(rescanDays.value) || 0;
     status.textContent = t('Saving...');
     status.style.color = 'var(--text-muted)';
-
-    var mode = document.querySelector('input[name="sched-mode"]:checked').value;
-    var body = {
-        schedule_enabled: document.getElementById('edit-sched-enabled').checked,
-        schedule_hours: parseInt(document.getElementById('edit-sched-hours').value) || 24,
-        full_rescan_days: parseInt(document.getElementById('edit-rescan-days').value) || 0,
-        use_vss: document.getElementById('edit-use-vss').checked,
-        cron_expression: '',
-        timezone: ''
-    };
-    if (mode === 'cron') {
-        body.cron_expression = document.getElementById('edit-cron-expr').value.trim();
-        body.timezone = document.getElementById('edit-timezone').value;
-    } else if (mode === 'schedule') {
-        var expr = buildCronFromVisual();
-        if (!expr) {
-            status.textContent = t('Select at least one day for weekly schedule.');
-            status.style.color = 'var(--danger)';
-            return;
-        }
-        body.cron_expression = expr;
-        body.timezone = document.getElementById('edit-timezone').value;
-    }
 
     fetch('/api/backups/' + jobID, {
         method: 'PUT',
@@ -1035,6 +866,8 @@ function saveSchedule(e) {
         if (!r.ok) return r.text().then(function(t) { throw new Error(t); });
         status.textContent = t('Saved');
         status.style.color = 'var(--ok)';
+        // The schedule tile above is drawn by the server.
+        setTimeout(function() { location.reload(); }, 600);
     })
     .catch(function(err) {
         status.textContent = err.message;
@@ -1042,170 +875,48 @@ function saveSchedule(e) {
     });
 }
 
-{{if index $data "Managed"}}
-// Filesystem tree browser for editing paths.
-function loadEditTree(parentEl, path) {
-    fetch('/api/agents/' + encodeURIComponent(agentName) + '/browse', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({path: path})
-    })
-    .then(function(r) {
-        if (!r.ok) return r.text().then(function(t) { throw new Error(t); });
-        return r.json();
-    })
-    .then(function(entries) { renderEditEntries(parentEl, entries); })
-    .catch(function(err) {
-        parentEl.innerHTML = '<div style="color:var(--danger);">' + t('Error: {message}', {message: err.message}) + '</div>';
-    });
-}
+{{if $v.Plan}}
+var editPlan = HitStorPlan.mount(document.getElementById('edit-plan'), {
+    kinds: {{index $data "PlanKinds"}},
+    plan: {{index $data "Plan"}}
+});
 
-function isEditAncestorChecked(el) {
-    var p = el.closest('.fs-children');
-    while (p) {
-        var parentNode = p.closest('.fs-node');
-        if (!parentNode) break;
-        var parentCb = parentNode.querySelector(':scope > .fs-row > .fs-check');
-        if (parentCb && parentCb.checked) return true;
-        p = parentNode.closest('.fs-children');
-    }
-    return false;
-}
-
-function cascadeEditCheck(nodeEl, checked) {
-    nodeEl.querySelectorAll('.fs-check').forEach(function(cb) { cb.checked = checked; });
-}
-
-function renderEditEntries(parentEl, entries) {
-    parentEl.innerHTML = '';
-    var parentChecked = isEditAncestorChecked(parentEl);
-    entries.forEach(function(entry) {
-        var node = document.createElement('div');
-        node.className = 'fs-node';
-
-        var row = document.createElement('div');
-        row.className = 'fs-row';
-
-        if (entry.is_dir && entry.has_children) {
-            var expand = document.createElement('span');
-            expand.className = 'fs-expand';
-            expand.textContent = '\u25B8';
-            node.appendChild(expand);
-        } else {
-            var spacer = document.createElement('span');
-            spacer.className = 'fs-expand';
-            if (entry.is_dir) { spacer.textContent = '\u25B8'; spacer.style.opacity = '0.3'; }
-            node.appendChild(spacer);
-        }
-
-        if (entry.is_dir) {
-            var cb = document.createElement('input');
-            cb.type = 'checkbox';
-            cb.dataset.path = entry.path;
-            cb.className = 'fs-check';
-            cb.checked = parentChecked || currentPaths.indexOf(entry.path) !== -1;
-            cb.onchange = function() { cascadeEditCheck(node, cb.checked); updateEditSummary(); };
-            row.appendChild(cb);
-        }
-
-        var icon = document.createElement('span');
-        icon.className = 'fs-icon';
-        icon.textContent = entry.is_dir ? '\uD83D\uDCC1' : '\uD83D\uDCC4';
-        row.appendChild(icon);
-
-        var label = document.createElement('span');
-        label.className = entry.is_dir ? 'fs-label fs-label-dir' : 'fs-label fs-label-file';
-        label.textContent = entry.name;
-        if (!entry.readable) { label.style.opacity = '0.4'; label.title = t('Not readable'); }
-        row.appendChild(label);
-
-        node.appendChild(row);
-
-        var children = document.createElement('div');
-        children.className = 'fs-children';
-        children.style.display = 'none';
-        node.appendChild(children);
-
-        if (entry.is_dir && entry.has_children) {
-            expand.onclick = function(e) { e.stopPropagation(); toggleEditDir(node, entry.path, expand); };
-            row.ondblclick = function(e) { e.stopPropagation(); toggleEditDir(node, entry.path, expand); };
-        }
-
-        parentEl.appendChild(node);
-    });
-}
-
-function toggleEditDir(nodeEl, path, expandBtn) {
-    var children = nodeEl.querySelector('.fs-children');
-    if (children.style.display === 'none') {
-        if (children.children.length === 0) {
-            children.innerHTML = '<div style="color:var(--text-muted); font-style:italic; padding:3px 4px;">' + t('Loading...') + '</div>';
-            loadEditTree(children, path);
-        }
-        children.style.display = '';
-        expandBtn.textContent = '\u25BE';
-        var icon = nodeEl.querySelector('.fs-icon');
-        if (icon) icon.textContent = '\uD83D\uDCC2';
-    } else {
-        children.style.display = 'none';
-        expandBtn.textContent = '\u25B8';
-        var icon = nodeEl.querySelector('.fs-icon');
-        if (icon) icon.textContent = '\uD83D\uDCC1';
-    }
-}
-
-function getEditSelectedPaths() {
-    var all = [];
-    document.querySelectorAll('#edit-fs-tree .fs-check:checked').forEach(function(cb) {
-        all.push(cb.dataset.path);
-    });
-    all.sort();
-    var paths = [];
-    for (var i = 0; i < all.length; i++) {
-        var dominated = false;
-        for (var j = 0; j < paths.length; j++) {
-            if (all[i].indexOf(paths[j] + '/') === 0 || all[i].indexOf(paths[j] + '\\') === 0) { dominated = true; break; }
-        }
-        if (!dominated) paths.push(all[i]);
-    }
-    return paths;
-}
-
-function updateEditSummary() {
-    var paths = getEditSelectedPaths();
-    var el = document.getElementById('edit-selected-summary');
-    el.textContent = paths.length > 0 ? t('Selected: {paths}', {paths: paths.join(', ')}) : '';
-}
-
-function saveEditedPaths() {
-    var paths = getEditSelectedPaths();
-    if (paths.length === 0) {
-        alert(t('Select at least one directory to back up.'));
+function savePlan() {
+    var status = document.getElementById('edit-plan-status');
+    var plan;
+    try {
+        plan = editPlan.value();
+    } catch (err) {
+        status.textContent = err.message;
+        status.style.color = 'var(--danger)';
         return;
     }
-    var status = document.getElementById('edit-paths-status');
     status.textContent = t('Saving...');
     status.style.color = 'var(--text-muted)';
-
     fetch('/api/backups/' + jobID, {
         method: 'PUT',
         headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({paths: paths})
+        body: JSON.stringify({plan: plan})
     })
     .then(function(r) {
         if (!r.ok) return r.text().then(function(t) { throw new Error(t); });
         status.textContent = t('Saved');
         status.style.color = 'var(--ok)';
-        currentPaths = paths;
+        setTimeout(function() { location.reload(); }, 600);
     })
     .catch(function(err) {
         status.textContent = err.message;
         status.style.color = 'var(--danger)';
     });
 }
+{{end}}
 
-loadEditTree(document.getElementById('edit-fs-tree'), '');
-updateEditSummary();
+{{if eq $job.JobType "workload"}}
+HitStorChains.render(document.getElementById('chains'), jobID);
+{{end}}
+
+{{if index $data "Managed"}}
+HitStorBackupJob.editSelection(document.getElementById('edit-selection'), {{$job}});
 {{end}}
 </script>
 {{end}}

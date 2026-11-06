@@ -11,7 +11,7 @@ HitStor es una plataforma de respaldo cifrado y con deduplicación escrita en Go
 - **Restauración bare-metal**: medios de recuperación basados en ReaR para equipos Linux
 - **Dashboard integrado**: monitoreo, programación y restauración
 
-HitStor solo respalda sistemas de archivos (Windows y Linux). Los respaldos de M365, Google Workspace, bases de datos y máquinas virtuales en la nube/VMware se eliminaron definitivamente en la v2.0.0; consulte la [Hoja de ruta](../admin-guide/roadmap.md#permanently-removed-v200).
+El núcleo respalda sistemas de archivos (Windows y Linux); las aplicaciones se respaldan mediante plugins de carga de trabajo instalables (`plugins/`, consulte [Arquitectura de plugins de carga de trabajo](plugin-architecture.md)), empezando por SQL Server. Los respaldos de M365, Google Workspace, las integraciones de bases de datos incorporadas y las máquinas virtuales en la nube/VMware se eliminaron en la v2.0.0; consulte la [Hoja de ruta](../admin-guide/roadmap.md#permanently-removed-v200).
 
 ## Estructura de directorios { #directory-layout }
 
@@ -23,6 +23,10 @@ cmd/                          # Binarios (puntos de entrada)
   hitstor-notifier-log/       # Plugin notificador de ejemplo
   hitstor-hook-log/           # Plugin hook de ejemplo
   hitstor-scanner-builtin/    # Plugin escáner de sistema de archivos integrado (incluido con el agente)
+  hitstor-pluginkit/          # Construye, firma y verifica paquetes de plugins de carga de trabajo (.hpk)
+
+plugins/                      # Plugins de carga de trabajo, un directorio por plugin (empaquetados como .hpk)
+  example/                    # Plugin de carga de trabajo de referencia
 
 internal/                     # Bibliotecas principales (no importables desde fuera)
   archiver/                   # Pipeline de respaldo local
@@ -36,6 +40,8 @@ internal/                     # Bibliotecas principales (no importables desde fu
   sentinel/                   # Telemetría de ransomware + análisis con Gemini
   config/                     # Configuración YAML + repositories[] multi-repositorio
   plugin/                     # Gestor de go-plugin de HashiCorp
+  pluginpkg/                  # Formato de paquete de plugins, firma y confianza
+  pluginmgr/                  # Almacén de plugins del agente: instalar, actualizar, desinstalar
   ...                         # chunker, crypto, retention, metrics, etc.
 
 api/proto/hitstor/plugin/v1/  # Definiciones gRPC públicas de plugins

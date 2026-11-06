@@ -18,6 +18,7 @@ const (
 	NotifierPluginName          = "notifier"
 	HookPluginName              = "hook"
 	FilesystemScannerPluginName = "filesystem_scanner"
+	WorkloadPluginName          = "workload"
 )
 
 // Configurable is an optional interface that plugins can implement

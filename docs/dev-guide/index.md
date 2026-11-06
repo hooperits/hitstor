@@ -7,6 +7,7 @@ The HitStor Dev Guide is an internal reference for building, packaging, testing,
 | Guide | Description |
 |-------|-------------|
 | [Codebase Overview](codebase-overview.md) | Architecture map, binaries, packages, and feature maturity. |
+| [Plugin Architecture](plugin-architecture.md) | Design of installable workload plugins (SQL Server first). |
 | [Dev Environment](dev-environment.md) | Install all prerequisite tools needed to build and package HitStor. |
 | [Build & Packaging](build-and-packaging.md) | Compile binaries and produce `.deb`, `.rpm`, Windows, and Docker packages. |
 | [Server Preparation](server-preparation.md) | Prepare an Ubuntu server before installing the HitStor `.deb` package. |

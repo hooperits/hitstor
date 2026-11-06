@@ -74,6 +74,9 @@ Used by `hitstor-agent` to configure the remote backup agent.
 | `plugin_dir` | string | | Directory to search for plugin binaries (searched before `$PATH`) |
 | `hook_plugins` | list | | Hook plugin names to load for pre/post-backup lifecycle events |
 | `fs_scanner_plugin` | string | | Filesystem scanner plugin name (`builtin` or a custom `Scanner` plugin; only one active at a time) |
+| `plugin_store_dir` | string | `/var/lib/hitstor/plugins` (Linux), `C:\ProgramData\HitStor\plugins` (Windows) | Agent: directory where workload plugin packages are installed |
+| `plugin_trusted_keys` | list | | Agent: extra base64 ed25519 public keys trusted to sign plugin packages, in addition to the official HitStor key |
+| `plugin_allow_unsigned` | bool | `false` | Agent: accept unsigned plugin packages. Development only; packages signed by an untrusted key are still rejected |
 
 ### Integrations (`integrations`)
 
@@ -96,6 +99,47 @@ Microsoft 365 (`m365_*`), cloud provider (`gcp_project`, `aws_role_arn`,
 `collector_plugins` keys were removed from the config schema in v2.0.0. Existing
 `config.yaml` files containing them still load — YAML silently ignores unknown
 keys — but the values are never read. Remove these keys at your convenience.
+
+### Email (`email`)
+
+The outgoing mail server for account emails: invitations to new users and
+password reset links. Secrets are stored encrypted with the repository key.
+Editable from the dashboard **Settings → Email** tab; see
+[Users and access](../admin-guide/users.md#email).
+
+| Key | Type | Description |
+|-----|------|-------------|
+| `host` | string | SMTP server. Empty turns account emails off |
+| `port` | int | Port (default: 587 for `starttls`, 465 for `tls`, 25 for `none`) |
+| `security` | string | `starttls`, `tls` or `none` (plain SMTP, for a relay on a trusted network) |
+| `auth` | string | `none` (the server accepts mail by client address), `password` or `microsoft365` (OAuth 2.0 app) |
+| `username` | string | `password`: user name. `microsoft365`: mailbox to sign in as, if not `from` |
+| `password_encrypted` | string | `password`: encrypted password |
+| `tenant_id` | string | `microsoft365`: directory (tenant) ID |
+| `client_id` | string | `microsoft365`: application (client) ID |
+| `client_secret_encrypted` | string | `microsoft365`: encrypted client secret |
+| `from` | string | Sender address |
+| `from_name` | string | Sender name |
+| `tls_skip_verify` | bool | Accept any server certificate (self-signed relays only) |
+| `dashboard_url` | string | The dashboard's address as people reach it, the base of the links in emails |
+
+### Reports (`reports`) { #reports-reports }
+
+The reports emailed on a schedule, a list. Editable from **Administration → Reports**; see [Reports](../admin-guide/reports.md).
+
+| Key | Type | Description |
+|-----|------|-------------|
+| `id` | string | Identifier |
+| `name` | string | Name shown in the list and the email subject |
+| `type` | string | `summary` (protection summary) or `daily` (daily backup status) |
+| `period` | string | `summary`: `week` or `month` (last 7 or 30 days) |
+| `cron` | string | When to send it (cron expression) |
+| `timezone` | string | Time zone of the schedule and of the dates in the report |
+| `recipients` | list | Email addresses |
+| `agents` | list | Agents covered; empty: every agent |
+| `language` | string | `en` or `es`; empty: the dashboard's default |
+| `enabled` | bool | Send it on schedule |
+| `created`, `last_sent`, `last_error` | | Kept by the server |
 
 ### Sentinel (`sentinel`)
 

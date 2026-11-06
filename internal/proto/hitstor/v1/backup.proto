@@ -49,7 +49,56 @@ service BackupService {
   // single-use recovery token and its current address. The server records
   // both, then dials back over the existing restore-push path unchanged.
   rpc AnnounceForRecovery(AnnounceForRecoveryRequest) returns (AnnounceForRecoveryResponse);
+
+  // ReportJobFailure tells the server that a scheduled job failed on the
+  // agent before finishing (for example, a plugin could not reach its
+  // database). The server records the error on the job, clears a pending
+  // "run now", and drops the job's abandoned session.
+  rpc ReportJobFailure(ReportJobFailureRequest) returns (ReportJobFailureResponse);
+
+  // GetWorkloadKnown lists the workload items the repositories hold for a
+  // job's selection, with their plugin metadata, so the plugin can check
+  // that a differential or log backup builds on backups HitStor can restore.
+  rpc GetWorkloadKnown(GetWorkloadKnownRequest) returns (GetWorkloadKnownResponse);
 }
+
+message GetWorkloadKnownRequest {
+  string api_key = 1;
+  string job_id = 2;
+}
+
+message GetWorkloadKnownResponse {
+  repeated WorkloadKnownItem items = 1;
+}
+
+message WorkloadKnownItem {
+  // Item path as the plugin produced it, e.g. "MSSQLSERVER/db/full-....bak".
+  string item = 1;
+  // The plugin's JSON metadata for the item.
+  bytes metadata = 2;
+}
+
+// WorkloadObjectResult reports a selected object of a workload backup that
+// produced no item: excluded by design, or failed.
+message WorkloadObjectResult {
+  string object = 1;
+  // "excluded" or "failed".
+  string status = 2;
+  // Plugin-defined reason code.
+  string reason = 3;
+  string message = 4;
+}
+
+message ReportJobFailureRequest {
+  string api_key = 1;
+  string job_id = 2;
+  // Human-readable error, shown in the dashboard.
+  string error = 3;
+  // Workload jobs: the objects that produced no item, and why.
+  repeated WorkloadObjectResult object_results = 4;
+}
+
+message ReportJobFailureResponse {}
 
 // --- Bare-metal recovery announce ---
 
@@ -188,6 +237,10 @@ message FinalizeBackupRequest {
   // bare-metal-restore state; the server stores it as a blob referenced by the
   // snapshot. Empty otherwise.
   bytes system_profile = 5;
+
+  // Workload backups: objects of the selection that produced no item. A
+  // failed one makes the run partial; the items that finished are kept.
+  repeated WorkloadObjectResult object_results = 6;
 }
 
 // FileNode represents a file or directory from the agent's filesystem.
@@ -245,6 +298,42 @@ message PingResponse {
 message GetScheduleRequest {
   // API key for authentication (32-byte hex string).
   string api_key = 1;
+
+  // Workload plugins installed on the agent. Only meaningful when
+  // plugins_reported is true: agents that predate plugins, or that could not
+  // read their plugin store, leave it false so the server keeps what it knew.
+  repeated AgentPlugin plugins = 2;
+  bool plugins_reported = 3;
+}
+
+// AgentPlugin describes one workload plugin installed on an agent.
+message AgentPlugin {
+  string id = 1;
+  string name = 2;
+  string version = 3;
+  // "active", "degraded", or "unregistered".
+  string status = 4;
+  int32 protocol_version = 5;
+  repeated string capabilities = 6;
+  // Base64 ed25519 public key that signed the package; empty when unsigned.
+  string signer = 7;
+  // Form fields the plugin declares (settings, backup and restore options).
+  repeated PluginField fields = 8;
+}
+
+// PluginField mirrors the workload protocol's FieldSpec.
+message PluginField {
+  string key = 1;
+  string scope = 2;
+  string type = 3;
+  map<string, string> label = 4;
+  map<string, string> help = 5;
+  string default = 6;
+  repeated string choices = 7;
+  bool required = 8;
+  repeated string object_kinds = 9;
+  string show_if = 10;
+  string choices_from = 11;
 }
 
 message GetScheduleResponse {
@@ -290,12 +379,24 @@ message ScheduledJob {
   // Use Volume Shadow Copy Service for consistent snapshots (Windows only).
   bool use_vss = 14;
 
-  // Job type: "files" (default). HitStor is filesystem-only; any other
-  // value is rejected by the server/agent.
+  // Job type: "files" (default) or "workload" (run by a workload plugin).
   string job_type = 15;
 
   // Fields 16-18 (db_type, db_connection_uri, db_temp_dir) supported a
-  // "database" job type that is no longer part of HitStor's scope.
+  // built-in "database" job type that was removed; database backup now
+  // happens through workload plugins.
   reserved 16, 17, 18;
   reserved "db_type", "db_connection_uri", "db_temp_dir";
+
+  // Workload jobs only: plugin id, its Configure settings, the selected
+  // objects, and the plugin-defined backup kind.
+  string plugin = 19;
+  map<string, string> plugin_settings = 20;
+  repeated string selection = 21;
+  string backup_kind = 22;
+  map<string, string> backup_options = 23;
+  // Set by servers that record per-object results of workload backups
+  // (FinalizeBackupRequest.object_results), so the agent may keep a run
+  // that backed up only some objects.
+  bool workload_results = 24;
 }

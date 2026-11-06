@@ -90,14 +90,15 @@ If the password is lost, the repository data is irrecoverable.
 
 ### Dashboard Authentication
 
-The web dashboard always requires login. The password comes from `serve_dashboard_password`; when it is not set, the server generates a random password at startup, stores its scrypt hash in the config file and logs the plaintext once so the operator can sign in and change it.
+The dashboard uses personal accounts with roles scoped to agents and mandatory two-step verification (TOTP). Passwords are stored as argon2id hashes; sessions time out after inactivity, sensitive changes ask to sign in again, accounts lock after repeated failures, and a hash-chained audit log records sign-ins, changes and denied requests. See [Users and Access](users.md).
 
 Session cookies have the following security properties:
 
 | Property | Value | Purpose |
 |----------|-------|---------|
 | `HttpOnly` | `true` | Prevents JavaScript access to the cookie |
-| `SameSite` | `Strict` | Prevents cross-site request forgery (CSRF) |
+| `SameSite` | `Lax` | Not sent on cross-site subrequests; changes from other sites are also refused by origin checks |
+| `Secure` | over HTTPS | Not sent over plain HTTP |
 
 The `/metrics` endpoint is excluded from authentication to allow Prometheus scraping. Restrict access to this endpoint at the network level if needed.
 
@@ -158,7 +159,7 @@ Use this checklist when deploying HitStor in production:
 - [ ] Use a strong repository password (at least 16 characters, randomly generated)
 - [ ] Store the password in a file with `0600` permissions, not on the command line
 - [ ] Use custom TLS certificates from a trusted CA
-- [ ] Set a dashboard password (`serve_dashboard_password`)
+- [ ] Create personal accounts with the least role each person needs, and remove the ones no longer used
 - [ ] Restrict dashboard port (8421) to management networks
 - [ ] Restrict the `/metrics` endpoint to Prometheus scraper IPs
 - [ ] Enable systemd hardening (included by default in packaged units)

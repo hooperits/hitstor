@@ -32,10 +32,18 @@ func runAsService() bool {
 func serviceBackup(ctx context.Context) error {
 	// Load config (same as CLI PersistentPreRunE).
 	loadConfig()
+	// A service has no console: log job activity (info) to the log file,
+	// where operators and the dashboard's log viewer can read it.
+	if verboseCount == 0 {
+		verboseCount = 1
+	}
 	setupLogging()
+	initAgentLogStore(loadedConfig)
 
 	// Load credentials from agent.env (Windows doesn't have systemd EnvironmentFile).
+	// Workload plugins inherit this environment.
 	loadEnvFile(agent.DefaultEnvPath)
+	clearStalePluginMarkers()
 
 	pollIntervalFlag = defaultPollInterval
 
@@ -50,6 +58,9 @@ func serviceBackup(ctx context.Context) error {
 	// Load or generate the agent token.
 	if err := os.MkdirAll(agent.DefaultConfigDir, 0755); err != nil {
 		slog.Error("create config dir", "error", err)
+	}
+	if err := agent.SecureConfigDir(); err != nil {
+		slog.Warn("could not restrict config directory permissions", "dir", agent.DefaultConfigDir, "error", err)
 	}
 	token, err := agent.LoadToken(agent.DefaultTokenPath)
 	if err != nil {
@@ -68,6 +79,7 @@ func serviceBackup(ctx context.Context) error {
 		ConfigPath: configFlag,
 		Version:    Version,
 	})
+	enablePlugins(agentSrv)
 
 	// When the server registers us, start the backup loop.
 	registerCh := make(chan struct{}, 1)

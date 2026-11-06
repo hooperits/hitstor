@@ -3,6 +3,7 @@
 {{$repoName := index $data "RepoName"}}
 {{$snap := index $data "Snapshot"}}
 {{$agents := index $data "Agents"}}
+{{$workload := index $data "WorkloadPlugin"}}
 
 <div class="snapshot-restore-page">
     <nav class="breadcrumb" aria-label="{{t "Breadcrumb"}}">
@@ -30,10 +31,18 @@
                 </p>
             </div>
             <div class="snapshot-restore-hero__actions">
-                <button type="button" class="btn" id="restore-show-btn" onclick="showRestoreDialog()">
+                {{if $.Nav.RestoreTo ""}}
+                {{if $workload}}
+                <button type="button" class="btn" id="workload-show-btn" onclick="showWorkloadRestore()">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
-                    {{t "Start Restore"}}
+                    {{t "Restore with the plugin"}}
                 </button>
+                {{end}}
+                <button type="button" class="btn{{if $workload}} btn-secondary{{end}}" id="restore-show-btn" onclick="showRestoreDialog()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+                    {{if $workload}}{{t "Restore as files"}}{{else}}{{t "Start Restore"}}{{end}}
+                </button>
+                {{end}}
             </div>
         </div>
 
@@ -101,6 +110,19 @@
             </dl>
         </details>
     </section>
+
+    {{if $workload}}
+    <section id="workload-restore" class="snapshot-restore-panel" hidden>
+        <header class="snapshot-restore-panel__head">
+            <div>
+                <h2 class="snapshot-restore-panel__title">{{t "Restore with the plugin"}}</h2>
+                <p class="snapshot-restore-panel__lead">{{t "Choose the database and the point to restore to, then where and under what name to restore it. The plugin checks the restore before it runs."}}</p>
+            </div>
+            <button type="button" class="btn btn-secondary btn-sm" onclick="document.getElementById('workload-restore').hidden = true; document.getElementById('workload-show-btn').hidden = false;">{{t "Close"}}</button>
+        </header>
+        <div id="workload-restore-body"></div>
+    </section>
+    {{end}}
 
     <section id="restore-dialog" class="snapshot-restore-panel" hidden>
         <header class="snapshot-restore-panel__head">
@@ -188,8 +210,24 @@
     </section>
 </div>
 
+{{if $workload}}<script src="/static/plugins.js"></script>{{end}}
 <script>
 var snapshotID = '{{$snap.ID}}';
+var workloadMounted = false;
+
+function showWorkloadRestore() {
+    var panel = document.getElementById('workload-restore');
+    if (!panel) return;
+    panel.hidden = false;
+    document.getElementById('workload-show-btn').hidden = true;
+    if (!workloadMounted) {
+        workloadMounted = true;
+        HitStorPlugins.workloadRestore(document.getElementById('workload-restore-body'), {
+            plugin: {{$workload}}, sourceAgent: {{index $data "SourceAgent"}}, snapshot: snapshotID
+        });
+    }
+    panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
 var restoreID = '';
 var evtSource = null;
 
@@ -510,7 +548,8 @@ function escapeHTML(s) {
             }
         }
     }
-    showRestoreDialog();
+    if (document.getElementById('workload-restore')) showWorkloadRestore();
+    else showRestoreDialog();
 })();
 </script>
 {{end}}

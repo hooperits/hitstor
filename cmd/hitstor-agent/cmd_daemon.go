@@ -51,7 +51,11 @@ func runDaemon(cmd *cobra.Command, args []string) error {
 	}
 
 	// Load credentials from agent.env (Windows doesn't have systemd EnvironmentFile).
+	// Workload plugins inherit this environment, which is where they read
+	// secrets such as database passwords from.
 	loadEnvFile(agent.DefaultEnvPath)
+
+	clearStalePluginMarkers()
 
 	// Check listen port from environment variable if not set via flag.
 	if !cmd.Flags().Changed("listen-port") {
@@ -86,6 +90,8 @@ func runDaemon(cmd *cobra.Command, args []string) error {
 		ConfigPath: configFlag,
 		Version:    Version,
 	})
+
+	enablePlugins(agentSrv)
 
 	// When the server registers us, start the backup loop.
 	registerCh := make(chan struct{}, 1)
@@ -194,9 +200,17 @@ func checkAndRunAll(ctx context.Context) {
 	}
 	defer client.Close()
 
-	// Query schedule.
+	// Query schedule, reporting installed plugins so the server's inventory
+	// stays current. If the store cannot be read, report nothing rather than
+	// an empty list, so the server keeps the last known inventory.
 	schedCtx, schedCancel := context.WithTimeout(ctx, 30*time.Second)
-	schedule, err := client.GetSchedule(schedCtx, apiKeyFlag)
+	var schedule *agent.ScheduleInfo
+	if plugins, perr := installedPlugins(); perr != nil {
+		slog.Warn("cannot read plugin store; not reporting plugins", "error", perr)
+		schedule, err = client.GetSchedule(schedCtx, apiKeyFlag)
+	} else {
+		schedule, err = client.GetScheduleReportingPlugins(schedCtx, apiKeyFlag, plugins)
+	}
 	schedCancel()
 	if err != nil {
 		slog.Error("failed to get schedule", "error", err)
@@ -327,9 +341,13 @@ func runJobBackup(ctx context.Context, client *agent.Client, job agent.JobSchedu
 		slog.Info("consistent snapshot mode enabled for job", "job_id", job.JobID)
 	}
 
+	if job.JobType == "workload" {
+		runWorkloadJob(ctx, client, job)
+		return
+	}
+
 	// Prefer the shipped filesystem scanner plugin (hitstor-scanner-builtin).
 	// Falls back to in-process walker if the plugin cannot be loaded.
-	// Database/SaaS job types are out of product scope (filesystem only).
 	if job.JobType != "" && job.JobType != "files" {
 		slog.Error("unsupported job type for filesystem agent",
 			"job_id", job.JobID,
@@ -373,6 +391,7 @@ func runJobBackup(ctx context.Context, client *agent.Client, job agent.JobSchedu
 			"job_name", job.Name,
 			"error", err,
 		)
+		reportJobFailure(ctx, client, job, err)
 		return
 	}
 
@@ -391,5 +410,62 @@ func runJobBackup(ctx context.Context, client *agent.Client, job agent.JobSchedu
 			"job_id", job.JobID,
 			"files_skipped", result.FilesSkipped,
 		)
+	}
+}
+
+// runWorkloadJob runs a backup job through an installed workload plugin.
+func runWorkloadJob(ctx context.Context, client *agent.Client, job agent.JobSchedule) {
+	log := slog.With("job_id", job.JobID, "job_name", job.Name, "plugin", job.Plugin)
+	log.Info("starting workload backup", "kind", job.BackupKind, "selection", job.Selection)
+
+	p, c, closeAll, err := openInstalledWorkload(job.Plugin, job.PluginSettings)
+	if err != nil {
+		log.Error("workload backup failed: cannot start plugin", "error", err)
+		reportJobFailure(ctx, client, job, fmt.Errorf("start plugin %s: %w", job.Plugin, err))
+		return
+	}
+	defer closeAll()
+
+	b := &agent.WorkloadBackup{
+		Client:        client,
+		APIKey:        apiKeyFlag,
+		Hostname:      loadedConfig.AgentHostname,
+		JobID:         job.JobID,
+		Tags:          []string{fmt.Sprintf("job:%s", job.JobID)},
+		PluginID:      p.ID,
+		PluginVersion: p.Version,
+		Source:        c,
+		Request: hitstorplugin.BackupRequest{
+			Selection: job.Selection,
+			Kind:      job.BackupKind,
+			Options:   job.BackupOptions,
+		},
+		ServerRecordsResults: job.WorkloadResults,
+	}
+	result, err := b.Run(ctx)
+	if err != nil {
+		if errors.Is(err, agent.ErrSessionCancelled) {
+			log.Warn("workload backup cancelled by server")
+			return
+		}
+		log.Error("workload backup failed", "error", err)
+		reportJobFailure(ctx, client, job, err)
+		return
+	}
+	log.Info("workload backup complete",
+		"snapshot", result.SnapshotID,
+		"items_new", result.FilesNew,
+		"bytes_added", result.BytesAdded,
+		"bytes_processed", result.BytesProcessed,
+		"duration", result.Duration,
+	)
+}
+
+// reportJobFailure tells the server a job failed, so the dashboard shows the
+// error and the job is not retried on every poll. Best effort: an old server
+// without the RPC simply keeps its previous behavior.
+func reportJobFailure(ctx context.Context, client *agent.Client, job agent.JobSchedule, jobErr error) {
+	if err := client.ReportJobFailure(ctx, apiKeyFlag, job.JobID, jobErr); err != nil {
+		slog.Warn("could not report job failure to server", "job_id", job.JobID, "error", err)
 	}
 }

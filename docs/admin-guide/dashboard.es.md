@@ -12,23 +12,13 @@ http://SERVER_IP:8421
 
 Reemplace `SERVER_IP` por el nombre de host o la dirección IP del servidor HitStor. El puerto predeterminado del dashboard es `8421` y se puede cambiar con `--dashboard-port`.
 
-## Protección con contraseña { #password-protection }
+## Inicio de sesión { #signing-in }
 
-El dashboard siempre requiere contraseña. Establézcala con la clave de configuración `serve_dashboard_password`:
+Cada persona inicia sesión con una cuenta personal: usuario, contraseña y un código de una app de autenticación. Los roles deciden qué páginas, agentes y acciones tiene cada uno. Consulte [Usuarios y acceso](users.md).
 
-```yaml
-# /etc/hitstor/config.yaml
-serve_dashboard_password: "DASHBOARD_PASSWORD"
-```
+En un servidor nuevo, o al actualizar desde una versión con una única contraseña de dashboard, el dashboard pide primero crear el administrador confirmando la contraseña compartida del dashboard. Esa contraseña proviene de la clave de configuración `serve_dashboard_password`; si no hay ninguna, `hitstor serve` genera una al iniciar, guarda su hash en el archivo de configuración e imprime el texto plano una sola vez en el registro del servidor (busque `no dashboard password configured`).
 
-Si no hay ninguna contraseña configurada, `hitstor serve` genera una aleatoria al iniciar, guarda su hash en el archivo de configuración e imprime el texto plano una sola vez en el registro del servidor (busque `no dashboard password configured`). Inicie sesión con ella y cámbiela en **Configuración**. Si el servidor no tiene archivo de configuración, se genera una contraseña nueva en cada reinicio.
-
-El dashboard presenta una página de inicio de sesión. La autenticación usa cookies de sesión con las siguientes propiedades de seguridad:
-
-- `HttpOnly`: las cookies no son accesibles desde JavaScript
-- `SameSite=Strict`: las cookies no se envían en solicitudes entre sitios
-
-Las sesiones expiran al cerrar el navegador.
+Las cookies de sesión son `HttpOnly` y `SameSite=Lax`, y los cambios se rechazan cuando el navegador indica que la solicitud viene de otro sitio.
 
 ## Notificaciones de actualización { #update-notifications }
 
@@ -40,10 +30,15 @@ El banner enlaza a la página de la versión en GitHub. Para deshabilitar las co
 
 ## Diseño { #layout }
 
-El dashboard usa una barra de encabezado fija con el logotipo y la versión de HitStor, una barra lateral con navegación por íconos y un área de contenido principal. La barra lateral agrupa las páginas en dos secciones:
+El dashboard usa una barra de encabezado fija, una barra lateral con navegación por íconos y un área de contenido principal. El encabezado muestra el nombre del repositorio, la versión y, a la derecha, el menú del usuario: **Mi cuenta**, el idioma y **Cerrar sesión**.
 
-- **Monitoreo**: Resumen, Respaldos, Agentes
-- **Administración**: Almacenamiento, Configuración
+La barra lateral agrupa las páginas según lo que se hace con ellas y muestra solo lo que su rol permite:
+
+- **Protección**: Resumen, Respaldos, Restauraciones, Recuperación ante desastres
+- **Infraestructura**: Agentes, Almacenamiento
+- **Administración**: Usuarios y acceso, Auditoría, Registros, Configuración
+
+Los botones de acciones que su rol no permite (por ejemplo, eliminar un agente o ejecutar un trabajo en un agente que no opera) no se muestran.
 
 ## Páginas del dashboard { #dashboard-pages }
 
@@ -54,6 +49,36 @@ La página principal muestra un resumen de la infraestructura de respaldo:
 - Número total de agentes, instantáneas (snapshots) y hora del último respaldo
 - Desglose del estado de los agentes (OK, inactivo, nunca respaldado)
 - Accesos rápidos a las páginas Agentes, Instantáneas y Almacenamiento
+
+### Respaldos { #backups }
+
+Lista las tareas de respaldo con su agente, última ejecución, verificación de
+restauración y estado. **+ Nueva tarea de respaldo** abre un asistente de tres
+pasos inspirado en las tareas de las herramientas de respaldo empresariales:
+
+1. **Selección.** Un árbol muestra cada máquina registrada con su estado y su
+   sistema operativo. Al expandir una máquina aparecen sus orígenes: el
+   **Sistema de archivos** y cada plugin instalado (por ejemplo **Microsoft
+   SQL Server**, con sus instancias y bases de datos). Marque lo que desea
+   respaldar; marcar un contenedor (una carpeta, una instancia) respalda todo
+   lo que contiene, incluido lo que se agregue después. Una tarea respalda
+   **un solo origen de una máquina**: al marcar algo, los demás orígenes se
+   bloquean hasta vaciar la selección. El panel lateral muestra la selección
+   y las opciones del origen: patrones de exclusión e instantáneas
+   consistentes para un sistema de archivos, el tipo de respaldo y las
+   opciones del plugin para un plugin.
+2. **Destino y programación.** El repositorio y la programación. La
+   programación parte de un plan habitual para el origen (cada noche para
+   archivos; completos semanales, diferenciales diarios o logs cada 15
+   minutos).
+3. **Revisar.** Un resumen de la tarea, con la programación en palabras y su
+   próxima ejecución, y un nombre sugerido.
+
+Las máquinas sin conexión o suspendidas aparecen en el árbol pero no se pueden
+expandir. En la página de una tarea, **Editar selección** abre el mismo árbol
+para la máquina y el origen de esa tarea, con la selección actual marcada; ahí
+también se cambian las opciones del origen. Para respaldar otro origen, cree
+otra tarea.
 
 ### Agentes { #agents }
 
@@ -171,15 +196,7 @@ curl -X POST http://localhost:8421/api/agents/web-01/browse \
 curl -s http://localhost:8421/api/agents | jq .
 ```
 
-Si la protección con contraseña del dashboard está habilitada, incluya la cookie de sesión o autentíquese primero:
-
-```bash
-# Autenticarse y guardar la cookie
-curl -c cookies.txt -d "password=DASHBOARD_PASSWORD" http://localhost:8421/login
-
-# Usar la cookie en las solicitudes a la API
-curl -b cookies.txt -s http://localhost:8421/api/stats | jq .
-```
+La API usa la misma sesión que el navegador: una solicitud necesita la cookie de sesión de un usuario que completó la verificación en dos pasos, y solo puede hacer lo que permite el rol de ese usuario. Sin sesión la API responde `401`.
 
 ## Métricas de Prometheus { #prometheus-metrics }
 

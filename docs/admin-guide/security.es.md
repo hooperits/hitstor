@@ -90,14 +90,15 @@ Si se pierde la contraseña, los datos del repositorio son irrecuperables.
 
 ### Autenticación del dashboard { #dashboard-authentication }
 
-El dashboard web siempre requiere iniciar sesión. La contraseña proviene de `serve_dashboard_password`; si no está configurada, el servidor genera una contraseña aleatoria al iniciar, almacena su hash scrypt en el archivo de configuración y registra la contraseña en texto plano una sola vez para que el operador pueda iniciar sesión y cambiarla.
+El dashboard usa cuentas personales con roles limitados por agente y verificación en dos pasos (TOTP) obligatoria. Las contraseñas se guardan como hashes argon2id; las sesiones expiran por inactividad, los cambios sensibles piden iniciar sesión de nuevo, las cuentas se bloquean tras fallos repetidos y una auditoría encadenada por hashes registra inicios de sesión, cambios y solicitudes denegadas. Consulte [Usuarios y acceso](users.md).
 
 Las cookies de sesión tienen las siguientes propiedades de seguridad:
 
 | Propiedad | Valor | Propósito |
 |----------|-------|---------|
 | `HttpOnly` | `true` | Impide que JavaScript acceda a la cookie |
-| `SameSite` | `Strict` | Previene la falsificación de solicitudes entre sitios (CSRF) |
+| `SameSite` | `Lax` | No se envía en subsolicitudes entre sitios; además, los cambios desde otros sitios se rechazan por verificación de origen |
+| `Secure` | con HTTPS | No se envía por HTTP sin cifrar |
 
 El endpoint `/metrics` está excluido de la autenticación para permitir la recolección de métricas por Prometheus. Si es necesario, restrinja el acceso a este endpoint a nivel de red.
 
@@ -158,7 +159,7 @@ Use esta lista de verificación al implementar HitStor en producción:
 - [ ] Use una contraseña de repositorio robusta (al menos 16 caracteres, generada aleatoriamente)
 - [ ] Almacene la contraseña en un archivo con permisos `0600`, no en la línea de comandos
 - [ ] Use certificados TLS personalizados emitidos por una CA de confianza
-- [ ] Configure una contraseña para el dashboard (`serve_dashboard_password`)
+- [ ] Cree cuentas personales con el menor rol que cada persona necesite y elimine las que ya no se usen
 - [ ] Restrinja el puerto del dashboard (8421) a las redes de administración
 - [ ] Restrinja el endpoint `/metrics` a las IP del recolector de Prometheus
 - [ ] Habilite el endurecimiento con systemd (incluido de forma predeterminada en las unidades empaquetadas)

@@ -17,3 +17,11 @@ func defaultMediaCacheDir() string {
 	}
 	return filepath.Join(os.TempDir(), "hitstor-bmr-media")
 }
+
+// defaultPluginPackageDir is where uploaded plugin packages are kept.
+func defaultPluginPackageDir() string {
+	if programData := os.Getenv("ProgramData"); programData != "" {
+		return filepath.Join(programData, "HitStor", "plugin-packages")
+	}
+	return filepath.Join(os.TempDir(), "hitstor-plugin-packages")
+}

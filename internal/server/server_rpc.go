@@ -10,8 +10,10 @@ import (
 	"github.com/hooperits/hitstor/internal/backend"
 	"github.com/hooperits/hitstor/internal/cron"
 	"github.com/hooperits/hitstor/internal/hook"
+	"github.com/hooperits/hitstor/internal/plugin"
 	pb "github.com/hooperits/hitstor/internal/proto/hitstor/v1"
 	"github.com/hooperits/hitstor/internal/repository"
+	"github.com/hooperits/hitstor/internal/runlog"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -124,6 +126,12 @@ func (s *Server) BeginSession(ctx context.Context, req *pb.BeginSessionRequest) 
 						"days", job.FullRescanDays, "last_full", job.LastFullBackup)
 				}
 			}
+		}
+
+		// Workload items are new streams every run (deduplication still
+		// applies to their chunks), so there is no parent to diff against.
+		if job != nil && IsWorkloadJobType(job.JobType) {
+			forceFull = true
 		}
 
 		if !forceFull {
@@ -315,8 +323,12 @@ func (s *Server) FinalizeBackup(ctx context.Context, req *pb.FinalizeBackupReque
 	}
 
 	session.SetPhase("finalizing")
+	// Tag a workload snapshot with the objects it holds, so retention keeps
+	// each object's chain on its own.
+	session.Tags = append(session.Tags, workloadObjectTags(session.Paths, req.Files)...)
 	resp, err := session.Finalize(req.Files, req.SystemProfile)
 	if err != nil {
+		s.recordRun(session, nil, nil, fmt.Sprintf("finalize failed: %v", err))
 		s.backupsFailed.Add(1)
 		s.notifyBackupFailed(session.AgentName, session.Hostname,
 			fmt.Sprintf("finalize failed: %v", err),
@@ -331,10 +343,11 @@ func (s *Server) FinalizeBackup(ctx context.Context, req *pb.FinalizeBackupReque
 		slog.Warn("failed to update agent last backup time", "agent", session.AgentName, "error", updateErr)
 	}
 	if session.JobID != "" {
-		if updateErr := s.registry.UpdateJobLastBackup(session.JobID, now); updateErr != nil {
+		if updateErr := s.registry.RecordKindBackup(session.JobID, KindFromTags(session.Tags), now, outcomesFromProto(req.ObjectResults)); updateErr != nil {
 			slog.Warn("failed to update job last backup time", "job", session.JobID, "error", updateErr)
 		}
-		if session.BackupType == "full" {
+		// Workload sessions are always stored whole; only a full kind is a full backup.
+		if kind := KindFromTags(session.Tags); session.BackupType == "full" && (kind == "" || kind == "full") {
 			if updateErr := s.registry.UpdateJobLastFullBackup(session.JobID, now); updateErr != nil {
 				slog.Warn("failed to update job last full backup time", "job", session.JobID, "error", updateErr)
 			}
@@ -342,6 +355,7 @@ func (s *Server) FinalizeBackup(ctx context.Context, req *pb.FinalizeBackupReque
 	}
 
 	s.backupsCompleted.Add(1)
+	s.recordRun(session, resp, outcomesFromProto(req.ObjectResults), "")
 
 	slog.Info("backup completed",
 		"agent", session.AgentName,
@@ -399,28 +413,67 @@ func (s *Server) GetSchedule(ctx context.Context, req *pb.GetScheduleRequest) (*
 		return nil, status.Error(codes.NotFound, "agent not found")
 	}
 
+	if req.PluginsReported {
+		plugins := make([]AgentPlugin, 0, len(req.Plugins))
+		for _, p := range req.Plugins {
+			plugins = append(plugins, AgentPlugin{
+				ID:              p.Id,
+				Name:            p.Name,
+				Version:         p.Version,
+				Status:          p.Status,
+				ProtocolVersion: int(p.ProtocolVersion),
+				Capabilities:    p.Capabilities,
+				Signer:          p.Signer,
+				Fields:          pluginFieldsFromProto(p.Fields),
+			})
+		}
+		// Inventory is informational: never fail the schedule poll over it.
+		if err := s.registry.SetAgentPlugins(agentName, plugins); err != nil {
+			slog.Warn("record agent plugins", "agent", agentName, "error", err)
+		}
+	}
+
 	jobs := s.registry.ListJobsByAgent(agentName)
 	resp := &pb.GetScheduleResponse{}
 
 	for _, j := range jobs {
 		sj := &pb.ScheduledJob{
-			JobId:          j.ID,
-			Name:           j.Name,
-			Paths:          j.Paths,
-			Excludes:       j.Excludes,
-			RepoName:       j.RepoName,
-			Enabled:        j.ScheduleEnabled,
-			IntervalHours:  int32(j.ScheduleHours),
-			RunNow:         j.RunNow,
-			FullRescanDays: int32(j.FullRescanDays),
-			UseVss:         j.UseVSS,
-			JobType:        j.JobType,
+			JobId:           j.ID,
+			Name:            j.Name,
+			Paths:           j.Paths,
+			Excludes:        j.Excludes,
+			RepoName:        j.RepoName,
+			Enabled:         j.ScheduleEnabled,
+			IntervalHours:   int32(j.ScheduleHours),
+			RunNow:          j.RunNow,
+			FullRescanDays:  int32(j.FullRescanDays),
+			UseVss:          j.UseVSS,
+			JobType:         j.JobType,
+			Plugin:          j.Plugin,
+			PluginSettings:  j.PluginSettings,
+			Selection:       j.Selection,
+			BackupKind:      j.BackupKind,
+			BackupOptions:   j.BackupOptions,
+			WorkloadResults: j.JobType == JobTypeWorkload,
 		}
 		if j.LastFullBackup != nil {
 			sj.LastFullBackupUnix = j.LastFullBackup.Unix()
 		}
 
-		if j.ScheduleEnabled && j.CronExpression != "" {
+		if UsesPlan(j) {
+			// The plan's kind that is due next, as the job's kind for this
+			// poll; the session's kind tag tells which kind ran.
+			sj.Enabled = false
+			for _, e := range EffectivePlan(j) {
+				sj.Enabled = sj.Enabled || e.Enabled
+			}
+			if kind, at, ok := DueKind(j, time.Now()); ok {
+				sj.BackupKind = kind
+				if !j.RunNow {
+					sj.NextRunUnix = at.Unix()
+				}
+			}
+		} else if j.ScheduleEnabled && j.CronExpression != "" {
 			// Cron mode: parse expression and compute next run in job's timezone.
 			expr, err := cron.Parse(j.CronExpression)
 			if err != nil {
@@ -437,7 +490,11 @@ func (s *Server) GetSchedule(ctx context.Context, req *pb.GetScheduleRequest) (*
 				}
 				slog.Debug("cron schedule evaluation", "job", j.ID, "expr", j.CronExpression, "timezone", loc)
 				var from time.Time
-				if j.LastBackup != nil {
+				if JobFailedSinceLastBackup(j) {
+					// A failed run waits for the next slot after it instead of
+					// being due again on every poll.
+					from = j.LastErrorAt.In(loc)
+				} else if j.LastBackup != nil {
 					from = j.LastBackup.In(loc)
 				} else {
 					// First-ever run: anchor 1 minute in the past so that if
@@ -457,6 +514,12 @@ func (s *Server) GetSchedule(ctx context.Context, req *pb.GetScheduleRequest) (*
 			// Legacy interval mode.
 			nextRun := j.LastBackup.Add(time.Duration(j.ScheduleHours) * time.Hour)
 			sj.NextRunUnix = nextRun.Unix()
+		}
+		// Interval jobs retry a failed run after a pause, not on every poll.
+		if !UsesPlan(j) && j.CronExpression == "" && JobFailedSinceLastBackup(j) {
+			if retry := j.LastErrorAt.Add(failedJobRetryDelay).Unix(); sj.NextRunUnix < retry {
+				sj.NextRunUnix = retry
+			}
 		}
 
 		resp.Jobs = append(resp.Jobs, sj)
@@ -556,4 +619,58 @@ func findPreviousSnapshot(repo *repository.Repository, jobID string) (*repositor
 		return nil, backend.ID{}, false
 	}
 	return bestSnap, bestID, true
+}
+
+func pluginFieldsFromProto(fs []*pb.PluginField) []plugin.FieldSpec {
+	out := make([]plugin.FieldSpec, 0, len(fs))
+	for _, f := range fs {
+		out = append(out, plugin.FieldSpec{Key: f.Key, Scope: f.Scope, Type: f.Type, Label: f.Label, Help: f.Help,
+			Default: f.Default, Choices: f.Choices, Required: f.Required, ObjectKinds: f.ObjectKinds, ShowIf: f.ShowIf, ChoicesFrom: f.ChoicesFrom})
+	}
+	return out
+}
+
+// failedKind returns the kind of a workload job's run that just failed: the
+// kind of its open session, or else the kind that was due.
+func (s *Server) failedKind(j BackupJob) string {
+	if j.JobType != JobTypeWorkload {
+		return ""
+	}
+	if kind := s.sessionKindByJobID(j.ID); kind != "" {
+		return kind
+	}
+	kind, _, _ := DueKind(j, time.Now())
+	return kind
+}
+
+// failedJobRetryDelay is how long an interval job waits after a failed run.
+const failedJobRetryDelay = 15 * time.Minute
+
+// ReportJobFailure implements BackupService.ReportJobFailure.
+func (s *Server) ReportJobFailure(ctx context.Context, req *pb.ReportJobFailureRequest) (*pb.ReportJobFailureResponse, error) {
+	agentName, ok := s.registry.VerifyKey(req.ApiKey)
+	if !ok {
+		return nil, status.Error(codes.Unauthenticated, "invalid API key")
+	}
+	job := s.registry.GetJob(req.JobId)
+	if job == nil {
+		return nil, status.Errorf(codes.NotFound, "backup job %q not found", req.JobId)
+	}
+	if job.AgentName != agentName {
+		return nil, status.Error(codes.PermissionDenied, "job does not belong to this agent")
+	}
+	kind := s.failedKind(*job)
+	outcomes := outcomesFromProto(req.ObjectResults)
+	if err := s.registry.RecordKindFailure(req.JobId, kind, req.Error, time.Now(), outcomes); err != nil {
+		return nil, status.Errorf(codes.Internal, "record job failure: %v", err)
+	}
+	if job.JobType == JobTypeWorkload {
+		kind = workloadKind(*job, kind)
+	}
+	s.appendRun(runlog.Run{JobID: job.ID, JobName: job.Name, Agent: agentName, Repo: job.RepoName, Plugin: job.Plugin,
+		Kind: kind, Result: runlog.ResultFailed, Error: req.Error, FailedObjects: failedObjectList(outcomes)})
+	dropped := s.CancelSessionByJobID(req.JobId)
+	slog.Warn("backup job failed on agent", "agent", agentName, "job", job.Name, "job_id", req.JobId,
+		"session_dropped", dropped, "error", req.Error)
+	return &pb.ReportJobFailureResponse{}, nil
 }

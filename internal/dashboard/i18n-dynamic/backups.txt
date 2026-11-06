@@ -10,3 +10,4 @@ finalizing
 done
 skipped
 Files
+failed

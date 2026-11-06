@@ -1,0 +1,8 @@
+id: example
+name: Example workload plugin
+version: 0.1.0
+type: workload
+protocol_version: 1
+min_agent_version: 0.1.0
+publisher: hitstor
+description: Reference workload plugin. It reports its metadata and does nothing else.

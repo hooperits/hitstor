@@ -25,14 +25,18 @@
             <p class="agent-detail-subtitle">{{if $a.AgentAddr}}{{$a.AgentAddr}}{{else}}{{t "No address configured"}}{{end}}</p>
         </div>
         <div class="agent-detail-hero__actions">
+            {{if $.Nav.Backup $a.Name}}
             {{if $a.Suspended}}
             <button type="button" class="btn agent-detail-unsuspend-btn" onclick="toggleSuspension(false)">{{t "Unsuspend Agent"}}</button>
             {{else}}
             <button type="button" class="btn agent-detail-suspend-btn" onclick="toggleSuspension(true)">{{t "Suspend Agent"}}</button>
             {{end}}
             <a href="/backups" class="btn btn-secondary">+ {{t "New Backup Job"}}</a>
+            {{end}}
+            {{if $.Nav.Admin}}
             <button type="button" class="btn agent-detail-delete-btn" onclick="removeAgent()">{{t "Remove"}}</button>
             <button type="button" class="btn" onclick="alert(t('To re-register: run {cmd} on the agent, then use the Agents > Add form (it will auto re-register if name exists and preserve jobs).', {cmd: 'sudo hitstor-agent show-id'}))">{{t "Re-register"}}</button>
+            {{end}}
         </div>
     </div>
     <div class="agent-detail-stats">
@@ -85,6 +89,18 @@
     </div>
     <div id="live-info-content" class="agent-detail-live-loading">{{t "Loading agent info..."}}</div>
 </div>
+
+<div class="card agent-detail-plugins-panel">
+    <div class="agent-detail-panel__head">
+        <span class="agent-detail-panel__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3 3-3 3-3-3z"/><path d="M5 9l3 3-3 3-3-3z"/><path d="M19 9l3 3-3 3-3-3z"/><path d="M12 16l3 3-3 3-3-3z"/></svg>
+        </span>
+        <h2 class="agent-detail-panel__title">{{t "Plugins"}}</h2>
+    </div>
+    <div id="agent-plugins">{{t "Loading..."}}</div>
+</div>
+<script src="/static/plugins.js"></script>
+<script>HitStorPlugins.agentPanel(document.getElementById('agent-plugins'), {{$a.Name}});</script>
 {{end}}
 
 <div class="agent-detail-jobs-panel">
@@ -102,7 +118,7 @@
     <div class="empty-state empty-state-agents">
         <h3>{{t "No backup jobs"}}</h3>
         <p>{{t "This agent has no scheduled backup jobs yet."}}</p>
-        <a href="/backups" class="btn">{{t "Create backup job"}}</a>
+        {{if $.Nav.Backup $a.Name}}<a href="/backups" class="btn">{{t "Create backup job"}}</a>{{end}}
     </div>
     {{else}}
     <div class="table-wrap agents-jobs-table">
@@ -139,7 +155,8 @@
                         {{if .Running}}
                         {{if .Stale}}<span class="badge badge-stale">{{t "stalled"}}</span>{{else}}<span class="badge badge-running">{{t "running"}}</span>{{end}}
                         {{else}}
-                        <span class="badge {{if eq .Status "ok"}}badge-ok{{else if eq .Status "overdue"}}badge-stale{{else if eq .Status "pending"}}badge-pending{{else if eq .Status "disabled"}}badge-disabled{{else}}badge-never{{end}}">{{t .Status}}</span>
+                        <span class="badge {{if eq .Status "ok"}}badge-ok{{else if or (eq .Status "overdue") (eq .Status "partial")}}badge-stale{{else if eq .Status "failed"}}badge-critical{{else if eq .Status "pending"}}badge-pending{{else if eq .Status "disabled"}}badge-disabled{{else}}badge-never{{end}}"{{if .LastError}} title="{{.LastError}}"{{end}}>{{t .Status}}</span>
+                        {{if .LastError}}<div class="job-last-error">{{.LastError}}</div>{{end}}
                         {{end}}
                     </td>
                 </tr>

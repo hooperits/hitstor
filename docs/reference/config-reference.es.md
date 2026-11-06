@@ -74,6 +74,9 @@ La usa `hitstor-agent` para configurar el agente de respaldo remoto.
 | `plugin_dir` | string | | Directorio donde se buscan los binarios de plugins (se busca antes que en `$PATH`) |
 | `hook_plugins` | list | | Nombres de los plugins de hook que se cargan para los eventos del ciclo de vida previos y posteriores al respaldo |
 | `fs_scanner_plugin` | string | | Nombre del plugin escáner del sistema de archivos (`builtin` o un plugin `Scanner` personalizado; solo uno activo a la vez) |
+| `plugin_store_dir` | string | `/var/lib/hitstor/plugins` (Linux), `C:\ProgramData\HitStor\plugins` (Windows) | Agente: directorio donde se instalan los paquetes de plugins de carga de trabajo |
+| `plugin_trusted_keys` | list | | Agente: claves públicas ed25519 en base64 adicionales autorizadas para firmar paquetes de plugins, además de la clave oficial de HitStor |
+| `plugin_allow_unsigned` | bool | `false` | Agente: acepta paquetes de plugins sin firma. Solo para desarrollo; los paquetes firmados con una clave no confiable se siguen rechazando |
 
 ### Integraciones (`integrations`) { #integrations-integrations }
 
@@ -96,6 +99,47 @@ Las claves de Microsoft 365 (`m365_*`), de proveedores de nube (`gcp_project`, `
 `collector_plugins` se eliminaron del esquema de configuración en v2.0.0. Los archivos
 `config.yaml` existentes que las contengan siguen cargándose (YAML ignora en silencio las claves
 desconocidas), pero sus valores nunca se leen. Elimine estas claves cuando le resulte conveniente.
+
+### Correo (`email`) { #email-email }
+
+El servidor de correo saliente para los correos de cuenta: invitaciones a usuarios nuevos y
+enlaces para restablecer contraseñas. Los secretos se almacenan cifrados con la clave del
+repositorio. Se puede editar desde la pestaña **Configuración → Correo** del dashboard; vea
+[Usuarios y acceso](../admin-guide/users.md#email).
+
+| Clave | Tipo | Descripción |
+|-----|------|-------------|
+| `host` | string | Servidor SMTP. Vacío desactiva los correos de cuenta |
+| `port` | int | Puerto (predeterminado: 587 con `starttls`, 465 con `tls`, 25 con `none`) |
+| `security` | string | `starttls`, `tls` o `none` (SMTP sin cifrar, para un relay en una red de confianza) |
+| `auth` | string | `none` (el servidor acepta el correo según la dirección del cliente), `password` o `microsoft365` (aplicación OAuth 2.0) |
+| `username` | string | `password`: nombre de usuario. `microsoft365`: buzón con el que iniciar sesión, si no es `from` |
+| `password_encrypted` | string | `password`: contraseña cifrada |
+| `tenant_id` | string | `microsoft365`: id. de directorio (inquilino) |
+| `client_id` | string | `microsoft365`: id. de aplicación (cliente) |
+| `client_secret_encrypted` | string | `microsoft365`: secreto de cliente cifrado |
+| `from` | string | Dirección del remitente |
+| `from_name` | string | Nombre del remitente |
+| `tls_skip_verify` | bool | Acepta cualquier certificado del servidor (solo relays con certificado autofirmado) |
+| `dashboard_url` | string | La dirección del dashboard tal como se llega a él; los enlaces de los correos empiezan con ella |
+
+### Reportes (`reports`) { #reports-reports }
+
+Los reportes enviados por correo según una programación, en una lista. Se pueden editar en **Administración → Reportes**; vea [Reportes](../admin-guide/reports.md).
+
+| Clave | Tipo | Descripción |
+|-----|------|-------------|
+| `id` | string | Identificador |
+| `name` | string | Nombre que se muestra en la lista y en el asunto del correo |
+| `type` | string | `summary` (resumen de protección) o `daily` (estado diario de respaldos) |
+| `period` | string | `summary`: `week` o `month` (últimos 7 o 30 días) |
+| `cron` | string | Cuándo enviarlo (expresión cron) |
+| `timezone` | string | Zona horaria de la programación y de las fechas del reporte |
+| `recipients` | lista | Direcciones de correo |
+| `agents` | lista | Agentes que abarca; vacía: todos |
+| `language` | string | `en` o `es`; vacío: el idioma predeterminado del dashboard |
+| `enabled` | bool | Enviarlo según la programación |
+| `created`, `last_sent`, `last_error` | | Los mantiene el servidor |
 
 ### Sentinel (`sentinel`) { #sentinel-sentinel }
 

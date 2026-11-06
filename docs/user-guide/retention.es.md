@@ -57,6 +57,16 @@ Por ejemplo, con `--keep-last 3 --keep-daily 7`:
 - Una instantánea se conserva si es una de las 3 más recientes **o** si es la última instantánea de uno de los últimos 7 días calendario.
 - Una instantánea que cumple ambas reglas también se conserva (las reglas no se anulan entre sí).
 
+## Cadenas de respaldo de cargas de trabajo { #workload-backup-chains }
+
+Los respaldos diferenciales y de log que toman los plugins de carga de trabajo
+(por ejemplo [SQL Server](sql-server.md)) solo se pueden restaurar junto con
+los respaldos anteriores. Cuando una política conserva una de esas
+instantáneas, HitStor también conserva las instantáneas anteriores del mismo
+host y plugin hasta el respaldo completo más reciente, aunque la política por
+sí sola las olvidaría. Las instantáneas se reconocen por sus etiquetas
+`plugin:<id>` y `kind:<tipo>`.
+
 ## Filtrado por host y ruta { #host-and-path-filtering }
 
 De forma predeterminada, `forget` aplica la política de retención a **todas** las instantáneas del repositorio, agrupadas por host y ruta. Puede acotar el alcance con filtros:

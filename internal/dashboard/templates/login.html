@@ -26,26 +26,163 @@
         </section>
         <section class="login-panel">
             <div class="login-lang">{{template "lang_selector" "login"}}</div>
-            <div class="login-card">
+            <div class="login-card{{if eq .Mode "enroll" "recovery-codes"}} login-card--wide{{end}}">
                 <div class="login-card-header">
                     <img src="/static/icon.png" alt="" class="brand-icon brand-icon-md login-card-icon" width="48" height="48">
                     <div>
+                        {{if eq .Mode "code"}}
+                        <h2 class="login-card-title">{{t "Verification code"}}</h2>
+                        <p class="login-card-subtitle">{{t "Enter the 6-digit code from your authenticator app, or one of your recovery codes."}}</p>
+                        {{else if eq .Mode "enroll"}}
+                        <h2 class="login-card-title">{{t "Set up two-step verification"}}</h2>
+                        <p class="login-card-subtitle">{{t "Every account signs in with a code from an authenticator app, such as Microsoft Authenticator or Google Authenticator."}}</p>
+                        {{else if eq .Mode "recovery-codes"}}
+                        <h2 class="login-card-title">{{t "Save your recovery codes"}}</h2>
+                        <p class="login-card-subtitle">{{t "Each code signs you in once if you lose your phone. They are shown only now: print them or keep them in a password manager."}}</p>
+                        {{else if eq .Mode "recovery-used"}}
+                        <h2 class="login-card-title">{{t "Recovery code used"}}</h2>
+                        <p class="login-card-subtitle">{{tf "You have {n} recovery codes left. Generate new ones in My account, and set up your authenticator again if you lost it." "n" (len .Codes)}}</p>
+                        {{else if eq .Mode "setup"}}
+                        <h2 class="login-card-title">{{t "Create the first administrator"}}</h2>
+                        <p class="login-card-subtitle">{{t "The dashboard now uses personal accounts. Confirm the current dashboard password and choose your administrator account."}}</p>
+                        {{else if eq .Mode "change-password"}}
+                        <h2 class="login-card-title">{{t "Choose a new password"}}</h2>
+                        <p class="login-card-subtitle">{{t "Your password was set by an administrator: choose your own to continue."}}</p>
+                        {{else if eq .Mode "forgot"}}
+                        <h2 class="login-card-title">{{t "Forgot your password?"}}</h2>
+                        {{if .EmailEnabled}}<p class="login-card-subtitle">{{t "Enter your user name or email address. We email you a link to choose a new password."}}</p>
+                        {{else}}<p class="login-card-subtitle">{{t "Ask an administrator to reset your password: this dashboard does not send email."}}</p>{{end}}
+                        {{else if eq .Mode "reset"}}
+                        {{if eq .Purpose "invite"}}<h2 class="login-card-title">{{t "Welcome to HitStor"}}</h2>
+                        <p class="login-card-subtitle">{{tf "Choose the password of your account {user}. Next you set up two-step verification." "user" .Username}}</p>
+                        {{else}}<h2 class="login-card-title">{{t "Choose a new password"}}</h2>
+                        <p class="login-card-subtitle">{{tf "Choose a new password for the account {user}." "user" .Username}}</p>{{end}}
+                        {{else if eq .Mode "link-invalid"}}
+                        <h2 class="login-card-title">{{t "This link no longer works"}}</h2>
+                        <p class="login-card-subtitle">{{t "Links work once and expire, and a newer link replaces the earlier ones. Ask for a new one."}}</p>
+                        {{else if eq .Mode "password"}}
                         <h2 class="login-card-title">{{t "Sign in"}}</h2>
                         <p class="login-card-subtitle">{{t "Enter your dashboard password to continue."}}</p>
+                        {{else}}
+                        <h2 class="login-card-title">{{t "Sign in"}}</h2>
+                        <p class="login-card-subtitle">{{t "Enter your user name and password to continue."}}</p>
+                        {{end}}
                     </div>
                 </div>
-                {{if .}}{{if .Error}}<div class="login-error" role="alert">{{t .Error}}</div>{{end}}{{end}}
+                {{if .Error}}<div class="login-error" role="alert">{{.Error}}</div>{{end}}
+                {{if .Notice}}<div class="login-notice" role="status">{{.Notice}}</div>{{end}}
+
+                {{if eq .Mode "code"}}
+                <form method="POST" action="/login/code" class="login-form">
+                    <label class="login-label" for="login-code">{{t "Code"}}</label>
+                    <input type="text" name="code" id="login-code" class="login-code-input" inputmode="numeric" autocomplete="one-time-code" autofocus required maxlength="23" placeholder="123456">
+                    <button type="submit" class="login-submit">{{t "Verify"}}</button>
+                </form>
+                <form method="POST" action="/logout" class="login-alt"><button type="submit" class="login-link">{{t "Use another account"}}</button></form>
+
+                {{else if eq .Mode "enroll"}}
+                <ol class="enroll-steps">
+                    <li>{{t "Install an authenticator app on your phone."}}</li>
+                    <li>{{t "In the app, add an account by scanning this code:"}}
+                        <img class="enroll-qr" src="{{.QR | safeURL}}" alt="{{t "QR code for the authenticator app"}}" width="200" height="200">
+                        <details class="enroll-manual"><summary>{{t "Cannot scan it? Enter this key instead"}}</summary><code class="enroll-secret">{{.Secret}}</code></details>
+                    </li>
+                    <li>{{t "Enter the 6-digit code the app shows:"}}</li>
+                </ol>
+                <form method="POST" action="/login/enroll" class="login-form">
+                    <input type="text" name="code" class="login-code-input" inputmode="numeric" autocomplete="one-time-code" autofocus required maxlength="6" pattern="[0-9 ]{6,7}" placeholder="123456" aria-label="{{t "Code"}}">
+                    <button type="submit" class="login-submit">{{t "Turn on two-step verification"}}</button>
+                </form>
+
+                {{else if eq .Mode "recovery-codes"}}
+                <ol class="recovery-codes">{{range .Codes}}<li><code>{{.}}</code></li>{{end}}</ol>
+                <div class="recovery-actions">
+                    <button type="button" class="btn btn-secondary" onclick="window.print()">{{t "Print"}}</button>
+                    <button type="button" class="btn btn-secondary" id="copy-codes">{{t "Copy"}}</button>
+                </div>
+                <a href="/" class="login-submit login-submit--link">{{t "I saved them: continue"}}</a>
+
+                {{else if eq .Mode "recovery-used"}}
+                <a href="/account" class="login-submit login-submit--link">{{t "Go to My account"}}</a>
+                <a href="/" class="login-link">{{t "Continue to the dashboard"}}</a>
+
+                {{else if eq .Mode "setup"}}
+                <form method="POST" action="/setup" class="login-form">
+                    <label class="login-label" for="setup-current">{{t "Current dashboard password"}}</label>
+                    <input type="password" name="current" id="setup-current" autocomplete="current-password" autofocus>
+                    <label class="login-label" for="setup-username">{{t "User name"}}</label>
+                    <input type="text" name="username" id="setup-username" value="{{.Username}}" autocomplete="username" required pattern="[A-Za-z0-9][A-Za-z0-9._\-]{1,63}">
+                    <label class="login-label" for="setup-password">{{t "New password"}}</label>
+                    <input type="password" name="password" id="setup-password" autocomplete="new-password" required minlength="12">
+                    <label class="login-label" for="setup-confirm">{{t "Repeat the password"}}</label>
+                    <input type="password" name="confirm" id="setup-confirm" autocomplete="new-password" required minlength="12">
+                    <p class="login-hint">{{t "At least 12 characters. A phrase of several words is easy to remember and hard to guess."}}</p>
+                    <button type="submit" class="login-submit">{{t "Create administrator"}}</button>
+                </form>
+
+                {{else if eq .Mode "change-password"}}
+                <form method="POST" action="/api/account/password" class="login-form">
+                    <input type="hidden" name="username" value="{{.Username}}" autocomplete="username">
+                    <label class="login-label" for="cp-current">{{t "Current password"}}</label>
+                    <input type="password" name="current" id="cp-current" autocomplete="current-password" autofocus required>
+                    <label class="login-label" for="cp-password">{{t "New password"}}</label>
+                    <input type="password" name="password" id="cp-password" autocomplete="new-password" required minlength="12">
+                    <label class="login-label" for="cp-confirm">{{t "Repeat the password"}}</label>
+                    <input type="password" name="confirm" id="cp-confirm" autocomplete="new-password" required minlength="12">
+                    <p class="login-hint">{{t "At least 12 characters. A phrase of several words is easy to remember and hard to guess."}}</p>
+                    <button type="submit" class="login-submit">{{t "Change password"}}</button>
+                </form>
+
+                {{else if eq .Mode "forgot"}}
+                {{if and .EmailEnabled (not .Notice)}}
+                <form method="POST" action="/login/forgot" class="login-form">
+                    <label class="login-label" for="forgot-login">{{t "User name or email address"}}</label>
+                    <input type="text" name="login" id="forgot-login" autocomplete="username" autofocus required maxlength="254">
+                    <button type="submit" class="login-submit">{{t "Email me a link"}}</button>
+                </form>
+                {{end}}
+                <a href="/login" class="login-link">{{t "Back to sign in"}}</a>
+
+                {{else if eq .Mode "reset"}}
+                <form method="POST" action="/login/reset" class="login-form">
+                    <input type="hidden" name="token" value="{{.Token}}">
+                    <input type="hidden" name="username" value="{{.Username}}" autocomplete="username">
+                    <label class="login-label" for="reset-password">{{t "New password"}}</label>
+                    <input type="password" name="password" id="reset-password" autocomplete="new-password" autofocus required minlength="12">
+                    <label class="login-label" for="reset-confirm">{{t "Repeat the password"}}</label>
+                    <input type="password" name="confirm" id="reset-confirm" autocomplete="new-password" required minlength="12">
+                    <p class="login-hint">{{t "At least 12 characters. A phrase of several words is easy to remember and hard to guess."}}</p>
+                    {{if .NeedCode}}
+                    <label class="login-label" for="reset-code">{{t "Code from your authenticator app"}}</label>
+                    <input type="text" name="code" id="reset-code" class="login-code-input" inputmode="numeric" autocomplete="one-time-code" required maxlength="23" placeholder="123456">
+                    <p class="login-hint">{{t "Or one of your recovery codes. If you lost both, ask an administrator to reset your two-step verification."}}</p>
+                    {{end}}
+                    <button type="submit" class="login-submit">{{if eq .Purpose "invite"}}{{t "Save and continue"}}{{else}}{{t "Change password"}}{{end}}</button>
+                </form>
+
+                {{else if eq .Mode "link-invalid"}}
+                {{if .EmailEnabled}}<a href="/login/forgot" class="login-submit login-submit--link">{{t "Ask for a new link"}}</a>{{end}}
+                <a href="/login" class="login-link">{{t "Back to sign in"}}</a>
+
+                {{else}}
                 <form method="POST" action="/login" class="login-form">
+                    {{if ne .Mode "password"}}
+                    <label class="login-label" for="login-username">{{t "User name"}}</label>
+                    <input type="text" name="username" id="login-username" value="{{.Username}}" autocomplete="username" autofocus required>
+                    {{end}}
                     <label class="login-label" for="login-password">{{t "Password"}}</label>
                     <div class="password-wrap">
-                        <input type="password" name="password" id="login-password" placeholder="{{t "Dashboard password"}}" autofocus required autocomplete="current-password">
+                        <input type="password" name="password" id="login-password" required autocomplete="current-password"{{if eq .Mode "password"}} autofocus{{end}}>
                         <button type="button" class="password-toggle" id="password-toggle" aria-label="{{t "Show password"}}">{{t "Show"}}</button>
                     </div>
                     <button type="submit" class="login-submit">{{t "Sign In"}}</button>
                 </form>
+                {{if and (eq .Mode "login") .EmailEnabled}}<a href="/login/forgot" class="login-link">{{t "Forgot your password?"}}</a>{{end}}
+                {{end}}
             </div>
         </section>
     </div>
     <script src="/static/app.js"></script>
+    <script src="/static/accounts.js"></script>
 </body>
 </html>

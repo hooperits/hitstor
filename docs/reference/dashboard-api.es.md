@@ -25,7 +25,7 @@ Salvo que se indique lo contrario, los endpoints requieren autenticación en el 
 
 | Método | Ruta | Descripción |
 |--------|------|-------------|
-| `GET` | `/api/agents` | Lista los agentes con su estado e información de programación |
+| `GET` | `/api/agents` | Lista los agentes con su estado, información de programación y plugins de carga de trabajo instalados (`plugins`) |
 | `POST` | `/api/agents` | Registra un agente (entrada manual: `name`, `agent_addr`, `api_key` opcional) |
 | `DELETE` | `/api/agents/{name}` | Elimina un agente |
 | `POST` | `/api/agents/{name}/schedule` | Define la programación (intervalo, cron, zona horaria, tareas) |
@@ -49,11 +49,12 @@ Salvo que se indique lo contrario, los endpoints requieren autenticación en el 
 | Método | Ruta | Descripción |
 |--------|------|-------------|
 | `GET` | `/api/backups` | Lista las tareas de respaldo |
-| `POST` | `/api/backups` | Crea una tarea (`job_type` siempre es `files`) |
+| `POST` | `/api/backups` | Crea una tarea. `job_type` es `files` (con `paths`) o `workload` (con `plugin`, `selection` y, opcionalmente, `plan` (un `{kind, enabled, cron_expression, timezone}` por tipo de respaldo), `backup_kind` y `plugin_settings`; el agente debe haber reportado el plugin) |
 | `GET` | `/api/backups/{id}` | Obtiene una tarea |
 | `PUT` | `/api/backups/{id}` | Actualiza una tarea |
 | `DELETE` | `/api/backups/{id}` | Elimina una tarea |
-| `POST` | `/api/backups/{id}/run` | Ejecuta la tarea ahora |
+| `POST` | `/api/backups/{id}/run` | Ejecuta la tarea ahora; en tareas de workload, `{"kind": "full"}` elige el tipo del plan |
+| `GET` | `/api/backups/{id}/chains` | Cadenas de respaldo de cada base de una tarea de workload |
 | `POST` | `/api/backups/{id}/cancel` | Cancela un respaldo en curso |
 | `GET` | `/api/backups/validate-cron` | Valida una expresión cron |
 | `GET` | `/api/timezones` | Lista las zonas horarias admitidas |
@@ -82,6 +83,19 @@ Salvo que se indique lo contrario, los endpoints requieren autenticación en el 
 | `POST` | `/api/snapshots/{id}/restore` | Inicia una restauración en un agente (`agent_name`, `target_path`, `includes` opcional) |
 | `GET` | `/api/restores` | Lista las sesiones de restauración |
 | `GET` | `/api/restore/{id}/events` | Progreso de la restauración vía SSE |
+| `GET` | `/api/agents/{name}/plugins/{plugin}/browse?path=` | Lista los objetos que un plugin de carga de trabajo del agente puede respaldar, con `detail`, `status` y si cada uno admite configuración (`configurable`) y la tiene guardada (`configured`) |
+| `GET` | `/api/agents/{name}/plugins/{plugin}/object-config?path=` | Configuración guardada en el agente para un objeto (`configured`, `values` sin contraseñas, `secrets_set`) |
+| `PUT` | `/api/agents/{name}/plugins/{plugin}/object-config` | Prueba y guarda en el agente la configuración de un objeto (`path`, `values`; una contraseña vacía conserva la guardada), o la quita (`path`, `remove: true`). El servidor no guarda nada |
+| `GET` | `/api/workload/points?agent=&plugin=&object=` | Elementos disponibles para restaurar un objeto de carga de trabajo, del más antiguo al más reciente |
+| `GET` | `/api/workload/catalog?agent=&plugin=&snapshot=` | Todos los elementos que un plugin respaldó en un agente, del más reciente al más antiguo, con su `object`; `snapshot` (un prefijo de ID) deja solo los de una instantánea |
+| `POST` | `/api/workload/restore-plan` | Vista previa de una restauración con plugin sin ejecutarla (mismo cuerpo que `POST /api/workload/restores`): los elementos que aplica, los archivos que escribe (`key`, `kind`, `source`, `target`), `warnings` y un `summary` |
+| `POST` | `/api/workload/restores` | Inicia una restauración de carga de trabajo (`agent_name`, `plugin`, `object`; opcionales: `source_agent` para restaurar respaldos de otro agente, `target` para el punto en el tiempo, `options` y `plugin_settings`) |
+| `GET` | `/api/workload/restores/{id}` | Estado de una restauración de carga de trabajo: plan, bytes enviados y resultado |
+| `GET` | `/api/plugin-packages` | Lista los paquetes de plugins cargados |
+| `POST` | `/api/plugin-packages` | Carga un paquete de plugin (el archivo `.hpk` como cuerpo `application/octet-stream`); se rechaza si no está firmado por una clave de confianza |
+| `DELETE` | `/api/plugin-packages/{file}` | Elimina un paquete cargado |
+| `POST` | `/api/agents/{name}/plugins` | Instala un paquete cargado en un agente administrado (`package`; opcionales `upgrade` y `allow_downgrade`); el agente lo vuelve a verificar |
+| `DELETE` | `/api/agents/{name}/plugins/{id}` | Desinstala un plugin de un agente administrado; se rechaza mientras una tarea lo usa |
 
 ## Progreso y operaciones { #progress-operations }
 

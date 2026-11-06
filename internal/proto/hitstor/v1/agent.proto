@@ -58,6 +58,33 @@ service AgentService {
   // cannot be produced server-side. Images run to hundreds of megabytes or
   // more, hence a stream: neither side buffers the whole thing.
   rpc BuildRecoveryMedia(BuildRecoveryMediaRequest) returns (stream MediaChunk);
+
+  // BrowseWorkload lists the objects an installed workload plugin can back
+  // up, for the dashboard's object picker.
+  rpc BrowseWorkload(BrowseWorkloadRequest) returns (BrowseWorkloadResponse);
+
+  // GetWorkloadObjectConfig returns the settings saved on the agent for one
+  // plugin object (for example a database instance), without secrets.
+  rpc GetWorkloadObjectConfig(GetWorkloadObjectConfigRequest) returns (GetWorkloadObjectConfigResponse);
+
+  // SetWorkloadObjectConfig tests and saves the settings of one plugin
+  // object. Secrets stay on the agent, encrypted at rest.
+  rpc SetWorkloadObjectConfig(SetWorkloadObjectConfigRequest) returns (SetWorkloadObjectConfigResponse);
+
+  // PlanWorkloadRestore asks an installed workload plugin which of the
+  // candidate items (found by the server in snapshots) to restore, in order.
+  rpc PlanWorkloadRestore(PlanWorkloadRestoreRequest) returns (PlanWorkloadRestoreResponse);
+
+  // RestoreWorkload streams planned items from the server; the agent pipes
+  // them into the plugin, verifying each item's SHA-256 on the way.
+  rpc RestoreWorkload(stream WorkloadRestoreMessage) returns (WorkloadRestoreResponse);
+
+  // InstallPlugin streams a plugin package from the server. The agent
+  // verifies it against its own trusted keys, exactly as a local install.
+  rpc InstallPlugin(stream InstallPluginMessage) returns (InstallPluginResponse);
+
+  // RemovePlugin uninstalls a plugin; refused while a job uses it.
+  rpc RemovePlugin(RemovePluginRequest) returns (RemovePluginResponse);
 }
 
 // --- Bare-metal recovery media ---
@@ -355,3 +382,166 @@ message DiscoverDatabasesResponse {
   string client_version = 4;
   repeated string databases = 5;
 }
+
+// --- Workload plugins ---
+
+message BrowseWorkloadRequest {
+  string token = 1;
+  string plugin = 2;
+  map<string, string> settings = 3;
+  // Object path to list; empty for the top level.
+  string path = 4;
+}
+
+message BrowseWorkloadResponse {
+  repeated WorkloadObject entries = 1;
+}
+
+message WorkloadObject {
+  string path = 1;
+  string name = 2;
+  string kind = 3;
+  bool selectable = 4;
+  bool has_children = 5;
+  string detail = 6;
+  string status = 7;
+  // Whether the plugin declares object settings for this object's kind.
+  bool configurable = 8;
+  // Whether settings are saved on the agent for this object.
+  bool configured = 9;
+}
+
+message GetWorkloadObjectConfigRequest {
+  string token = 1;
+  string plugin = 2;
+  string path = 3;
+}
+
+message GetWorkloadObjectConfigResponse {
+  bool configured = 1;
+  // Saved values, without password fields.
+  map<string, string> values = 2;
+  // Password fields that have a saved value.
+  repeated string secrets_set = 3;
+}
+
+message SetWorkloadObjectConfigRequest {
+  string token = 1;
+  string plugin = 2;
+  string path = 3;
+  // New values. An empty password value keeps the saved one.
+  map<string, string> values = 4;
+  // Remove the object's settings instead of saving values.
+  bool remove = 5;
+  // Job-level settings to test the connection with.
+  map<string, string> settings = 6;
+}
+
+message SetWorkloadObjectConfigResponse {
+  // Result of the connection test, e.g. "12 objects".
+  string message = 1;
+}
+
+message WorkloadCandidate {
+  string ref = 1;
+  string item = 2;
+  string kind = 3;
+  int64 created_unix_nanos = 4;
+  bytes metadata = 5;
+}
+
+message PlanWorkloadRestoreRequest {
+  string token = 1;
+  string plugin = 2;
+  map<string, string> settings = 3;
+  string object = 4;
+  // 0 means the latest point available.
+  int64 target_unix_nanos = 5;
+  map<string, string> options = 6;
+  repeated WorkloadCandidate candidates = 7;
+  string language = 8;
+}
+
+message PlanWorkloadRestoreResponse {
+  repeated string refs = 1;
+  repeated WorkloadRestoreFile files = 2;
+  repeated string warnings = 3;
+  string summary = 4;
+}
+
+message WorkloadRestoreFile {
+  string key = 1;
+  string kind = 2;
+  string source = 3;
+  string target = 4;
+}
+
+message WorkloadRestoreMessage {
+  oneof payload {
+    WorkloadRestoreBegin begin = 1;
+    WorkloadItemStart start = 2;
+    bytes data = 3;
+    WorkloadItemEnd end = 4;
+  }
+}
+
+message WorkloadRestoreBegin {
+  string token = 1;
+  string plugin = 2;
+  map<string, string> settings = 3;
+  string object = 4;
+  int64 target_unix_nanos = 5;
+  map<string, string> options = 6;
+  int32 item_count = 7;
+}
+
+message WorkloadItemStart {
+  string ref = 1;
+  string item = 2;
+  bytes metadata = 3;
+  // Expected size and hex SHA-256 of the item, from its manifest.
+  int64 size = 4;
+  string sha256 = 5;
+}
+
+message WorkloadItemEnd {}
+
+message WorkloadRestoreResponse {
+  string message = 1;
+}
+
+// --- Plugin installation ---
+
+message InstallPluginMessage {
+  oneof payload {
+    InstallPluginBegin begin = 1;
+    // Package bytes, in order.
+    bytes data = 2;
+  }
+}
+
+message InstallPluginBegin {
+  string token = 1;
+  // Package file name, for messages only.
+  string file_name = 2;
+  // Package size in bytes.
+  int64 size = 3;
+  // Replace an installed version instead of failing.
+  bool upgrade = 4;
+  bool allow_downgrade = 5;
+}
+
+message InstallPluginResponse {
+  string id = 1;
+  string name = 2;
+  string version = 3;
+  string status = 4;
+  string signer = 5;
+}
+
+message RemovePluginRequest {
+  string token = 1;
+  string id = 2;
+}
+
+message RemovePluginResponse {}

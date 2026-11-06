@@ -1,6 +1,8 @@
 package dashboard
 
 import (
+	"github.com/hooperits/hitstor/internal/users"
+
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -97,8 +99,11 @@ func (d *Dashboard) handleAPIActiveBackups(w http.ResponseWriter, r *http.Reques
 
 	sessions := d.srv.AllSessions()
 	result := make([]sessionProgressJSON, 0, len(sessions))
+	visible := agentFilter(r, users.PermView)
 	for _, s := range sessions {
-		result = append(result, sessionInfoToProgress(s))
+		if visible == nil || visible(s.AgentName) {
+			result = append(result, sessionInfoToProgress(s))
+		}
 	}
 	writeJSON(w, map[string]any{
 		"count":    len(result),
@@ -131,8 +136,11 @@ func (d *Dashboard) handleAPIBackupProgressEvents(w http.ResponseWriter, r *http
 
 		var sessions []sessionProgressJSON
 		if d.srv != nil {
+			visible := agentFilter(r, users.PermView)
 			for _, s := range d.srv.AllSessions() {
-				sessions = append(sessions, sessionInfoToProgress(s))
+				if visible == nil || visible(s.AgentName) {
+					sessions = append(sessions, sessionInfoToProgress(s))
+				}
 			}
 		}
 		data, _ := json.Marshal(map[string]any{"sessions": sessions})

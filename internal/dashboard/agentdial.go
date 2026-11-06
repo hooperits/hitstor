@@ -12,6 +12,9 @@ import (
 // certificate (possible MITM) fails the handshake. Unregistered probes
 // (discovery, initial registration) use server.DialAgent directly.
 func (d *Dashboard) dialManagedAgent(name, addr string) (*server.AgentClient, error) {
+	if d.dialAgent != nil {
+		return d.dialAgent(name, addr)
+	}
 	return dialPinnedAgent(d.registry, name, addr)
 }
 

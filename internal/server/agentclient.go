@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"os"
+	"path/filepath"
 
 	pb "github.com/hooperits/hitstor/internal/proto/hitstor/v1"
 	"github.com/hooperits/hitstor/internal/tlsutil"
@@ -240,4 +242,90 @@ func (c *AgentClient) BuildRecoveryMedia(ctx context.Context, cache *MediaCache,
 	}
 
 	return writer.Commit()
+}
+
+// BrowseWorkload lists the objects a workload plugin on the agent can back up.
+func (c *AgentClient) BrowseWorkload(ctx context.Context, req *pb.BrowseWorkloadRequest) (*pb.BrowseWorkloadResponse, error) {
+	return c.agent.BrowseWorkload(ctx, req)
+}
+
+// GetWorkloadObjectConfig reads the settings saved on the agent for one
+// plugin object, without secrets.
+func (c *AgentClient) GetWorkloadObjectConfig(ctx context.Context, req *pb.GetWorkloadObjectConfigRequest) (*pb.GetWorkloadObjectConfigResponse, error) {
+	return c.agent.GetWorkloadObjectConfig(ctx, req)
+}
+
+// SetWorkloadObjectConfig tests and saves the settings of one plugin object
+// on the agent.
+func (c *AgentClient) SetWorkloadObjectConfig(ctx context.Context, req *pb.SetWorkloadObjectConfigRequest) (*pb.SetWorkloadObjectConfigResponse, error) {
+	return c.agent.SetWorkloadObjectConfig(ctx, req)
+}
+
+// PlanWorkloadRestore asks a workload plugin on the agent which candidate
+// items to restore, in order.
+func (c *AgentClient) PlanWorkloadRestore(ctx context.Context, req *pb.PlanWorkloadRestoreRequest) (*pb.PlanWorkloadRestoreResponse, error) {
+	return c.agent.PlanWorkloadRestore(ctx, req)
+}
+
+// RestoreWorkload opens the stream that carries planned items to the agent.
+// The caller sends a begin message, the items, and closes with CloseAndRecv.
+func (c *AgentClient) RestoreWorkload(ctx context.Context) (pb.AgentService_RestoreWorkloadClient, error) {
+	return c.agent.RestoreWorkload(ctx)
+}
+
+// InstallPlugin streams a plugin package file to the agent, which verifies
+// and installs it.
+func (c *AgentClient) InstallPlugin(ctx context.Context, token, pkgPath string, upgrade, allowDowngrade bool) (*pb.InstallPluginResponse, error) {
+	f, err := os.Open(pkgPath)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+	fi, err := f.Stat()
+	if err != nil {
+		return nil, err
+	}
+	stream, err := c.agent.InstallPlugin(ctx)
+	if err != nil {
+		return nil, err
+	}
+	send := func() error {
+		if err := stream.Send(&pb.InstallPluginMessage{Payload: &pb.InstallPluginMessage_Begin{Begin: &pb.InstallPluginBegin{
+			Token: token, FileName: filepath.Base(pkgPath), Size: fi.Size(), Upgrade: upgrade, AllowDowngrade: allowDowngrade,
+		}}}); err != nil {
+			return err
+		}
+		buf := make([]byte, 1<<20)
+		for {
+			n, err := f.Read(buf)
+			if n > 0 {
+				if err := stream.Send(&pb.InstallPluginMessage{Payload: &pb.InstallPluginMessage_Data{Data: append([]byte(nil), buf[:n]...)}}); err != nil {
+					return err
+				}
+			}
+			if err == io.EOF {
+				return nil
+			}
+			if err != nil {
+				return err
+			}
+		}
+	}
+	sendErr := send()
+	resp, err := stream.CloseAndRecv()
+	if err != nil {
+		// The agent's refusal (bad signature, wrong platform) explains more
+		// than a send that failed because it stopped listening.
+		return nil, err
+	}
+	if sendErr != nil && sendErr != io.EOF {
+		return nil, sendErr
+	}
+	return resp, nil
+}
+
+// RemovePlugin uninstalls a plugin from the agent.
+func (c *AgentClient) RemovePlugin(ctx context.Context, token, id string) error {
+	_, err := c.agent.RemovePlugin(ctx, &pb.RemovePluginRequest{Token: token, Id: id})
+	return err
 }

@@ -218,8 +218,14 @@ func TestAuthRequired(t *testing.T) {
 
 	handler := dash.Handler()
 
-	// All protected routes should redirect to /login.
-	for _, path := range []string{"/", "/agents", "/storage", "/api/stats"} {
+	// The API answers 401; pages redirect to /login.
+	req := httptest.NewRequest("GET", "/api/stats", nil)
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, req)
+	if rec.Code != http.StatusUnauthorized {
+		t.Errorf("GET /api/stats without auth status = %d, want %d", rec.Code, http.StatusUnauthorized)
+	}
+	for _, path := range []string{"/", "/agents", "/storage"} {
 		req := httptest.NewRequest("GET", path, nil)
 		rec := httptest.NewRecorder()
 		handler.ServeHTTP(rec, req)

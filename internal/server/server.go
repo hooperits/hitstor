@@ -10,6 +10,7 @@ import (
 
 	"github.com/hooperits/hitstor/internal/hook"
 	pb "github.com/hooperits/hitstor/internal/proto/hitstor/v1"
+	"github.com/hooperits/hitstor/internal/runlog"
 	"github.com/hooperits/hitstor/internal/sentinel"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -51,6 +52,9 @@ type Server struct {
 	// handlersMu guards the optional callbacks below, which may be swapped
 	// while RPC goroutines fire notifications.
 	handlersMu sync.RWMutex
+
+	// runs records finished backup runs (optional; see SetRunLog).
+	runs *runlog.Log
 
 	// onBackupFailed is called when a backup fails (optional).
 	onBackupFailed func(agentName, hostname, reason string, details map[string]any)

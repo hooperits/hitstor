@@ -13,6 +13,7 @@ The HitStor User Guide covers everything you need to know to protect your data w
 | [Retention](retention.md) | Define retention policies, remove old snapshots with `forget`, and reclaim space with `prune`. |
 | [Configuration](configuration.md) | Manage the config file, environment variables, and interactive setup wizard. |
 | [Plugins](plugins.md) | Discover, install, and configure storage backends, notifiers, hooks, and scanner plugins. |
+| [SQL Server](sql-server.md) | Back up and restore SQL Server databases through the `mssql` workload plugin. |
 
 ## Prerequisites
 

@@ -10,18 +10,57 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
+	"reflect"
+	"regexp"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/hooperits/hitstor/internal/config"
 	"github.com/hooperits/hitstor/internal/crypto"
+	"github.com/hooperits/hitstor/internal/plugin"
+)
+
+// Job types.
+const (
+	JobTypeFiles    = "files"
+	JobTypeWorkload = "workload"
 )
 
 // IsFilesystemJobType reports whether jobType is a supported filesystem job.
 // Empty job type is treated as files for backward compatibility.
 func IsFilesystemJobType(jobType string) bool {
-	return jobType == "" || jobType == "files"
+	return jobType == "" || jobType == JobTypeFiles
+}
+
+// IsWorkloadJobType reports whether jobType runs through a workload plugin.
+func IsWorkloadJobType(jobType string) bool {
+	return jobType == JobTypeWorkload
+}
+
+// IsSupportedJobType reports whether jobType can run on current agents.
+func IsSupportedJobType(jobType string) bool {
+	return IsFilesystemJobType(jobType) || IsWorkloadJobType(jobType)
+}
+
+var pluginIDPattern = regexp.MustCompile(`^[a-z0-9][a-z0-9-]{0,62}$`)
+
+// ValidateJob checks the fields that depend on the job type.
+func ValidateJob(job BackupJob) error {
+	switch {
+	case IsFilesystemJobType(job.JobType):
+		return nil
+	case IsWorkloadJobType(job.JobType):
+		if !pluginIDPattern.MatchString(job.Plugin) {
+			return fmt.Errorf("server: workload job needs a valid plugin id, got %q", job.Plugin)
+		}
+		if len(job.Selection) == 0 {
+			return fmt.Errorf("server: workload job needs at least one selected object")
+		}
+		return nil
+	default:
+		return fmt.Errorf("server: unsupported job type %q", job.JobType)
+	}
 }
 
 // SentinelAlert records a ransomware threat event.
@@ -63,12 +102,30 @@ type AgentRecord struct {
 	// restored OS comes back up.
 	RecoveryTokenEncrypted string `json:"recovery_token_encrypted,omitempty"`
 
+	// Plugins is the workload plugin inventory the agent last reported.
+	Plugins []AgentPlugin `json:"plugins,omitempty"`
+
 	// Deprecated: schedule/repo/backup fields moved to BackupJob.
 	// Kept for backward-compatible JSON parsing during migration.
 	LastBackup      *time.Time `json:"last_backup,omitempty"`
 	ScheduleEnabled bool       `json:"schedule_enabled,omitempty"`
 	ScheduleHours   int        `json:"schedule_hours,omitempty"`
 	RepoName        string     `json:"repo_name,omitempty"`
+}
+
+// AgentPlugin is one workload plugin installed on an agent, as reported by
+// the agent.
+type AgentPlugin struct {
+	ID              string   `json:"id"`
+	Name            string   `json:"name"`
+	Version         string   `json:"version"`
+	Status          string   `json:"status"`
+	ProtocolVersion int      `json:"protocol_version"`
+	Capabilities    []string `json:"capabilities,omitempty"`
+	Signer          string   `json:"signer,omitempty"`
+	// Fields are the form fields the plugin declares, rendered by the
+	// dashboard for job settings and backup/restore options.
+	Fields []plugin.FieldSpec `json:"fields,omitempty"`
 }
 
 // BackupJob defines a scheduled backup targeting one agent and one repository.
@@ -103,8 +160,36 @@ type BackupJob struct {
 	LastVerifyFiles   int        `json:"last_verify_files,omitempty"`
 	LastVerifyBytes   uint64     `json:"last_verify_bytes,omitempty"`
 
-	// JobType is "files" (or empty) for every job; HitStor is filesystem-only.
+	// JobType is "files" (or empty) for filesystem jobs and "workload" for
+	// jobs run by a workload plugin.
 	JobType string `json:"job_type,omitempty"`
+
+	// Workload jobs only. Plugin is the plugin id; PluginSettings are passed
+	// to its Configure RPC (never secrets: plugins read those from the
+	// agent's environment); Selection lists the objects to back up and
+	// BackupKind the plugin-defined backup kind ("full", "log", ...).
+	Plugin         string            `json:"plugin,omitempty"`
+	PluginSettings map[string]string `json:"plugin_settings,omitempty"`
+	Selection      []string          `json:"selection,omitempty"`
+	BackupKind     string            `json:"backup_kind,omitempty"`
+	// BackupOptions are passed with each run (e.g. copy_only).
+	BackupOptions map[string]string `json:"backup_options,omitempty"`
+	// Plan schedules each backup kind of the selection (see plan.go); when
+	// empty, the job runs BackupKind on its own schedule. KindRuns records
+	// each kind's runs, and RunNowKind the kind of a pending manual run.
+	Plan       []PlanEntry        `json:"plan,omitempty"`
+	KindRuns   map[string]KindRun `json:"kind_runs,omitempty"`
+	RunNowKind string             `json:"run_now_kind,omitempty"`
+
+	// LastError and LastErrorAt record the most recent failed run reported
+	// by the agent; a successful backup clears them.
+	LastError   string     `json:"last_error,omitempty"`
+	LastErrorAt *time.Time `json:"last_error_at,omitempty"`
+}
+
+// JobFailedSinceLastBackup reports whether the job's latest run failed.
+func JobFailedSinceLastBackup(j BackupJob) bool {
+	return j.LastErrorAt != nil && (j.LastBackup == nil || j.LastErrorAt.After(*j.LastBackup))
 }
 
 // registryData is the versioned envelope stored in agents.json.
@@ -203,12 +288,13 @@ func LoadAgentRegistry(encryptKey [32]byte, repoPath string) (*AgentRegistry, er
 }
 
 // orphanNonFilesystemJobs disables schedules for job types removed from product
-// scope (M365, database, cloud VM, Google Workspace). Records remain so
-// operators can inspect and delete them; they will not run.
+// scope (the legacy M365, database, cloud VM, and Google Workspace jobs).
+// Records remain so operators can inspect and delete them; they will not run.
+// Workload plugin jobs are supported and left alone.
 func (r *AgentRegistry) orphanNonFilesystemJobs() {
 	for i := range r.jobs {
 		j := &r.jobs[i]
-		if IsFilesystemJobType(j.JobType) {
+		if IsSupportedJobType(j.JobType) {
 			continue
 		}
 		if j.ScheduleEnabled || j.RunNow {
@@ -445,6 +531,27 @@ func (r *AgentRegistry) SetAgentFingerprint(name, fingerprint string) error {
 	return fmt.Errorf("server: agent %q not found", name)
 }
 
+// SetAgentPlugins records the plugin inventory an agent reported. Agents
+// report on every schedule poll, so the registry is only rewritten when the
+// inventory actually changed.
+func (r *AgentRegistry) SetAgentPlugins(name string, plugins []AgentPlugin) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	a := r.mutableAgentLocked(name)
+	if a == nil {
+		return fmt.Errorf("server: agent %q not found", name)
+	}
+	if len(plugins) == 0 {
+		plugins = nil
+	}
+	if reflect.DeepEqual(a.Plugins, plugins) {
+		return nil
+	}
+	a.Plugins = plugins
+	slog.Info("agent plugin inventory changed", "agent", name, "plugins", len(plugins))
+	return r.save()
+}
+
 // GetAgent returns the agent record for the given name, or nil if not found.
 func (r *AgentRegistry) GetAgent(name string) *AgentRecord {
 	r.mu.RLock()
@@ -586,8 +693,8 @@ func (r *AgentRegistry) EncryptKey() ([32]byte, bool) {
 
 // AddJob registers a new backup job and persists to disk.
 func (r *AgentRegistry) AddJob(job BackupJob) error {
-	if !IsFilesystemJobType(job.JobType) {
-		return fmt.Errorf("server: unsupported job type %q: HitStor supports filesystem backup jobs only", job.JobType)
+	if err := ValidateJob(job); err != nil {
+		return err
 	}
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -606,8 +713,8 @@ func (r *AgentRegistry) AddJob(job BackupJob) error {
 
 // UpdateJob replaces a backup job by ID and persists.
 func (r *AgentRegistry) UpdateJob(job BackupJob) error {
-	if !IsFilesystemJobType(job.JobType) {
-		return fmt.Errorf("server: unsupported job type %q: HitStor supports filesystem backup jobs only", job.JobType)
+	if err := ValidateJob(job); err != nil {
+		return err
 	}
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -733,17 +840,65 @@ func (r *AgentRegistry) ReattachJobs(targetAgentName string, jobIDs []string) er
 
 // UpdateJobLastBackup sets the last backup time for the given job ID.
 func (r *AgentRegistry) UpdateJobLastBackup(id string, t time.Time) error {
+	return r.RecordKindBackup(id, "", t, nil)
+}
+
+// RecordKindBackup records a run of a workload job's kind ("" for jobs
+// without kinds) that stored a snapshot, along with the job's last backup.
+// outcomes are the objects that produced no item; failed ones make the run
+// partial.
+func (r *AgentRegistry) RecordKindBackup(id, kind string, t time.Time, outcomes []ObjectOutcome) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	for i := range r.jobs {
 		if r.jobs[i].ID == id {
-			r.jobs[i].LastBackup = &t
-			r.jobs[i].RunNow = false        // Clear manual trigger after backup completes.
-			r.jobs[i].ForceFullScan = false // Clear force-full after backup completes.
+			j := &r.jobs[i]
+			if j.JobType == JobTypeWorkload {
+				kind = workloadKind(*j, kind)
+				// Keep the other kinds' history of a job made before plans.
+				j.KindRuns = kindRunsOf(*j)
+				run := KindRun{LastBackup: &t, Objects: outcomes, Partial: failedObjects(outcomes) > 0}
+				j.KindRuns[kind] = run
+				for _, e := range EffectivePlan(*j) {
+					if kindCovers(kind, e.Kind) {
+						// The covered kind's slot is filled; what its own last
+						// run reported no longer stands.
+						j.KindRuns[e.Kind] = KindRun{LastBackup: &t}
+					}
+				}
+			}
+			j.LastBackup = &t
+			j.RunNow, j.RunNowKind = false, "" // Clear manual trigger after backup completes.
+			j.ForceFullScan = false            // Clear force-full after backup completes.
+			j.LastError, j.LastErrorAt = "", nil
 			return r.save()
 		}
 	}
 	return fmt.Errorf("server: job %q not found", id)
+}
+
+// workloadKind is the kind a workload job's run took: kind, or for an
+// agent that does not tag kinds, the job's own (see EffectivePlan).
+func workloadKind(j BackupJob, kind string) string {
+	if kind != "" {
+		return kind
+	}
+	return EffectivePlan(j)[0].Kind
+}
+
+// kindRunsOf returns a copy of j's per-kind records, filled from the job's
+// own record for a job made before plans.
+func kindRunsOf(j BackupJob) map[string]KindRun {
+	out := make(map[string]KindRun, len(j.KindRuns)+1)
+	for _, e := range EffectivePlan(j) {
+		if st := KindState(j, e.Kind); st.LastBackup != nil || st.LastErrorAt != nil {
+			out[e.Kind] = st
+		}
+	}
+	for k, v := range j.KindRuns {
+		out[k] = v
+	}
+	return out
 }
 
 // UpdateJobLastFullBackup sets the last full backup time for the given job ID.
@@ -797,13 +952,56 @@ func (r *AgentRegistry) UpdateJobVerifyResult(id string, result JobVerifyResult)
 	return fmt.Errorf("server: job %q not found", id)
 }
 
+// RecordJobFailure stores a failed run reported by the agent and clears the
+// manual "Backup Now" flag, so a failing job is not retried on every poll.
+func (r *AgentRegistry) RecordJobFailure(id, msg string, t time.Time) error {
+	return r.RecordKindFailure(id, "", msg, t, nil)
+}
+
+// RecordKindFailure is RecordJobFailure for one kind of a workload job,
+// with the plugin's report on each object when it gave one.
+func (r *AgentRegistry) RecordKindFailure(id, kind, msg string, t time.Time, outcomes []ObjectOutcome) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	for i := range r.jobs {
+		if r.jobs[i].ID == id {
+			j := &r.jobs[i]
+			if len(msg) > 2000 {
+				msg = msg[:2000]
+			}
+			if j.JobType == JobTypeWorkload {
+				kind = workloadKind(*j, kind)
+				j.KindRuns = kindRunsOf(*j)
+				st := j.KindRuns[kind]
+				st.LastError, st.LastErrorAt, st.Objects, st.Partial = msg, &t, outcomes, false
+				j.KindRuns[kind] = st
+			}
+			j.LastError = msg
+			j.LastErrorAt = &t
+			j.RunNow, j.RunNowKind = false, ""
+			return r.save()
+		}
+	}
+	return fmt.Errorf("server: job %q not found", id)
+}
+
 // SetJobRunNow marks or clears the manual "Backup Now" flag on a job.
 func (r *AgentRegistry) SetJobRunNow(id string, runNow bool) error {
+	return r.SetJobRunNowKind(id, runNow, "")
+}
+
+// SetJobRunNowKind marks a manual run of one kind of a workload job ("":
+// the plan's first kind), or clears the flag.
+func (r *AgentRegistry) SetJobRunNowKind(id string, runNow bool, kind string) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	for i := range r.jobs {
 		if r.jobs[i].ID == id {
 			r.jobs[i].RunNow = runNow
+			r.jobs[i].RunNowKind = ""
+			if runNow {
+				r.jobs[i].RunNowKind = kind
+			}
 			return r.save()
 		}
 	}

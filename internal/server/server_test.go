@@ -887,6 +887,71 @@ func TestGetScheduleInvalidKey(t *testing.T) {
 	}
 }
 
+func TestGetScheduleRecordsPluginInventory(t *testing.T) {
+	client, _, _, registry, cleanup := testSetupWithServer(t)
+	defer cleanup()
+
+	apiKey, err := registry.AddAgent("plugin-agent")
+	if err != nil {
+		t.Fatal(err)
+	}
+	poll := func(req *pb.GetScheduleRequest) {
+		t.Helper()
+		req.ApiKey = apiKey
+		if _, err := client.GetSchedule(context.Background(), req); err != nil {
+			t.Fatal(err)
+		}
+	}
+	plugins := func() []AgentPlugin { return registry.GetAgent("plugin-agent").Plugins }
+
+	poll(&pb.GetScheduleRequest{PluginsReported: true, Plugins: []*pb.AgentPlugin{{
+		Id: "example", Name: "Example", Version: "0.1.0", Status: "active",
+		ProtocolVersion: 1, Capabilities: []string{"example.noop"}, Signer: "key",
+	}}})
+	got := plugins()
+	if len(got) != 1 || got[0].ID != "example" || got[0].Version != "0.1.0" || got[0].Capabilities[0] != "example.noop" {
+		t.Fatalf("plugins = %+v", got)
+	}
+
+	// An agent that does not report (older agent, unreadable store) leaves
+	// the inventory untouched.
+	poll(&pb.GetScheduleRequest{})
+	if len(plugins()) != 1 {
+		t.Fatalf("unreported poll changed inventory: %+v", plugins())
+	}
+
+	// Reporting an empty list clears it.
+	poll(&pb.GetScheduleRequest{PluginsReported: true})
+	if got := plugins(); got != nil {
+		t.Fatalf("plugins = %+v, want none", got)
+	}
+}
+
+func TestSetAgentPluginsSkipsUnchanged(t *testing.T) {
+	_, _, _, r, cleanup := testSetupWithServer(t)
+	defer cleanup()
+
+	if _, err := r.AddAgent("a"); err != nil {
+		t.Fatal(err)
+	}
+	inv := []AgentPlugin{{ID: "example", Version: "0.1.0"}}
+	if err := r.SetAgentPlugins("a", inv); err != nil {
+		t.Fatal(err)
+	}
+	// Detach the backing store: any save now fails, so a nil error on an
+	// identical report proves the registry was not rewritten.
+	r.path = ""
+	if err := r.SetAgentPlugins("a", []AgentPlugin{{ID: "example", Version: "0.1.0"}}); err != nil {
+		t.Fatalf("unchanged inventory triggered a save: %v", err)
+	}
+	if err := r.SetAgentPlugins("a", []AgentPlugin{{ID: "example", Version: "0.2.0"}}); err == nil {
+		t.Fatal("changed inventory did not try to save")
+	}
+	if err := r.SetAgentPlugins("missing", inv); err == nil {
+		t.Fatal("unknown agent accepted")
+	}
+}
+
 func TestGenerateSelfSignedTLS(t *testing.T) {
 	dir := t.TempDir()
 	be, err := local.New(dir)

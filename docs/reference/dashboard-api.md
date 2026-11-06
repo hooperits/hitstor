@@ -25,7 +25,7 @@ Unless noted, endpoints require dashboard authentication when `serve_dashboard_p
 
 | Method | Path | Description |
 |--------|------|-------------|
-| `GET` | `/api/agents` | List agents with status and schedule info |
+| `GET` | `/api/agents` | List agents with status, schedule info, and installed workload plugins (`plugins`) |
 | `POST` | `/api/agents` | Register agent (manual entry: `name`, `agent_addr`, optional `api_key`) |
 | `DELETE` | `/api/agents/{name}` | Remove agent |
 | `POST` | `/api/agents/{name}/schedule` | Set schedule (interval, cron, timezone, jobs) |
@@ -49,11 +49,12 @@ Unless noted, endpoints require dashboard authentication when `serve_dashboard_p
 | Method | Path | Description |
 |--------|------|-------------|
 | `GET` | `/api/backups` | List backup jobs |
-| `POST` | `/api/backups` | Create job (`job_type` is always `files`) |
+| `POST` | `/api/backups` | Create job. `job_type` is `files` (with `paths`) or `workload` (with `plugin`, `selection`, optional `plan` (one `{kind, enabled, cron_expression, timezone}` per backup kind), `backup_kind` and `plugin_settings`; the agent must have reported the plugin) |
 | `GET` | `/api/backups/{id}` | Get job |
 | `PUT` | `/api/backups/{id}` | Update job |
 | `DELETE` | `/api/backups/{id}` | Delete job |
-| `POST` | `/api/backups/{id}/run` | Run job now |
+| `POST` | `/api/backups/{id}/run` | Run job now; for workload jobs, `{"kind": "full"}` picks the plan's kind |
+| `GET` | `/api/backups/{id}/chains` | Backup chains of each database of a workload job |
 | `POST` | `/api/backups/{id}/cancel` | Cancel running backup |
 | `GET` | `/api/backups/validate-cron` | Validate cron expression |
 | `GET` | `/api/timezones` | List supported timezones |
@@ -82,6 +83,19 @@ Unless noted, endpoints require dashboard authentication when `serve_dashboard_p
 | `POST` | `/api/snapshots/{id}/restore` | Start agent restore (`agent_name`, `target_path`, optional `includes`) |
 | `GET` | `/api/restores` | List restore sessions |
 | `GET` | `/api/restore/{id}/events` | SSE restore progress |
+| `GET` | `/api/agents/{name}/plugins/{plugin}/browse?path=` | List the objects a workload plugin on the agent can back up, with `detail`, `status`, and whether each takes object settings (`configurable`) and has them saved (`configured`) |
+| `GET` | `/api/agents/{name}/plugins/{plugin}/object-config?path=` | Settings saved on the agent for one object (`configured`, `values` without passwords, `secrets_set`) |
+| `PUT` | `/api/agents/{name}/plugins/{plugin}/object-config` | Test and save an object's settings on the agent (`path`, `values`; an empty password keeps the saved one), or remove them (`path`, `remove: true`). The server stores nothing |
+| `GET` | `/api/workload/points?agent=&plugin=&object=` | Items available to restore a workload object, oldest first |
+| `GET` | `/api/workload/catalog?agent=&plugin=&snapshot=` | Every item a plugin backed up on an agent, newest first, with its `object`; `snapshot` (an ID prefix) keeps one snapshot's |
+| `POST` | `/api/workload/restore-plan` | Preview a workload restore without running it (same body as `POST /api/workload/restores`): the items it applies, the files it writes (`key`, `kind`, `source`, `target`), `warnings`, and a `summary` |
+| `POST` | `/api/workload/restores` | Start a workload restore (`agent_name`, `plugin`, `object`; optional `source_agent` to restore another agent's backups, `target` time, `options`, `plugin_settings`) |
+| `GET` | `/api/workload/restores/{id}` | Workload restore status: plan, bytes sent, result |
+| `GET` | `/api/plugin-packages` | List uploaded plugin packages |
+| `POST` | `/api/plugin-packages` | Upload a plugin package (the `.hpk` file as an `application/octet-stream` body); rejected unless signed by a trusted key |
+| `DELETE` | `/api/plugin-packages/{file}` | Delete an uploaded package |
+| `POST` | `/api/agents/{name}/plugins` | Install an uploaded package on a managed agent (`package`, optional `upgrade`, `allow_downgrade`); the agent verifies it again |
+| `DELETE` | `/api/agents/{name}/plugins/{id}` | Uninstall a plugin from a managed agent; refused while a job uses it |
 
 ## Progress & Operations
 

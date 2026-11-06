@@ -4,14 +4,19 @@ import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
+	"errors"
 	"fmt"
 	"os"
 	"time"
 
+	"github.com/hooperits/hitstor/internal/plugin"
+	"github.com/hooperits/hitstor/internal/pluginmgr"
 	pb "github.com/hooperits/hitstor/internal/proto/hitstor/v1"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/keepalive"
+	"google.golang.org/grpc/status"
 )
 
 // Client wraps the gRPC connection to a HitStor server.
@@ -238,6 +243,15 @@ type JobSchedule struct {
 	Timezone           string
 	UseVSS             bool
 	JobType            string
+
+	// Workload jobs only.
+	Plugin         string
+	PluginSettings map[string]string
+	Selection      []string
+	BackupKind     string
+	BackupOptions  map[string]string
+	// WorkloadResults says the server records per-object results.
+	WorkloadResults bool
 }
 
 // ScheduleInfo holds the schedule returned by the server.
@@ -250,11 +264,32 @@ type ScheduleInfo struct {
 
 // GetSchedule queries the server for this agent's backup schedule.
 func (c *Client) GetSchedule(ctx context.Context, apiKey string) (*ScheduleInfo, error) {
+	return c.getSchedule(ctx, &pb.GetScheduleRequest{ApiKey: apiKey})
+}
+
+// GetScheduleReportingPlugins queries the schedule and reports the agent's
+// installed plugins in the same call, keeping the server's inventory current.
+func (c *Client) GetScheduleReportingPlugins(ctx context.Context, apiKey string, plugins []pluginmgr.InstalledPlugin) (*ScheduleInfo, error) {
+	req := &pb.GetScheduleRequest{ApiKey: apiKey, PluginsReported: true}
+	for _, p := range plugins {
+		req.Plugins = append(req.Plugins, &pb.AgentPlugin{
+			Id:              p.ID,
+			Name:            p.Name,
+			Version:         p.Version,
+			Status:          p.Status,
+			ProtocolVersion: int32(p.ProtocolVersion),
+			Capabilities:    p.Capabilities,
+			Signer:          p.Signer,
+			Fields:          pluginFieldsToProto(p.Fields),
+		})
+	}
+	return c.getSchedule(ctx, req)
+}
+
+func (c *Client) getSchedule(ctx context.Context, req *pb.GetScheduleRequest) (*ScheduleInfo, error) {
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
-	resp, err := c.backup.GetSchedule(ctx, &pb.GetScheduleRequest{
-		ApiKey: apiKey,
-	})
+	resp, err := c.backup.GetSchedule(ctx, req)
 	if err != nil {
 		return nil, fmt.Errorf("agent: get schedule: %w", err)
 	}
@@ -282,6 +317,12 @@ func (c *Client) GetSchedule(ctx context.Context, apiKey string) (*ScheduleInfo,
 			Timezone:           j.Timezone,
 			UseVSS:             j.UseVss,
 			JobType:            j.JobType,
+			Plugin:             j.Plugin,
+			PluginSettings:     j.PluginSettings,
+			Selection:          j.Selection,
+			BackupKind:         j.BackupKind,
+			BackupOptions:      j.BackupOptions,
+			WorkloadResults:    j.WorkloadResults,
 		})
 	}
 
@@ -307,13 +348,19 @@ func (c *Client) BeginSessionWithJob(ctx context.Context, apiKey, hostname strin
 // systemProfile carries the host's disk and boot layout as JSON for bare-metal
 // restore, and is nil when the job does not capture it.
 func (c *Client) FinalizeBackup(ctx context.Context, sessionID string, files []*pb.FileNode, systemProfile []byte) (*pb.FinalizeBackupResponse, error) {
+	return c.finalize(ctx, &pb.FinalizeBackupRequest{SessionId: sessionID, Files: files, SystemProfile: systemProfile})
+}
+
+// FinalizeWorkload closes a workload backup session with the plugin's
+// reports on the objects that produced no item.
+func (c *Client) FinalizeWorkload(ctx context.Context, sessionID string, files []*pb.FileNode, results []plugin.ObjectResult) (*pb.FinalizeBackupResponse, error) {
+	return c.finalize(ctx, &pb.FinalizeBackupRequest{SessionId: sessionID, Files: files, ObjectResults: objectResultsToProto(results)})
+}
+
+func (c *Client) finalize(ctx context.Context, req *pb.FinalizeBackupRequest) (*pb.FinalizeBackupResponse, error) {
 	ctx, cancel := context.WithTimeout(ctx, 5*time.Minute)
 	defer cancel()
-	return c.backup.FinalizeBackup(ctx, &pb.FinalizeBackupRequest{
-		SessionId:     sessionID,
-		Files:         files,
-		SystemProfile: systemProfile,
-	})
+	return c.backup.FinalizeBackup(ctx, req)
 }
 
 // AnnounceForRecovery tells the server that this host has booted off
@@ -326,4 +373,54 @@ func (c *Client) AnnounceForRecovery(ctx context.Context, req *pb.AnnounceForRec
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 	return c.backup.AnnounceForRecovery(ctx, req)
+}
+
+func pluginFieldsToProto(fs []plugin.FieldSpec) []*pb.PluginField {
+	out := make([]*pb.PluginField, 0, len(fs))
+	for _, f := range fs {
+		out = append(out, &pb.PluginField{Key: f.Key, Scope: f.Scope, Type: f.Type, Label: f.Label, Help: f.Help,
+			Default: f.Default, Choices: f.Choices, Required: f.Required, ObjectKinds: f.ObjectKinds, ShowIf: f.ShowIf, ChoicesFrom: f.ChoicesFrom})
+	}
+	return out
+}
+
+// ReportJobFailure tells the server that a job failed on this agent.
+func (c *Client) ReportJobFailure(ctx context.Context, apiKey, jobID string, jobErr error) error {
+	var results []plugin.ObjectResult
+	var re *WorkloadRunError
+	if errors.As(jobErr, &re) {
+		results = re.Results
+	}
+	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	defer cancel()
+	_, err := c.backup.ReportJobFailure(ctx, &pb.ReportJobFailureRequest{ApiKey: apiKey, JobId: jobID, Error: jobErr.Error(),
+		ObjectResults: objectResultsToProto(results)})
+	return err
+}
+
+// GetWorkloadKnown returns the workload items the server holds for a job's
+// selection. provided is false from a server that predates the RPC.
+func (c *Client) GetWorkloadKnown(ctx context.Context, apiKey, jobID string) (items []plugin.KnownItem, provided bool, err error) {
+	ctx, cancel := context.WithTimeout(ctx, 2*time.Minute)
+	defer cancel()
+	resp, err := c.backup.GetWorkloadKnown(ctx, &pb.GetWorkloadKnownRequest{ApiKey: apiKey, JobId: jobID})
+	if status.Code(err) == codes.Unimplemented {
+		return nil, false, nil
+	}
+	if err != nil {
+		return nil, false, err
+	}
+	out := make([]plugin.KnownItem, 0, len(resp.Items))
+	for _, it := range resp.Items {
+		out = append(out, plugin.KnownItem{Item: it.Item, Metadata: it.Metadata})
+	}
+	return out, true, nil
+}
+
+func objectResultsToProto(rs []plugin.ObjectResult) []*pb.WorkloadObjectResult {
+	out := make([]*pb.WorkloadObjectResult, 0, len(rs))
+	for _, r := range rs {
+		out = append(out, &pb.WorkloadObjectResult{Object: r.Object, Status: r.Status, Reason: r.Reason, Message: r.Message})
+	}
+	return out
 }

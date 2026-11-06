@@ -12,23 +12,13 @@ http://SERVER_IP:8421
 
 Replace `SERVER_IP` with the hostname or IP address of the HitStor server. The default dashboard port is `8421`, configurable with `--dashboard-port`.
 
-## Password Protection
+## Signing In
 
-The dashboard always requires a password. Set it with the `serve_dashboard_password` configuration key:
+Everyone signs in with a personal account: user name, password and a code from an authenticator app. Roles decide which pages, agents and actions each person gets. See [Users and Access](users.md).
 
-```yaml
-# /etc/hitstor/config.yaml
-serve_dashboard_password: "DASHBOARD_PASSWORD"
-```
+On a new server, or after upgrading from a version with a single dashboard password, the dashboard first asks to create the administrator, confirming the shared dashboard password. That password comes from the `serve_dashboard_password` configuration key; if none is configured, `hitstor serve` generates one at startup, stores its hash in the config file and prints the plaintext once in the server log (look for `no dashboard password configured`).
 
-If no password is configured, `hitstor serve` generates a random one at startup, stores its hash in the config file and prints the plaintext once in the server log (look for `no dashboard password configured`). Log in with it and change it under **Settings**. If the server has no config file, a new password is generated on every restart.
-
-The dashboard presents a login page. Authentication uses session cookies with the following security properties:
-
-- `HttpOnly` — cookies are not accessible to JavaScript
-- `SameSite=Strict` — cookies are not sent on cross-site requests
-
-Sessions expire when the browser is closed.
+Session cookies are `HttpOnly` and `SameSite=Lax`, and changes are refused when the browser reports a request from another site.
 
 ## Update Notifications
 
@@ -40,10 +30,15 @@ The banner links to the release page on GitHub. To disable automatic checks, set
 
 ## Layout
 
-The dashboard uses a fixed header bar with the HitStor logo and version, a sidebar with icon navigation, and a main content area. The sidebar groups pages into two sections:
+The dashboard uses a fixed header bar, a sidebar with icon navigation, and a main content area. The header shows the repository name, the version and, on the right, the user menu: **My account**, the language and **Sign out**.
 
-- **Monitoring** — Overview, Backups, Agents
-- **Management** — Storage, Settings
+The sidebar groups pages by what you do with them, and shows only what your role allows:
+
+- **Protection** — Overview, Backups, Restores, Disaster Recovery
+- **Infrastructure** — Agents, Storage
+- **Administration** — Users and access, Audit log, Logs, Settings
+
+Buttons for actions your role does not allow (for example removing an agent, or running a job on an agent you do not operate) are not shown.
 
 ## Dashboard Pages
 
@@ -54,6 +49,33 @@ The main page displays a summary of the backup infrastructure:
 - Total number of agents, snapshots, and last backup time
 - Agent health breakdown (OK, stale, never backed up)
 - Quick links to Agents, Snapshots, and Storage pages
+
+### Backups { #backups }
+
+Lists the backup jobs with their agent, last run, restore verification, and
+status. **+ New Backup Job** opens a three-step wizard modeled on the backup
+jobs of enterprise backup tools:
+
+1. **Selection.** A tree shows every registered machine with its status and
+   operating system. Expanding a machine lists its sources: the **File
+   system** and each installed plugin (for example **Microsoft SQL Server**,
+   then its instances and databases). Check what to back up; checking a
+   container (a folder, an instance) backs up everything in it, including
+   what is added later. A job backs up **one source of one machine**: once
+   something is checked, the other sources lock until the selection is
+   cleared. The side panel lists the selection and the source's options:
+   exclude patterns and consistent snapshots for a file system, the backup
+   kind and plugin options for a plugin.
+2. **Target and schedule.** The repository and the schedule. The schedule
+   starts from a usual plan for the source (nightly for files, weekly fulls,
+   daily differentials, or logs every 15 minutes).
+3. **Review.** A summary of the job, with the schedule in words and its next
+   run, and a suggested name.
+
+Machines that are offline or suspended appear in the tree but cannot be
+expanded. On a job's page, **Edit selection** opens the same tree for that
+job's machine and source, with the current selection checked; the source
+options can change there too. To back up another source, create another job.
 
 ### Agents
 
@@ -171,15 +193,7 @@ curl -X POST http://localhost:8421/api/agents/web-01/browse \
 curl -s http://localhost:8421/api/agents | jq .
 ```
 
-If dashboard password protection is enabled, include the session cookie or authenticate first:
-
-```bash
-# Authenticate and save cookie
-curl -c cookies.txt -d "password=DASHBOARD_PASSWORD" http://localhost:8421/login
-
-# Use cookie for API requests
-curl -b cookies.txt -s http://localhost:8421/api/stats | jq .
-```
+The API uses the same session as the browser, so a request needs the session cookie of a user who completed two-step verification, and it can do only what that user's role allows. Without a session the API answers `401`.
 
 ## Prometheus Metrics
 

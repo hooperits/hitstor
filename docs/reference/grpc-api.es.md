@@ -18,6 +18,7 @@ HitStor usa gRPC sobre TLS para la comunicación entre componentes. Hay dos serv
 | `FinalizeBackup` | Unaria | Envía el árbol de archivos, crea la instantánea y cierra la sesión |
 | `Ping` | Unaria | Verificación de estado; devuelve la versión del servidor |
 | `GetSchedule` | Unaria | Consulta la programación de respaldos de este agente |
+| `ReportJobFailure` | Unaria | Informa una tarea que falló en el agente: el servidor guarda el error (visible en el dashboard), limpia un "respaldar ahora" pendiente, descarta la sesión abandonada y posterga el siguiente intento |
 
 ## Autenticación { #authentication }
 
@@ -178,6 +179,8 @@ Devuelve la programación de respaldos configurada para este agente.
 | Campo | Tipo | Descripción |
 |-------|------|-------------|
 | `api_key` | string | Clave de API hexadecimal de 64 caracteres |
+| `plugins` | repeated `AgentPlugin` | Plugins de carga de trabajo instalados en el agente (`id`, `name`, `version`, `status`, `protocol_version`, `capabilities`, `signer`) |
+| `plugins_reported` | bool | `true` cuando `plugins` es el inventario completo del agente. Si es `false` (agentes anteriores o un almacén de plugins ilegible), el servidor conserva el inventario que ya tenía |
 
 **Respuesta: `GetScheduleResponse`**
 
@@ -188,7 +191,7 @@ Devuelve la programación de respaldos configurada para este agente.
 | `next_run_unix` | int64 | Heredado: próxima ejecución de la primera tarea |
 | `jobs` | repeated `ScheduledJob` | Todas las tareas de respaldo de este agente |
 
-**Campos de `ScheduledJob`:** `job_id`, `name`, `paths`, `excludes`, `repo_name`, `enabled`, `interval_hours`, `next_run_unix`, `run_now`, `full_rescan_days`, `last_full_backup_unix`, `cron_expression`, `timezone`, `use_vss`.
+**Campos de `ScheduledJob`:** `job_id`, `name`, `paths`, `excludes`, `repo_name`, `enabled`, `interval_hours`, `next_run_unix`, `run_now`, `full_rescan_days`, `last_full_backup_unix`, `cron_expression`, `timezone`, `use_vss`, `job_type` y, para las tareas de carga de trabajo, `plugin`, `plugin_settings`, `selection` y `backup_kind`.
 
 ## Transporte { #transport }
 
@@ -218,6 +221,13 @@ AgentService se ejecuta en cada agente (puerto predeterminado 8422) y atiende la
 | `AgentInfo` | Unaria | Consulta el nombre de host, la versión, el sistema operativo, las rutas y el estado de registro del agente |
 | `RestoreData` | Streaming del cliente | Envía en flujo los datos de restauración al agente |
 | `WakeUp` | Unaria | Indica al agente que revise su programación de inmediato ("Respaldar ahora" en el dashboard) |
+| `BrowseWorkload` | Unaria | Lista los objetos que un plugin de carga de trabajo instalado puede respaldar |
+| `GetWorkloadObjectConfig` | Unaria | Lee la configuración guardada en el agente para un objeto de plugin, sin contraseñas |
+| `SetWorkloadObjectConfig` | Unaria | Prueba y guarda (o quita) la configuración de un objeto de plugin; los secretos quedan cifrados en el agente |
+| `PlanWorkloadRestore` | Unaria | Pregunta a un plugin de carga de trabajo qué elementos candidatos restaurar y en qué orden |
+| `RestoreWorkload` | Streaming del cliente | Envía al agente los elementos planificados; el agente verifica el SHA-256 de cada uno y lo pasa al plugin |
+| `InstallPlugin` | Streaming del cliente | Envía un paquete de plugin al agente, que lo verifica y lo instala con su propia configuración de confianza |
+| `RemovePlugin` | Unaria | Desinstala un plugin (se rechaza mientras una tarea lo usa) |
 
 ### Autenticación de AgentService { #agentservice-authentication }
 

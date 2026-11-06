@@ -58,6 +58,7 @@ nav:
     - Retention: user-guide/retention.md
     - Configuration: user-guide/configuration.md
     - Plugins: user-guide/plugins.md
+    - SQL Server: user-guide/sql-server.md
   - Administration:
     - admin-guide/index.md
     - Server Setup: admin-guide/server-setup.md
@@ -67,6 +68,8 @@ nav:
     - Agent Discovery: admin-guide/agent-discovery.md
     - Agent Deployment: admin-guide/agent-deployment.md
     - Dashboard: admin-guide/dashboard.md
+    - Users and Access: admin-guide/users.md
+    - Reports: admin-guide/reports.md
     - Server Settings: admin-guide/settings.md
     - Monitoring: admin-guide/monitoring.md
     - Scheduling: admin-guide/scheduling.md
@@ -103,6 +106,7 @@ nav:
       - recover: reference/agent-commands/recover.md
       - bmr: reference/agent-commands/bmr.md
       - show-id: reference/agent-commands/show-id.md
+      - plugin: reference/agent-commands/plugin.md
       - service: reference/agent-commands/service.md
     - Internals: reference/internals.md
     - Config Reference: reference/config-reference.md
@@ -114,6 +118,7 @@ nav:
   - Dev Guide:
     - dev-guide/index.md
     - Codebase Overview: dev-guide/codebase-overview.md
+    - Plugin Architecture: dev-guide/plugin-architecture.md
     - Dev Environment: dev-guide/dev-environment.md
     - Build & Packaging: dev-guide/build-and-packaging.md
     - Server Preparation: dev-guide/server-preparation.md
@@ -174,6 +179,7 @@ plugins:
             Disaster Recovery: Recuperación ante desastres
             Bare-Metal Restore: Restauración bare-metal
             Plugins: Plugins
+            SQL Server: SQL Server
             Administration: Administración
             Server Setup: Puesta en marcha del servidor
             TLS Certificates: Certificados TLS
@@ -183,6 +189,8 @@ plugins:
             Agent Deployment: Despliegue de agentes
             Scheduling: Programación
             Dashboard: Dashboard
+            Users and Access: Usuarios y acceso
+            Reports: Reportes
             Server Settings: Configuración del servidor
             Monitoring: Monitoreo
             Sentinel: Sentinel
@@ -202,6 +210,7 @@ plugins:
             Dev Guide: Guía de desarrollo
             Dev Environment: Entorno de desarrollo
             Codebase Overview: Visión general del código
+            Plugin Architecture: Arquitectura de plugins
             "Build & Packaging": "Compilación y empaquetado"
             Testing: Pruebas
             Benchmarks: Benchmarks

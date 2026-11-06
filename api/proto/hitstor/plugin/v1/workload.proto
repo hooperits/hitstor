@@ -1,0 +1,295 @@
+// Workload plugin protocol for HitStor.
+//
+// Workload plugins are installable packages that teach an agent to back up
+// and restore an application (for example a database engine). The agent
+// launches the plugin as a subprocess and communicates over this protocol via
+// hashicorp/go-plugin. A plugin never talks to the server: the agent owns
+// everything that touches the repository.
+//
+// A backup produces items: named byte streams (for example one database
+// backup file) plus opaque metadata that only the plugin interprets. The
+// agent stores each item as a file in the snapshot, so deduplication,
+// encryption, retention, and verification work unchanged.
+//
+// RPCs added after the first release must be optional: the host treats
+// codes.Unimplemented as "capability not supported".
+
+syntax = "proto3";
+
+package hitstor.plugin.v1;
+
+option go_package = "github.com/hooperits/hitstor/api/proto/hitstor/plugin/v1";
+
+import "hitstor/plugin/v1/storage.proto";
+
+// Workload is the gRPC service that workload plugins implement.
+service Workload {
+  // GetMetadata describes the plugin. The agent calls it when installing a
+  // package to confirm the binary matches its manifest, and again whenever it
+  // needs the plugin's capabilities.
+  rpc GetMetadata(GetMetadataRequest) returns (WorkloadMetadata);
+
+  // Configure passes the job's settings and the per-object settings saved
+  // on the agent (for example the credentials of each database instance)
+  // after launch.
+  rpc Configure(WorkloadConfigureRequest) returns (ConfigureResponse);
+
+  // Browse lists the selectable objects under a path, for example
+  // instance -> databases. An empty path lists the top level.
+  rpc Browse(BrowseRequest) returns (BrowseResponse);
+
+  // Backup backs up the selected objects and streams the resulting items.
+  // Each item is sent as ItemStart, any number of data messages, and ItemEnd.
+  // Returning a gRPC error fails the whole backup.
+  rpc Backup(BackupRequest) returns (stream BackupMessage);
+
+  // PlanRestore chooses, from the candidate items the host found in
+  // snapshots, which ones to apply and in what order to restore an object to
+  // a point in time (for example full, then differential, then logs).
+  rpc PlanRestore(PlanRestoreRequest) returns (PlanRestoreResponse);
+
+  // Restore applies the planned items. The host sends RestoreBegin, then
+  // each item as RestoreItemStart, any number of data messages, and
+  // RestoreItemEnd, in plan order.
+  rpc Restore(stream RestoreMessage) returns (RestoreResult);
+}
+
+message GetMetadataRequest {}
+
+message WorkloadConfigureRequest {
+  // Job-level settings (fields of scope "settings").
+  map<string, string> settings = 1;
+  // Per-object settings (fields of scope "object") saved on the agent, one
+  // entry per configured object. Values of "password" fields are included.
+  repeated ObjectSettings objects = 2;
+}
+
+message ObjectSettings {
+  // Object path, as returned by Browse.
+  string path = 1;
+  map<string, string> values = 2;
+}
+
+// WorkloadMetadata identifies a plugin and what it can do.
+message WorkloadMetadata {
+  // Plugin id; must equal the id in the package manifest.
+  string id = 1;
+  // Human-readable name.
+  string name = 2;
+  // Plugin version (semver); must equal the version in the package manifest.
+  string version = 3;
+  // Workload protocol version the plugin implements.
+  int32 protocol_version = 4;
+  // One-line description.
+  string description = 5;
+  // Capability identifiers, e.g. "backup.full", "restore.point_in_time".
+  repeated string capabilities = 6;
+  // Fields the dashboard renders for this plugin's settings, backup options,
+  // and restore options. The dashboard knows nothing else about a plugin.
+  repeated FieldSpec fields = 7;
+}
+
+// FieldSpec declares one form field.
+message FieldSpec {
+  // Key in the settings or options map.
+  string key = 1;
+  // "settings" (Configure, stored in the job), "object" (Configure, saved
+  // on the agent per browse object, e.g. an instance's credentials),
+  // "backup" (BackupRequest options), or "restore" (restore options).
+  string scope = 2;
+  // "string", "bool", "number", "choice", or "password". Password values
+  // are only accepted in scope "object": they stay on the agent, encrypted,
+  // and are never sent back to the dashboard.
+  string type = 3;
+  // Display label and help text by language code ("en" is required).
+  map<string, string> label = 4;
+  map<string, string> help = 5;
+  // Default value, as text.
+  string default = 6;
+  // Allowed values for type "choice".
+  repeated string choices = 7;
+  bool required = 8;
+  // For scope "object": the browse kinds the field applies to, e.g.
+  // "instance". Objects of these kinds get a Configure action.
+  repeated string object_kinds = 9;
+  // Show the field only when another field has one of some values, as
+  // "key=value1|value2", e.g. "auth=sql|windows".
+  string show_if = 10;
+  // "browse": the choices are the top-level objects of the agent's
+  // selection tree (e.g. its database instances), listed at form time.
+  string choices_from = 11;
+}
+
+message BrowseRequest {
+  // Object path to list; empty for the top level.
+  string path = 1;
+}
+
+message BrowseResponse {
+  repeated BrowseEntry entries = 1;
+}
+
+// BrowseEntry is one object in the selection tree.
+message BrowseEntry {
+  // Full object path, used in BackupRequest.selection and further Browse calls.
+  string path = 1;
+  // Display name.
+  string name = 2;
+  // Plugin-defined object kind, e.g. "instance" or "database".
+  string kind = 3;
+  // Whether the object can be selected for backup.
+  bool selectable = 4;
+  // Whether Browse on this path returns more entries.
+  bool has_children = 5;
+  // Short facts shown next to the name, e.g. "FULL · 1.3 GiB".
+  string detail = 6;
+  // Set when the object needs attention, e.g. "OFFLINE".
+  string status = 7;
+}
+
+message BackupRequest {
+  // Object paths to back up, as returned by Browse.
+  repeated string selection = 1;
+  // Backup kind, e.g. "full", "differential", "log". Plugin-defined.
+  string kind = 2;
+  // Per-run options. Connection settings come from Configure.
+  map<string, string> options = 3;
+  // Items the host holds for the selection, so a plugin can check that a
+  // differential or log backup builds on backups the host can restore.
+  // Only meaningful when known_provided is set; otherwise the host does not
+  // know and plugins use their own means.
+  repeated KnownItem known = 4;
+  // Set by hosts that accept ObjectResult messages and aborted items. A
+  // plugin then reports objects it skipped or failed and goes on with the
+  // others; without it, the first failure ends the backup.
+  bool object_results = 5;
+  // Set when known lists every item the host holds (possibly none).
+  bool known_provided = 6;
+}
+
+// KnownItem is an item the host holds, with the metadata the plugin gave it.
+message KnownItem {
+  string item = 1;
+  bytes metadata = 2;
+}
+
+// ObjectResult reports a selected object that produced no item.
+message ObjectResult {
+  // Object path, as in BackupRequest.selection or below it.
+  string object = 1;
+  // "excluded" (by design, e.g. no log backups in SIMPLE recovery) or
+  // "failed" (should have been backed up).
+  string status = 2;
+  // Plugin-defined reason code, e.g. "simple-recovery", "no-full".
+  string reason = 3;
+  // Human-readable detail.
+  string message = 4;
+}
+
+message BackupMessage {
+  oneof msg {
+    ItemStart start = 1;
+    // A slice of the current item's bytes (at most 1 MiB per message).
+    bytes data = 2;
+    ItemEnd end = 3;
+    // Only when the request set object_results.
+    ObjectResult result = 4;
+  }
+}
+
+message ItemStart {
+  // Relative, slash-separated item path, e.g. "MSSQLSERVER/db1/full-20260101T020000Z.bak".
+  string path = 1;
+}
+
+message ItemEnd {
+  // Plugin-defined metadata for the item, as a JSON value. Stored next to
+  // the item and handed back to the plugin when planning a restore.
+  bytes metadata = 1;
+  // The item failed part way and must be discarded (only when the request
+  // set object_results).
+  bool aborted = 2;
+}
+
+// RestoreCandidate is an item available in some snapshot.
+message RestoreCandidate {
+  // Opaque reference chosen by the host; returned in the plan.
+  string ref = 1;
+  // Item path as produced by Backup.
+  string item = 2;
+  // Backup kind the item was produced with.
+  string kind = 3;
+  // When the item was backed up (Unix nanoseconds).
+  int64 created_unix_nanos = 4;
+  // Metadata the plugin attached to the item.
+  bytes metadata = 5;
+}
+
+message PlanRestoreRequest {
+  // Object to restore, as in BackupRequest.selection.
+  string object = 1;
+  // Point in time to restore to (Unix nanoseconds); 0 means the latest.
+  int64 target_unix_nanos = 2;
+  // Restore options, e.g. a new database name.
+  map<string, string> options = 3;
+  repeated RestoreCandidate candidates = 4;
+  // Language for the preview's warnings and summary, e.g. "es"; English
+  // when empty or unsupported.
+  string language = 5;
+}
+
+message PlanRestoreResponse {
+  // Candidate refs to apply, in order.
+  repeated string refs = 1;
+  // Where the restore writes, for the operator to review and change
+  // (through restore options "file:<key>"), e.g. a database's files.
+  repeated RestoreFile files = 2;
+  // Things the operator should know before restoring, e.g. that the
+  // target database exists and would need replace.
+  repeated string warnings = 3;
+  // One line describing the restore, e.g. "Sales as Sales_copy on MSSQLSERVER".
+  string summary = 4;
+}
+
+// RestoreFile is one file the restore writes.
+message RestoreFile {
+  // Key for the restore option "file:<key>" that changes target.
+  string key = 1;
+  // Plugin-defined kind, e.g. "ROWS" or "LOG".
+  string kind = 2;
+  // Where the file was when backed up.
+  string source = 3;
+  // Where the restore will write it.
+  string target = 4;
+}
+
+message RestoreMessage {
+  oneof msg {
+    RestoreBegin begin = 1;
+    RestoreItemStart start = 2;
+    // A slice of the current item's bytes.
+    bytes data = 3;
+    RestoreItemEnd end = 4;
+  }
+}
+
+message RestoreBegin {
+  string object = 1;
+  int64 target_unix_nanos = 2;
+  map<string, string> options = 3;
+  // Number of items that follow.
+  int32 item_count = 4;
+}
+
+message RestoreItemStart {
+  string ref = 1;
+  string item = 2;
+  bytes metadata = 3;
+}
+
+message RestoreItemEnd {}
+
+message RestoreResult {
+  // Human-readable summary, e.g. "restored db1 as db1_copy".
+  string message = 1;
+}

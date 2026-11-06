@@ -3,11 +3,13 @@ package main
 import (
 	"fmt"
 	"os"
+	"slices"
 
 	"github.com/hooperits/hitstor/internal/pruner"
 	"github.com/hooperits/hitstor/internal/repository"
 	"github.com/hooperits/hitstor/internal/retention"
 	"github.com/hooperits/hitstor/internal/ui"
+	"github.com/hooperits/hitstor/internal/workloadcat"
 	"github.com/spf13/cobra"
 )
 
@@ -116,7 +118,7 @@ func runForgetPolicy(repo *repository.Repository, policy retention.Policy, progr
 			Time:     snap.Time,
 			Hostname: snap.Hostname,
 			Paths:    snap.Paths,
-			Tags:     snap.Tags,
+			Tags:     forgetTags(repo, id, snap),
 		})
 	}
 
@@ -231,4 +233,21 @@ func runPruneFromForget(repo *repository.Repository, progress *ui.Progress) erro
 	)
 
 	return nil
+}
+
+// forgetTags returns the tags retention sees for a snapshot: for a workload
+// snapshot from before servers tagged objects, its objects read from its
+// contents. Only snapshots the filters select are read.
+func forgetTags(repo *repository.Repository, id repository.ID, snap *repository.Snapshot) []string {
+	if filterHost != "" && snap.Hostname != filterHost {
+		return snap.Tags
+	}
+	if filterPath != "" && !slices.Contains(snap.Paths, filterPath) {
+		return snap.Tags
+	}
+	tags, err := workloadcat.Default.ObjectTags(repo, id, snap)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "warning: snapshot %s: cannot read which objects it holds (%v); it is kept with every backup it may be the base of\n", id.String()[:8], err)
+	}
+	return tags
 }

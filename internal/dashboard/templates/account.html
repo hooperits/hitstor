@@ -1,0 +1,41 @@
+{{define "content"}}
+{{$u := .Content.User}}
+<div id="account-app" class="set-page" data-username="{{$u.Username}}" data-display-name="{{$u.DisplayName}}">
+    <section class="set-card">
+        <h2 class="set-title">{{t "Profile"}}</h2>
+        <div class="set-row"><div class="set-label">{{t "User name"}}</div><div class="set-value"><strong>{{$u.Username}}</strong></div><div class="set-action"></div></div>
+        <div class="set-row"><div class="set-label">{{t "Full name"}}</div><div class="set-value" id="acct-name">{{if $u.DisplayName}}{{$u.DisplayName}}{{else}}<span class="text-muted">—</span>{{end}}</div>
+            <div class="set-action"><button type="button" class="btn btn-secondary btn-sm" id="acct-edit-name">{{t "Edit"}}</button></div></div>
+        <div class="set-row"><div class="set-label">{{t "Email"}}</div>
+            <div class="set-value">{{if $u.Email}}{{$u.Email}}{{else}}<span class="text-muted">—</span>{{end}}<div class="set-hint">{{t "Password reset links go to this address. An administrator changes it."}}</div></div><div class="set-action"></div></div>
+        <div class="set-row"><div class="set-label">{{t "Access"}}</div>
+            <div class="set-value">{{range $u.Grants}}<div><span class="role-chip role-chip--{{.Role}}">{{template "role_name" .Role}}</span>
+                <span class="role-scope">{{if or (eq .Role "admin") (not .Agents)}}{{t "all agents"}}{{else}}{{range $i, $a := .Agents}}{{if $i}}, {{end}}{{$a}}{{end}}{{end}}</span></div>{{end}}
+                <div class="set-hint">{{t "Given by an administrator."}}</div></div><div class="set-action"></div></div>
+    </section>
+
+    <section class="set-card">
+        <h2 class="set-title">{{t "Security"}}</h2>
+        <div class="set-row"><div class="set-label">{{t "Password"}}</div>
+            <div class="set-value">{{t "Changed"}} <time data-rel datetime="{{$u.PasswordSince.Format "2006-01-02T15:04:05Z07:00"}}"></time></div>
+            <div class="set-action"><button type="button" class="btn btn-secondary btn-sm" id="acct-change-password">{{t "Change"}}</button></div></div>
+        <div class="set-row"><div class="set-label">{{t "Two-step verification"}}</div>
+            <div class="set-value"><span class="badge badge-ok">{{t "Set up"}}</span> {{t "Authenticator app"}}</div>
+            <div class="set-action"><a href="/login/enroll" class="btn btn-secondary btn-sm">{{t "Move to a new phone"}}</a></div></div>
+        <div class="set-row"><div class="set-label">{{t "Recovery codes"}}</div>
+            <div class="set-value">{{tf "{n} unused" "n" $u.RecoveryLeft}}<div class="set-hint">{{t "Generating new ones makes the old ones stop working."}}</div></div>
+            <div class="set-action"><button type="button" class="btn btn-secondary btn-sm" id="account-codes">{{t "Generate new"}}</button></div></div>
+    </section>
+
+    <section class="set-card">
+        <h2 class="set-title">{{t "Open sessions"}}</h2>
+        <div id="account-sessions"><p class="set-hint">{{t "Loading..."}}</p></div>
+        <div class="set-foot"><button type="button" class="btn btn-secondary btn-sm" id="acct-end-others" hidden>{{t "Sign out of the other sessions"}}</button></div>
+    </section>
+
+    <section class="set-card">
+        <h2 class="set-title">{{t "Preferences"}}</h2>
+        <div class="set-row"><div class="set-label">{{t "Language"}}</div><div class="set-value">{{template "lang_selector" "account"}}</div><div class="set-action"></div></div>
+    </section>
+</div>
+{{end}}

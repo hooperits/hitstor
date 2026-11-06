@@ -26,10 +26,12 @@ import (
 	"github.com/hooperits/hitstor/internal/notifier/webhook"
 	hitstorplugin "github.com/hooperits/hitstor/internal/plugin"
 	"github.com/hooperits/hitstor/internal/repository"
+	"github.com/hooperits/hitstor/internal/runlog"
 	"github.com/hooperits/hitstor/internal/sentinel"
 	"github.com/hooperits/hitstor/internal/server"
 	"github.com/hooperits/hitstor/internal/ui"
 	"github.com/hooperits/hitstor/internal/update"
+	"github.com/hooperits/hitstor/internal/users"
 	"github.com/spf13/cobra"
 )
 
@@ -56,6 +58,7 @@ func newServeCmd() *cobra.Command {
 	cmd.Flags().StringVar(&serveAdvertiseAddrFlag, "advertise-addr", "", "address sent to agents during registration (host:port, auto-detected if empty)")
 
 	cmd.AddCommand(newServeAgentCmd())
+	cmd.AddCommand(newServeUserCmd())
 
 	return cmd
 }
@@ -105,6 +108,9 @@ func runServe(cmd *cobra.Command, args []string) error {
 
 	var firstRepo *server.ManagedRepo
 	var registry *server.AgentRegistry
+	var accounts *users.Store
+	var audit *users.AuditLog
+	var runs *runlog.Log
 
 	if setupMode {
 		slog.Info("no repositories configured, starting in setup mode (dashboard only)")
@@ -119,6 +125,15 @@ func runServe(cmd *cobra.Command, args []string) error {
 		if err != nil {
 			return fmt.Errorf("load agent registry: %w", err)
 		}
+		// Dashboard users live next to the agent registry, under the same key.
+		if accounts, err = users.Open(basePath, firstRepo.Repo.Key().EncryptKey); err != nil {
+			return fmt.Errorf("load dashboard users: %w", err)
+		}
+		if audit, err = users.OpenAuditLog(basePath); err != nil {
+			return fmt.Errorf("open audit log: %w", err)
+		}
+		// The history of backup runs, for reports.
+		runs = runlog.Open(basePath, firstRepo.Repo.Key().EncryptKey)
 	}
 
 	encKey, hasKey := repos.EncryptKey()
@@ -184,6 +199,9 @@ func runServe(cmd *cobra.Command, args []string) error {
 
 	alertCtx, alertCancel := context.WithCancel(context.Background())
 	defer alertCancel()
+	if runs != nil {
+		srv.SetRunLog(runs)
+	}
 
 	var alert *alerting.Alerter
 
@@ -263,10 +281,15 @@ func runServe(cmd *cobra.Command, args []string) error {
 	}
 
 	dash.SetRepoManager(repos)
+	dash.SetUsers(accounts, audit)
 	dash.SetConfig(&loadedConfig)
 	dash.SetServer(srv)
 	dash.SetServerGRPCAddr(resolveAdvertiseAddr(servePortFlag))
 	dash.SetRestoreManager(dashboard.NewRestoreManager())
+	if runs != nil {
+		dash.SetRunLog(runs)
+		go dash.RunReportScheduler(alertCtx)
+	}
 
 	// Mount Prometheus metrics endpoint (only with repos).
 	if firstRepo != nil {

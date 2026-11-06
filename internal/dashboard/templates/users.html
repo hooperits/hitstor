@@ -1,0 +1,29 @@
+{{define "content"}}
+<div id="users-app" class="users-page" data-agents="{{toJSON .Content.Agents}}" data-roles="{{toJSON .Content.Roles}}" data-email="{{if .Content.EmailEnabled}}1{{end}}">
+    <div class="toolbar">
+        <label class="search"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="search" id="users-search" placeholder="{{t "Search users"}}" aria-label="{{t "Search"}}"></label>
+        <select id="users-role" class="toolbar-select" aria-label="{{t "Role"}}">
+            <option value="">{{t "All roles"}}</option>
+            {{range .Content.Roles}}<option value="{{.}}">{{template "role_name" .}}</option>{{end}}
+        </select>
+        <select id="users-status" class="toolbar-select" aria-label="{{t "Status"}}">
+            <option value="">{{t "All statuses"}}</option>
+            <option value="active">{{t "Active user"}}</option>
+            <option value="pending">{{t "First sign-in pending"}}</option>
+            <option value="locked">{{t "Locked"}}</option>
+            <option value="disabled">{{t "Disabled"}}</option>
+        </select>
+        <span class="grow"></span>
+        <button type="button" id="user-add" class="btn">+ {{t "New user"}}</button>
+    </div>
+    <section class="acct-section acct-section--wide">
+        <div class="table-wrap">
+            <table class="users-table">
+                <thead><tr><th>{{t "User"}}</th><th>{{t "Roles"}}</th><th>{{t "Two-step"}}</th><th>{{t "Last sign-in"}}</th><th>{{t "Status"}}</th><th></th></tr></thead>
+                <tbody id="users-body"><tr><td colspan="6" class="text-muted">{{t "Loading..."}}</td></tr></tbody>
+            </table>
+        </div>
+    </section>
+</div>
+{{end}}

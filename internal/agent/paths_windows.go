@@ -15,6 +15,8 @@ var (
 	DefaultConfigDir = programDataDir()
 	// DefaultServerPinPath stores the pinned server certificate fingerprint.
 	DefaultServerPinPath = filepath.Join(programDataDir(), "server-fingerprint")
+	// DefaultPluginStoreDir holds installed plugin packages.
+	DefaultPluginStoreDir = filepath.Join(programDataDir(), "plugins")
 )
 
 func programDataDir() string {

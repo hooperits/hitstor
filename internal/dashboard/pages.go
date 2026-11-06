@@ -4,11 +4,13 @@ import (
 	"net/http"
 	"strings"
 	"time"
+	"unicode"
 
 	"github.com/hooperits/hitstor/internal/cron"
 	"github.com/hooperits/hitstor/internal/i18n"
 	"github.com/hooperits/hitstor/internal/repository"
 	"github.com/hooperits/hitstor/internal/server"
+	"github.com/hooperits/hitstor/internal/users"
 )
 
 type pageData struct {
@@ -18,12 +20,79 @@ type pageData struct {
 	Subtitle        string
 	Version         string
 	RepoID          string
+	RepoName        string // first repository, shown in the header
 	Active          string // current nav item
 	Content         any
 	HasAuth         bool
 	UpdateAvailable bool
 	LatestVersion   string
 	UpdateURL       string
+	Nav             navAccess // what the signed-in user may open
+	Crumbs          []crumb   // where the page sits, above its title
+}
+
+// crumb is a step of the breadcrumb trail; Label is a message key.
+type crumb struct {
+	URL   string
+	Label string
+}
+
+// navAccess decides which sections the layout shows. Without accounts,
+// everything.
+type navAccess struct {
+	User     string // signed-in user name, "" without accounts
+	Name     string // display name, if set
+	Initials string // for the avatar
+	Grants   []users.Grant
+	All      bool // reads that span agents: overview, storage, logs
+	Restore  bool
+	Admin    bool
+	user     *users.User
+}
+
+// Backup reports whether the user may run and change backups of agent
+// ("" for any agent). Pages hide the actions a user cannot take.
+func (n navAccess) Backup(agent string) bool { return n.can(users.PermBackup, agent) }
+
+// RestoreTo reports whether the user may restore on agent ("" for any).
+func (n navAccess) RestoreTo(agent string) bool { return n.can(users.PermRestore, agent) }
+
+func (n navAccess) can(p users.Permission, agent string) bool {
+	return n.user == nil || n.user.Can(p, agent)
+}
+
+// initials returns up to two letters for an avatar: of the display name's
+// first and last words, or else of the user name.
+func initials(name, username string) string {
+	words := strings.Fields(name)
+	if len(words) == 0 {
+		words = strings.FieldsFunc(username, func(r rune) bool { return r == '.' || r == '_' || r == '-' })
+	}
+	var out []rune
+	for i, w := range words {
+		if i != 0 && i != len(words)-1 {
+			continue
+		}
+		for _, r := range w {
+			out = append(out, unicode.ToUpper(r))
+			break
+		}
+	}
+	if len(out) == 1 {
+		if rs := []rune(words[0]); len(rs) > 1 {
+			out = append(out, unicode.ToUpper(rs[1]))
+		}
+	}
+	return string(out)
+}
+
+func navFor(r *http.Request) navAccess {
+	u := currentUser(r)
+	if u == nil {
+		return navAccess{All: true, Restore: true, Admin: true}
+	}
+	return navAccess{User: u.Username, Name: u.DisplayName, Initials: initials(u.DisplayName, u.Username), Grants: u.Grants,
+		All: u.CanAll(users.PermView), Restore: u.Can(users.PermRestore, ""), Admin: u.CanAll(users.PermAdmin), user: u}
 }
 
 func (d *Dashboard) newPageData(title, subtitle, active string, content any) pageData {
@@ -32,6 +101,7 @@ func (d *Dashboard) newPageData(title, subtitle, active string, content any) pag
 		Subtitle: subtitle,
 		Version:  d.opts.Version,
 		RepoID:   d.opts.RepoID,
+		RepoName: d.firstRepoName(),
 		Active:   active,
 		Content:  content,
 		HasAuth:  d.opts.Password != "",
@@ -46,7 +116,30 @@ func (d *Dashboard) newPageData(title, subtitle, active string, content any) pag
 	return pd
 }
 
+// kindRunAt is when a plan kind last ran: its latest error or backup.
+func kindRunAt(k planKindView) time.Time {
+	if k.LastErrorAt != nil && (k.LastBackup == nil || k.LastErrorAt.After(*k.LastBackup)) {
+		return *k.LastErrorAt
+	}
+	if k.LastBackup != nil {
+		return *k.LastBackup
+	}
+	return time.Time{}
+}
+
+func (d *Dashboard) firstRepoName() string {
+	if d.repos == nil {
+		return ""
+	}
+	if list := d.repos.List(); len(list) > 0 {
+		return list[0].Name
+	}
+	return ""
+}
+
 type jobView struct {
+	// LastError is the agent's message for the latest failed run.
+	LastError        string
 	ID               string
 	Name             string
 	JobType          string
@@ -83,6 +176,15 @@ type jobView struct {
 	LastVerifyBytes  uint64
 	VerifyOK         bool
 	VerifyFailed     bool
+
+	// Plan describes each backup kind of a workload job; FullRequired lists
+	// the databases a failed differential or log backup needs a full for.
+	Plan         []planKindView
+	FullRequired []fullRequiredItem
+	Failures     []objectOutcomeView // failed objects a full would not fix
+	FailedKind   string              // label of the kind whose run failed or was partial
+	Partial      bool                // that run backed up some objects
+	RunNowKind   string
 }
 
 // buildJobView prepares a job for display; schedule and date text are in
@@ -103,6 +205,10 @@ func buildJobView(c *i18n.Catalog, j server.BackupJob, sess *server.SessionInfo,
 		} else {
 			status = "ok"
 		}
+	}
+	var lastError string
+	if !j.RunNow && server.JobFailedSinceLastBackup(j) {
+		status, lastError = "failed", j.LastError
 	}
 
 	schedDisplay := c.Tf("every {n}h", "n", j.ScheduleHours)
@@ -136,7 +242,7 @@ func buildJobView(c *i18n.Catalog, j server.BackupJob, sess *server.SessionInfo,
 		ID:               j.ID,
 		Name:             j.Name,
 		JobType:          j.JobType,
-		JobTypeLabel:     "Files",
+		JobTypeLabel:     jobTypeLabel(j),
 		AgentName:        j.AgentName,
 		Paths:            j.Paths,
 		SourceLabel:      formatJobSource(c, j),
@@ -159,7 +265,46 @@ func buildJobView(c *i18n.Catalog, j server.BackupJob, sess *server.SessionInfo,
 		LastBackup:       j.LastBackup,
 		RunNow:           j.RunNow,
 		Status:           status,
+		LastError:        lastError,
 		CreatedAt:        j.CreatedAt,
+	}
+
+	if st, fr, failures, ok := legacyWorkloadOutcome(c, j); ok {
+		v.Status, v.FullRequired, v.Failures = st, fr, failures
+		v.Partial = st == "partial"
+		if v.Partial || len(fr)+len(failures) > 0 {
+			v.FailedKind = kindLabel(c, server.EffectivePlan(j)[0].Kind)
+		}
+	}
+	if plan := buildPlanView(c, j, now); plan != nil {
+		v.Plan = plan
+		v.Status = planStatus(j, plan, now)
+		v.ScheduleDisplay, v.NextRun = planSummary(c, plan)
+		v.ScheduleEnabled = v.Status != "disabled"
+		v.LastError = ""
+		if j.RunNow {
+			v.RunNowKind = kindLabel(c, server.EffectivePlan(j)[0].Kind)
+			if j.RunNowKind != "" {
+				v.RunNowKind = kindLabel(c, j.RunNowKind)
+			}
+		}
+		// The alert explains the most recent run that failed, else the most
+		// recent partial one.
+		for _, partial := range []bool{false, true} {
+			var pick *planKindView
+			for i, k := range plan {
+				if (partial && !k.Partial) || (!partial && !k.Failed) {
+					continue
+				}
+				if pick == nil || kindRunAt(k).After(kindRunAt(*pick)) {
+					pick = &plan[i]
+				}
+			}
+			if pick != nil && v.FailedKind == "" {
+				v.FailedKind, v.Partial = pick.Label, partial
+				v.LastError, v.FullRequired, v.Failures = pick.LastError, pick.FullRequired, pick.Failures
+			}
+		}
 	}
 
 	if sess != nil {
@@ -184,7 +329,21 @@ func buildJobView(c *i18n.Catalog, j server.BackupJob, sess *server.SessionInfo,
 	return v
 }
 
+// jobTypeLabel names what a job backs up: files, or the workload plugin.
+func jobTypeLabel(j server.BackupJob) string {
+	if server.IsWorkloadJobType(j.JobType) {
+		return "Plugin: " + j.Plugin
+	}
+	return "Files"
+}
+
 func formatJobSource(c *i18n.Catalog, job server.BackupJob) string {
+	if server.IsWorkloadJobType(job.JobType) && len(job.Selection) > 0 {
+		if len(job.Selection) > 1 {
+			return c.Tf("{path} +{n} more", "path", job.Selection[0], "n", len(job.Selection)-1)
+		}
+		return job.Selection[0]
+	}
 	if len(job.Paths) > 0 {
 		if len(job.Paths) > 1 {
 			return c.Tf("{path} +{n} more", "path", job.Paths[0], "n", len(job.Paths)-1)
@@ -196,6 +355,11 @@ func formatJobSource(c *i18n.Catalog, job server.BackupJob) string {
 }
 
 func (d *Dashboard) handleOverview(w http.ResponseWriter, r *http.Request) {
+	// The overview spans every agent: users limited to some start at their jobs.
+	if !can(r, users.PermView, "") {
+		http.Redirect(w, r, "/backups", http.StatusSeeOther)
+		return
+	}
 	agents := d.registry.ListAgents()
 	var snapIDs []repository.ID
 	if d.repo != nil {
@@ -309,7 +473,7 @@ func buildAgentView(a server.AgentRecord, jobCount int, now time.Time) agentView
 }
 
 func (d *Dashboard) handleAgents(w http.ResponseWriter, r *http.Request) {
-	agents := d.registry.ListAgents()
+	agents := d.visibleAgents(r)
 	now := time.Now()
 
 	jobCounts := make(map[string]int)
@@ -407,7 +571,7 @@ func (d *Dashboard) handleAgentDetail(w http.ResponseWriter, r *http.Request) {
 }
 
 func (d *Dashboard) handleBackups(w http.ResponseWriter, r *http.Request) {
-	jobs := d.registry.ListJobs()
+	jobs := d.visibleJobs(r)
 	now := time.Now()
 
 	// Build map of active sessions by JobID.
@@ -479,6 +643,14 @@ func (d *Dashboard) handleBackupDetail(w http.ResponseWriter, r *http.Request) {
 	// Check if agent is managed (for filesystem browsing).
 	agent := d.registry.GetAgent(job.AgentName)
 	managed := agent != nil && agent.Managed
+	pluginName := job.Plugin
+	if agent != nil {
+		for _, p := range agent.Plugins {
+			if p.ID == job.Plugin && p.Name != "" {
+				pluginName = p.Name
+			}
+		}
+	}
 
 	// Check for active backup session for this job.
 	var progress *sessionProgressJSON
@@ -503,10 +675,27 @@ func (d *Dashboard) handleBackupDetail(w http.ResponseWriter, r *http.Request) {
 		"AgentNames": agentNames,
 		"RepoNames":  repoNames,
 		"Managed":    managed,
+		"PluginName": pluginName,
 		"Progress":   progress,
+		"PlanKinds":  planKinds(agent, *job),
+		"Plan":       server.EffectivePlan(*job),
 	})
 	data.TitleRaw = true
 	d.render(w, r, "backup_detail", data)
+}
+
+// planKinds returns the kinds a workload job's plan can schedule: those
+// the agent's plugin offers, or the plan's own when the agent has not
+// reported the plugin.
+func planKinds(agent *server.AgentRecord, j server.BackupJob) []string {
+	if kinds := pluginKinds(agent, j.Plugin); len(kinds) > 0 {
+		return kinds
+	}
+	var kinds []string
+	for _, e := range server.EffectivePlan(j) {
+		kinds = append(kinds, e.Kind)
+	}
+	return kinds
 }
 
 type snapshotAgentGroup struct {
@@ -598,10 +787,33 @@ func (d *Dashboard) handleSnapshotDetail(w http.ResponseWriter, r *http.Request)
 		}
 	}
 
+	// A plugin backup restores through its plugin, on the agent it came from.
+	var workloadPlugin, sourceAgent string
+	for _, tag := range found.Tags {
+		if id, ok := strings.CutPrefix(tag, "plugin:"); ok {
+			workloadPlugin = id
+		}
+		if id, ok := strings.CutPrefix(tag, "job:"); ok && sourceAgent == "" {
+			if j := d.registry.GetJob(id); j != nil {
+				sourceAgent = j.AgentName
+			}
+		}
+	}
+	if workloadPlugin != "" && sourceAgent == "" {
+		for _, a := range d.registry.ListAgents() {
+			if d.snapshotMatchesAgent(cachedSnapshotSummary{Hostname: found.Hostname, Tags: found.Tags}, a.Name) {
+				sourceAgent = a.Name
+				break
+			}
+		}
+	}
+
 	data := d.newPageData("Snapshot {id}", "Recover files from this backup point", "restores", map[string]any{
-		"Snapshot": found,
-		"Agents":   agentNames,
-		"RepoName": found.RepoName,
+		"Snapshot":       found,
+		"Agents":         agentNames,
+		"RepoName":       found.RepoName,
+		"WorkloadPlugin": workloadPlugin,
+		"SourceAgent":    sourceAgent,
 	})
 	data.TitleID = shortID(found.ID)
 	d.render(w, r, "snapshot_detail", data)

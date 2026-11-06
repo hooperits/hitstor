@@ -18,6 +18,7 @@ HitStor uses gRPC over TLS for communication between components. There are two g
 | `FinalizeBackup` | Unary | Send file tree, create snapshot, end session |
 | `Ping` | Unary | Health check, returns server version |
 | `GetSchedule` | Unary | Query backup schedule for this agent |
+| `ReportJobFailure` | Unary | Report a job that failed on the agent: the server records the error (shown in the dashboard), clears a pending "run now", drops the abandoned session, and delays the next attempt |
 
 ## Authentication
 
@@ -178,6 +179,8 @@ Returns the backup schedule configured for this agent.
 | Field | Type | Description |
 |-------|------|-------------|
 | `api_key` | string | 64-character hex API key |
+| `plugins` | repeated `AgentPlugin` | Workload plugins installed on the agent (`id`, `name`, `version`, `status`, `protocol_version`, `capabilities`, `signer`) |
+| `plugins_reported` | bool | `true` when `plugins` is the agent's complete inventory. When `false` (older agents, or an unreadable plugin store) the server keeps the inventory it already had |
 
 **Response: `GetScheduleResponse`**
 
@@ -188,7 +191,7 @@ Returns the backup schedule configured for this agent.
 | `next_run_unix` | int64 | Legacy: next run from first job |
 | `jobs` | repeated `ScheduledJob` | All backup jobs for this agent |
 
-**`ScheduledJob` fields:** `job_id`, `name`, `paths`, `excludes`, `repo_name`, `enabled`, `interval_hours`, `next_run_unix`, `run_now`, `full_rescan_days`, `last_full_backup_unix`, `cron_expression`, `timezone`, `use_vss`.
+**`ScheduledJob` fields:** `job_id`, `name`, `paths`, `excludes`, `repo_name`, `enabled`, `interval_hours`, `next_run_unix`, `run_now`, `full_rescan_days`, `last_full_backup_unix`, `cron_expression`, `timezone`, `use_vss`, `job_type`, and for workload jobs `plugin`, `plugin_settings`, `selection`, `backup_kind`.
 
 ## Transport
 
@@ -218,6 +221,13 @@ The AgentService runs on each agent (default port 8422) and handles server-to-ag
 | `AgentInfo` | Unary | Query agent hostname, version, OS, paths, and registration status |
 | `RestoreData` | Client streaming | Stream restore data to agent |
 | `WakeUp` | Unary | Signal agent to check schedule immediately (dashboard "Backup Now") |
+| `BrowseWorkload` | Unary | List the objects an installed workload plugin can back up |
+| `GetWorkloadObjectConfig` | Unary | Read the settings saved on the agent for one plugin object, without passwords |
+| `SetWorkloadObjectConfig` | Unary | Test and save (or remove) the settings of one plugin object; secrets stay on the agent, encrypted |
+| `PlanWorkloadRestore` | Unary | Ask a workload plugin which candidate items to restore, in order |
+| `RestoreWorkload` | Client streaming | Stream planned items to the agent, which verifies each item's SHA-256 and pipes it into the plugin |
+| `InstallPlugin` | Client streaming | Stream a plugin package to the agent, which verifies and installs it with its own trust settings |
+| `RemovePlugin` | Unary | Uninstall a plugin (refused while a job uses it) |
 
 ### AgentService Authentication
 

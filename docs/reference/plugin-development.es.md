@@ -1,6 +1,6 @@
 # Guía de desarrollo de plugins
 
-HitStor admite cuatro tipos de plugins mediante el framework [HashiCorp go-plugin](https://github.com/hashicorp/go-plugin). Los plugins se ejecutan como procesos separados y se comunican con HitStor por gRPC.
+HitStor admite cinco tipos de plugins mediante el framework [HashiCorp go-plugin](https://github.com/hashicorp/go-plugin). Los plugins se ejecutan como procesos separados y se comunican con HitStor por gRPC.
 
 ## Tipos de plugins { #plugin-types }
 
@@ -10,6 +10,7 @@ HitStor admite cuatro tipos de plugins mediante el framework [HashiCorp go-plugi
 | Notificador | `hitstor-notifier-<name>` | `alert_notifier_plugins` | `api/proto/hitstor/plugin/v1/notifier.proto` |
 | Hook | `hitstor-hook-<name>` | `hook_plugins` | `api/proto/hitstor/plugin/v1/hook.proto` |
 | Escáner de sistemas de archivos | `hitstor-scanner-<name>` | `fs_scanner_plugin` | `api/proto/hitstor/plugin/v1/scanner.proto` |
+| Carga de trabajo | Paquete `.hpk` con `bin/hitstor-plugin-<id>` | se instala con `hitstor-agent plugin install` | `api/proto/hitstor/plugin/v1/workload.proto` |
 
 ## Conceptos comunes { #common-concepts }
 
@@ -359,6 +360,218 @@ func main() {
 ```
 
 **Ejemplo:** consulte `cmd/hitstor-scanner-builtin/main.go` para ver un plugin de escáner que envuelve el recorrido de directorios integrado.
+
+---
+
+## Plugins de carga de trabajo { #workload-plugins }
+
+Los plugins de carga de trabajo le enseñan a un agente a respaldar una
+aplicación, por ejemplo un motor de base de datos. A diferencia de los demás
+tipos, no son binarios sueltos que se buscan en `$PATH`: se distribuyen como
+paquetes `.hpk` firmados que el agente instala en su almacén de plugins con
+[`hitstor-agent plugin`](agent-commands/plugin.md). El diseño se describe en
+[Arquitectura de plugins de carga de trabajo](../dev-guide/plugin-architecture.md).
+
+### RPC del servicio { #workload-service-rpcs }
+
+Se definen en `api/proto/hitstor/plugin/v1/workload.proto`. Solo
+`GetMetadata` es obligatorio; el host trata un RPC no implementado como una
+capacidad no soportada.
+
+| RPC | Interfaz de Go | Propósito |
+|-----|----------------|-----------|
+| `GetMetadata` | `plugin.Workload` | Devuelve id, nombre, versión, versión de protocolo, descripción y capacidades. El agente lo llama al instalar y rechaza el paquete si el id o la versión no coinciden con el manifiesto |
+| `Configure` | `plugin.Configurable`, `plugin.ObjectConfigurable` | Recibe la configuración de la tarea y la configuración de objetos guardada en el agente |
+| `Browse` | `plugin.WorkloadBrowser` | Lista los objetos seleccionables bajo una ruta (por ejemplo instancia → bases de datos) |
+| `Backup` | `plugin.WorkloadBackuper` | Respalda los objetos seleccionados y envía por stream uno o más elementos |
+| `PlanRestore` | `plugin.WorkloadRestorer` | Elige qué elementos, y en qué orden, restauran un objeto a un punto en el tiempo |
+| `Restore` | `plugin.WorkloadRestorer` | Aplica los elementos planificados a medida que llegan por stream |
+
+### Elementos { #items }
+
+Un respaldo produce **elementos**: streams de bytes con nombre, como un
+archivo de respaldo de base de datos, cada uno con metadatos JSON opcionales.
+El plugin los emite mediante el `ItemSink` que recibe:
+
+```go
+func (p *myPlugin) Backup(ctx context.Context, req plugin.BackupRequest, sink plugin.ItemSink) error {
+    for _, obj := range req.Selection {
+        w, err := sink.Item(obj + "/full-20260101T020000Z.bak")
+        if err != nil {
+            return err
+        }
+        if err := p.streamBackup(ctx, obj, w); err != nil { // escribe los bytes
+            return err
+        }
+        if err := w.Finish([]byte(`{"first_lsn":"..."}`)); err != nil { // metadatos, conocidos al final
+            return err
+        }
+    }
+    return nil
+}
+```
+
+Las rutas de los elementos son relativas y separadas por `/`. El agente guarda
+cada elemento como el archivo `<id del plugin>/<ruta del elemento>` en la
+instantánea (snapshot), junto a `<ruta del elemento>.meta.json`, que contiene
+los metadatos del plugin más el tamaño, el SHA-256, el tipo y la fecha de
+creación del elemento. Los elementos pasan por la misma fragmentación,
+deduplicación, compresión y cifrado que los archivos, y siempre se pueden
+restaurar como archivos comunes.
+
+### Formularios y configuración de objetos { #forms-and-object-settings }
+
+Un plugin declara sus formularios como `FieldSpec` en `GetMetadata`; el
+dashboard no sabe nada más de él. Cada campo tiene un ámbito:
+
+| Ámbito | Se define en | Llega al plugin como |
+|--------|--------------|----------------------|
+| `settings` | La tarea (guardada en el servidor) | `Configure(settings)` |
+| `object` | Un objeto del árbol de selección, como una instancia de base de datos (guardado en el agente) | `ConfigureObjects(objects)`, por ruta del objeto |
+| `backup` | La tarea | `BackupRequest.Options` |
+| `restore` | La restauración | `RestoreRequest.Options` |
+
+Los tipos de campo son `string`, `bool`, `number`, `choice` y `password`.
+Otros atributos:
+
+- `object_kinds`: en el ámbito `object`, los tipos de objeto del árbol que
+  usan el campo. Esos objetos tienen la acción **Configurar** en el árbol del
+  dashboard.
+- `show_if`: muestra el campo solo cuando otro campo tiene alguno de ciertos
+  valores, como `clave=valor1|valor2`.
+
+**Los secretos van en campos `password` de ámbito `object`**, nunca en la
+configuración de la tarea. El agente prueba la nueva configuración de un
+objeto explorándolo con ella, solo la guarda si funciona, la mantiene cifrada
+(DPAPI en Windows) y nunca devuelve los valores `password` al dashboard.
+Llegan al plugin por `ConfigureObjects` cada vez que se inicia.
+
+Las entradas de `Browse` pueden traer un `Detail` (una línea corta de datos,
+como `FULL · 1.3 GiB`) y un `Status` (cuando el objeto requiere atención, como
+`OFFLINE`). Un contenedor seleccionable es una selección válida: el plugin
+decide qué representa al momento del respaldo (por ejemplo, todas las bases de
+una instancia, incluidas las nuevas).
+
+### Restauración { #restore }
+
+La restauración ocurre en dos pasos, de modo que toda la lógica de la
+aplicación queda en el plugin:
+
+1. **Planificar.** El servidor reúne los elementos del objeto en las
+   instantáneas (sus manifiestos: ruta, tipo, fecha de creación y metadatos
+   del plugin) y el agente se los pasa a `PlanRestore` junto con el punto en
+   el tiempo objetivo (cero significa el más reciente). El plugin devuelve las
+   referencias a aplicar, en orden; para una base de datos suele ser el último
+   respaldo completo anterior al objetivo, el diferencial posterior y los logs
+   hasta el objetivo.
+2. **Aplicar.** El servidor envía los elementos planificados al agente, que
+   los pasa a `Restore`. El agente verifica el tamaño y el SHA-256 de cada
+   elemento contra su manifiesto antes de que el plugin vea el final del
+   elemento.
+
+```go
+func (p *myPlugin) Restore(ctx context.Context, req plugin.RestoreRequest, items plugin.RestoreItems) (string, error) {
+    for {
+        it, err := items.Next() // io.EOF después del último elemento
+        if err == io.EOF {
+            return "restored " + req.Object, nil
+        }
+        if err != nil {
+            return "", err
+        }
+        if err := p.apply(ctx, req, it.Item, it.Metadata, it.Data); err != nil {
+            return "", err
+        }
+    }
+}
+```
+
+Un restaurador que además implementa `plugin.RestorePreviewer` describe el
+plan antes de ejecutarlo: los archivos que escribirá (`RestoreFile`: clave,
+tipo, ruta de origen y de destino), advertencias y un resumen de una línea, en
+`req.Language` cuando puede. El dashboard los muestra y el operador cambia el
+destino de un archivo con la opción `file:<clave>`. Un campo de restauración
+con `choices_from: "browse"` lista los objetos de primer nivel del agente de
+destino, como sus instancias de base de datos.
+
+Las opciones de restauración (`req.Options`, por ejemplo un nombre nuevo para
+la base de datos) las indica el operador y las define cada plugin.
+
+### Probar un plugin sin servidor { #trying-a-plugin-without-a-server }
+
+Instale el plugin en un equipo y ejecute:
+
+```bash
+hitstor-agent plugin browse example
+hitstor-agent plugin test-backup example --select demo/alpha --out /tmp/items
+hitstor-agent plugin test-restore example --from /tmp/items --object demo/alpha \
+    --option target_dir=/tmp/restored
+```
+
+`test-restore` planifica a partir de los manifiestos de `--from` exactamente
+como el servidor planifica a partir de las instantáneas.
+
+### Escribir un plugin de carga de trabajo { #writing-a-workload-plugin }
+
+Coloque el código en `plugins/<id>/` junto con un `plugin.yaml` de origen y
+embébalo, para que el binario siempre reporte la versión que declara su
+paquete:
+
+```yaml
+# plugins/example/plugin.yaml
+id: example
+name: Example workload plugin
+version: 0.1.0
+type: workload
+protocol_version: 1
+min_agent_version: 0.1.0
+publisher: hitstor
+description: Reference workload plugin.
+```
+
+```go
+//go:embed plugin.yaml
+var sourceManifest []byte
+
+func main() {
+    m, _ := pluginpkg.ParseSource(sourceManifest)
+    plugin.ServeWorkload(&myWorkload{manifest: m})
+}
+```
+
+Un manifiesto de origen omite `platforms` y `entrypoint`: el empaquetado los
+completa y genera un paquete por plataforma.
+
+### Empaquetado y firma { #packaging-and-signing }
+
+`hitstor-pluginkit` construye y firma los paquetes:
+
+```bash
+hitstor-pluginkit keygen --out mykey            # mykey.key (secreta) + mykey.pub
+hitstor-pluginkit pack --source plugins/example/plugin.yaml \
+    --binary bin/hitstor-plugin-example.exe --os windows --arch amd64 \
+    --key-file mykey.key --out dist
+hitstor-pluginkit verify dist/hitstor-plugin-example-0.1.0-windows-amd64.hpk \
+    --trusted-key "$(cat mykey.pub)"
+```
+
+`make plugin-packages PLUGIN_KEY_FILE=mykey.key` genera un paquete por cada par
+`id:os/arch` de `WORKLOAD_PLUGIN_TARGETS`.
+`PLUGIN_UNSIGNED=1` genera paquetes sin firma para pruebas locales; los agentes
+solo los aceptan con `plugin_allow_unsigned: true`.
+
+Un paquete es un zip con `plugin.yaml`, el binario bajo `bin/`, documentación
+opcional y un archivo `SIGNATURE`: una firma ed25519 sobre un resumen SHA-256
+de todas las demás entradas (nombre y hash del contenido, ordenados). Agregar,
+quitar o modificar cualquier archivo invalida la firma.
+
+Los paquetes oficiales se firman en el workflow de publicación con el secreto
+`HITSTOR_PLUGIN_SIGNING_KEY` del environment `release`, y su clave pública va
+incluida en el agente (`pluginpkg.OfficialKeys`). Para instalar sus propios
+plugins, agregue su clave pública a `plugin_trusted_keys` en los agentes.
+
+**Ejemplo:** consulte `plugins/example/` para ver un plugin de carga de trabajo
+mínimo.
 
 ---
 

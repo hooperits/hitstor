@@ -61,6 +61,15 @@ func GetConfigValue(cfg Config, keyName string) string {
 		return cfg.FsScannerPlugin
 	case "plugin_dir":
 		return cfg.PluginDir
+	case "plugin_store_dir":
+		return cfg.PluginStoreDir
+	case "plugin_trusted_keys":
+		return strings.Join(cfg.PluginTrustedKeys, ", ")
+	case "plugin_allow_unsigned":
+		if cfg.PluginAllowUnsigned {
+			return "true"
+		}
+		return "false"
 	case "update_check":
 		if cfg.UpdateCheck {
 			return "true"
@@ -179,6 +188,20 @@ func SetConfigValue(cfg *Config, keyName, value string) {
 		cfg.FsScannerPlugin = value
 	case "plugin_dir":
 		cfg.PluginDir = value
+	case "plugin_store_dir":
+		cfg.PluginStoreDir = value
+	case "plugin_trusted_keys":
+		if value == "" {
+			cfg.PluginTrustedKeys = nil
+		} else {
+			parts := strings.Split(value, ",")
+			for i := range parts {
+				parts[i] = strings.TrimSpace(parts[i])
+			}
+			cfg.PluginTrustedKeys = parts
+		}
+	case "plugin_allow_unsigned":
+		cfg.PluginAllowUnsigned = value == "true"
 	case "update_check":
 		cfg.UpdateCheck = value == "true"
 	case "update_url":
@@ -246,6 +269,12 @@ func ZeroConfigValue(cfg *Config, keyName string) {
 		cfg.FsScannerPlugin = ""
 	case "plugin_dir":
 		cfg.PluginDir = ""
+	case "plugin_store_dir":
+		cfg.PluginStoreDir = ""
+	case "plugin_trusted_keys":
+		cfg.PluginTrustedKeys = nil
+	case "plugin_allow_unsigned":
+		cfg.PluginAllowUnsigned = false
 	case "update_check":
 		cfg.UpdateCheck = false
 	case "update_url":
@@ -312,6 +341,12 @@ func IsZeroValue(cfg Config, keyName string) bool {
 		return cfg.FsScannerPlugin == ""
 	case "plugin_dir":
 		return cfg.PluginDir == ""
+	case "plugin_store_dir":
+		return cfg.PluginStoreDir == ""
+	case "plugin_trusted_keys":
+		return len(cfg.PluginTrustedKeys) == 0
+	case "plugin_allow_unsigned":
+		return !cfg.PluginAllowUnsigned
 	case "update_check":
 		return !cfg.UpdateCheck
 	case "update_url":
@@ -501,6 +536,8 @@ func getListValue(cfg Config, keyName string) []string {
 		return cfg.AlertNotifierPlugins
 	case "hook_plugins":
 		return cfg.HookPlugins
+	case "plugin_trusted_keys":
+		return cfg.PluginTrustedKeys
 	default:
 		return nil
 	}
@@ -518,6 +555,8 @@ func setListValue(cfg *Config, keyName string, list []string) {
 		cfg.AlertNotifierPlugins = list
 	case "hook_plugins":
 		cfg.HookPlugins = list
+	case "plugin_trusted_keys":
+		cfg.PluginTrustedKeys = list
 	}
 }
 

@@ -9,4 +9,6 @@ var (
 	DefaultConfigDir = "/etc/hitstor"
 	// DefaultServerPinPath stores the pinned server certificate fingerprint.
 	DefaultServerPinPath = "/etc/hitstor/server-fingerprint"
+	// DefaultPluginStoreDir holds installed plugin packages.
+	DefaultPluginStoreDir = "/var/lib/hitstor/plugins"
 )

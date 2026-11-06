@@ -9,8 +9,9 @@ El enfoque recomendado es la programación gestionada por el servidor, en la que
 ### Configurar desde el dashboard { #configure-from-the-dashboard }
 
 1. Abra el [Dashboard](dashboard.md) en `http://SERVER_IP:8421`.
-2. Vaya a **Respaldos** y haga clic en **+ Nueva tarea de respaldo** (o abra una tarea existente).
-3. Elija un modo de programación:
+2. Vaya a **Respaldos** y haga clic en **+ Nueva tarea de respaldo**. El paso 2 del asistente
+   define la programación con el asistente de programación (vea [Tareas nuevas: asistente de programación](#plugin-jobs-schedule-picker)).
+3. Para cambiar la programación de una tarea existente, ábrala y despliegue **Editar programación**; luego elija un modo:
     - **Intervalo**: ejecutar cada N horas (sencillo, sin tener en cuenta la zona horaria).
     - **Expresión cron**: usar la sintaxis cron estándar de 5 campos para una programación precisa con soporte de zona horaria.
 4. Si usa el modo cron, ingrese la expresión y seleccione una zona horaria. El dashboard valida la expresión y muestra una descripción legible junto con las próximas 3 ejecuciones.
@@ -27,6 +28,27 @@ La opción de programación más sencilla. Defina el número de horas entre resp
 - **Cómo funciona**: `next_run = last_backup + interval_hours`
 - **Zona horaria**: no aplica (relativo a la hora del último respaldo)
 - **Ideal para**: configuraciones sencillas en las que la hora exacta de ejecución no importa
+
+#### Tareas nuevas: asistente de programación { #plugin-jobs-schedule-picker }
+
+Las tareas de respaldo nuevas, de archivos o de un plugin, definen su programación con un asistente inspirado en los
+conjuntos de programación de las herramientas de respaldo empresariales, y
+guardan el resultado como una expresión cron:
+
+| Opción | Configuración |
+|--------|---------------|
+| **Solo a demanda** | La tarea solo se ejecuta con **Respaldar ahora** |
+| **Repetitiva → Todos los días** | Hora de inicio |
+| **Repetitiva → Días de la semana** | Días, y opcionalmente semanas del mes (1.ª a 5.ª, Última); hora de inicio |
+| **Repetitiva → Días del mes** | Días 1 a 31 y **Último día**; hora de inicio. Los días que un mes no tiene se omiten |
+| **Repetitiva → Cada…** | Cada 5 a 30 minutos, o cada 1 a 12 horas en un minuto dado; opcionalmente solo entre dos horas y solo de lunes a viernes |
+
+Cada programación tiene una zona horaria (la del navegador por defecto). El
+asistente muestra la programación en palabras y sus próximas ejecuciones, y
+**Editar como expresión cron** cambia a la expresión directa. Mientras no
+cambie la programación, esta sigue el tipo de respaldo: completos los domingos
+a la 1:00 a. m., diferenciales de lunes a sábado a la 1:00 a. m. y respaldos
+de log cada 15 minutos.
 
 #### Modo expresión cron { #cron-expression-mode }
 
@@ -52,6 +74,9 @@ Sintaxis cron estándar de 5 campos para una programación precisa y con zona ho
 | Rango | `1-5` | Del 1 al 5 |
 | Paso | `*/15` | Cada 15 unidades |
 | Rango con paso | `0-30/10` | 0, 10, 20, 30 |
+| Último día del mes | `L` (día del mes) | El último día de cada mes |
+| N-ésimo día de la semana | `0#1` (día de la semana) | El primer domingo del mes (`#1` a `#5`) |
+| Último día de la semana | `5L` (día de la semana) | El último viernes del mes |
 
 **Ejemplos comunes**:
 
@@ -63,6 +88,8 @@ Sintaxis cron estándar de 5 campos para una programación precisa y con zona ho
 | `0 */6 * * *` | Cada 6 horas |
 | `0 22 1 * *` | El día 1 de cada mes a las 10:00 p. m. |
 | `*/15 * * * *` | Cada 15 minutos |
+| `0 23 L * *` | El último día de cada mes a las 11:00 p. m. |
+| `0 2 * * 0#1` | El primer domingo de cada mes a las 2:00 a. m. |
 
 **Manejo de zonas horarias**:
 

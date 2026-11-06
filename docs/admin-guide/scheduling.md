@@ -9,8 +9,9 @@ The recommended approach is server-managed scheduling, where backup schedules ar
 ### Configure from the Dashboard
 
 1. Open the [Dashboard](dashboard.md) at `http://SERVER_IP:8421`.
-2. Navigate to **Backups** and click **+ New Backup Job** (or open an existing job).
-3. Choose a schedule mode:
+2. Navigate to **Backups** and click **+ New Backup Job**. Step 2 of the wizard sets the
+   schedule with the schedule picker (see [New Jobs: Schedule Picker](#plugin-jobs-schedule-picker)).
+3. To change the schedule of an existing job, open it and expand **Edit schedule**, then choose a mode:
     - **Interval**: Run every N hours (simple, no timezone awareness).
     - **Cron Expression**: Use standard 5-field cron syntax for precise scheduling with timezone support.
 4. If using Cron mode, enter the expression and select a timezone. The dashboard validates the expression and shows a human-readable description with the next 3 run times.
@@ -27,6 +28,26 @@ The simplest scheduling option. Set the number of hours between backups:
 - **How it works**: `next_run = last_backup + interval_hours`
 - **Timezone**: Not applicable (relative to last backup time)
 - **Best for**: Simple setups where exact run times don't matter
+
+#### New Jobs: Schedule Picker { #plugin-jobs-schedule-picker }
+
+New backup jobs, of files or of a plugin, set their
+schedule with a picker modeled on the schedule sets of enterprise backup
+tools, and store the result as a cron expression:
+
+| Option | Settings |
+|--------|----------|
+| **On demand only** | The job runs only with **Backup Now** |
+| **Repeating → Every day** | Start time |
+| **Repeating → Days of week** | Weekdays, and optionally weeks of the month (1st to 5th, Last); start time |
+| **Repeating → Days of month** | Days 1 to 31 and **Last day**; start time. Days a month does not have are skipped |
+| **Repeating → Every…** | Every 5 to 30 minutes, or every 1 to 12 hours at a given minute; optionally only between two hours and only Monday to Friday |
+
+Each schedule takes a time zone (the browser's by default). The picker shows
+the schedule in words and its next runs, and **Edit as cron expression**
+switches to the raw expression. Until you change the schedule, it follows the
+backup kind: fulls on Sundays at 1:00 AM, differentials Monday to Saturday at
+1:00 AM, and log backups every 15 minutes.
 
 #### Cron Expression Mode
 
@@ -52,6 +73,9 @@ Standard 5-field cron syntax for precise, timezone-aware scheduling:
 | Range | `1-5` | 1 through 5 |
 | Step | `*/15` | Every 15 units |
 | Range with step | `0-30/10` | 0, 10, 20, 30 |
+| Last day of month | `L` (day of month) | The last day of each month |
+| Nth weekday | `0#1` (day of week) | The first Sunday of the month (`#1` to `#5`) |
+| Last weekday | `5L` (day of week) | The last Friday of the month |
 
 **Common examples**:
 
@@ -63,6 +87,8 @@ Standard 5-field cron syntax for precise, timezone-aware scheduling:
 | `0 */6 * * *` | Every 6 hours |
 | `0 22 1 * *` | 1st of each month at 10:00 PM |
 | `*/15 * * * *` | Every 15 minutes |
+| `0 23 L * *` | Last day of each month at 11:00 PM |
+| `0 2 * * 0#1` | First Sunday of each month at 2:00 AM |
 
 **Timezone handling**:
 

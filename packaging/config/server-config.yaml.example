@@ -43,7 +43,9 @@
 # Web dashboard port (HTTPS, default: 8421).
 # serve_dashboard_port: 8421
 
-# Dashboard login password (empty = open access).
+# Dashboard password: signs in while no repository exists and is asked once to
+# create the first administrator. If empty, the server generates one, stores its
+# hash here and writes the plaintext once to its log.
 # serve_dashboard_password: changeme
 
 # Alerting: webhook URL for backup failure notifications.
